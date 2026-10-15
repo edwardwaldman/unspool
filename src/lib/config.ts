@@ -1,0 +1,52 @@
+// Central place for product knobs and environment lookups.
+
+export const REELS_PER_DOC = 10;
+export const FREE_REELS = 1;
+
+export const MAX_FILE_BYTES = 25 * 1024 * 1024;
+export const MAX_WORDS = 40_000;
+export const MAX_PAGES = 60;
+
+export const ACCEPTED_EXTENSIONS = ["pdf", "docx", "pptx", "txt", "md", "png", "jpg", "jpeg", "webp"] as const;
+export type AcceptedExtension = (typeof ACCEPTED_EXTENSIONS)[number];
+
+export const PRICING = {
+  documentCents: Number(process.env.PRICE_DOCUMENT_CENTS ?? 249),
+  subscriptionCents: Number(process.env.PRICE_SUBSCRIPTION_CENTS ?? 799),
+  currency: "usd",
+};
+
+export const LIMITS = {
+  freeUploadsPerDay: Number(process.env.FREE_UPLOADS_PER_DAY ?? 3),
+  subscriberUploadsPerDay: Number(process.env.SUBSCRIBER_UPLOADS_PER_DAY ?? 40),
+  anonymousRetentionDays: 7,
+};
+
+/** Generate reels 2–10 right away (best UX) or only after the document is unlocked (cheapest). */
+export const GENERATE_LOCKED_REELS_EAGERLY = process.env.GENERATE_LOCKED_REELS_EAGERLY !== "false";
+
+export const ANON_COOKIE = "unspool_anon";
+
+export function formatPrice(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+export function siteUrl(fallbackOrigin?: string) {
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
+  if (fallbackOrigin) return fallbackOrigin;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+}
+
+export function extensionOf(fileName: string): string {
+  const m = /\.([a-z0-9]+)$/i.exec(fileName);
+  return m ? m[1].toLowerCase() : "";
+}
+
+export function isAccepted(fileName: string): fileName is string {
+  return (ACCEPTED_EXTENSIONS as readonly string[]).includes(extensionOf(fileName));
+}
+
+export const supabaseConfigured = Boolean(
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+);

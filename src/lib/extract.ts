@@ -1,0 +1,151 @@
+import { MAX_PAGES, MAX_WORDS, extensionOf } from "./config";
+import { transcribeWithClaude } from "./claude";
+
+export type Extracted = {
+  text: string;
+  pageCount: number | null;
+  wordCount: number;
+  truncated: boolean;
+  method: "text" | "ocr";
+};
+
+export class ExtractionError extends Error {}
+
+const IMAGE_TYPES: Record<string, "image/png" | "image/jpeg" | "image/webp"> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  webp: "image/webp",
+};
+
+function countWords(text: string) {
+  return text.split(/\s+/).filter(Boolean).length;
+}
+
+function clean(text: string) {
+  return text
+    .replace(/\r\n?/g, "\n")
+    .replace(/[ \t\f\v]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+async function extractPdf(buf: Buffer) {
+  const { extractText, getDocumentProxy } = await import("unpdf");
+  const pdf = await getDocumentProxy(new Uint8Array(buf));
+  const { totalPages, text } = await extractText(pdf, { mergePages: false });
+  const pages = (text as string[]).slice(0, MAX_PAGES);
+  return {
+    text: pages.map((p, i) => `[Page ${i + 1}]\n${p}`).join("\n\n"),
+    pageCount: totalPages,
+    pagesTruncated: totalPages > MAX_PAGES,
+    plainWords: countWords(pages.join(" ")),
+  };
+}
+
+async function extractDocx(buf: Buffer) {
+  const mammoth = await import("mammoth");
+  const { value } = await mammoth.extractRawText({ buffer: buf });
+  return value;
+}
+
+function decodeXml(s: string) {
+  return s
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&amp;/g, "&");
+}
+
+async function extractPptx(buf: Buffer) {
+  const JSZip = (await import("jszip")).default;
+  const zip = await JSZip.loadAsync(buf);
+  const slideFiles = Object.keys(zip.files)
+    .filter((f) => /^ppt\/slides\/slide\d+\.xml$/.test(f))
+    .sort((a, b) => Number(/(\d+)\.xml$/.exec(a)![1]) - Number(/(\d+)\.xml$/.exec(b)![1]));
+  const slides: string[] = [];
+  for (const [i, f] of slideFiles.entries()) {
+    const xml = await zip.files[f].async("string");
+    const paragraphs = xml.split(/<\/a:p>/).map((p) =>
+      [...p.matchAll(/<a:t>([\s\S]*?)<\/a:t>/g)].map((m) => decodeXml(m[1])).join(""),
+    );
+    slides.push(`[Slide ${i + 1}]\n${paragraphs.filter((p) => p.trim()).join("\n")}`);
+  }
+  return { text: slides.join("\n\n"), pageCount: slideFiles.length };
+}
+
+function capWords(text: string) {
+  const words = countWords(text);
+  if (words <= MAX_WORDS) return { text, words, truncated: false };
+  // Cut on a word boundary, keeping original whitespace.
+  let count = 0;
+  const re = /\S+/g;
+  let m: RegExpExecArray | null;
+  let end = text.length;
+  while ((m = re.exec(text))) {
+    count++;
+    if (count === MAX_WORDS) {
+      end = m.index + m[0].length;
+      break;
+    }
+  }
+  return { text: text.slice(0, end), words: MAX_WORDS, truncated: true };
+}
+
+/** Pull readable text out of an uploaded file. Falls back to OCR (via Claude vision) for scans and images. */
+export async function extractDocument(buf: Buffer, fileName: string): Promise<Extracted> {
+  const ext = extensionOf(fileName);
+  let text = "";
+  let pageCount: number | null = null;
+  let truncated = false;
+  let method: Extracted["method"] = "text";
+
+  if (ext === "pdf") {
+    const pdf = await extractPdf(buf);
+    pageCount = pdf.pageCount;
+    truncated = pdf.pagesTruncated;
+    text = pdf.text;
+    // Scanned PDFs have little or no text layer.
+    const expected = Math.max(40, Math.min(pdf.pageCount, MAX_PAGES) * 25);
+    if (pdf.plainWords < expected) {
+      if (buf.length > 30 * 1024 * 1024 || pdf.pageCount > 100) {
+        if (pdf.plainWords < 40) throw new ExtractionError("This PDF looks scanned and is too large to OCR. Try a smaller file.");
+      } else {
+        const ocr = await transcribeWithClaude({ kind: "pdf", data: buf.toString("base64") });
+        if (countWords(ocr) > pdf.plainWords) {
+          text = ocr;
+          method = "ocr";
+        }
+      }
+    }
+  } else if (ext === "docx") {
+    text = await extractDocx(buf);
+  } else if (ext === "pptx") {
+    const pptx = await extractPptx(buf);
+    text = pptx.text;
+    pageCount = pptx.pageCount;
+  } else if (ext === "txt" || ext === "md") {
+    text = buf.toString("utf8");
+  } else if (IMAGE_TYPES[ext]) {
+    if (buf.length > 5 * 1024 * 1024) throw new ExtractionError("Images must be under 5 MB.");
+    text = await transcribeWithClaude({ kind: "image", mediaType: IMAGE_TYPES[ext], data: buf.toString("base64") });
+    pageCount = 1;
+    method = "ocr";
+  } else {
+    throw new ExtractionError("Unsupported file type. Try PDF, DOCX, PPTX, TXT, MD or an image.");
+  }
+
+  const capped = capWords(clean(text));
+  if (capped.words < 40) {
+    throw new ExtractionError("We couldn't find enough readable text in this file.");
+  }
+  return {
+    text: capped.text,
+    pageCount,
+    wordCount: capped.words,
+    truncated: truncated || capped.truncated,
+    method,
+  };
+}

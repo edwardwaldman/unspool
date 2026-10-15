@@ -1,0 +1,158 @@
+import { z } from "zod";
+
+// ---------------------------------------------------------------------------
+// Reel script schema (what the script writer returns, stored in reels.script_json)
+// ---------------------------------------------------------------------------
+
+export const ColorSchema = z.enum(["primary", "warn", "yellow", "cyan"]);
+export const AccentSchema = z.enum(["blue", "pink", "cyan", "yellow", "green", "violet", "orange"]);
+
+const Side = z.object({
+  emoji: z.string(),
+  title: z.string(),
+  sub: z.string(),
+});
+
+const Step = z.object({
+  emoji: z.string(),
+  title: z.string(),
+  sub: z.string(),
+});
+
+const ListItem = z.object({
+  emoji: z.string(),
+  label: z.string(),
+});
+
+export const VisualSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("hook"), emoji: z.string(), tag: z.string(), color: ColorSchema }),
+  z.object({ type: z.literal("bigword"), word: z.string(), sub: z.string(), color: ColorSchema }),
+  z.object({ type: z.literal("split"), mode: z.enum(["vs", "to"]), left: Side, right: Side }),
+  z.object({ type: z.literal("flow"), steps: z.array(Step) }),
+  z.object({ type: z.literal("list"), title: z.string(), items: z.array(ListItem) }),
+  z.object({ type: z.literal("emoji"), items: z.array(ListItem), arrow: z.boolean() }),
+  z.object({
+    type: z.literal("crowd"),
+    total_label: z.string(),
+    highlight_label: z.string(),
+    ratio: z.number(),
+  }),
+  z.object({ type: z.literal("stat"), value: z.string(), label: z.string(), color: ColorSchema }),
+]);
+
+export const BeatSchema = z.object({
+  say: z.string(),
+  visual: VisualSchema,
+});
+
+export const StatSchema = z.object({
+  label: z.string(),
+  value: z.number(),
+  prefix: z.string(),
+  suffix: z.string(),
+  at_beat: z.number().int(),
+});
+
+export const QuizSchema = z.object({
+  question: z.string(),
+  options: z.array(z.string()),
+  answer: z.number().int(),
+  explain: z.string(),
+});
+
+export const OutroSchema = z.object({
+  next_title: z.string(),
+  say: z.string(),
+});
+
+export const ReelScriptSchema = z.object({
+  index: z.number().int(),
+  title: z.string(),
+  headline: z.string(),
+  accent: AccentSchema,
+  summary: z.string(),
+  stats: z.array(StatSchema),
+  beats: z.array(BeatSchema),
+  quiz: QuizSchema,
+  outro: OutroSchema,
+});
+
+export type Visual = z.infer<typeof VisualSchema>;
+export type VisualType = Visual["type"] | "quiz" | "outro";
+export type Beat = z.infer<typeof BeatSchema>;
+export type ReelScript = z.infer<typeof ReelScriptSchema>;
+export type Accent = z.infer<typeof AccentSchema>;
+export type HighlightColor = z.infer<typeof ColorSchema>;
+export type Stat = z.infer<typeof StatSchema>;
+
+/** Post-validation sanity rules that JSON schema can't express. Returns a list of problems. */
+export function reelScriptProblems(s: ReelScript): string[] {
+  const problems: string[] = [];
+  if (s.beats.length < 4) problems.push("needs at least 4 beats (hook + body)");
+  if (s.beats[0]?.visual.type !== "hook") problems.push("first beat must use the hook visual");
+  if (s.quiz.options.length < 2 || s.quiz.options.length > 4) problems.push("quiz needs 2–4 options");
+  if (s.quiz.answer < 0 || s.quiz.answer >= s.quiz.options.length) problems.push("quiz.answer out of range");
+  for (const [i, b] of s.beats.entries()) {
+    if (!b.say.trim()) problems.push(`beat ${i} has empty say`);
+    if (b.visual.type === "flow" && (b.visual.steps.length < 2 || b.visual.steps.length > 4))
+      problems.push(`beat ${i} flow needs 2–4 steps`);
+    if (b.visual.type === "list" && (b.visual.items.length < 2 || b.visual.items.length > 5))
+      problems.push(`beat ${i} list needs 2–5 items`);
+    if (b.visual.type === "emoji" && (b.visual.items.length < 1 || b.visual.items.length > 3))
+      problems.push(`beat ${i} emoji needs 1–3 items`);
+  }
+  return problems;
+}
+
+/** Clamp anything slightly out of range instead of failing the whole reel. */
+export function normalizeReelScript(s: ReelScript): ReelScript {
+  const beats = s.beats.map((b) => {
+    const v = b.visual;
+    if (v.type === "flow") return { ...b, visual: { ...v, steps: v.steps.slice(0, 4) } };
+    if (v.type === "list") return { ...b, visual: { ...v, items: v.items.slice(0, 5) } };
+    if (v.type === "emoji") return { ...b, visual: { ...v, items: v.items.slice(0, 3) } };
+    if (v.type === "crowd") return { ...b, visual: { ...v, ratio: Math.min(0.9, Math.max(0.02, v.ratio)) } };
+    return b;
+  });
+  return {
+    ...s,
+    beats,
+    stats: s.stats.slice(0, 3).map((st) => ({ ...st, at_beat: Math.max(0, Math.min(beats.length - 1, st.at_beat)) })),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Plan schema (one call over the whole document)
+// ---------------------------------------------------------------------------
+
+export const PlanSchema = z.object({
+  title: z.string(),
+  doc_type: z.enum(["study", "work", "other"]),
+  sensitive: z.boolean(),
+  reels: z.array(
+    z.object({
+      index: z.number().int(),
+      title: z.string(),
+      hook: z.string(),
+      section: z.string(),
+    }),
+  ),
+});
+
+export type Plan = z.infer<typeof PlanSchema>;
+
+// ---------------------------------------------------------------------------
+// Audio / timing (stored in reels.audio_paths, keyed by segment key)
+// ---------------------------------------------------------------------------
+
+export type SegmentAudio = {
+  /** Storage path in the `audio` bucket, absent when TTS isn't configured. */
+  path?: string;
+  /** Seconds. Estimated when the provider doesn't report it; the player corrects on load. */
+  duration: number;
+  /** Word start times as fractions of duration (0..1). */
+  words: number[];
+  exact?: boolean;
+};
+
+export type AudioMap = Record<string, SegmentAudio>;
