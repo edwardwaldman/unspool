@@ -86,7 +86,7 @@ function BigUpload() {
         <Float className="bottom-4 left-10 rotate-2" delay={0.8}>×10 reels</Float>
         <Float className="bottom-0 right-6 -rotate-3" delay={1.2}>~60s each</Float>
         {/* hand-drawn "start here" arrow */}
-        <div aria-hidden className="pointer-events-none absolute -top-9 left-1/2 hidden translate-x-[70px] items-start gap-1 md:flex">
+        <div aria-hidden className="pointer-events-none absolute -top-12 left-1/2 hidden translate-x-[70px] items-start gap-1 md:flex">
           <span className="-rotate-6 font-hook text-[20px] text-thread">start here</span>
           <svg width="88" height="99" viewBox="0 0 80 90" className="-ml-1 mt-2 overflow-visible">
             <motion.path
