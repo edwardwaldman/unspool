@@ -2,9 +2,6 @@
 
 import Link from "next/link";
 import { useRef, useSyncExternalStore } from "react";
-import { formatPrice, PRICING } from "@/lib/config";
-import { SAMPLE_SPOOL } from "@/lib/sample";
-import { ReelView } from "../reel/reel-view";
 import { UploadIcon, Wordmark } from "../ui/icons";
 import { useMedia } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
@@ -30,17 +27,13 @@ function useViewport(dim: "innerHeight" | "innerWidth", fallback: number) {
   );
 }
 
-/** Blurred, quietly playing reel acting as a sign-up gate (or the upload button once signed in). */
-function UploadReel({ width, height }: { width: number; height: number }) {
+/** The hero's call to action: opens the file picker (after sign-up if needed). */
+function UploadButton() {
   const input = useRef<HTMLInputElement>(null);
   const upload = useUploader();
   const pending = usePendingUpload();
   return (
-    <div className="relative shrink-0 overflow-hidden border border-line" style={{ width, height }}>
-      <div className="pointer-events-none absolute inset-0 scale-105 opacity-40 blur-[7px]" aria-hidden>
-        <ReelView spool={SAMPLE_SPOOL} reel={SAMPLE_SPOOL.reels[0]} active total={10} chrome={{ bottomInset: 0 }} onMore={() => undefined} preview />
-      </div>
-      <div className="absolute inset-0 bg-paper/65" />
+    <>
       <input
         ref={input}
         type="file"
@@ -52,48 +45,16 @@ function UploadReel({ width, height }: { width: number; height: number }) {
           if (f) void upload(f);
         }}
       />
-      <div className="absolute inset-x-6 bottom-6">
-        <div className="flex items-center gap-2 font-mono text-[12px]">
-          <span className="text-muted line-through decoration-coral decoration-2">{formatPrice(PRICING.documentCents)}</span>
-          <span className="border border-thread px-1.5 py-0.5 text-thread">$0 to start</span>
-        </div>
-        <h2 className="mt-3 font-display text-[32px] leading-[1.05]">
-          Your first reel is{" "}
-          <span className="relative inline-block text-thread">
-            free
-            <svg className="pointer-events-none absolute -left-4 -top-1 h-[calc(100%+10px)] w-[calc(100%+32px)] overflow-visible" viewBox="0 0 100 50" preserveAspectRatio="none" aria-hidden>
-              <motion.path
-                d="M50 4 C 77 4, 97 13, 97 25 C 97 37, 77 46, 50 46 C 23 46, 3 37, 3 25 C 3 13, 23 4, 56 5"
-                fill="none"
-                stroke="var(--thread)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                vectorEffect="non-scaling-stroke"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: [0, 1, 1, 1], opacity: [1, 1, 1, 0] }}
-                transition={{ duration: 5, delay: 0.8, times: [0, 0.22, 0.85, 1], ease: "easeInOut", repeat: Infinity, repeatDelay: 0.6 }}
-              />
-            </svg>
-          </span>
-          <span className="ml-5">.</span>
-        </h2>
-        <p className="mt-3 text-[14px] leading-snug text-muted">
-          Drop in any doc and watch it turn into reels. No card, no catch.
-        </p>
-        <div className="mt-5">
-          <button
-            type="button"
-            onClick={() => {
-              pickFileWithAuth(() => input.current?.click());
-            }}
-            disabled={Boolean(pending)}
-            className="btn-primary w-full py-4 text-[15px]"
-          >
-            {pending ? "Opening your feed" : (<><UploadIcon size={17} /> Upload a document</>)}
-          </button>
-        </div>
-      </div>
-    </div>
+      <button
+        type="button"
+        onClick={() => pickFileWithAuth(() => input.current?.click())}
+        disabled={Boolean(pending)}
+        className="flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-10 py-4 text-[18px] font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-60 lg:px-14 lg:py-5 lg:text-[22px]"
+      >
+        {pending ? "Opening your feed" : (<><UploadIcon size={22} /> Upload a document</>)}
+      </button>
+      <p className="-mt-3 text-[13px] text-muted lg:-mt-2">Your first reel is free. No card needed.</p>
+    </>
   );
 }
 
@@ -161,11 +122,11 @@ export function Landing() {
   const animScale = useTransform(scrollY, [0, 700], [1, 0.88]);
   const animFade = useTransform(scrollY, [250, 750], [1, 0.2]);
   const cueFade = useTransform(scrollY, [0, 60], [1, 0]);
-  const k = lg ? Math.max(1.2, Math.min(2.6, (vh - 200) / ANIM_H, (vw - 160) / ANIM_W)) : Math.min(1.2, (vw - 32) / ANIM_W);
+  const k = lg ? Math.max(1, Math.min(2.8, (vh - 370) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 330) / ANIM_H));
 
   return (
     <div>
-    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-8 px-6 pb-24 pt-24 lg:gap-7 lg:pb-8 lg:pt-16">
+    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-3 pb-10 pt-20 lg:gap-6 lg:px-6 lg:pb-24 lg:pt-16">
       {/* Phones: a plain wordmark until the top bar slides in */}
       <Link href="/" aria-label="unspool" className="absolute left-5 top-5 lg:hidden">
         <Wordmark size={24} />
@@ -174,15 +135,13 @@ export function Landing() {
       <motion.div style={lg ? { y: headY, opacity: headFade } : undefined}>
         <Headline />
       </motion.div>
-      <div className="flex flex-col items-center gap-12 lg:gap-20">
-        <motion.div>
-          <UploadReel width={lg ? 380 : 300} height={lg ? 420 : 360} />
-        </motion.div>
+      <div className="flex flex-col items-center gap-6 lg:gap-8">
         <motion.div className="order-first" style={lg ? { width: ANIM_W * k, height: ANIM_H * k, scale: animScale, opacity: animFade } : { width: ANIM_W * k, height: ANIM_H * k }}>
           <div className="origin-top-left" style={{ width: ANIM_W, height: ANIM_H, transform: `scale(${k})` }}>
             <DocToReel />
           </div>
         </motion.div>
+        <UploadButton />
       </div>
       {/* Scroll cue */}
       <motion.div
