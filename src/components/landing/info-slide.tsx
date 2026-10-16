@@ -1,4 +1,5 @@
 import { formatPrice, PRICING } from "@/lib/config";
+import { ProcessDemo } from "./process-demo";
 
 const STEPS = [
   ["01", "Drop anything", "Notes, a textbook chapter, a work PDF, a contract or a photo of handwritten pages."],
@@ -19,7 +20,10 @@ export function InfoSlide() {
     <section className="flex min-h-[80dvh] flex-col justify-center border-t border-line px-6 py-20">
       <div className="mx-auto w-full max-w-[1100px]">
         <div className="label">How it works</div>
-        <div className="mt-8 grid border-t border-line md:grid-cols-3">
+        <div className="mt-8">
+          <ProcessDemo />
+        </div>
+        <div className="mt-14 grid border-t border-line md:grid-cols-3">
           {STEPS.map(([n, title, body], i) => (
             <div key={n} className={`py-8 md:pr-8 ${i > 0 ? "border-t border-line md:border-l md:border-t-0 md:pl-8" : ""}`}>
               <div className="font-mono text-[12px] text-thread">{n}</div>

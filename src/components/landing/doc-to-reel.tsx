@@ -1,7 +1,7 @@
 "use client";
 
-import { FileText, Heart } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { FileText } from "lucide-react";
+import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { SAMPLE_SPOOL } from "@/lib/sample";
 
@@ -20,29 +20,8 @@ export function DocToReel() {
     return () => clearInterval(t);
   }, []);
 
-  // Cursor path per step: hover the lit section, click, carry it to the phone, click.
-  const lineY = 100 + i * 17.5;
   return (
-    <div className="relative flex items-center gap-6" aria-hidden>
-      <motion.div
-        key={`cursor-${i}`}
-        className="pointer-events-none absolute left-0 top-0 z-20"
-        initial={false}
-        animate={{ x: [380, 120, 120, 360, 360], y: [150, lineY, lineY, 140, 140], scale: [1, 1, 0.85, 1, 0.85] }}
-        transition={{ duration: STEP_MS / 1000, times: [0, 0.3, 0.38, 0.75, 0.82], ease: "easeInOut" }}
-      >
-        <svg width="18" height="20" viewBox="0 0 18 20">
-          <path d="M1 1 L1 15 L5 11.5 L8 18 L10.5 17 L7.6 10.6 L13 10.6 Z" fill="var(--ink)" stroke="var(--paper)" strokeWidth="1.2" strokeLinejoin="round" />
-        </svg>
-      </motion.div>
-      <motion.span
-        key={`click-${i}`}
-        className="pointer-events-none absolute z-10 h-6 w-6 rounded-full border border-thread"
-        style={{ left: 108, top: lineY - 12 }}
-        initial={{ scale: 0.2, opacity: 0 }}
-        animate={{ scale: [0.2, 1.4], opacity: [0, 0.9, 0] }}
-        transition={{ delay: (STEP_MS / 1000) * 0.33, duration: 0.5 }}
-      />
+    <div className="flex items-center gap-6" aria-hidden>
       <div className="w-[190px] shrink-0 border border-line bg-surface p-4">
         <div className="flex items-center gap-2 text-muted">
           <FileText size={14} strokeWidth={1.5} />
@@ -72,7 +51,7 @@ export function DocToReel() {
         />
       </div>
 
-      <div className="relative w-[184px] shrink-0 border border-ink/60 bg-paper p-[6px]">
+      <div className="w-[184px] shrink-0 border border-ink/60 bg-paper p-[6px]">
         <div className="relative overflow-hidden border border-line" style={{ height: TILE }}>
           <motion.div animate={{ y: -i * TILE }} transition={{ type: "spring", stiffness: 140, damping: 22 }}>
             {REELS.map((r) => (
@@ -95,29 +74,7 @@ export function DocToReel() {
               </div>
             ))}
           </motion.div>
-          <AnimatePresence>
-            <motion.div
-              key={`heart-${i}`}
-              className="absolute bottom-10 right-3 text-thread"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: [0, 1.3, 1], opacity: [0, 1, 0] }}
-              transition={{ delay: (STEP_MS / 1000) * 0.8, duration: 0.8 }}
-            >
-              <Heart size={18} fill="currentColor" strokeWidth={0} />
-            </motion.div>
-          </AnimatePresence>
         </div>
-        <AnimatePresence>
-          <motion.div
-            key={`chip-${i}`}
-            className="absolute -top-3 right-2 border border-thread bg-paper px-1.5 py-0.5 font-mono text-[9px] text-thread"
-            initial={{ y: 6, opacity: 0 }}
-            animate={{ y: [6, 0, -4], opacity: [0, 1, 0] }}
-            transition={{ delay: (STEP_MS / 1000) * 0.78, duration: 1.1 }}
-          >
-            reel {REELS[i].index} ready
-          </motion.div>
-        </AnimatePresence>
       </div>
     </div>
   );
