@@ -43,6 +43,14 @@ function PasswordField({ label, value, onChange, placeholder, autoComplete }: { 
   );
 }
 
+function friendly(message: string) {
+  if (/invalid login credentials/i.test(message)) return "Wrong email or password.";
+  if (/already (registered|exists)/i.test(message)) return "An account with this email already exists. Log in instead.";
+  if (/email not confirmed/i.test(message)) return "Confirm your email first: check your inbox for the link.";
+  if (/rate limit|too many/i.test(message)) return "Too many attempts. Wait a minute and try again.";
+  return message;
+}
+
 /** Sign up / log in popup: Google, or email + password. */
 export function AuthModal() {
   const { open, mode, next, onDone } = useAuthModal();
@@ -88,13 +96,15 @@ export function AuthModal() {
         options: { emailRedirectTo: callback(), data: { marketing_opt_in: updates, accepted_terms_at: new Date().toISOString() } },
       });
       setBusy(false);
-      if (error) return setErr(error.message);
+      if (error) return setErr(friendly(error.message));
+      // With "Confirm email" on, an already-registered address comes back with no identities and no error.
+      if (data.user && data.user.identities?.length === 0) return setErr("An account with this email already exists. Log in instead.");
       if (!data.session) return setSent(email.trim());
       if (data.user) markSignedIn({ id: data.user.id, email: data.user.email ?? null });
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       setBusy(false);
-      if (error) return setErr(error.message === "Invalid login credentials" ? "Wrong email or password." : error.message);
+      if (error) return setErr(friendly(error.message));
       if (data.user) markSignedIn({ id: data.user.id, email: data.user.email ?? null });
     }
     setPassword("");
@@ -111,8 +121,8 @@ export function AuthModal() {
   const forgot = async () => {
     if (!email.trim()) return setErr("Enter your email first.");
     const { error } = await createClient().auth.resetPasswordForEmail(email.trim(), { redirectTo: callback("/profile?reset=1") });
-    if (error) setErr(error.message);
-    else toast("Password reset link sent");
+    if (error) setErr(friendly(error.message));
+    else toast("Password reset link sent. Check your email.", 4000);
   };
 
   return (
