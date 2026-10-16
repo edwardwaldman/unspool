@@ -105,8 +105,8 @@ export function PaywallSheet({
           <h2 className="mt-2 font-display text-[34px] leading-[1.05]">Sign in to unlock.</h2>
           <p className="mt-2 text-[14px] text-muted">You&apos;ll come back to reel {reel}.</p>
           {sent ? (
-            <div className="mt-6 border border-line p-4 text-[14.5px] text-cream/85">
-              Sign-in link sent to <span className="text-cream">{email}</span>. Open it on this device.
+            <div className="mt-6 border border-line p-4 text-[14.5px] text-ink/85">
+              Sign-in link sent to <span className="text-ink">{email}</span>. Open it on this device.
             </div>
           ) : (
             <>
@@ -147,7 +147,7 @@ export function PaywallSheet({
             {locked.map((r) => (
               <div key={r.id} className="flex gap-3 border-b border-line py-2 text-[13.5px]">
                 <span className="w-5 font-mono text-[10.5px] leading-[20px] text-muted">{String(r.index).padStart(2, "0")}</span>
-                <span className="text-cream/90">{r.title}</span>
+                <span className="text-ink/90">{r.title}</span>
               </div>
             ))}
           </div>

@@ -13,8 +13,8 @@ export function LoginForm({ next, error }: { next: string; error?: string }) {
   return (
     <div className="w-full max-w-[380px]">
       {sent ? (
-        <div className="border border-line p-5 text-[15px] text-cream/85">
-          Sign-in link sent to <span className="text-cream">{email}</span>. Open it on this device.
+        <div className="border border-line p-5 text-[15px] text-ink/85">
+          Sign-in link sent to <span className="text-ink">{email}</span>. Open it on this device.
         </div>
       ) : (
         <>

@@ -46,12 +46,12 @@ export function ReelView({
   const visualKey = pb.segment.kind === "explain" ? `q${pb.segment.beatIndex}` : pb.segment.kind === "quiz" ? `q${pb.segment.beatIndex}` : pb.segment.key;
 
   return (
-    <div className="relative h-full w-full select-none overflow-hidden bg-ink" onClick={pb.toggle}>
+    <div className="relative h-full w-full select-none overflow-hidden bg-paper" onClick={pb.toggle}>
       <ParticleField active={active && pb.playing} pulse={pb.seg} />
 
       {/* Hook headline + live stat line */}
       <div className="absolute inset-x-0 top-0 z-10 px-5 pt-[60px]">
-        <h2 className="font-hook text-[26px] font-extrabold leading-[1.08] tracking-[-0.025em] text-cream sm:text-[27px]">
+        <h2 className="font-hook text-[26px] font-extrabold leading-[1.08] tracking-[-0.025em] text-ink sm:text-[27px]">
           <MarkedText text={script.headline} />
         </h2>
         <div className="mt-3">
@@ -123,7 +123,7 @@ export function ReelView({
             exit={{ opacity: 0 }}
             className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
           >
-            <div className="flex h-20 w-20 items-center justify-center rounded-full border border-cream/40 bg-ink/50 text-cream">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full border border-ink/40 bg-paper/50 text-ink">
               <PlayIcon size={30} />
             </div>
           </motion.div>

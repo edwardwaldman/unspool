@@ -1,12 +1,12 @@
 @import "tailwindcss";
 @import "./theme.css";
 
-/* Expose the theme to Tailwind: bg-ink, text-cream, border-line, text-thread, font-display, … */
+/* Expose the theme to Tailwind: bg-paper, text-ink, border-line, text-thread, font-display, … */
 @theme inline {
-  --color-ink: var(--ink);
+  --color-paper: var(--paper);
   --color-surface: var(--surface);
   --color-line: var(--border);
-  --color-cream: var(--cream);
+  --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-thread: var(--thread);
   --color-sage: var(--sage);
@@ -23,8 +23,8 @@
 
 html,
 body {
-  background: var(--ink);
-  color: var(--cream);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-ui);
   -webkit-tap-highlight-color: transparent;
 }
@@ -34,6 +34,16 @@ body {
 }
 
 @layer components {
+/* Display headlines: family, weight and tracking all come from theme.css. */
+.font-display {
+  font-weight: var(--display-weight);
+  letter-spacing: var(--display-tracking);
+}
+.font-display em,
+em.font-display {
+  font-style: normal;
+}
+
 /* Small uppercase, letter-spaced labels for section headers and metadata. */
 .label {
   font-family: var(--font-ui);
@@ -49,10 +59,10 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: var(--cream);
-  color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
   font-weight: 600;
-  border: 1px solid var(--cream);
+  border: 1px solid var(--ink);
   transition: opacity 0.15s;
 }
 .btn-primary:hover { opacity: 0.9; }
@@ -64,7 +74,7 @@ body {
   justify-content: center;
   gap: 0.5rem;
   background: transparent;
-  color: var(--cream);
+  color: var(--ink);
   font-weight: 500;
   border: 1px solid var(--border);
   transition: border-color 0.15s;
@@ -75,7 +85,7 @@ body {
 .field {
   background: transparent;
   border: 1px solid var(--border);
-  color: var(--cream);
+  color: var(--ink);
   outline: none;
 }
 .field:focus { border-color: var(--thread); }
@@ -97,7 +107,7 @@ body {
   animation: shimmer 1.8s linear infinite;
 }
 
-.prose-unspool h2 { font-family: var(--font-display); font-size: 1.6rem; font-weight: 400; margin-top: 2.25rem; margin-bottom: 0.5rem; color: var(--cream); }
-.prose-unspool p, .prose-unspool li { color: color-mix(in srgb, var(--cream) 82%, var(--muted)); line-height: 1.7; margin-bottom: 0.75rem; }
+.prose-unspool h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: var(--display-weight); letter-spacing: var(--display-tracking); margin-top: 2.25rem; margin-bottom: 0.5rem; color: var(--ink); }
+.prose-unspool p, .prose-unspool li { color: color-mix(in srgb, var(--ink) 82%, var(--muted)); line-height: 1.7; margin-bottom: 0.75rem; }
 .prose-unspool ul { list-style: disc; padding-left: 1.25rem; }
 .prose-unspool a { color: var(--thread); text-decoration: underline; text-underline-offset: 3px; }

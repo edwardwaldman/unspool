@@ -29,13 +29,13 @@ function Plan({
         {name}
       </div>
       <div className="mt-4 flex items-baseline gap-1">
-        <span className="font-display text-[52px] leading-none">{price}</span>
+        <span className="font-display text-[42px] leading-none">{price}</span>
         {unit && <span className="text-[15px] text-muted">{unit}</span>}
       </div>
       <div className="mt-2 font-mono text-[12px] text-muted">{note}</div>
       <ul className="mt-6 border-t border-line text-[14.5px]">
         {items.map((i) => (
-          <li key={i} className="border-b border-line py-2.5 text-cream/85">
+          <li key={i} className="border-b border-line py-2.5 text-ink/85">
             {i}
           </li>
         ))}
@@ -51,10 +51,10 @@ export default function PricingPage() {
     <MarketingPage>
       <section className="pt-16">
         <div className="label">Pricing</div>
-        <h1 className="mt-3 max-w-[640px] font-display text-[56px] leading-[0.98] tracking-[-0.01em] sm:text-[72px]">
+        <h1 className="mt-3 max-w-[640px] font-display text-[45px] leading-[0.98] sm:text-[58px]">
           Reel one is free. <em className="text-thread">Every time.</em>
         </h1>
-        <p className="mt-5 max-w-[520px] text-[16px] text-cream/80">
+        <p className="mt-5 max-w-[520px] text-[16px] text-ink/80">
           See the first reel and all ten titles for any document before you pay anything.
         </p>
       </section>

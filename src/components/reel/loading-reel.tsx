@@ -44,12 +44,12 @@ export function LoadingReel({
   const ready = reels.filter((r) => r.status === "ready").length;
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden bg-ink px-6" style={{ paddingBottom: bottomInset + 28 }}>
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-paper px-6" style={{ paddingBottom: bottomInset + 28 }}>
       <ParticleField active pulse={stage} />
 
       <div className="relative z-10 pt-[64px]">
         <div className="label">{name}</div>
-        <h2 className="mt-3 font-display text-[40px] leading-[1.02] tracking-[-0.01em]">
+        <h2 className="mt-3 font-display text-[32px] leading-[1.02]">
           {isError ? "That didn't work." : reels.length && reelIndex > 1 ? `Writing reel ${reelIndex}.` : "Unspooling your doc."}
         </h2>
         <p className="mt-2 text-[14.5px] text-muted">
@@ -73,9 +73,9 @@ export function LoadingReel({
         <div className="relative z-10 mt-9 grid grid-cols-4 border-t border-line">
           {STAGES.map((s, i) => (
             <div key={s} className="pt-3">
-              <div className="mb-2 h-px" style={{ background: i < stage ? "var(--cream)" : i === stage ? "var(--thread)" : "transparent" }} />
+              <div className="mb-2 h-px" style={{ background: i < stage ? "var(--ink)" : i === stage ? "var(--thread)" : "transparent" }} />
               <div className="font-mono text-[10.5px] text-muted">0{i + 1}</div>
-              <div className="text-[13px]" style={{ color: i === stage ? "var(--thread)" : i < stage ? "var(--cream)" : "var(--muted)" }}>
+              <div className="text-[13px]" style={{ color: i === stage ? "var(--thread)" : i < stage ? "var(--ink)" : "var(--muted)" }}>
                 {s}
               </div>
             </div>
@@ -112,7 +112,7 @@ export function LoadingReel({
                   className="flex items-center gap-3 border-b border-line py-1.5 text-[13px]"
                 >
                   <span className="w-5 font-mono text-[10.5px] text-muted">{String(r.index).padStart(2, "0")}</span>
-                  <span className={`truncate ${r.index === reelIndex ? "text-thread" : "text-cream/85"}`}>{r.title}</span>
+                  <span className={`truncate ${r.index === reelIndex ? "text-thread" : "text-ink/85"}`}>{r.title}</span>
                   <span className="ml-auto font-mono text-[10.5px] text-muted">
                     {r.status === "ready" ? "ready" : r.locked ? "locked" : r.status === "generating" ? "writing" : ""}
                   </span>

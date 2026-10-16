@@ -114,7 +114,7 @@ export function Feed({
           const near = Math.abs(i - index) <= 1;
           const isActive = i === index;
           let content: React.ReactNode;
-          if (!near) content = <div className="h-full w-full bg-ink" />;
+          if (!near) content = <div className="h-full w-full bg-paper" />;
           else if (!it.reel || (!it.reel.locked && it.reel.status !== "ready")) {
             content = (
               <LoadingReel
@@ -164,18 +164,18 @@ export function Feed({
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-center pt-4">
         <div className="pointer-events-auto flex items-center gap-5 text-[15.5px] font-semibold">
           {docHref ? (
-            <Link href={docHref} className={tab === "doc" ? "text-cream" : "text-muted"}>
+            <Link href={docHref} className={tab === "doc" ? "text-ink" : "text-muted"}>
               This doc
             </Link>
           ) : (
-            <span className={tab === "doc" ? "text-cream" : "text-muted"}>This doc</span>
+            <span className={tab === "doc" ? "text-ink" : "text-muted"}>This doc</span>
           )}
           <span className="h-3.5 w-px bg-line" />
-          <Link href="/feed" className={tab === "all" ? "text-cream" : "text-muted"}>
+          <Link href="/feed" className={tab === "all" ? "text-ink" : "text-muted"}>
             All spools
           </Link>
         </div>
-        <Link href="/library" aria-label="Library" className="pointer-events-auto absolute right-4 top-4 text-cream">
+        <Link href="/library" aria-label="Library" className="pointer-events-auto absolute right-4 top-4 text-ink">
           <FilterIcon size={20} />
         </Link>
       </div>
@@ -187,7 +187,7 @@ export function Feed({
           aria-label="Previous reel"
           disabled={index === 0}
           onClick={() => scrollTo(Math.max(0, index - 1))}
-          className="flex h-11 w-11 items-center justify-center border border-line text-cream hover:border-muted disabled:opacity-30"
+          className="flex h-11 w-11 items-center justify-center border border-line text-ink hover:border-muted disabled:opacity-30"
         >
           <ChevronUp size={24} />
         </button>
@@ -196,7 +196,7 @@ export function Feed({
           aria-label="Next reel"
           disabled={index >= items.length - 1}
           onClick={() => scrollTo(Math.min(items.length - 1, index + 1))}
-          className="flex h-11 w-11 items-center justify-center border border-line text-cream hover:border-muted disabled:opacity-30"
+          className="flex h-11 w-11 items-center justify-center border border-line text-ink hover:border-muted disabled:opacity-30"
         >
           <ChevronDown size={24} />
         </button>

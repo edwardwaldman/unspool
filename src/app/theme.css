@@ -7,30 +7,32 @@
 
 :root {
   /* Surfaces */
-  --ink: #0e1220;          /* app background */
-  --surface: #161b2c;      /* sheets, panels */
-  --border: #262c40;       /* 1px rules and outlines */
+  --paper: #f6f3ec;        /* app background (warm off-white) */
+  --surface: #fbf9f5;      /* sheets, panels */
+  --border: #e1dcd1;       /* 1px rules and outlines */
 
   /* Text */
-  --cream: #ece7dd;        /* primary text, primary button fill */
-  --muted: #8a8fa3;        /* secondary text, inactive tabs, labels */
+  --ink: #1b2030;          /* primary text, primary button fill */
+  --muted: #6d7284;        /* secondary text, inactive tabs, labels */
 
   /* The one accent */
-  --thread: #9db0ff;       /* key terms, active states, progress, reel visuals */
+  --thread: #5a6ad8;       /* key terms, active states, progress, reel visuals */
 
   /* Meaning colors — use only when the meaning applies */
-  --sage: #a3cfae;         /* correct / good / ~word~ */
-  --coral: #f0a491;        /* warning / trap / risk / #word# */
-  --butter: #eed891;       /* highlight / ^word^ */
+  --sage: #4e8a62;         /* correct / good / ~word~ */
+  --coral: #c65f48;        /* warning / trap / risk / #word# */
+  --butter: #a8821c;       /* highlight / ^word^ */
 
   /* Soft glow used by reel visuals (blurred, never neon) */
-  --glow-strength: 0.22;
+  --glow-strength: 0.16;
 
   /* Fonts (next/font variables are set in layout.tsx) */
-  --font-display: var(--font-instrument-serif), "Instrument Serif", Georgia, serif;
-  --font-hook: var(--font-inter-tight), "Inter Tight", var(--font-geist), system-ui, sans-serif;
-  --font-ui: var(--font-geist), "Geist", system-ui, -apple-system, sans-serif;
-  --font-numeric: var(--font-jetbrains), "JetBrains Mono", ui-monospace, monospace;
+  --font-display: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;
+  --display-weight: 700;
+  --display-tracking: -0.03em;
+  --font-hook: var(--font-archivo), "Archivo", system-ui, sans-serif;
+  --font-ui: var(--font-instrument-sans), "Instrument Sans", system-ui, sans-serif;
+  --font-numeric: var(--font-martian), "Martian Mono", ui-monospace, monospace;
 
-  color-scheme: dark;
+  color-scheme: light;
 }

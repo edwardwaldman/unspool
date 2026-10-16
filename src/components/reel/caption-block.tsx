@@ -27,7 +27,7 @@ export function CaptionBlock({
           {fileLabel(fileType)}
         </div>
         <span className="min-w-0 truncate text-[14px] font-semibold">{fileName}</span>
-        <span className="shrink-0 border border-cream/60 px-2 py-0.5 font-mono text-[11px]">
+        <span className="shrink-0 border border-ink/60 px-2 py-0.5 font-mono text-[11px]">
           {index}/{total}
         </span>
       </div>
@@ -37,7 +37,7 @@ export function CaptionBlock({
           e.stopPropagation();
           setOpen((o) => !o);
         }}
-        className={`mt-2 block w-full text-left text-[13.5px] leading-snug text-cream/75 ${open ? "" : "truncate"}`}
+        className={`mt-2 block w-full text-left text-[13.5px] leading-snug text-ink/75 ${open ? "" : "truncate"}`}
       >
         {summary}
       </button>

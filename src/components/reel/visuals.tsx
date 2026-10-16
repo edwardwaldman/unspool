@@ -123,10 +123,10 @@ function SplitVisual({ v }: { v: Extract<Visual, { type: "split" }> }) {
       transition={{ delay: i * 0.3, duration: 0.55, ease }}
       className="flex w-[42%] flex-col items-center text-center"
     >
-      <Icon name={s.icon} size={40} delay={i * 0.3} color={i === 0 ? "var(--cream)" : "var(--thread)"} />
+      <Icon name={s.icon} size={40} delay={i * 0.3} color={i === 0 ? "var(--ink)" : "var(--thread)"} />
       <div
         className="mt-4 font-hook text-[20px] font-extrabold uppercase leading-tight tracking-[-0.01em]"
-        style={{ color: i === 0 ? "var(--cream)" : "var(--thread)" }}
+        style={{ color: i === 0 ? "var(--ink)" : "var(--thread)" }}
       >
         {s.title}
       </div>
@@ -144,7 +144,7 @@ function SplitVisual({ v }: { v: Extract<Visual, { type: "split" }> }) {
           transition={{ duration: 0.6, ease }}
           className="h-40 w-px origin-top bg-line"
         />
-        <div className="absolute top-1/2 -translate-y-1/2 border border-line bg-ink px-1.5 py-0.5 font-mono text-[11px] uppercase text-muted">
+        <div className="absolute top-1/2 -translate-y-1/2 border border-line bg-paper px-1.5 py-0.5 font-mono text-[11px] uppercase text-muted">
           {v.mode === "vs" ? "vs" : <ArrowRight size={12} strokeWidth={1.5} />}
         </div>
       </div>
@@ -177,7 +177,7 @@ function FlowVisual({ v, progress }: { v: Extract<Visual, { type: "flow" }>; pro
             className="relative flex items-center gap-4 py-2.5"
           >
             <div
-              className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center border bg-ink"
+              className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center border bg-paper"
               style={{ borderColor: on ? "var(--thread)" : "var(--border)", color: on ? "var(--thread)" : "var(--muted)" }}
             >
               <ReelIcon name={s.icon} size={24} strokeWidth={1.5} />
@@ -238,7 +238,7 @@ function IconsVisual({ v }: { v: Extract<Visual, { type: "icons" }> }) {
           <div className="flex flex-col items-center text-center">
             <Icon name={it.icon} size={v.items.length > 2 ? 46 : 60} delay={i * 0.45} />
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.45 + 0.2 }} className="mt-4 max-w-[110px]">
-              <Label color="var(--cream)">{it.label}</Label>
+              <Label color="var(--ink)">{it.label}</Label>
             </motion.div>
           </div>
         </div>
@@ -284,7 +284,7 @@ function StatVisual({ v }: { v: Extract<Visual, { type: "stat" }> }) {
         {v.value}
       </motion.div>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="relative mt-5 border-t border-line pt-3">
-        <Label color="var(--cream)">{v.label}</Label>
+        <Label color="var(--ink)">{v.label}</Label>
       </motion.div>
     </div>
   );
@@ -335,7 +335,7 @@ function QuizVisual({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: revealed && !correct && !chosen ? 0.4 : 1, y: 0 }}
               transition={{ delay: revealed ? 0 : 0.15 + i * 0.1, duration: 0.35, ease }}
-              className="-mt-px flex items-center gap-3.5 border bg-ink/60 px-4 py-3.5 text-left text-[16px] font-medium hover:bg-surface"
+              className="-mt-px flex items-center gap-3.5 border bg-paper/60 px-4 py-3.5 text-left text-[16px] font-medium hover:bg-surface"
               style={{ borderColor: tone, position: "relative", zIndex: revealed && (correct || chosen) ? 1 : 0 }}
             >
               <span

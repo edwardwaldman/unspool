@@ -10,12 +10,12 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const raw = typeof sp.next === "string" ? sp.next : "/";
   const next = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-ink px-6 py-12">
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-paper px-6 py-12">
       <div className="w-full max-w-[380px]">
         <Link href="/">
           <Wordmark size={26} />
         </Link>
-        <h1 className="mt-12 font-display text-[44px] leading-none">Sign in.</h1>
+        <h1 className="mt-12 font-display text-[35px] leading-none">Sign in.</h1>
         <p className="mb-8 mt-3 text-[15px] text-muted">Keep your spools and unlock all 10 reels.</p>
         <LoginForm next={next} error={typeof sp.error === "string" ? sp.error : undefined} />
         <p className="mt-8 text-[12px] text-muted">

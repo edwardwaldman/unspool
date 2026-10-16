@@ -37,7 +37,7 @@ export function Toaster() {
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
-            className="border border-line bg-surface px-4 py-2.5 text-[14px] text-cream"
+            className="border border-line bg-surface px-4 py-2.5 text-[14px] text-ink"
           >
             {t.text}
           </motion.div>

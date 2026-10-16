@@ -8,7 +8,7 @@ export default function TermsPage() {
     <MarketingPage>
       <article className="prose-unspool max-w-[720px] pt-14">
         <div className="label">Legal</div>
-        <h1 className="mt-3 font-display text-[52px] leading-none">Terms of Service</h1>
+        <h1 className="mt-3 font-display text-[42px] leading-none">Terms of Service</h1>
         <p className="font-mono !text-[12px] !text-muted">Last updated October 2026</p>
         <h2>Using Unspool</h2>
         <p>

@@ -9,7 +9,7 @@ export function Sheet({ open, onClose, children, label }: { open: boolean; onClo
       {open && (
         <motion.div className="fixed inset-0 z-[60] flex items-end justify-center" initial={{ opacity: 1 }} exit={{ opacity: 1 }}>
           <motion.div
-            className="absolute inset-0 bg-ink/70"
+            className="absolute inset-0 bg-ink/25"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

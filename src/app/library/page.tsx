@@ -52,7 +52,7 @@ export default async function LibraryPage() {
       <div className="mx-auto max-w-[720px]">
         <header className="px-5 pb-6 pt-10">
           <div className="label">{viewer?.email ?? "Not signed in"}</div>
-          <h1 className="mt-2 font-display text-[44px] leading-none">Library</h1>
+          <h1 className="mt-2 font-display text-[35px] leading-none">Library</h1>
           <div className="mt-6 grid grid-cols-3 border-y border-line">
             {stats.map(([label, value], i) => (
               <div key={label} className={`py-3 ${i > 0 ? "border-l border-line pl-4" : ""}`}>
@@ -64,7 +64,7 @@ export default async function LibraryPage() {
           {!viewer?.userId && items.length > 0 && (
             <p className="mt-4 text-[13.5px] text-muted">
               Anonymous spools are deleted after 7 days.{" "}
-              <Link href="/login?next=/library" className="text-cream underline underline-offset-4">
+              <Link href="/login?next=/library" className="text-ink underline underline-offset-4">
                 Sign in to keep them.
               </Link>
             </p>

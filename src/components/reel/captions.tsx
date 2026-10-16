@@ -36,7 +36,7 @@ export function Captions({ text, words, fraction }: { text: string; words: numbe
             key={i}
             className="mx-[0.18em] inline-block transition-[transform,opacity] duration-150"
             style={{
-              color: w.color ? COLOR_VAR[w.color] : "var(--cream)",
+              color: w.color ? COLOR_VAR[w.color] : "var(--ink)",
               opacity: spoken ? 1 : 0.4,
               transform: isNow ? "translateY(-2px)" : "none",
             }}

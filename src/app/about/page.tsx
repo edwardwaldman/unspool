@@ -73,12 +73,12 @@ export default function AboutPage() {
       <section className="grid gap-12 pt-16 md:grid-cols-[1.2fr_1fr] md:items-end">
         <div>
           <div className="label">How it works</div>
-          <h1 className="mt-3 font-display text-[60px] leading-[0.95] tracking-[-0.015em] sm:text-[80px]">
+          <h1 className="mt-3 font-display text-[48px] leading-[0.95] sm:text-[64px]">
             Your textbook,
             <br />
             <em className="text-thread">but it&apos;s reels.</em>
           </h1>
-          <p className="mt-6 max-w-[520px] text-[17px] leading-relaxed text-cream/80">
+          <p className="mt-6 max-w-[520px] text-[17px] leading-relaxed text-ink/80">
             Drop in any document. Unspool turns it into 10 short reels with a hook, voiceover, visuals and a quiz, so you actually remember it.
           </p>
           <div className="mt-8 flex gap-3">
@@ -98,7 +98,7 @@ export default function AboutPage() {
           <div key={title} className={`py-8 md:pr-8 ${i > 0 ? "border-t border-line md:border-l md:border-t-0 md:pl-8" : ""}`}>
             <div className="font-mono text-[12px] text-muted">0{i + 1}</div>
             <h2 className="mt-3 font-display text-[30px] leading-tight">{title}</h2>
-            <p className="mt-2 text-[15px] leading-relaxed text-cream/75">{body}</p>
+            <p className="mt-2 text-[15px] leading-relaxed text-ink/75">{body}</p>
           </div>
         ))}
       </section>
@@ -107,12 +107,12 @@ export default function AboutPage() {
         <div className="py-10 md:pr-10">
           <div className="label">For students</div>
           <h2 className="mt-3 font-display text-[36px] leading-[1.05]">Cram the chapter in the time it takes to scroll.</h2>
-          <p className="mt-3 text-[15px] text-cream/75">Test tips, common traps, memory hacks and a quiz in every reel. Then review every spool in one feed the night before.</p>
+          <p className="mt-3 text-[15px] text-ink/75">Test tips, common traps, memory hacks and a quiz in every reel. Then review every spool in one feed the night before.</p>
         </div>
         <div className="border-t border-line py-10 md:border-l md:border-t-0 md:pl-10">
           <div className="label">For work</div>
           <h2 className="mt-3 font-display text-[36px] leading-[1.05]">Read the contract in sixty seconds.</h2>
-          <p className="mt-3 text-[15px] text-cream/75">Policies, onboarding docs, reports and contracts: what you have to do, the deadlines, the money and the clauses to watch.</p>
+          <p className="mt-3 text-[15px] text-ink/75">Policies, onboarding docs, reports and contracts: what you have to do, the deadlines, the money and the clauses to watch.</p>
         </div>
       </section>
 
@@ -137,7 +137,7 @@ export default function AboutPage() {
                 {q}
                 <span className="font-mono text-muted transition group-open:rotate-45">+</span>
               </summary>
-              <p className="mt-2 max-w-[640px] text-[15px] leading-relaxed text-cream/75">{a}</p>
+              <p className="mt-2 max-w-[640px] text-[15px] leading-relaxed text-ink/75">{a}</p>
             </details>
           ))}
         </div>

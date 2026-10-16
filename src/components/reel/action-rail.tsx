@@ -15,10 +15,10 @@ function RailButton({ label, count, onClick, children }: { label: string; count?
         e.stopPropagation();
         onClick();
       }}
-      className="flex flex-col items-center gap-1 text-cream active:opacity-60"
+      className="flex flex-col items-center gap-1 text-ink active:opacity-60"
     >
       {children}
-      {count !== undefined && <span className="text-[11px] text-cream/80">{count}</span>}
+      {count !== undefined && <span className="text-[11px] text-ink/80">{count}</span>}
     </button>
   );
 }
@@ -81,7 +81,7 @@ export function ActionRail({
       <RailButton label="More" onClick={onMore}>
         <MoreIcon size={24} />
       </RailButton>
-      <div className="mt-1 flex h-9 w-9 items-center justify-center border border-cream/70 font-mono text-[9px] text-cream" aria-hidden>
+      <div className="mt-1 flex h-9 w-9 items-center justify-center border border-ink/70 font-mono text-[9px] text-ink" aria-hidden>
         {fileLabel(fileType)}
       </div>
     </div>

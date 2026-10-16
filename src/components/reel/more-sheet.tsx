@@ -44,7 +44,7 @@ export function MoreSheet({
             key={s}
             type="button"
             onClick={() => setPrefs({ speed: s })}
-            className={`-ml-px border px-2.5 py-1 font-mono text-[12px] ${prefs.speed === s ? "border-cream bg-cream text-ink" : "border-line text-muted"}`}
+            className={`-ml-px border px-2.5 py-1 font-mono text-[12px] ${prefs.speed === s ? "border-ink bg-ink text-paper" : "border-line text-muted"}`}
           >
             {s}x
           </button>
@@ -61,7 +61,7 @@ export function MoreSheet({
       {canDelete &&
         (confirm ? (
           <div className="mt-4 border border-coral/50 p-4">
-            <p className="text-[14px] text-cream/85">Delete the file, its reels and audio? This can&apos;t be undone.</p>
+            <p className="text-[14px] text-ink/85">Delete the file, its reels and audio? This can&apos;t be undone.</p>
             <div className="mt-3 flex">
               <button type="button" onClick={() => setConfirm(false)} className="btn-secondary flex-1 py-2.5 text-[14px]">
                 Cancel

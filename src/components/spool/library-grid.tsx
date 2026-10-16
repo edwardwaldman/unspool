@@ -64,16 +64,16 @@ export function LibraryGrid({ initial }: { initial: LibraryItem[] }) {
         {items.map((it) => {
           const failed = it.status === "failed";
           return (
-            <div key={it.id} className="relative bg-ink">
-              <Link href={`/s/${it.id}`} className="relative block aspect-[9/16] overflow-hidden bg-ink">
+            <div key={it.id} className="relative bg-paper">
+              <Link href={`/s/${it.id}`} className="relative block aspect-[9/16] overflow-hidden bg-paper">
                 <div
                   aria-hidden
                   className="absolute left-1/2 top-[64%] h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-thread opacity-15 blur-2xl"
                 />
-                <div className="relative line-clamp-6 p-2.5 font-hook text-[12.5px] font-extrabold leading-[1.12] tracking-[-0.01em] text-cream">
+                <div className="relative line-clamp-6 p-2.5 font-hook text-[12.5px] font-extrabold leading-[1.12] tracking-[-0.01em] text-ink">
                   {it.headline ? <MarkedText text={it.headline} /> : it.hook ?? it.name}
                 </div>
-                <div className="absolute inset-x-0 bottom-0 bg-ink/85 p-2">
+                <div className="absolute inset-x-0 bottom-0 bg-paper/85 p-2">
                   <div className="mb-1.5 grid grid-cols-10 gap-px">
                     {Array.from({ length: 10 }, (_, i) => (
                       <div key={i} className="h-[2px]" style={{ background: i < it.readyCount ? "var(--thread)" : "var(--border)" }} />
@@ -91,7 +91,7 @@ export function LibraryGrid({ initial }: { initial: LibraryItem[] }) {
                   type="button"
                   aria-label={`Delete ${it.name}`}
                   onClick={() => remove(it.id)}
-                  className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center border border-coral bg-ink text-coral"
+                  className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center border border-coral bg-paper text-coral"
                 >
                   <TrashIcon size={15} />
                 </button>

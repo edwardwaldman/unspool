@@ -47,24 +47,11 @@ export const CloseIcon = (p: P) => <X strokeWidth={sw} {...p} />;
 export const TrashIcon = (p: P) => <Trash2 strokeWidth={sw} {...p} />;
 export const UploadIcon = (p: P) => <Upload strokeWidth={sw} {...p} />;
 
-/** The Unspool mark: a spool with its thread running out. Drawn SVG, theme colors. */
-export function SpoolMark({ size = 22 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="10" r="7" stroke="var(--thread)" strokeWidth="1.5" />
-      <circle cx="12" cy="10" r="3" stroke="var(--thread)" strokeWidth="1.5" />
-      <path d="M12 17c3.5 2.6 7 2.6 10.5 0.6" stroke="var(--cream)" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
+/** Typographic wordmark: "Unspool." with the period in the thread accent. */
 export function Wordmark({ size = 26 }: { size?: number }) {
   return (
-    <span className="flex items-center gap-2">
-      <SpoolMark size={size * 0.85} />
-      <span className="font-display leading-none" style={{ fontSize: size }}>
-        Unspool
-      </span>
+    <span className="font-display leading-none" style={{ fontSize: size }}>
+      Unspool<span className="text-thread">.</span>
     </span>
   );
 }

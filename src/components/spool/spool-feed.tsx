@@ -67,7 +67,7 @@ export function SpoolFeed({ id }: { id: string }) {
 
   if (error?.status === 404) {
     return (
-      <div className="flex h-full flex-col justify-center bg-ink px-8">
+      <div className="flex h-full flex-col justify-center bg-paper px-8">
         <div className="label">Not found</div>
         <h1 className="mt-3 font-display text-[38px] leading-[1.02]">This spool isn&apos;t here.</h1>
         <p className="mt-2 text-[15px] text-muted">It was deleted, or it belongs to another account.</p>
@@ -79,7 +79,7 @@ export function SpoolFeed({ id }: { id: string }) {
   }
   if (error?.status === 503) {
     return (
-      <div className="flex h-full flex-col justify-center bg-ink px-8">
+      <div className="flex h-full flex-col justify-center bg-paper px-8">
         <div className="label">Setup</div>
         <h1 className="mt-3 font-display text-[34px] leading-[1.05]">Not configured yet.</h1>
         <p className="mt-2 text-[15px] text-muted">{error.message}</p>

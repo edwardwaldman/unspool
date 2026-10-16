@@ -6,6 +6,13 @@ import { GridIcon, HomeIcon, PlusIcon, ReelsIcon, UploadIcon, UserIcon, Wordmark
 import { Toaster } from "../ui/toast";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 
+const TOP_LINKS = [
+  ["/about", "About"],
+  ["/pricing", "Pricing"],
+  ["/privacy", "Privacy"],
+  ["/terms", "Terms"],
+] as const;
+
 export type NavKey = "home" | "reels" | "library" | "profile" | "none";
 
 function useFilePicker() {
@@ -39,7 +46,7 @@ function Logo() {
  * App chrome. Desktop: slim left sidebar + content centered as a tall phone column (TikTok web).
  * Mobile: full-bleed content + a floating pill nav (Home · Reels · + · Library · Profile).
  */
-export function AppShell({ active, children, feed = false }: { active: NavKey; children: React.ReactNode; feed?: boolean }) {
+export function AppShell({ active, children, feed = false, aside }: { active: NavKey; children: React.ReactNode; feed?: boolean; aside?: React.ReactNode }) {
   const picker = useFilePicker();
   const [dragging, setDragging] = useState(false);
 
@@ -47,7 +54,7 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
     <Link
       href={href}
       className={`flex items-center gap-3.5 border-l px-3 py-2.5 text-[15px] transition ${
-        active === key ? "border-thread text-cream" : "border-transparent text-muted hover:text-cream"
+        active === key ? "border-thread text-ink" : "border-transparent text-muted hover:text-ink"
       }`}
     >
       {icon}
@@ -59,7 +66,7 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
     <Link
       href={href}
       aria-label={label}
-      className={`flex h-11 flex-1 items-center justify-center border transition ${active === key ? "border-line bg-surface text-cream" : "border-transparent text-muted"}`}
+      className={`flex h-11 flex-1 items-center justify-center border transition ${active === key ? "border-line bg-surface text-ink" : "border-transparent text-muted"}`}
     >
       {icon(active === key)}
     </Link>
@@ -67,7 +74,7 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
 
   return (
     <div
-      className="flex h-[100dvh] w-full overflow-hidden bg-ink"
+      className="flex h-[100dvh] w-full overflow-hidden bg-paper"
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes("Files")) {
           e.preventDefault();
@@ -95,38 +102,49 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
           <button
             type="button"
             onClick={picker.open}
-            className="flex items-center gap-3.5 border-l border-transparent px-3 py-2.5 text-left text-[15px] text-muted hover:text-cream"
+            className="flex items-center gap-3.5 border-l border-transparent px-3 py-2.5 text-left text-[15px] text-muted hover:text-ink"
           >
             <UploadIcon size={20} /> Upload
           </button>
           {side("library", "/library", "Library", <GridIcon size={20} filled={active === "library"} />)}
           {side("profile", "/profile", "Profile", <UserIcon size={20} filled={active === "profile"} />)}
         </nav>
-        <div className="mt-auto space-y-2 px-3 text-[12.5px] text-muted">
-          <div className="flex flex-wrap gap-x-3 gap-y-1">
-            <Link href="/about">About</Link>
-            <Link href="/pricing">Pricing</Link>
-            <Link href="/privacy">Privacy</Link>
-            <Link href="/terms">Terms</Link>
-          </div>
-          <div>© {new Date().getFullYear()} Unspool</div>
-        </div>
       </aside>
 
-      {/* Content */}
-      <main className={`relative flex min-w-0 flex-1 ${feed ? "items-center justify-center lg:py-4" : "overflow-y-auto"}`}>
-        {feed ? (
-          <div className="relative h-full w-full overflow-hidden lg:aspect-[9/16] lg:h-full lg:w-auto lg:max-w-[calc(100vw-360px)] lg:overflow-visible">
-            <div className="h-full w-full lg:border lg:border-line">{children}</div>
-          </div>
-        ) : (
-          <div className="w-full pb-28 lg:pb-10">{children}</div>
-        )}
-      </main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Top bar: site links (hidden over the full-screen feed on phones) */}
+        <header
+          className={`h-14 shrink-0 items-center justify-between border-b border-line px-5 lg:flex lg:px-8 ${feed ? "hidden" : "flex"}`}
+        >
+          <Link href="/" className="lg:invisible">
+            <Wordmark size={20} />
+          </Link>
+          <nav className="flex items-center gap-5 text-[13.5px] text-muted lg:gap-7">
+            {TOP_LINKS.map(([href, label]) => (
+              <Link key={href} href={href} className="hover:text-ink">
+                {label}
+              </Link>
+            ))}
+          </nav>
+        </header>
+
+        {/* Content */}
+        <main className={`relative flex min-h-0 min-w-0 flex-1 ${feed ? "items-center justify-center lg:py-4" : "overflow-y-auto"}`}>
+          {feed ? (
+            <div className="relative h-full w-full overflow-hidden lg:aspect-[9/16] lg:h-full lg:w-auto lg:max-w-[calc(100vw-360px)] lg:overflow-visible">
+              <div className="h-full w-full lg:border lg:border-line">{children}</div>
+            </div>
+          ) : null}
+          {feed && aside ? <div className="ml-16 hidden xl:block">{aside}</div> : null}
+          {feed ? null : (
+            <div className="w-full pb-28 lg:pb-10">{children}</div>
+          )}
+        </main>
+      </div>
 
       {/* Mobile floating pill nav */}
       <nav className="safe-bottom fixed inset-x-3 bottom-3 z-50 lg:hidden">
-        <div className="flex items-center gap-1 border border-line bg-ink/90 p-1 backdrop-blur-md">
+        <div className="flex items-center gap-1 border border-line bg-paper/90 p-1 backdrop-blur-md">
           {tab("home", "/", "Home", (on) => <HomeIcon size={22} filled={on} />)}
           {tab("reels", "/feed", "Reels", (on) => <ReelsIcon size={22} filled={on} />)}
           <button
@@ -135,7 +153,7 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
             onClick={picker.open}
             className="flex h-11 flex-1 items-center justify-center"
           >
-            <span className="flex h-9 w-12 items-center justify-center bg-cream text-ink">
+            <span className="flex h-9 w-12 items-center justify-center bg-ink text-paper">
               <PlusIcon size={21} />
             </span>
           </button>
@@ -145,10 +163,10 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
       </nav>
 
       {dragging && (
-        <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center bg-ink/85">
+        <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center bg-paper/85">
           <div className="border border-dashed border-thread px-12 py-12 text-center">
             <div className="label">Release to upload</div>
-            <div className="mt-2 font-display text-[40px] leading-none">Drop to unspool it.</div>
+            <div className="mt-2 font-display text-[32px] leading-none">Drop to unspool it.</div>
           </div>
         </div>
       )}

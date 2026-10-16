@@ -23,7 +23,7 @@ export default async function ProfilePage() {
     <AppShell active="profile">
       <div className="mx-auto max-w-[520px] px-5 pt-10">
         <div className="label">Account</div>
-        <h1 className="mt-2 font-display text-[44px] leading-none">Profile</h1>
+        <h1 className="mt-2 font-display text-[35px] leading-none">Profile</h1>
         {!viewer?.userId ? (
           <div className="mt-8 border-t border-line pt-6">
             <p className="text-[16px]">You&apos;re not signed in.</p>
@@ -60,10 +60,10 @@ export default async function ProfilePage() {
           </div>
         )}
         <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-[13.5px] text-muted">
-          <Link href="/about" className="hover:text-cream">How it works</Link>
-          <Link href="/pricing" className="hover:text-cream">Pricing</Link>
-          <Link href="/privacy" className="hover:text-cream">Privacy</Link>
-          <Link href="/terms" className="hover:text-cream">Terms</Link>
+          <Link href="/about" className="hover:text-ink">How it works</Link>
+          <Link href="/pricing" className="hover:text-ink">Pricing</Link>
+          <Link href="/privacy" className="hover:text-ink">Privacy</Link>
+          <Link href="/terms" className="hover:text-ink">Terms</Link>
         </div>
       </div>
     </AppShell>

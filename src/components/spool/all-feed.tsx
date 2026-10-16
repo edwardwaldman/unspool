@@ -31,7 +31,7 @@ export function AllFeed() {
 
   if (failed || (data && items.length === 0)) {
     return (
-      <div className="flex h-full flex-col justify-center bg-ink px-8">
+      <div className="flex h-full flex-col justify-center bg-paper px-8">
         <div className="label">All spools</div>
         <h1 className="mt-3 font-display text-[38px] leading-[1.02]">No reels yet.</h1>
         <p className="mt-2 max-w-[300px] text-[15px] text-muted">
@@ -43,7 +43,7 @@ export function AllFeed() {
       </div>
     );
   }
-  if (!data) return <div className="h-full w-full bg-ink" />;
+  if (!data) return <div className="h-full w-full bg-paper" />;
 
   const current = items[index]?.spool;
   return <Feed items={items} viewer={data.viewer} tab="all" docHref={current ? `/s/${current.id}` : undefined} onIndexChange={setIndex} />;
