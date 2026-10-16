@@ -6,7 +6,7 @@ import { UploadIcon, Wordmark } from "../ui/icons";
 import { useMedia } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, pickFileWithAuth, useUploader } from "../upload/use-uploader";
-import { motion, useTransform } from "motion/react";
+import { motion, useSpring, useTransform } from "motion/react";
 import { SiteFooter } from "../shell/site-footer";
 import { DocToReel } from "./doc-to-reel";
 import { InfoSlide } from "./info-slide";
@@ -118,10 +118,13 @@ export function Landing() {
   // Fit the animation to the screen: as big as width allows, never taller than what's left under the headline.
   const scrollY = useMainScroll();
   const headY = useTransform(scrollY, [0, 700], [0, -220]);
-  const headFade = useTransform(scrollY, [0, 450], [1, 0]);
-  const animScale = useTransform(scrollY, [0, 700], [1, 0.88]);
-  const animFade = useTransform(scrollY, [250, 750], [1, 0.2]);
-  const cueFade = useTransform(scrollY, [0, 60], [1, 0]);
+  // Eased copy of the scroll position so fades glide instead of snapping.
+  const easedY = useSpring(scrollY, { stiffness: 90, damping: 26, mass: 0.6 });
+  const headFade = useTransform(easedY, [0, 500], [1, 0]);
+  const animScale = useTransform(easedY, [0, 800], [1, 0.9]);
+  const animFade = useTransform(easedY, [150, 900], [1, 0.25]);
+  const cueFade = useTransform(easedY, [40, 420], [1, 0]);
+  const cueY = useTransform(easedY, [0, 420], [0, 24]);
   const k = lg ? Math.max(1, Math.min(2.8, (vh - 420) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
 
   return (
@@ -145,13 +148,13 @@ export function Landing() {
           <div className="flex flex-col items-center gap-3">
             <UploadButton />
           </div>
+          <motion.div className="flex items-center gap-5" style={{ opacity: cueFade, y: cueY }}>
           {/* Scroll cue: a spinning "see how it works" badge with a bouncing arrow */}
           <motion.button
             type="button"
             aria-label="See how it works"
             onClick={(e) => e.currentTarget.closest("main")?.scrollBy({ top: window.innerHeight * 0.9, behavior: "smooth" })}
             className="shrink-0"
-            style={{ opacity: cueFade }}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 1.2, type: "spring", stiffness: 220, damping: 14 }}
@@ -174,6 +177,24 @@ export function Landing() {
               </span>
             </span>
           </motion.button>
+          {/* Mouse with a scrolling wheel */}
+          <motion.div
+            aria-hidden
+            className="flex flex-col items-center gap-2 text-muted"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.6, duration: 0.6 }}
+          >
+            <span className="relative h-11 w-6 rounded-full border-2 border-muted/70">
+              <motion.span
+                className="absolute left-1/2 top-2 h-2 w-1 -translate-x-1/2 rounded-full bg-thread"
+                animate={{ y: [0, 14, 0], opacity: [1, 0.2, 1] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              />
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em]">Scroll</span>
+          </motion.div>
+          </motion.div>
         </div>
       </div>
     </div>
