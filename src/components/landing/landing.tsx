@@ -128,9 +128,10 @@ function Headline() {
               stroke="var(--thread)"
               strokeWidth="2.5"
               strokeLinecap="round"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 1.1, delay: 0.3, ease: "easeInOut" }}
+              // Draw in, hold, wipe away to the right, rest — then again.
+              initial={{ pathLength: 0, pathOffset: 0 }}
+              animate={{ pathLength: [0, 1, 1, 0, 0], pathOffset: [0, 0, 0, 1, 1] }}
+              transition={{ duration: 6.5, delay: 0.3, times: [0, 0.18, 0.72, 0.9, 1], ease: "easeInOut", repeat: Infinity }}
             />
           </svg>
         </span>
