@@ -114,7 +114,7 @@ function Stage({ p, narrow, h }: { p: number; narrow: boolean; h: number }) {
                 {REELS.map((r) => (
                   <div key={r.id} className="flex flex-col justify-between p-4" style={{ height: TILE }}>
                     <div>
-                      <div className="font-mono text-[10px] text-muted">{r.index}/10</div>
+                      <div className="font-mono text-[10px] text-muted">{r.index}/{REELS.length}</div>
                       <div className="mt-2 font-hook text-[18px] font-extrabold leading-[1.12]">{r.hook}</div>
                     </div>
                     <div className="grid grid-cols-8 gap-[7px] self-center">
@@ -134,7 +134,7 @@ function Stage({ p, narrow, h }: { p: number; narrow: boolean; h: number }) {
           <div className={narrow ? "absolute right-3 top-3 text-right" : "absolute right-16 top-1/2 -translate-y-1/2 text-right"}>
             <div className={`font-mono leading-none text-thread ${narrow ? "text-[22px]" : "text-[44px]"}`}>
               {reelIdx + 1}
-              <span className="text-muted">/10</span>
+              <span className="text-muted">/{REELS.length}</span>
             </div>
             {!narrow && <div className="label mt-2">Keep scrolling</div>}
           </div>
