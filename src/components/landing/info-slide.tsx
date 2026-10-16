@@ -83,9 +83,9 @@ function BigUpload() {
       <button
         type="button"
         onClick={() => pickFileWithAuth(() => input.current?.click())}
-        className="mx-auto flex items-center justify-center gap-2 bg-thread px-10 py-4 text-[16px] font-medium text-paper transition-opacity hover:opacity-90"
+        className="mx-auto flex items-center justify-center gap-4 bg-thread px-16 py-8 text-[28px] md:px-24 md:py-10 md:text-[36px] font-medium text-paper transition-opacity hover:opacity-90"
       >
-        <UploadIcon size={18} /> Upload a document
+        <UploadIcon size={36} /> Upload a document
       </button>
     </>
   );
