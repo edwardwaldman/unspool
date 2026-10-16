@@ -80,29 +80,13 @@ function BigUpload() {
           if (f) void upload(f);
         }}
       />
-      <motion.button
+      <button
         type="button"
         onClick={() => pickFileWithAuth(() => input.current?.click())}
-        whileHover="hover"
-        whileTap={{ scale: 0.985 }}
-        className="group relative flex w-full flex-col items-center justify-center gap-5 overflow-hidden border border-dashed border-thread/50 bg-surface px-6 py-14 text-center transition-colors hover:border-thread hover:bg-[#1a3126] md:py-20"
+        className="mx-auto flex items-center justify-center gap-2 bg-thread px-10 py-4 text-[16px] font-medium text-paper transition-opacity hover:opacity-90"
       >
-        <motion.span
-          className="relative flex h-16 w-16 items-center justify-center rounded-full bg-thread text-paper md:h-20 md:w-20"
-          variants={{ hover: { scale: 1.08 } }}
-        >
-          <UploadIcon size={30} />
-        </motion.span>
-        <span className="relative font-display text-[30px] leading-none text-ink md:text-[44px]">
-          Upload a document
-        </span>
-        <span className="relative text-[14px] text-muted md:text-[15px]">
-          PDF, Word, slides, notes or photos · your first reel is <span className="text-thread">free</span>
-        </span>
-        <span className="relative font-mono text-[11px] uppercase tracking-[0.2em] text-thread/80">
-          Click to browse
-        </span>
-      </motion.button>
+        <UploadIcon size={18} /> Upload a document
+      </button>
     </>
   );
 }
