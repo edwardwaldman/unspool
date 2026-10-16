@@ -136,16 +136,6 @@ export function Landing() {
       {/* Parallax: each layer leaves at its own speed as you scroll */}
       <motion.div className="relative" style={lg ? { y: headY, opacity: headFade } : undefined}>
         <Headline />
-        {/* Diagonal sticker riding on the headline */}
-        <motion.span
-          aria-hidden
-          className="absolute -top-8 right-0 rotate-[8deg] whitespace-nowrap rounded-[3px] bg-thread px-2 py-0.5 font-hook text-[10px] font-extrabold uppercase tracking-wide text-paper shadow-[3px_3px_0_var(--coral)] lg:-right-40 lg:top-12 lg:px-3 lg:py-1 lg:text-[14px]"
-          initial={{ opacity: 0, scale: 0.6, rotate: 0 }}
-          animate={{ opacity: 1, scale: 1, rotate: 8 }}
-          transition={{ delay: 0.5, type: "spring", stiffness: 260, damping: 14 }}
-        >
-          Skip the 40-page read
-        </motion.span>
       </motion.div>
       <div className="flex flex-col items-center gap-6 lg:gap-8">
         <motion.div className="order-first" style={lg ? { width: ANIM_W * k, height: ANIM_H * k, scale: animScale, opacity: animFade } : { width: ANIM_W * k, height: ANIM_H * k }}>

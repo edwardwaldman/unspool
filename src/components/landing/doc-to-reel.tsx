@@ -23,7 +23,16 @@ export function DocToReel() {
 
   return (
     <div className="flex items-center gap-6" aria-hidden>
-      <div className="w-[190px] shrink-0 border border-line bg-surface p-4">
+      <div className="relative w-[190px] shrink-0 border border-line bg-surface p-4">
+        {/* Square sticker slapped on the doc's corner */}
+        <motion.div
+          className="absolute -left-12 -top-[60px] z-10 flex h-[62px] w-[62px] flex-col justify-center bg-thread px-1.5 font-hook text-[9.5px] font-extrabold uppercase leading-[1.1] text-paper shadow-[3px_3px_0_var(--coral)]"
+          initial={{ opacity: 0, scale: 0.5, rotate: 0 }}
+          animate={{ opacity: 1, scale: 1, rotate: -10 }}
+          transition={{ delay: 0.6, type: "spring", stiffness: 260, damping: 14 }}
+        >
+          Skip the 40-page read
+        </motion.div>
         <div className="flex items-center gap-2 text-muted">
           <FileText size={14} strokeWidth={1.5} />
           <span className="truncate font-mono text-[10px]">Q3-report.pdf</span>
