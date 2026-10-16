@@ -83,7 +83,7 @@ function UploadReel({ width, height }: { width: number; height: number }) {
           Your first reel is{" "}
           <span className="relative inline-block text-thread">
             free
-            <svg className="pointer-events-none absolute -left-3 -top-2 h-[calc(100%+16px)] w-[calc(100%+22px)] overflow-visible" viewBox="0 0 100 50" preserveAspectRatio="none" aria-hidden>
+            <svg className="pointer-events-none absolute -left-6 -top-2 h-[calc(100%+16px)] w-[calc(100%+34px)] overflow-visible" viewBox="0 0 100 50" preserveAspectRatio="none" aria-hidden>
               <motion.path
                 d="M8 30 C 6 12, 40 4, 70 7 S 98 22, 92 34 S 50 50, 22 44 S 4 34, 14 20"
                 fill="none"
