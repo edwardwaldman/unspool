@@ -14,8 +14,7 @@ export function InfoSlide() {
   return (
     <section className="flex min-h-[80dvh] flex-col justify-center border-t border-line px-6 py-20">
       <div className="mx-auto w-full max-w-[1100px]">
-        <div className="label">How it works</div>
-        <div className="mt-8">
+        <div>
           <ProcessDemo />
         </div>
         <div className="mt-14 grid grid-cols-2 border-y border-line md:grid-cols-4">
