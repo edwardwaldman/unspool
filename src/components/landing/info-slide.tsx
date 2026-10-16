@@ -96,8 +96,11 @@ function BigUpload() {
               strokeWidth="2.5"
               strokeLinecap="round"
               initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: [0, 1, 1, 1], opacity: [1, 1, 1, 0] }}
-              transition={{ duration: 3.4, times: [0, 0.35, 0.85, 1], ease: "easeInOut", repeat: Infinity, repeatDelay: 0.4 }}
+              animate={{ pathLength: [0, 1, 1, 1], opacity: [0, 1, 1, 1, 0] }}
+              transition={{
+                pathLength: { duration: 3.4, times: [0, 0.35, 0.85, 1], ease: "easeInOut", repeat: Infinity, repeatDelay: 0.4 },
+                opacity: { duration: 3.4, times: [0, 0.03, 0.35, 0.85, 1], repeat: Infinity, repeatDelay: 0.4 },
+              }}
             />
             <motion.path
               d="M55 68 L 60 80 L 69 71"
@@ -107,8 +110,11 @@ function BigUpload() {
               strokeLinecap="round"
               strokeLinejoin="round"
               initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: [0, 0, 1, 1, 1], opacity: [0, 1, 1, 1, 0] }}
-              transition={{ duration: 3.4, times: [0, 0.35, 0.45, 0.85, 1], ease: "easeOut", repeat: Infinity, repeatDelay: 0.4 }}
+              animate={{ pathLength: [0, 0, 1, 1, 1], opacity: [0, 0, 1, 1, 0] }}
+              transition={{
+                pathLength: { duration: 3.4, times: [0, 0.35, 0.45, 0.85, 1], ease: "easeOut", repeat: Infinity, repeatDelay: 0.4 },
+                opacity: { duration: 3.4, times: [0, 0.36, 0.38, 0.85, 1], repeat: Infinity, repeatDelay: 0.4 },
+              }}
             />
           </svg>
         </div>
