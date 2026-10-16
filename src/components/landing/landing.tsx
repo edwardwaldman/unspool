@@ -53,9 +53,7 @@ function UploadButton() {
       >
         {pending ? "Opening your feed" : (<><UploadIcon size={22} /> Upload a document</>)}
       </button>
-      <p className="max-w-[340px] text-center text-[13px] leading-snug text-muted">
-        First reel free, no card. Your reels play right here in a swipeable feed and save to your library, with a link to share.
-      </p>
+      <p className="text-[13px] text-muted">Your first reel is free. No card needed.</p>
     </>
   );
 }
@@ -127,21 +125,28 @@ export function Landing() {
   const animFade = useTransform(easedY, [150, 900], [1, 0.25]);
   const cueFade = useTransform(easedY, [40, 420], [1, 0]);
   const cueY = useTransform(easedY, [0, 420], [0, 24]);
-  const k = lg ? Math.max(1, Math.min(2.8, (vh - 470) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 480) / ANIM_H));
+  const k = lg ? Math.max(1, Math.min(2.8, (vh - 420) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
 
   return (
     <div>
-    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-center gap-6 overflow-hidden px-4 pb-14 pt-20 lg:gap-6 lg:px-6 lg:pb-24 lg:pt-16">
+    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-center gap-6 overflow-hidden px-3 pb-10 pt-20 lg:gap-6 lg:px-6 lg:pb-24 lg:pt-16">
       {/* Phones: a plain wordmark until the top bar slides in */}
       <Link href="/" aria-label="unspool" className="absolute left-5 top-5 lg:hidden">
         <Wordmark size={24} />
       </Link>
       {/* Parallax: each layer leaves at its own speed as you scroll */}
-      <motion.div style={lg ? { y: headY, opacity: headFade } : undefined}>
+      <motion.div className="relative" style={lg ? { y: headY, opacity: headFade } : undefined}>
         <Headline />
-        <p className="mx-auto mt-3 max-w-[560px] text-center text-[15px] leading-snug text-muted lg:text-[17px]">
-          Skip the 40-page read. Get the key points as 60-second reels in minutes, and actually remember them.
-        </p>
+        {/* Diagonal sticker riding on the headline */}
+        <motion.span
+          aria-hidden
+          className="absolute -top-8 right-0 rotate-[8deg] whitespace-nowrap border border-thread bg-paper px-2 py-0.5 font-hook text-[10px] font-bold uppercase tracking-wide text-thread lg:-right-40 lg:top-12 lg:px-3 lg:py-1 lg:text-[14px]"
+          initial={{ opacity: 0, scale: 0.6, rotate: 0 }}
+          animate={{ opacity: 1, scale: 1, rotate: 8 }}
+          transition={{ delay: 0.5, type: "spring", stiffness: 260, damping: 14 }}
+        >
+          Skip the 40-page read
+        </motion.span>
       </motion.div>
       <div className="flex flex-col items-center gap-6 lg:gap-8">
         <motion.div className="order-first" style={lg ? { width: ANIM_W * k, height: ANIM_H * k, scale: animScale, opacity: animFade } : { width: ANIM_W * k, height: ANIM_H * k }}>
@@ -159,7 +164,7 @@ export function Landing() {
             type="button"
             aria-label="See how it works"
             onClick={(e) => e.currentTarget.closest("main")?.scrollBy({ top: window.innerHeight * 0.9, behavior: "smooth" })}
-            className="hidden shrink-0 lg:block"
+            className="shrink-0"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.3, type: "spring", stiffness: 320, damping: 16 }}
