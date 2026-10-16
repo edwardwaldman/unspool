@@ -80,13 +80,32 @@ function BigUpload() {
           if (f) void upload(f);
         }}
       />
-      <button
+      <motion.button
         type="button"
         onClick={() => pickFileWithAuth(() => input.current?.click())}
-        className="btn-primary w-full py-8 text-[22px] md:py-10 md:text-[28px]"
+        whileHover="hover"
+        whileTap={{ scale: 0.985 }}
+        className="group relative flex w-full flex-col items-center justify-center gap-5 overflow-hidden border border-dashed border-thread/50 bg-surface px-6 py-14 text-center transition-colors hover:border-thread hover:bg-[#1a3126] md:py-20"
       >
-        <UploadIcon size={28} /> Upload a document
-      </button>
+        <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 h-[320px] w-[620px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-thread/10 blur-[90px] transition-opacity group-hover:opacity-100 md:opacity-70" />
+        <motion.span
+          className="relative flex h-16 w-16 items-center justify-center rounded-full bg-thread text-paper shadow-[0_0_40px_rgba(211,240,90,0.35)] md:h-20 md:w-20"
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          variants={{ hover: { scale: 1.08 } }}
+        >
+          <UploadIcon size={30} />
+        </motion.span>
+        <span className="relative font-display text-[30px] leading-none text-ink md:text-[44px]">
+          Upload a document
+        </span>
+        <span className="relative text-[14px] text-muted md:text-[15px]">
+          PDF, Word, slides, notes or photos · your first reel is <span className="text-thread">free</span>
+        </span>
+        <span className="relative font-mono text-[11px] uppercase tracking-[0.2em] text-thread/80">
+          Click to browse
+        </span>
+      </motion.button>
     </>
   );
 }
