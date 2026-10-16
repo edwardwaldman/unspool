@@ -6,11 +6,13 @@ import { GridIcon, HomeIcon, PlusIcon, ReelsIcon, UploadIcon, UserIcon, Wordmark
 import { Toaster } from "../ui/toast";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 
-const TOP_LINKS: [NavKey | "about" | "pricing", string, string][] = [
+const TOP_LINKS: [string, string, string][] = [
   ["reels", "/feed", "Reels"],
   ["library", "/library", "Library"],
   ["about", "/about", "How it works"],
   ["pricing", "/pricing", "Pricing"],
+  ["privacy", "/privacy", "Privacy"],
+  ["terms", "/terms", "Terms"],
 ];
 
 export type NavKey = "home" | "reels" | "library" | "profile" | "none";
@@ -39,7 +41,7 @@ function useFilePicker() {
  * App chrome. Desktop: slim left sidebar + content centered as a tall phone column (TikTok web).
  * Mobile: full-bleed content + a floating pill nav (Home · Reels · + · Library · Profile).
  */
-export function AppShell({ active, children, feed = false }: { active: NavKey; children: React.ReactNode; feed?: boolean }) {
+export function AppShell({ active, children, feed = false, aside }: { active: NavKey; children: React.ReactNode; feed?: boolean; aside?: React.ReactNode }) {
   const picker = useFilePicker();
   const [dragging, setDragging] = useState(false);
 
@@ -102,7 +104,9 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
           <div className="relative h-full w-full overflow-hidden lg:aspect-[9/16] lg:h-full lg:w-auto lg:overflow-visible">
             <div className="h-full w-full lg:border lg:border-line">{children}</div>
           </div>
-        ) : (
+        ) : null}
+        {feed && aside ? <div className="ml-16 hidden xl:block">{aside}</div> : null}
+        {feed ? null : (
           <div className="w-full pb-28 lg:pb-0">{children}</div>
         )}
       </main>

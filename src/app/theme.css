@@ -2,29 +2,27 @@
  * Unspool theme — every color and font lives here. Tweak these and the whole app follows.
  *
  * Rules: one accent ("thread"). Sage, coral and butter appear only when they carry meaning
- * (correct / risk / highlight). Sharp corners, 1px borders, no shadows, no gradient buttons.
+ * (correct / risk / highlight). Sharp corners, 1px borders, no shadows, no gradients.
  */
 
 :root {
   /* Surfaces */
-  --paper: #0e1220;        /* app background (deep navy-black) */
-  --surface: #161b2c;      /* sheets, panels */
-  --border: #262c40;       /* 1px rules and outlines */
+  --paper: #0b1d33;        /* app background (deep ink blue) */
+  --surface: #10253f;      /* sheets, panels */
+  --border: #1f3a5c;       /* 1px rules and outlines */
 
   /* Text */
   --ink: #ece7dd;          /* primary text, primary button fill */
-  --muted: #8a8fa3;        /* secondary text, inactive tabs, labels */
+  --muted: #8b9cb3;        /* secondary text, inactive tabs, labels */
 
   /* The one accent */
-  --thread: #9db0ff;       /* key terms, active states, progress, reel visuals */
+  --thread: #a8b8ff;       /* key terms, active states, progress, reel visuals */
 
   /* Meaning colors — use only when the meaning applies */
   --sage: #a3cfae;         /* correct / good / ~word~ */
   --coral: #f0a491;        /* warning / trap / risk / #word# */
   --butter: #eed891;       /* highlight / ^word^ */
 
-  /* Soft glow used by reel visuals (blurred, never neon) */
-  --glow-strength: 0.22;
 
   /* Fonts (next/font variables are set in layout.tsx) */
   --font-display: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;

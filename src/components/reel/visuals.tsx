@@ -15,21 +15,10 @@ function colorOf(c: HighlightColor | undefined) {
   return COLOR_VAR[c ?? "primary"];
 }
 
-/** Soft, heavily blurred halo behind a visual. Never neon. */
-function Halo({ color = "var(--thread)", size = 260 }: { color?: string; size?: number }) {
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-      style={{
-        width: size,
-        height: size,
-        background: color,
-        opacity: "var(--glow-strength)",
-        filter: `blur(${Math.round(size / 3)}px)`,
-      }}
-    />
-  );
+/** Halos removed: the design uses flat color only (no gradients or glow fields). */
+function Halo(props: { color?: string; size?: number }) {
+  void props;
+  return null;
 }
 
 function Label({ children, color }: { children: React.ReactNode; color?: string }) {
