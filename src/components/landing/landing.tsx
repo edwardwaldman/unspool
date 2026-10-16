@@ -153,9 +153,17 @@ function Headline() {
               strokeWidth="2.5"
               strokeLinecap="round"
               // Draw in, hold, wipe away to the right, rest — then again.
-              initial={{ pathLength: 0, pathOffset: 0 }}
-              animate={{ pathLength: [0, 1, 1, 0, 0], pathOffset: [0, 0, 0, 1, 1] }}
-              transition={{ duration: 6.5, delay: 0.3, times: [0, 0.18, 0.72, 0.9, 1], ease: "easeInOut", repeat: Infinity }}
+              // Hidden while the path is zero-length, otherwise the round caps leave two dots behind.
+              initial={{ pathLength: 0, pathOffset: 0, opacity: 0 }}
+              animate={{ pathLength: [0, 1, 1, 0, 0], pathOffset: [0, 0, 0, 1, 1], opacity: [0, 1, 1, 0, 0] }}
+              transition={{
+                duration: 6.5,
+                delay: 0.3,
+                times: [0, 0.18, 0.72, 0.9, 1],
+                ease: "easeInOut",
+                repeat: Infinity,
+                opacity: { duration: 6.5, delay: 0.3, times: [0, 0.02, 0.86, 0.89, 1], repeat: Infinity },
+              }}
             />
           </svg>
         </span>
