@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, FileText, Heart, Plus } from "lucide-react";
-import { motion, useMotionValueEvent, useTransform, type MotionValue } from "motion/react";
+import { useMotionValueEvent, type MotionValue } from "motion/react";
 import { useState } from "react";
 import { SAMPLE_SPOOL } from "@/lib/sample";
 import { useMedia } from "../ui/use-media";
@@ -16,10 +16,10 @@ const TILE = 420;
 
 // Scroll progress (0..1) → scene. Each scene gets a slice of the scroll.
 const SCENES = [
-  { id: "plus", from: 0, to: 0.16, label: "Tap +" },
-  { id: "pick", from: 0.16, to: 0.36, label: "Pick a file" },
-  { id: "load", from: 0.36, to: 0.6, label: "Unspooling" },
-  { id: "reels", from: 0.6, to: 1, label: "Swipe reels" },
+  { id: "plus", from: 0, to: 0.16 },
+  { id: "pick", from: 0.16, to: 0.36 },
+  { id: "load", from: 0.36, to: 0.6 },
+  { id: "reels", from: 0.6, to: 1 },
 ] as const;
 type SceneId = (typeof SCENES)[number]["id"];
 
@@ -157,23 +157,9 @@ export function ProcessDemo({ progress }: { progress: MotionValue<number> }) {
   const lg = useMedia("(min-width: 1024px)");
   const md = useMedia("(min-width: 640px)");
   const k = lg ? 1.05 : md ? 0.7 : 0.38;
-  const bar = useTransform(progress, [0, 1], ["0%", "100%"]);
-  const current = sceneAt(p).id;
 
   return (
     <div className="mx-auto" style={{ width: W * k }} aria-hidden>
-      {/* Scene rail, scrubbed by scroll */}
-      <div className="mb-5 grid grid-cols-4 gap-4">
-        {SCENES.map((s, i) => (
-          <div key={s.id} className="text-[13px]" style={{ color: s.id === current ? "var(--thread)" : p >= s.to ? "var(--ink)" : "var(--muted)" }}>
-            <span className="mr-2 font-mono text-[11px]">0{i + 1}</span>
-            {s.label}
-          </div>
-        ))}
-      </div>
-      <div className="mb-5 h-px bg-line">
-        <motion.div className="h-px bg-thread" style={{ width: bar }} />
-      </div>
       <div style={{ width: W * k, height: H * k }}>
         <div className="relative origin-top-left overflow-hidden border border-line bg-surface" style={{ width: W, height: H, transform: `scale(${k})` }}>
           <div className="flex h-10 items-center gap-2 border-b border-line px-4">
