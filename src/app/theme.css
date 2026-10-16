@@ -7,21 +7,21 @@
 
 :root {
   /* Surfaces */
-  --paper: #0b1d33;        /* app background (deep ink blue) */
-  --surface: #10253f;      /* sheets, panels */
-  --border: #1f3a5c;       /* 1px rules and outlines */
+  --paper: #0f1d18;        /* app background (deep forest) */
+  --surface: #152820;      /* sheets, panels */
+  --border: #24402f;       /* 1px rules and outlines */
 
   /* Text */
-  --ink: #ece7dd;          /* primary text, primary button fill */
-  --muted: #8b9cb3;        /* secondary text, inactive tabs, labels */
+  --ink: #e9f0e4;          /* primary text, primary button fill */
+  --muted: #8ea595;        /* secondary text, labels */
 
   /* The one accent */
-  --thread: #a8b8ff;       /* key terms, active states, progress, reel visuals */
+  --thread: #d3f05a;       /* the one accent: key terms, active states, progress */
 
   /* Meaning colors — use only when the meaning applies */
-  --sage: #a3cfae;         /* correct / good / ~word~ */
-  --coral: #f0a491;        /* warning / trap / risk / #word# */
-  --butter: #eed891;       /* highlight / ^word^ */
+  --sage: #7fd3a6;         /* correct / good / ~word~ */
+  --coral: #ff8b6c;        /* warning / trap / risk / #word# */
+  --butter: #f2d36b;       /* highlight / ^word^ */
 
 
   /* Fonts (next/font variables are set in layout.tsx) */

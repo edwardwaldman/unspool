@@ -49,7 +49,7 @@ function UploadReel({ width, height }: { width: number; height: number }) {
   );
 }
 
-/** First-visit home: one line, a big document-to-reels animation, and the upload reel beside it. */
+/** First-visit home: one line, the upload reel, and a big document-to-reels animation beside it. */
 export function Landing() {
   const xl = useMedia("(min-width: 1280px)");
   const lg = useMedia("(min-width: 1024px)");
@@ -61,12 +61,12 @@ export function Landing() {
         One document <span className="text-thread">into reels</span>
       </h1>
       <div className="flex flex-col items-center gap-12 lg:flex-row lg:gap-16">
+        <UploadReel width={lg ? 340 : 300} height={lg ? ANIM_H * k : 360} />
         <div style={{ width: ANIM_W * k, height: ANIM_H * k }}>
           <div className="origin-top-left" style={{ width: ANIM_W, height: ANIM_H, transform: `scale(${k})` }}>
             <DocToReel />
           </div>
         </div>
-        <UploadReel width={lg ? 340 : 300} height={lg ? ANIM_H * k : 360} />
       </div>
     </div>
   );

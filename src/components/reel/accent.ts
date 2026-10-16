@@ -3,8 +3,8 @@ export const THREAD = "var(--thread)";
 
 /** Canvas can't read CSS variables cheaply per frame, so it gets the resolved value. */
 export function threadHex() {
-  if (typeof window === "undefined") return "#9db0ff";
-  return getComputedStyle(document.documentElement).getPropertyValue("--thread").trim() || "#9db0ff";
+  if (typeof window === "undefined") return "#d3f05a";
+  return getComputedStyle(document.documentElement).getPropertyValue("--thread").trim() || "#d3f05a";
 }
 
 export function fileLabel(ext: string) {

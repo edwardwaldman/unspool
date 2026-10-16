@@ -21,7 +21,7 @@ export function ParticleField({ active, pulse }: { active: boolean; pulse: numbe
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const accent = threadHex();
-    const base = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8a8fa3";
+    const base = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8ea595";
     let raf = 0;
     let w = 0;
     let h = 0;
