@@ -78,19 +78,9 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
     >
       {picker.el}
 
-      {/* Log in / Sign up: always in the top right */}
-      <div className={`fixed right-5 top-3.5 z-50 items-center gap-2 lg:right-10 ${feed ? "hidden lg:flex" : "flex"}`}>
-        <button type="button" onClick={() => openAuth("login")} className="px-3 py-2 text-[14px] text-muted hover:text-ink">
-          Log in
-        </button>
-        <button type="button" onClick={() => openAuth("signup")} className="btn-primary px-4 py-2 text-[14px]">
-          Sign up
-        </button>
-      </div>
-
       {/* Top bar: slides in once you scroll */}
       <header
-        className={`fixed inset-x-0 top-0 z-40 h-16 items-center gap-8 border-b border-line bg-paper px-5 pr-56 transition-transform duration-300 lg:px-10 lg:pr-64 ${
+        className={`fixed inset-x-0 top-0 z-40 h-16 items-center gap-8 border-b border-line bg-paper px-5 transition-transform duration-300 lg:px-10 ${
           feed ? "hidden lg:flex" : "flex"
         } ${barShown ? "translate-y-0" : "-translate-y-full"}`}
       >
@@ -104,6 +94,14 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
             </Link>
           ))}
         </nav>
+        <div className="ml-auto flex items-center gap-2 md:ml-6">
+          <button type="button" onClick={() => openAuth("login")} className="px-3 py-2 text-[14px] text-muted hover:text-ink">
+            Log in
+          </button>
+          <button type="button" onClick={() => openAuth("signup")} className="btn-primary px-4 py-2 text-[14px]">
+            Sign up
+          </button>
+        </div>
       </header>
 
       {/* Content */}
