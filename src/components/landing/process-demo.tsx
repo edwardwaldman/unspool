@@ -11,7 +11,7 @@ import { ReelMock } from "./reel-mock";
 const W = 900;
 const H = 520;
 const REELS = SAMPLE_SPOOL.reels.slice(0, 5);
-const FILES = ["unit-3-notes.pdf", "apartment-lease.pdf", "onboarding-guide.docx"];
+const FILES = ["Q3-report.pdf", "board-deck.pptx", "onboarding-guide.docx"];
 const STAGES = ["Read", "Plan", "Write"];
 const TILE = 420;
 
@@ -87,7 +87,7 @@ function Stage({ p, narrow, h }: { p: number; narrow: boolean; h: number }) {
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <div className="flex items-center gap-3 text-muted">
             <FileText size={18} strokeWidth={1.5} />
-            <span className="font-mono text-[13px]">unit-3-notes.pdf</span>
+            <span className="font-mono text-[13px]">Q3-report.pdf</span>
           </div>
           <div className={`mt-5 text-center font-display leading-none ${narrow ? "text-[32px]" : "text-[40px]"}`}>Unspooling your doc</div>
           <div className={`mt-8 flex ${narrow ? "flex-col gap-3" : "gap-8"}`}>

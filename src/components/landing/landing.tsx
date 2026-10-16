@@ -53,7 +53,9 @@ function UploadButton() {
       >
         {pending ? "Opening your feed" : (<><UploadIcon size={22} /> Upload a document</>)}
       </button>
-      <p className="text-[13px] text-muted">Your first reel is free. No card needed.</p>
+      <p className="max-w-[340px] text-center text-[13px] leading-snug text-muted">
+        First reel free, no card. Your reels play right here in a swipeable feed and save to your library, with a link to share.
+      </p>
     </>
   );
 }
@@ -125,11 +127,11 @@ export function Landing() {
   const animFade = useTransform(easedY, [150, 900], [1, 0.25]);
   const cueFade = useTransform(easedY, [40, 420], [1, 0]);
   const cueY = useTransform(easedY, [0, 420], [0, 24]);
-  const k = lg ? Math.max(1, Math.min(2.8, (vh - 420) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
+  const k = lg ? Math.max(1, Math.min(2.8, (vh - 470) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 480) / ANIM_H));
 
   return (
     <div>
-    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-center gap-6 overflow-hidden px-3 pb-10 pt-20 lg:gap-6 lg:px-6 lg:pb-24 lg:pt-16">
+    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-center gap-6 overflow-hidden px-4 pb-14 pt-20 lg:gap-6 lg:px-6 lg:pb-24 lg:pt-16">
       {/* Phones: a plain wordmark until the top bar slides in */}
       <Link href="/" aria-label="unspool" className="absolute left-5 top-5 lg:hidden">
         <Wordmark size={24} />
@@ -137,6 +139,9 @@ export function Landing() {
       {/* Parallax: each layer leaves at its own speed as you scroll */}
       <motion.div style={lg ? { y: headY, opacity: headFade } : undefined}>
         <Headline />
+        <p className="mx-auto mt-3 max-w-[560px] text-center text-[15px] leading-snug text-muted lg:text-[17px]">
+          Skip the 40-page read. Get the key points as 60-second reels in minutes, and actually remember them.
+        </p>
       </motion.div>
       <div className="flex flex-col items-center gap-6 lg:gap-8">
         <motion.div className="order-first" style={lg ? { width: ANIM_W * k, height: ANIM_H * k, scale: animScale, opacity: animFade } : { width: ANIM_W * k, height: ANIM_H * k }}>
@@ -154,7 +159,7 @@ export function Landing() {
             type="button"
             aria-label="See how it works"
             onClick={(e) => e.currentTarget.closest("main")?.scrollBy({ top: window.innerHeight * 0.9, behavior: "smooth" })}
-            className="shrink-0"
+            className="hidden shrink-0 lg:block"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.3, type: "spring", stiffness: 320, damping: 16 }}

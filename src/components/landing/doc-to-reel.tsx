@@ -26,7 +26,7 @@ export function DocToReel() {
       <div className="w-[190px] shrink-0 border border-line bg-surface p-4">
         <div className="flex items-center gap-2 text-muted">
           <FileText size={14} strokeWidth={1.5} />
-          <span className="truncate font-mono text-[10px]">unit-3-notes.pdf</span>
+          <span className="truncate font-mono text-[10px]">Q3-report.pdf</span>
         </div>
         <div className="mt-4 space-y-[8px]">
           {REELS.map((r, n) => (
