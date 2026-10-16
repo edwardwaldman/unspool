@@ -151,7 +151,6 @@ function Headline() {
 
 /** First-visit home: one line, the upload reel, and a big document-to-reels animation beside it. */
 export function Landing() {
-  const xl = useMedia("(min-width: 1280px)");
   const lg = useMedia("(min-width: 1024px)");
   const vh = useViewport("innerHeight", 900);
   const vw = useViewport("innerWidth", 1440);
@@ -159,12 +158,10 @@ export function Landing() {
   const scrollY = useMainScroll();
   const headY = useTransform(scrollY, [0, 700], [0, -220]);
   const headFade = useTransform(scrollY, [0, 450], [1, 0]);
-  const cardY = useTransform(scrollY, [0, 700], [0, -90]);
-  const animY = useTransform(scrollY, [0, 700], [0, 140]);
   const animScale = useTransform(scrollY, [0, 700], [1, 0.88]);
   const animFade = useTransform(scrollY, [250, 750], [1, 0.2]);
   const cueFade = useTransform(scrollY, [0, 60], [1, 0]);
-  const k = lg ? Math.max(0.9, Math.min(xl ? 2.15 : 1.5, (vh - 190) / ANIM_H, (vw - 340 - 64 - 120) / ANIM_W)) : Math.min(1.2, (vw - 32) / ANIM_W);
+  const k = lg ? Math.max(1.2, Math.min(2.6, (vh - 200) / ANIM_H, (vw - 160) / ANIM_W)) : Math.min(1.2, (vw - 32) / ANIM_W);
 
   return (
     <div>
@@ -177,11 +174,11 @@ export function Landing() {
       <motion.div style={lg ? { y: headY, opacity: headFade } : undefined}>
         <Headline />
       </motion.div>
-      <div className="flex flex-col items-center gap-12 lg:flex-row lg:gap-16">
-        <motion.div style={lg ? { y: cardY } : undefined}>
-          <UploadReel width={lg ? 340 : 300} height={lg ? ANIM_H * k : 360} />
+      <div className="flex flex-col items-center gap-12 lg:gap-20">
+        <motion.div>
+          <UploadReel width={lg ? 380 : 300} height={lg ? 420 : 360} />
         </motion.div>
-        <motion.div className="order-first lg:order-none" style={lg ? { width: ANIM_W * k, height: ANIM_H * k, y: animY, scale: animScale, opacity: animFade } : { width: ANIM_W * k, height: ANIM_H * k }}>
+        <motion.div className="order-first" style={lg ? { width: ANIM_W * k, height: ANIM_H * k, scale: animScale, opacity: animFade } : { width: ANIM_W * k, height: ANIM_H * k }}>
           <div className="origin-top-left" style={{ width: ANIM_W, height: ANIM_H, transform: `scale(${k})` }}>
             <DocToReel />
           </div>
