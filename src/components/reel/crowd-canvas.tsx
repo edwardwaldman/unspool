@@ -20,7 +20,7 @@ export function CrowdCanvas({ ratio, progress }: { ratio: number; progress: numb
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const accent = threadHex();
-    const base = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#6d7284";
+    const base = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8a8fa3";
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     let w = 0;
     let h = 0;

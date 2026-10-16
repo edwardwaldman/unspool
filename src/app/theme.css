@@ -7,24 +7,24 @@
 
 :root {
   /* Surfaces */
-  --paper: #f6f3ec;        /* app background (warm off-white) */
-  --surface: #fbf9f5;      /* sheets, panels */
-  --border: #e1dcd1;       /* 1px rules and outlines */
+  --paper: #0e1220;        /* app background (deep navy-black) */
+  --surface: #161b2c;      /* sheets, panels */
+  --border: #262c40;       /* 1px rules and outlines */
 
   /* Text */
-  --ink: #1b2030;          /* primary text, primary button fill */
-  --muted: #6d7284;        /* secondary text, inactive tabs, labels */
+  --ink: #ece7dd;          /* primary text, primary button fill */
+  --muted: #8a8fa3;        /* secondary text, inactive tabs, labels */
 
   /* The one accent */
-  --thread: #5a6ad8;       /* key terms, active states, progress, reel visuals */
+  --thread: #9db0ff;       /* key terms, active states, progress, reel visuals */
 
   /* Meaning colors — use only when the meaning applies */
-  --sage: #4e8a62;         /* correct / good / ~word~ */
-  --coral: #c65f48;        /* warning / trap / risk / #word# */
-  --butter: #a8821c;       /* highlight / ^word^ */
+  --sage: #a3cfae;         /* correct / good / ~word~ */
+  --coral: #f0a491;        /* warning / trap / risk / #word# */
+  --butter: #eed891;       /* highlight / ^word^ */
 
   /* Soft glow used by reel visuals (blurred, never neon) */
-  --glow-strength: 0.16;
+  --glow-strength: 0.22;
 
   /* Fonts (next/font variables are set in layout.tsx) */
   --font-display: var(--font-bricolage), "Bricolage Grotesque", system-ui, sans-serif;
@@ -34,5 +34,5 @@
   --font-ui: var(--font-instrument-sans), "Instrument Sans", system-ui, sans-serif;
   --font-numeric: var(--font-martian), "Martian Mono", ui-monospace, monospace;
 
-  color-scheme: light;
+  color-scheme: dark;
 }
