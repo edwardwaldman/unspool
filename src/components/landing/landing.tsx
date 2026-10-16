@@ -167,7 +167,7 @@ export function Landing() {
 
   return (
     <div>
-    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-8 px-6 pb-24 pt-16 lg:gap-7 lg:pb-8 lg:pt-16">
+    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-8 px-6 pb-24 pt-28 lg:gap-7 lg:pb-8 lg:pt-16">
       {/* Parallax: each layer leaves at its own speed as you scroll */}
       <motion.div style={lg ? { y: headY, opacity: headFade } : undefined}>
         <Headline />
