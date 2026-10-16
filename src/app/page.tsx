@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { HeroCard } from "@/components/landing/hero-card";
 import { Landing } from "@/components/landing/landing";
 import { AppShell } from "@/components/shell/app-shell";
 import { SpoolFeed } from "@/components/spool/spool-feed";
@@ -27,7 +26,7 @@ export default async function Home() {
     );
   }
   return (
-    <AppShell active="home" feed aside={<HeroCard />}>
+    <AppShell active="home">
       <Landing />
     </AppShell>
   );
