@@ -84,21 +84,31 @@ function BigUpload() {
         <Float className="left-0 top-2 -rotate-6" delay={0}>.pdf</Float>
         <Float className="right-4 top-0 rotate-3" delay={0.4}>.docx</Float>
         <Float className="bottom-4 left-10 rotate-2" delay={0.8}>×10 reels</Float>
-        <Float className="bottom-0 right-0 -rotate-3 border-thread text-thread" delay={1.2}>reel 1 free</Float>
         {/* hand-drawn "start here" arrow */}
-        <div aria-hidden className="pointer-events-none absolute -top-6 left-1/2 hidden translate-x-[90px] items-end gap-1 md:flex">
-          <span className="mb-6 -rotate-6 font-hook text-[15px] text-thread">start here</span>
-          <svg width="56" height="48" viewBox="0 0 56 48" className="overflow-visible">
+        <div aria-hidden className="pointer-events-none absolute -top-14 left-1/2 hidden translate-x-[80px] items-end gap-1 md:flex">
+          <span className="mb-20 -rotate-6 font-hook text-[20px] text-thread">start here</span>
+          <svg width="76" height="114" viewBox="0 0 56 84" className="overflow-visible">
             <motion.path
-              d="M50 4 C 44 22, 30 34, 10 40 M10 40 L 20 32 M10 40 L 21 45"
+              d="M48 4 C 50 40, 22 36, 20 78"
               fill="none"
               stroke="var(--thread)"
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
-              initial={{ pathLength: 0 }}
-              whileInView={{ pathLength: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.9, delay: 0.3, ease: "easeInOut" }}
+              vectorEffect="non-scaling-stroke"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: [0, 1, 1, 1], opacity: [1, 1, 1, 0] }}
+              transition={{ duration: 3, times: [0, 0.35, 0.85, 1], ease: "easeInOut", repeat: Infinity, repeatDelay: 0.4 }}
+            />
+            <motion.path
+              d="M20 78 L 12 68 M20 78 L 29 69"
+              fill="none"
+              stroke="var(--thread)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0, 1, 1, 0] }}
+              transition={{ duration: 3, times: [0, 0.33, 0.36, 0.85, 1], repeat: Infinity, repeatDelay: 0.4 }}
             />
           </svg>
         </div>
@@ -118,7 +128,7 @@ function Float({ children, className, delay }: { children: React.ReactNode; clas
   return (
     <motion.span
       aria-hidden
-      className={`absolute hidden border border-line bg-paper px-2.5 py-1 font-mono text-[12px] text-muted md:block ${className}`}
+      className={`absolute hidden border border-line bg-paper px-4 py-2 font-mono text-[17px] text-muted md:block ${className}`}
       initial={{ opacity: 0, y: 8 }}
       whileInView={{ opacity: 1, y: [0, -6, 0] }}
       viewport={{ once: true }}
