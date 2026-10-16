@@ -1,10 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useSyncExternalStore } from "react";
 import { formatPrice, PRICING } from "@/lib/config";
 import { SAMPLE_SPOOL } from "@/lib/sample";
 import { ReelView } from "../reel/reel-view";
-import { UploadIcon } from "../ui/icons";
+import { UploadIcon, Wordmark } from "../ui/icons";
 import { useMedia } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, pickFileWithAuth, useUploader } from "../upload/use-uploader";
@@ -167,7 +168,11 @@ export function Landing() {
 
   return (
     <div>
-    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-8 px-6 pb-24 pt-28 lg:gap-7 lg:pb-8 lg:pt-16">
+    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-8 px-6 pb-24 pt-24 lg:gap-7 lg:pb-8 lg:pt-16">
+      {/* Phones: a plain wordmark until the top bar slides in */}
+      <Link href="/" aria-label="unspool" className="absolute left-5 top-5 lg:hidden">
+        <Wordmark size={24} />
+      </Link>
       {/* Parallax: each layer leaves at its own speed as you scroll */}
       <motion.div style={lg ? { y: headY, opacity: headFade } : undefined}>
         <Headline />

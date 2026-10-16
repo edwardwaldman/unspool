@@ -74,7 +74,7 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
       <header
         className={`fixed inset-x-0 top-0 z-40 h-16 items-center gap-8 border-b border-line bg-paper px-5 transition-transform duration-300 lg:px-10 ${
           feed ? "hidden lg:flex" : "flex"
-        } ${barShown ? "translate-y-0" : "translate-y-0 lg:-translate-y-full"}`}
+        } ${barShown ? "translate-y-0" : "-translate-y-full"}`}
       >
         <Link href="/">
           <Wordmark size={24} />
@@ -86,7 +86,7 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
             </Link>
           ))}
         </nav>
-        <div className="ml-auto hidden items-center gap-2 md:ml-6 md:flex">
+        <div className="ml-auto flex items-center gap-2 md:ml-6">
           {user ? (
             <>
               <Link href="/library" className="px-3 py-2 text-[14px] text-muted hover:text-ink">
