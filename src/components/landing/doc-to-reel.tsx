@@ -4,6 +4,7 @@ import { FileText } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { SAMPLE_SPOOL } from "@/lib/sample";
+import { ReelMock } from "./reel-mock";
 
 const REELS = SAMPLE_SPOOL.reels;
 const TILE = 320; // phone screen height per reel
@@ -51,27 +52,11 @@ export function DocToReel() {
         />
       </div>
 
-      <div className="w-[184px] shrink-0 border border-ink/60 bg-paper p-[6px]">
-        <div className="relative overflow-hidden border border-line" style={{ height: TILE }}>
+      <div className="w-[184px] shrink-0 rounded-[22px] border border-ink/30 bg-black p-[5px]">
+        <div className="relative overflow-hidden rounded-[17px]" style={{ height: TILE }}>
           <motion.div animate={{ y: -i * TILE }} transition={{ type: "spring", stiffness: 140, damping: 22 }}>
-            {REELS.map((r) => (
-              <div key={r.id} className="flex flex-col justify-between p-3" style={{ height: TILE }}>
-                <div>
-                  <div className="font-mono text-[9px] text-muted">{r.index}/10</div>
-                  <div className="mt-2 font-hook text-[14px] font-extrabold leading-[1.12]">{r.hook}</div>
-                </div>
-                <div className="grid grid-cols-8 gap-[6px] self-center">
-                  {Array.from({ length: 32 }, (_, k) => (
-                    <span key={k} className="h-[4px] w-[4px] rounded-full" style={{ background: (k * 7 + r.index) % 5 === 0 ? "var(--thread)" : "var(--border)" }} />
-                  ))}
-                </div>
-                <div>
-                  <div className="font-hook text-[11px] font-bold uppercase text-thread">{r.title}</div>
-                  <div className="mt-2 h-[2px] bg-line">
-                    <div className="h-full w-1/3 bg-thread" />
-                  </div>
-                </div>
-              </div>
+            {REELS.map((r, n) => (
+              <ReelMock key={r.id} r={r} width={172} height={TILE} liked={n === i} />
             ))}
           </motion.div>
         </div>

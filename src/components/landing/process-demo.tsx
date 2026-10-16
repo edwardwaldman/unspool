@@ -1,10 +1,11 @@
 "use client";
 
-import { Check, FileText, Heart, Plus } from "lucide-react";
+import { Check, FileText, Plus } from "lucide-react";
 import { useMotionValueEvent, type MotionValue } from "motion/react";
 import { useEffect, useState } from "react";
 import { SAMPLE_SPOOL } from "@/lib/sample";
 import { useMedia } from "../ui/use-media";
+import { ReelMock } from "./reel-mock";
 
 // Stage is drawn at 900×520 and scaled to fit.
 const W = 900;
@@ -108,26 +109,12 @@ function Stage({ p, narrow, h }: { p: number; narrow: boolean; h: number }) {
 
       {id === "reels" && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative w-[250px] border border-ink/60 bg-paper p-[7px]">
-            <div className="relative overflow-hidden border border-line" style={{ height: TILE }}>
+          <div className="relative w-[250px] rounded-[26px] border border-ink/30 bg-black p-[6px]">
+            <div className="relative overflow-hidden rounded-[20px]" style={{ height: TILE }}>
               <div style={{ transform: `translateY(${-reelPos * TILE}px)` }}>
-                {REELS.map((r) => (
-                  <div key={r.id} className="flex flex-col justify-between p-4" style={{ height: TILE }}>
-                    <div>
-                      <div className="font-mono text-[10px] text-muted">{r.index}/{REELS.length}</div>
-                      <div className="mt-2 font-hook text-[18px] font-extrabold leading-[1.12]">{r.hook}</div>
-                    </div>
-                    <div className="grid grid-cols-8 gap-[7px] self-center">
-                      {Array.from({ length: 40 }, (_, k) => (
-                        <span key={k} className="h-[5px] w-[5px] rounded-full" style={{ background: (k * 7 + r.index) % 5 === 0 ? "var(--thread)" : "var(--border)" }} />
-                      ))}
-                    </div>
-                    <div className="font-hook text-[13px] font-bold uppercase text-thread">{r.title}</div>
-                  </div>
+                {REELS.map((r, n) => (
+                  <ReelMock key={r.id} r={r} width={238} height={TILE} liked={n === reelIdx && Math.abs(reelPos - reelIdx) < 0.12} />
                 ))}
-              </div>
-              <div className="absolute bottom-16 right-4 text-thread" style={{ opacity: Math.abs(reelPos - reelIdx) < 0.12 ? 1 : 0, transition: "opacity .2s" }}>
-                <Heart size={22} fill="currentColor" strokeWidth={0} />
               </div>
             </div>
           </div>
