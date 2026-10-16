@@ -53,7 +53,6 @@ function UploadButton() {
       >
         {pending ? "Opening your feed" : (<><UploadIcon size={22} /> Upload a document</>)}
       </button>
-      <p className="text-[13px] text-muted">Your first reel is free. No card needed.</p>
     </>
   );
 }
@@ -140,7 +139,7 @@ export function Landing() {
         {/* Diagonal sticker riding on the headline */}
         <motion.span
           aria-hidden
-          className="absolute -top-8 right-0 rotate-[8deg] whitespace-nowrap border border-thread bg-paper px-2 py-0.5 font-hook text-[10px] font-bold uppercase tracking-wide text-thread lg:-right-40 lg:top-12 lg:px-3 lg:py-1 lg:text-[14px]"
+          className="absolute -top-8 right-0 rotate-[8deg] whitespace-nowrap rounded-[3px] bg-thread px-2 py-0.5 font-hook text-[10px] font-extrabold uppercase tracking-wide text-paper shadow-[3px_3px_0_var(--coral)] lg:-right-40 lg:top-12 lg:px-3 lg:py-1 lg:text-[14px]"
           initial={{ opacity: 0, scale: 0.6, rotate: 0 }}
           animate={{ opacity: 1, scale: 1, rotate: 8 }}
           transition={{ delay: 0.5, type: "spring", stiffness: 260, damping: 14 }}
