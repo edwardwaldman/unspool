@@ -177,23 +177,6 @@ export function Landing() {
               </span>
             </span>
           </motion.button>
-          {/* Mouse with a scrolling wheel */}
-          <motion.div
-            aria-hidden
-            className="flex flex-col items-center gap-2 text-muted"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.6, duration: 0.6 }}
-          >
-            <span className="relative h-11 w-6 rounded-full border-2 border-muted/70">
-              <motion.span
-                className="absolute left-1/2 top-2 h-2 w-1 -translate-x-1/2 rounded-full bg-thread"
-                animate={{ y: [0, 14, 0], opacity: [1, 0.2, 1] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-              />
-            </span>
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em]">Scroll</span>
-          </motion.div>
           </motion.div>
         </div>
       </div>
