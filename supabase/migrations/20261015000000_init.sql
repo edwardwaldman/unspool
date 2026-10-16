@@ -33,6 +33,8 @@ begin
 end;
 $$;
 
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
@@ -121,6 +123,8 @@ begin
   return new;
 end;
 $$;
+
+revoke execute on function public.touch_updated_at() from public, anon, authenticated;
 
 drop trigger if exists profiles_touch on public.profiles;
 create trigger profiles_touch before update on public.profiles
