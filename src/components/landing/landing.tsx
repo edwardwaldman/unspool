@@ -129,8 +129,8 @@ export function Landing() {
   return (
     <div>
     <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-[safe_center] gap-6 overflow-hidden px-3 pb-10 pt-20 lg:gap-6 lg:px-6 lg:pb-16 lg:pt-24">
-      {/* Phones: a plain wordmark until the top bar slides in */}
-      <Link href="/" aria-label="unspool" className="absolute left-5 top-5 lg:hidden">
+      {/* Wordmark under the top bar: the bar slides down over it on scroll */}
+      <Link href="/" aria-label="unspool" className="absolute left-5 top-5 lg:left-10 lg:top-[22px]">
         <Wordmark size={24} />
       </Link>
       {/* Parallax: each layer leaves at its own speed as you scroll */}
