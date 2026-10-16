@@ -143,28 +143,35 @@ export function Landing() {
         </motion.div>
         <UploadButton />
       </div>
-      {/* Scroll cue */}
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute bottom-5 left-1/2 z-20 hidden -translate-x-1/2 flex-col items-center gap-2 text-muted lg:flex"
+      {/* Scroll cue: a spinning "see how it works" badge with a bouncing arrow */}
+      <motion.button
+        type="button"
+        aria-label="See how it works"
+        onClick={(e) => e.currentTarget.closest("main")?.scrollBy({ top: window.innerHeight * 0.9, behavior: "smooth" })}
+        className="absolute bottom-6 left-1/2 z-20 -translate-x-1/2 lg:bottom-12 lg:left-auto lg:right-14 lg:translate-x-0"
         style={{ opacity: cueFade }}
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ delay: 1.2, type: "spring", stiffness: 220, damping: 14 }}
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.94 }}
       >
-        <motion.div
-          className="flex flex-col items-center gap-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.6, duration: 0.6 }}
-        >
-        <span className="relative h-9 w-5 rounded-full border border-muted/60">
-          <motion.span
-            className="absolute left-1/2 top-1.5 h-1.5 w-1 -translate-x-1/2 rounded-full bg-thread"
-            animate={{ y: [0, 12, 0], opacity: [1, 0.2, 1] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-          />
+        <span className="relative flex h-[92px] w-[92px] items-center justify-center lg:h-[112px] lg:w-[112px]">
+          <motion.svg viewBox="0 0 100 100" className="absolute inset-0" animate={{ rotate: 360 }} transition={{ duration: 14, repeat: Infinity, ease: "linear" }}>
+            <defs>
+              <path id="cue-ring" d="M50 50 m-38 0 a38 38 0 1 1 76 0 a38 38 0 1 1 -76 0" />
+            </defs>
+            <text className="fill-ink font-mono uppercase" style={{ fontSize: 9.6 }}>
+              <textPath href="#cue-ring" textLength="236" lengthAdjust="spacing">see how it works · see how it works ·</textPath>
+            </text>
+          </motion.svg>
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-thread text-paper lg:h-12 lg:w-12">
+            <motion.svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" animate={{ y: [-3, 4, -3] }} transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}>
+              <path d="M12 4v15M5 12l7 7 7-7" />
+            </motion.svg>
+          </span>
         </span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em]">Scroll</span>
-      </motion.div>
-      </motion.div>
+      </motion.button>
     </div>
       <InfoSlide />
       <SiteFooter />
