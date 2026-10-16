@@ -80,7 +80,7 @@ function BigUpload() {
           if (f) void upload(f);
         }}
       />
-      <div className="relative mx-auto w-fit py-16 md:px-40">
+      <div className="relative mx-auto w-fit py-10 md:px-40 md:py-16">
         <Float className="left-0 top-2 -rotate-6" delay={0}>.pdf</Float>
         <Float className="right-4 top-0 rotate-3" delay={0.4}>.docx</Float>
         <Float className="bottom-4 left-10 rotate-2" delay={0.8}>×10 reels</Float>
@@ -105,9 +105,9 @@ function BigUpload() {
         <button
           type="button"
           onClick={() => pickFileWithAuth(() => input.current?.click())}
-          className="relative z-10 mx-auto flex items-center justify-center gap-4 bg-thread px-16 py-8 text-[28px] md:px-24 md:py-10 md:text-[36px] font-medium text-paper transition-opacity hover:opacity-90"
+          className="relative z-10 mx-auto flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-8 py-6 text-[20px] md:gap-4 md:px-24 md:py-10 md:text-[36px] font-medium text-paper transition-opacity hover:opacity-90"
         >
-          <UploadIcon size={36} /> Upload a document
+          <UploadIcon size={28} /> Upload a document
         </button>
       </div>
     </>

@@ -2,7 +2,7 @@
 
 import { Check, FileText, Heart, Plus } from "lucide-react";
 import { useMotionValueEvent, type MotionValue } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SAMPLE_SPOOL } from "@/lib/sample";
 import { useMedia } from "../ui/use-media";
 
@@ -39,16 +39,18 @@ function cursorFor(id: SceneId, t: number) {
   return { x: 470, y: 380 - Math.sin(local * Math.PI) * 160, press: local > 0.1 && local < 0.9 };
 }
 
-function Stage({ p }: { p: number }) {
+function Stage({ p, narrow, h }: { p: number; narrow: boolean; h: number }) {
   const { id, t } = sceneAt(p);
-  const c = cursorFor(id, t);
+  const raw = cursorFor(id, t);
+  // Cursor paths are authored for the 900px stage; squeeze them toward the centre of the phone stage.
+  const c = narrow ? { ...raw, x: (raw.x - 450) * 0.4 + 180, y: (raw.y - 240) * 0.85 + (h - 40) / 2 } : raw;
   const loaded = id === "load" ? Math.round(t * 10) : id === "reels" ? 10 : 0;
   const stage = loaded < 3 ? 0 : loaded < 7 ? 1 : loaded < 10 ? 2 : 3;
   const reelPos = id === "reels" ? t * (REELS.length - 1) : 0;
   const reelIdx = Math.round(reelPos);
 
   return (
-    <div className="relative" style={{ height: H - 40 }}>
+    <div className="relative" style={{ height: h - 40 }}>
       {(id === "plus" || id === "pick") && (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <div className="flex h-24 w-24 items-center justify-center bg-ink text-paper" style={{ transform: `scale(${id === "plus" && c.press ? 0.9 : 1})`, transition: "transform .15s" }}>
@@ -60,8 +62,8 @@ function Stage({ p }: { p: number }) {
 
       {id === "pick" && (
         <div
-          className="absolute left-1/2 top-1/2 z-20 w-[380px] border border-line bg-paper"
-          style={{ transform: `translate(-50%, calc(-50% + ${lerp(20, 0, t / 0.3)}px))`, opacity: lerp(0, 1, t / 0.3) }}
+          className="absolute left-1/2 top-1/2 z-20 border border-line bg-paper"
+          style={{ width: narrow ? 300 : 380, transform: `translate(-50%, calc(-50% + ${lerp(20, 0, t / 0.3)}px))`, opacity: lerp(0, 1, t / 0.3) }}
         >
           <div className="label border-b border-line px-4 py-2.5">Choose a file</div>
           {FILES.map((f, i) => (
@@ -86,8 +88,8 @@ function Stage({ p }: { p: number }) {
             <FileText size={18} strokeWidth={1.5} />
             <span className="font-mono text-[13px]">unit-3-notes.pdf</span>
           </div>
-          <div className="mt-5 font-display text-[40px] leading-none">Unspooling your doc</div>
-          <div className="mt-8 flex gap-8">
+          <div className={`mt-5 text-center font-display leading-none ${narrow ? "text-[32px]" : "text-[40px]"}`}>Unspooling your doc</div>
+          <div className={`mt-8 flex ${narrow ? "flex-col gap-3" : "gap-8"}`}>
             {STAGES.map((s, i) => (
               <div key={s} className="flex items-center gap-2 text-[14px]" style={{ color: i < stage ? "var(--ink)" : i === stage ? "var(--thread)" : "var(--muted)" }}>
                 {i < stage ? <Check size={14} strokeWidth={2} /> : <span className="font-mono text-[11px]">0{i + 1}</span>}
@@ -95,7 +97,7 @@ function Stage({ p }: { p: number }) {
               </div>
             ))}
           </div>
-          <div className="mt-8 grid w-[460px] grid-cols-10 gap-1.5">
+          <div className="mt-8 grid grid-cols-10 gap-1.5" style={{ width: narrow ? 280 : 460 }}>
             {Array.from({ length: 10 }, (_, i) => (
               <div key={i} className="h-2" style={{ background: i < loaded ? "var(--thread)" : "var(--border)" }} />
             ))}
@@ -129,12 +131,12 @@ function Stage({ p }: { p: number }) {
               </div>
             </div>
           </div>
-          <div className="absolute right-16 top-1/2 -translate-y-1/2 text-right">
-            <div className="font-mono text-[44px] leading-none text-thread">
+          <div className={narrow ? "absolute right-3 top-3 text-right" : "absolute right-16 top-1/2 -translate-y-1/2 text-right"}>
+            <div className={`font-mono leading-none text-thread ${narrow ? "text-[22px]" : "text-[44px]"}`}>
               {reelIdx + 1}
               <span className="text-muted">/10</span>
             </div>
-            <div className="label mt-2">Keep scrolling</div>
+            {!narrow && <div className="label mt-2">Keep scrolling</div>}
           </div>
         </div>
       )}
@@ -156,21 +158,36 @@ export function ProcessDemo({ progress }: { progress: MotionValue<number> }) {
   useMotionValueEvent(progress, "change", (v) => setP(v));
   const lg = useMedia("(min-width: 1024px)");
   const md = useMedia("(min-width: 640px)");
-  const k = lg ? 1.05 : md ? 0.7 : 0.38;
+  const narrow = !md;
+  const vw = useViewportWidth();
+  const w = narrow ? 360 : W;
+  const h = narrow ? 600 : H;
+  const k = lg ? 1.05 : md ? 0.7 : Math.min(1, (vw - 32) / w);
 
   return (
-    <div className="mx-auto" style={{ width: W * k }} aria-hidden>
-      <div style={{ width: W * k, height: H * k }}>
-        <div className="relative origin-top-left overflow-hidden border border-line bg-surface" style={{ width: W, height: H, transform: `scale(${k})` }}>
+    <div className="mx-auto" style={{ width: w * k }} aria-hidden>
+      <div style={{ width: w * k, height: h * k }}>
+        <div className="relative origin-top-left overflow-hidden border border-line bg-surface" style={{ width: w, height: h, transform: `scale(${k})` }}>
           <div className="flex h-10 items-center gap-2 border-b border-line px-4">
             <span className="h-2.5 w-2.5 rounded-full bg-line" />
             <span className="h-2.5 w-2.5 rounded-full bg-line" />
             <span className="h-2.5 w-2.5 rounded-full bg-line" />
             <span className="ml-4 font-mono text-[11px] text-muted">unspool.cc</span>
           </div>
-          <Stage p={p} />
+          <Stage p={p} narrow={narrow} h={h} />
         </div>
       </div>
     </div>
   );
+}
+
+function useViewportWidth() {
+  const [vw, setVw] = useState(390);
+  useEffect(() => {
+    const on = () => setVw(window.innerWidth);
+    on();
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, []);
+  return vw;
 }
