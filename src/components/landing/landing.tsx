@@ -53,7 +53,7 @@ function UploadButton() {
       >
         {pending ? "Opening your feed" : (<><UploadIcon size={22} /> Upload a document</>)}
       </button>
-      <p className="-mt-3 text-[13px] text-muted lg:-mt-2">Your first reel is free. No card needed.</p>
+      <p className="text-[13px] text-muted">Your first reel is free. No card needed.</p>
     </>
   );
 }
@@ -122,7 +122,7 @@ export function Landing() {
   const animScale = useTransform(scrollY, [0, 700], [1, 0.88]);
   const animFade = useTransform(scrollY, [250, 750], [1, 0.2]);
   const cueFade = useTransform(scrollY, [0, 60], [1, 0]);
-  const k = lg ? Math.max(1, Math.min(2.8, (vh - 370) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 330) / ANIM_H));
+  const k = lg ? Math.max(1, Math.min(2.8, (vh - 420) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
 
   return (
     <div>
@@ -141,37 +141,41 @@ export function Landing() {
             <DocToReel />
           </div>
         </motion.div>
-        <UploadButton />
+        <div className="flex flex-col items-center gap-2 lg:flex-row lg:gap-10">
+          <div className="flex flex-col items-center gap-3">
+            <UploadButton />
+          </div>
+          {/* Scroll cue: a spinning "see how it works" badge with a bouncing arrow */}
+          <motion.button
+            type="button"
+            aria-label="See how it works"
+            onClick={(e) => e.currentTarget.closest("main")?.scrollBy({ top: window.innerHeight * 0.9, behavior: "smooth" })}
+            className="shrink-0"
+            style={{ opacity: cueFade }}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 1.2, type: "spring", stiffness: 220, damping: 14 }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.94 }}
+          >
+            <span className="relative flex h-[124px] w-[124px] items-center justify-center lg:h-[140px] lg:w-[140px]">
+              <motion.svg viewBox="0 0 100 100" className="absolute inset-0" animate={{ rotate: 360 }} transition={{ duration: 14, repeat: Infinity, ease: "linear" }}>
+                <defs>
+                  <path id="cue-ring" d="M50 50 m-38 0 a38 38 0 1 1 76 0 a38 38 0 1 1 -76 0" />
+                </defs>
+                <text className="fill-ink font-mono uppercase" style={{ fontSize: 9.6 }}>
+                  <textPath href="#cue-ring" textLength="236" lengthAdjust="spacing">see how it works · see how it works ·</textPath>
+                </text>
+              </motion.svg>
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-thread text-paper lg:h-16 lg:w-16">
+                <motion.svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" animate={{ y: [-3, 4, -3] }} transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}>
+                  <path d="M12 4v15M5 12l7 7 7-7" />
+                </motion.svg>
+              </span>
+            </span>
+          </motion.button>
+        </div>
       </div>
-      {/* Scroll cue: a spinning "see how it works" badge with a bouncing arrow */}
-      <motion.button
-        type="button"
-        aria-label="See how it works"
-        onClick={(e) => e.currentTarget.closest("main")?.scrollBy({ top: window.innerHeight * 0.9, behavior: "smooth" })}
-        className="absolute bottom-6 left-1/2 z-20 -translate-x-1/2 lg:bottom-12 lg:left-auto lg:right-14 lg:translate-x-0"
-        style={{ opacity: cueFade }}
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 1.2, type: "spring", stiffness: 220, damping: 14 }}
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.94 }}
-      >
-        <span className="relative flex h-[92px] w-[92px] items-center justify-center lg:h-[112px] lg:w-[112px]">
-          <motion.svg viewBox="0 0 100 100" className="absolute inset-0" animate={{ rotate: 360 }} transition={{ duration: 14, repeat: Infinity, ease: "linear" }}>
-            <defs>
-              <path id="cue-ring" d="M50 50 m-38 0 a38 38 0 1 1 76 0 a38 38 0 1 1 -76 0" />
-            </defs>
-            <text className="fill-ink font-mono uppercase" style={{ fontSize: 9.6 }}>
-              <textPath href="#cue-ring" textLength="236" lengthAdjust="spacing">see how it works · see how it works ·</textPath>
-            </text>
-          </motion.svg>
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-thread text-paper lg:h-12 lg:w-12">
-            <motion.svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" animate={{ y: [-3, 4, -3] }} transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}>
-              <path d="M12 4v15M5 12l7 7 7-7" />
-            </motion.svg>
-          </span>
-        </span>
-      </motion.button>
     </div>
       <InfoSlide />
       <SiteFooter />
