@@ -80,13 +80,51 @@ function BigUpload() {
           if (f) void upload(f);
         }}
       />
-      <button
-        type="button"
-        onClick={() => pickFileWithAuth(() => input.current?.click())}
-        className="mx-auto flex items-center justify-center gap-4 bg-thread px-16 py-8 text-[28px] md:px-24 md:py-10 md:text-[36px] font-medium text-paper transition-opacity hover:opacity-90"
-      >
-        <UploadIcon size={36} /> Upload a document
-      </button>
+      <div className="relative mx-auto w-fit py-16 md:px-40">
+        <Float className="left-0 top-2 -rotate-6" delay={0}>.pdf</Float>
+        <Float className="right-4 top-0 rotate-3" delay={0.4}>.docx</Float>
+        <Float className="bottom-4 left-10 rotate-2" delay={0.8}>×10 reels</Float>
+        <Float className="bottom-0 right-0 -rotate-3 border-thread text-thread" delay={1.2}>reel 1 free</Float>
+        {/* hand-drawn "start here" arrow */}
+        <div aria-hidden className="pointer-events-none absolute -top-6 left-1/2 hidden translate-x-[90px] items-end gap-1 md:flex">
+          <span className="mb-6 -rotate-6 font-hook text-[15px] text-thread">start here</span>
+          <svg width="56" height="48" viewBox="0 0 56 48" className="overflow-visible">
+            <motion.path
+              d="M50 4 C 44 22, 30 34, 10 40 M10 40 L 20 32 M10 40 L 21 45"
+              fill="none"
+              stroke="var(--thread)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              initial={{ pathLength: 0 }}
+              whileInView={{ pathLength: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.9, delay: 0.3, ease: "easeInOut" }}
+            />
+          </svg>
+        </div>
+        <button
+          type="button"
+          onClick={() => pickFileWithAuth(() => input.current?.click())}
+          className="relative z-10 mx-auto flex items-center justify-center gap-4 bg-thread px-16 py-8 text-[28px] md:px-24 md:py-10 md:text-[36px] font-medium text-paper transition-opacity hover:opacity-90"
+        >
+          <UploadIcon size={36} /> Upload a document
+        </button>
+      </div>
     </>
+  );
+}
+
+function Float({ children, className, delay }: { children: React.ReactNode; className: string; delay: number }) {
+  return (
+    <motion.span
+      aria-hidden
+      className={`absolute hidden border border-line bg-paper px-2.5 py-1 font-mono text-[12px] text-muted md:block ${className}`}
+      initial={{ opacity: 0, y: 8 }}
+      whileInView={{ opacity: 1, y: [0, -6, 0] }}
+      viewport={{ once: true }}
+      transition={{ opacity: { delay, duration: 0.5 }, y: { delay, duration: 4, repeat: Infinity, ease: "easeInOut" } }}
+    >
+      {children}
+    </motion.span>
   );
 }
