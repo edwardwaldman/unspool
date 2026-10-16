@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useTransform } from "motion/react";
+import { motion, useSpring, useTransform } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { ProcessDemo } from "./process-demo";
 import { useMainScroll } from "./use-main-scroll";
@@ -36,11 +36,13 @@ export function InfoSlide() {
     return () => window.removeEventListener("resize", measure);
   }, []);
 
-  const progress = useTransform(scrollY, range, [0, 1], { clamp: true });
+  const raw = useTransform(scrollY, range, [0, 1], { clamp: true });
+  // Smooth the scrub so fast flicks still play out gently.
+  const progress = useSpring(raw, { stiffness: 60, damping: 22, mass: 0.6 });
 
   return (
     <>
-      <section ref={track} className="relative border-t border-line" style={{ height: "320dvh" }}>
+      <section ref={track} className="relative border-t border-line" style={{ height: "650dvh" }}>
         <div className="sticky top-0 flex h-[100dvh] items-center justify-center px-6">
           <ProcessDemo progress={progress} />
         </div>
