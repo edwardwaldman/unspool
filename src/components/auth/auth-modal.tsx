@@ -6,6 +6,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "../ui/toast";
 import { closeAuth, setAuthMode, useAuthModal } from "./auth-store";
+import { markSignedIn } from "./use-session";
 
 function GoogleG() {
   return (
@@ -55,7 +56,8 @@ export function AuthModal() {
 
   if (!open) return null;
   const signup = mode === "signup";
-  const callback = () => `${window.location.origin}/auth/callback?next=${encodeURIComponent(next ?? window.location.pathname)}`;
+  const callback = (to?: string) =>
+    `${window.location.origin}/auth/callback?next=${encodeURIComponent(to ?? next ?? window.location.pathname + window.location.search)}`;
   const switchMode = (m: "signup" | "login") => {
     setErr(null);
     setSent(null);
@@ -88,21 +90,27 @@ export function AuthModal() {
       setBusy(false);
       if (error) return setErr(error.message);
       if (!data.session) return setSent(email.trim());
+      if (data.user) markSignedIn({ id: data.user.id, email: data.user.email ?? null });
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       setBusy(false);
       if (error) return setErr(error.message === "Invalid login credentials" ? "Wrong email or password." : error.message);
+      if (data.user) markSignedIn({ id: data.user.id, email: data.user.email ?? null });
     }
-    // Attach any anonymous uploads from this browser to the account.
-    await fetch("/api/auth/claim", { method: "POST" }).catch(() => undefined);
+    setPassword("");
+    setConfirm("");
     closeAuth();
     toast(signup ? "Account created" : "Signed in");
-    onDone?.();
+    // Attach any anonymous uploads from this browser to the account, then continue what the visitor was doing.
+    // onDone runs right away so it can still open the file picker inside the click's user activation.
+    const claim = fetch("/api/auth/claim", { method: "POST" }).catch(() => undefined);
+    if (onDone) onDone();
+    else void claim.then(() => window.location.reload());
   };
 
   const forgot = async () => {
     if (!email.trim()) return setErr("Enter your email first.");
-    const { error } = await createClient().auth.resetPasswordForEmail(email.trim(), { redirectTo: callback() });
+    const { error } = await createClient().auth.resetPasswordForEmail(email.trim(), { redirectTo: callback("/profile?reset=1") });
     if (error) setErr(error.message);
     else toast("Password reset link sent");
   };

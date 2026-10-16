@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { AuthModal } from "../auth/auth-modal";
+import { Toaster } from "../ui/toast";
 import { Wordmark } from "../ui/icons";
 
 /** Scrolling layout for marketing and legal pages. */
@@ -12,6 +14,9 @@ export function MarketingPage({ children }: { children: React.ReactNode }) {
         <nav className="flex items-center gap-6 text-[14px] text-muted">
           <Link href="/about" className="hidden hover:text-ink sm:inline">
             How it works
+          </Link>
+          <Link href="/library" className="hidden hover:text-ink sm:inline">
+            Library
           </Link>
           <Link href="/pricing" className="hover:text-ink">
             Pricing
@@ -28,6 +33,8 @@ export function MarketingPage({ children }: { children: React.ReactNode }) {
         <Link href="/terms" className="hover:text-ink">Terms</Link>
         <Link href="/pricing" className="hover:text-ink">Pricing</Link>
       </footer>
+      <AuthModal />
+      <Toaster />
     </div>
   );
 }

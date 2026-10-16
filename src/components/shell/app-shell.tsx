@@ -5,8 +5,9 @@ import { useRef, useState } from "react";
 import { GridIcon, HomeIcon, PlusIcon, ReelsIcon, UserIcon, Wordmark } from "../ui/icons";
 import { AuthModal } from "../auth/auth-modal";
 import { openAuth } from "../auth/auth-store";
+import { useSessionUser } from "../auth/use-session";
 import { Toaster } from "../ui/toast";
-import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
+import { FILE_ACCEPT, pickFileWithAuth, useUploader } from "../upload/use-uploader";
 
 const TOP_LINKS: [string, string, string][] = [
   ["about", "/about", "How it works"],
@@ -33,7 +34,7 @@ function useFilePicker() {
       }}
     />
   );
-  return { open: () => input.current?.click(), el, upload };
+  return { open: () => pickFileWithAuth(() => input.current?.click()), el, upload };
 }
 
 
@@ -43,6 +44,7 @@ function useFilePicker() {
  */
 export function AppShell({ active, children, feed = false }: { active: NavKey; children: React.ReactNode; feed?: boolean }) {
   const picker = useFilePicker();
+  const user = useSessionUser();
   const [dragging, setDragging] = useState(false);
   // The top bar stays out of the way until the visitor scrolls (or tries to).
   const [barShown, setBarShown] = useState(false);
@@ -95,12 +97,25 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2 md:ml-6">
-          <button type="button" onClick={() => openAuth("login")} className="px-3 py-2 text-[14px] text-muted hover:text-ink">
-            Log in
-          </button>
-          <button type="button" onClick={() => openAuth("signup")} className="btn-primary px-4 py-2 text-[14px]">
-            Sign up
-          </button>
+          {user ? (
+            <>
+              <Link href="/library" className="px-3 py-2 text-[14px] text-muted hover:text-ink">
+                Library
+              </Link>
+              <Link href="/profile" className="btn-secondary px-4 py-2 text-[14px]">
+                Account
+              </Link>
+            </>
+          ) : user === false ? (
+            <>
+              <button type="button" onClick={() => openAuth("login")} className="px-3 py-2 text-[14px] text-muted hover:text-ink">
+                Log in
+              </button>
+              <button type="button" onClick={() => openAuth("signup")} className="btn-primary px-4 py-2 text-[14px]">
+                Sign up
+              </button>
+            </>
+          ) : null}
         </div>
       </header>
 

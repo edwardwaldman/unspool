@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import { CheckoutReturn, SignInButtons } from "@/components/shell/account-actions";
 import { AppShell } from "@/components/shell/app-shell";
 import { LibraryGrid, type LibraryItem } from "@/components/spool/library-grid";
 import { isUnlocked } from "@/lib/access";
@@ -49,6 +51,9 @@ export default async function LibraryPage() {
 
   return (
     <AppShell active="library">
+      <Suspense>
+        <CheckoutReturn />
+      </Suspense>
       <div className="mx-auto max-w-[720px]">
         <header className="px-5 pb-6 pt-10">
           <div className="label">{viewer?.email ?? "Not signed in"}</div>
@@ -68,6 +73,12 @@ export default async function LibraryPage() {
                 Sign in to keep them.
               </Link>
             </p>
+          )}
+          {!viewer?.userId && items.length === 0 && supabaseConfigured && (
+            <div className="mt-6">
+              <p className="text-[14px] text-muted">Create a free account to unspool a document. Your first reel is free.</p>
+              <SignInButtons next="/library" />
+            </div>
           )}
         </header>
         <LibraryGrid initial={items} />

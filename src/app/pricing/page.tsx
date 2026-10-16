@@ -63,7 +63,7 @@ export default function PricingPage() {
           name="Free"
           price="$0"
           note={`${LIMITS.freeUploadsPerDay} documents a day`}
-          items={["Reel 1 of every document", "All 10 titles and hooks", "No account needed"]}
+          items={["Reel 1 of every document", "All 10 titles and hooks", "Free account, no card"]}
         >
           <Link href="/" className="btn-secondary w-full py-3 text-[14px]">
             Upload a document

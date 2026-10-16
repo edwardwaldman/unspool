@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { openAuth } from "../auth/auth-store";
 
 export function LoginForm({ next, error }: { next: string; error?: string }) {
   const [email, setEmail] = useState("");
@@ -59,6 +60,13 @@ export function LoginForm({ next, error }: { next: string; error?: string }) {
               {busy ? "Sending" : "Email me a sign-in link"}
             </button>
           </form>
+          <button
+            type="button"
+            onClick={() => openAuth("login", { next, onDone: () => (window.location.href = next) })}
+            className="mt-4 w-full text-center text-[13.5px] text-thread hover:underline"
+          >
+            Use email and password
+          </button>
         </>
       )}
       {err && <p className="mt-3 text-center text-[13px] text-coral">{err}</p>}

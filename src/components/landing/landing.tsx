@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { formatPrice, PRICING, supabaseConfigured } from "@/lib/config";
-import { createClient } from "@/lib/supabase/client";
+import { useRef, useSyncExternalStore } from "react";
+import { formatPrice, PRICING } from "@/lib/config";
 import { SAMPLE_SPOOL } from "@/lib/sample";
 import { ReelView } from "../reel/reel-view";
 import { UploadIcon } from "../ui/icons";
 import { useMedia } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
-import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
+import { FILE_ACCEPT, pickFileWithAuth, useUploader } from "../upload/use-uploader";
 import { motion, useTransform } from "motion/react";
-import { openAuth } from "../auth/auth-store";
 import { SiteFooter } from "../shell/site-footer";
 import { DocToReel } from "./doc-to-reel";
 import { InfoSlide } from "./info-slide";
@@ -31,32 +29,11 @@ function useViewport(dim: "innerHeight" | "innerWidth", fallback: number) {
   );
 }
 
-/** Signed in? null while checking. */
-function useSignedIn(): [boolean | null, (v: boolean) => void] {
-  const [signedIn, setSignedIn] = useState<boolean | null>(null);
-  useEffect(() => {
-    if (!supabaseConfigured) {
-      const t = setTimeout(() => setSignedIn(false), 0);
-      return () => clearTimeout(t);
-    }
-    let live = true;
-    createClient()
-      .auth.getUser()
-      .then((res: { data: { user: unknown } }) => live && setSignedIn(Boolean(res.data.user)))
-      .catch(() => live && setSignedIn(false));
-    return () => {
-      live = false;
-    };
-  }, []);
-  return [signedIn, setSignedIn];
-}
-
 /** Blurred, quietly playing reel acting as a sign-up gate (or the upload button once signed in). */
 function UploadReel({ width, height }: { width: number; height: number }) {
   const input = useRef<HTMLInputElement>(null);
   const upload = useUploader();
   const pending = usePendingUpload();
-  const [signedIn, setSignedIn] = useSignedIn();
   return (
     <div className="relative shrink-0 overflow-hidden border border-line" style={{ width, height }}>
       <div className="pointer-events-none absolute inset-0 scale-105 opacity-40 blur-[7px]" aria-hidden>
@@ -106,8 +83,7 @@ function UploadReel({ width, height }: { width: number; height: number }) {
           <button
             type="button"
             onClick={() => {
-              if (signedIn) input.current?.click();
-              else openAuth("signup", { next: "/", onDone: () => setSignedIn(true) });
+              pickFileWithAuth(() => input.current?.click());
             }}
             disabled={Boolean(pending)}
             className="btn-primary w-full py-4 text-[15px]"

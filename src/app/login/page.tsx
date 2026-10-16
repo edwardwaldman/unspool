@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AuthModal } from "@/components/auth/auth-modal";
 import { LoginForm } from "@/components/shell/login-form";
+import { Toaster } from "@/components/ui/toast";
 import { Wordmark } from "@/components/ui/icons";
 
 export const metadata: Metadata = { title: "Sign in" };
@@ -24,6 +26,8 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           <Link href="/privacy" className="underline underline-offset-2">Privacy Policy</Link>.
         </p>
       </div>
+      <AuthModal />
+      <Toaster />
     </div>
   );
 }

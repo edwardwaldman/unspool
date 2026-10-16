@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { openAuth } from "../auth/auth-store";
 
 export function BillingButton({ mode, label }: { mode: "portal" | "subscribe"; label?: string }) {
   const [busy, setBusy] = useState(false);
@@ -10,7 +11,7 @@ export function BillingButton({ mode, label }: { mode: "portal" | "subscribe"; l
       <button
         type="button"
         disabled={busy}
-        onClick={async () => {
+        onClick={async function go() {
           setBusy(true);
           setErr(null);
           const res = await fetch(mode === "portal" ? "/api/billing/portal" : "/api/checkout", {
@@ -20,8 +21,11 @@ export function BillingButton({ mode, label }: { mode: "portal" | "subscribe"; l
           });
           const body = await res.json().catch(() => ({}));
           if (res.ok && body.url) window.location.href = body.url;
-          else {
-            setErr(body.code === "auth" ? "Sign in first." : body.error ?? "Something went wrong.");
+          else if (body.code === "auth") {
+            setBusy(false);
+            openAuth(mode === "subscribe" ? "signup" : "login", { onDone: () => void go() });
+          } else {
+            setErr(body.error ?? "Something went wrong.");
             setBusy(false);
           }
         }}

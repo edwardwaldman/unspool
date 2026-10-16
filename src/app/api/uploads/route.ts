@@ -17,7 +17,8 @@ export async function POST(req: Request) {
   if (!size || size > MAX_FILE_BYTES) return error(400, "Files must be under 25 MB.");
 
   const viewer = await getViewer();
-  if (!viewer.userId && !viewer.anonToken) return error(400, "Missing session. Refresh and try again.");
+  // A free account is required to unspool: it's what the free reel (and any purchase) is tied to.
+  if (!viewer.userId) return error(401, "Create a free account to unspool your document.", { code: "auth" });
   const ipHash = await clientIpHash();
   const db = adminClient();
 

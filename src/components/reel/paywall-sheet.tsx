@@ -5,6 +5,7 @@ import { useState } from "react";
 import { formatPrice, PRICING } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import type { SpoolDTO, ViewerDTO } from "@/lib/spool-types";
+import { openAuth } from "../auth/auth-store";
 import { Sheet } from "../ui/sheet";
 
 export type CheckoutKind = "document" | "subscription";
@@ -23,7 +24,7 @@ export async function startCheckout(kind: CheckoutKind, documentId: string, reel
   return body.error ?? "Couldn't open checkout.";
 }
 
-/** "Unlock all 10 reels" → sign in (Google / magic link) → Stripe Checkout → back to the same reel. */
+/** "Unlock all 10 reels" → sign in (Google / magic link / password) → Stripe Checkout → back to the same reel. */
 export function PaywallSheet({
   open,
   onClose,
@@ -130,6 +131,29 @@ export function PaywallSheet({
                 </button>
               </form>
             </>
+          )}
+          {!sent && (
+            <button
+              type="button"
+              onClick={() => {
+                const kind = wanted;
+                openAuth("login", {
+                  next: nextPath(kind),
+                  onDone: () => {
+                    setBusy(kind);
+                    startCheckout(kind, spool.id, reel).then((e) => {
+                      if (e) {
+                        setErr(e);
+                        setBusy(null);
+                      }
+                    });
+                  },
+                });
+              }}
+              className="mt-4 w-full text-center text-[13.5px] text-thread hover:underline"
+            >
+              Use email and password instead
+            </button>
           )}
           <button type="button" onClick={() => setWanted(null)} className="mt-5 w-full text-center text-[13.5px] text-muted">
             Back
