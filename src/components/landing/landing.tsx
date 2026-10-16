@@ -129,7 +129,7 @@ export function Landing() {
 
   return (
     <div>
-    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-3 pb-10 pt-20 lg:gap-6 lg:px-6 lg:pb-24 lg:pt-16">
+    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-center gap-6 overflow-hidden px-3 pb-10 pt-20 lg:gap-6 lg:px-6 lg:pb-24 lg:pt-16">
       {/* Phones: a plain wordmark until the top bar slides in */}
       <Link href="/" aria-label="unspool" className="absolute left-5 top-5 lg:hidden">
         <Wordmark size={24} />
@@ -181,8 +181,11 @@ export function Landing() {
         </div>
       </div>
     </div>
-      <InfoSlide />
-      <SiteFooter />
+      {/* Everything below slides up over the pinned hero like a card */}
+      <div className="relative z-10 rounded-t-[32px] border-t border-line bg-paper shadow-[0_-24px_60px_rgba(0,0,0,0.45)]">
+        <InfoSlide />
+        <SiteFooter />
+      </div>
     </div>
   );
 }

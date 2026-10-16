@@ -36,24 +36,26 @@ export function InfoSlide() {
   const smooth = useSpring(raw, { stiffness: 60, damping: 22, mass: 0.6 });
   // The demo plays over the first 85% of the track; the rest holds the last frame and eases it out.
   const progress = useTransform(smooth, [0, 0.85], [0, 1], { clamp: true });
-  const exitOpacity = useTransform(smooth, [0.88, 1], [1, 0]);
-  const exitScale = useTransform(smooth, [0.88, 1], [1, 0.92]);
-  const exitY = useTransform(smooth, [0.88, 1], [0, -60]);
+  // Then the demo slides up and away, handing off to the upload section below.
+  const exitOpacity = useTransform(smooth, [0.94, 1], [1, 0]);
+  const exitScale = useTransform(smooth, [0.86, 1], [1, 0.96]);
+  const exitY = useTransform(smooth, [0.86, 1], ["0dvh", "-70dvh"]);
 
   return (
     <>
-      <section ref={track} className="relative border-t border-line" style={{ height: "650dvh" }}>
+      <section ref={track} className="relative" style={{ height: "650dvh" }}>
         <div className="sticky top-0 flex h-[100dvh] items-center justify-center px-4 pt-16 lg:px-6 lg:pt-0">
           <motion.div style={{ opacity: exitOpacity, scale: exitScale, y: exitY }}>
             <ProcessDemo progress={progress} />
           </motion.div>
         </div>
       </section>
-      <section className="px-6 pb-24 pt-8">
+      {/* Overlaps the end of the track so it rises in as the demo slides away */}
+      <section className="relative -mt-[60dvh] flex min-h-[80dvh] items-center px-6 pb-16">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.6 }}
+          viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.6, ease }}
           className="mx-auto w-full max-w-[1100px]"
         >
