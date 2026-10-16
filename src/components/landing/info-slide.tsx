@@ -1,4 +1,3 @@
-import { formatPrice, PRICING } from "@/lib/config";
 import { ProcessDemo } from "./process-demo";
 
 
@@ -25,9 +24,6 @@ export function InfoSlide() {
             </div>
           ))}
         </div>
-        <p className="mt-6 text-[13px] text-muted">
-          {formatPrice(PRICING.documentCents)} unlocks all 10 reels for a document, or {formatPrice(PRICING.subscriptionCents)}/month for unlimited.
-        </p>
       </div>
     </section>
   );
