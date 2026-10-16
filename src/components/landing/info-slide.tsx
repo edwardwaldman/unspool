@@ -84,31 +84,21 @@ function BigUpload() {
         <Float className="left-0 top-2 -rotate-6" delay={0}>.pdf</Float>
         <Float className="right-4 top-0 rotate-3" delay={0.4}>.docx</Float>
         <Float className="bottom-4 left-10 rotate-2" delay={0.8}>×10 reels</Float>
+        <Float className="bottom-0 right-6 -rotate-3" delay={1.2}>~60s each</Float>
         {/* hand-drawn "start here" arrow */}
         <div aria-hidden className="pointer-events-none absolute -top-14 left-1/2 hidden translate-x-[80px] items-end gap-1 md:flex">
           <span className="mb-20 -rotate-6 font-hook text-[20px] text-thread">start here</span>
           <svg width="76" height="114" viewBox="0 0 56 84" className="overflow-visible">
             <motion.path
-              d="M48 4 C 50 40, 22 36, 20 78"
+              d="M46 3 C 56 18, 50 30, 38 34 C 26 38, 24 28, 32 26 C 42 24, 40 50, 22 77 M 11 67 C 15 71, 18 74, 22 77 C 25 72, 28 69, 33 66"
               fill="none"
               stroke="var(--thread)"
               strokeWidth="2.5"
               strokeLinecap="round"
-              vectorEffect="non-scaling-stroke"
+              strokeLinejoin="round"
               initial={{ pathLength: 0, opacity: 0 }}
               animate={{ pathLength: [0, 1, 1, 1], opacity: [1, 1, 1, 0] }}
-              transition={{ duration: 3, times: [0, 0.35, 0.85, 1], ease: "easeInOut", repeat: Infinity, repeatDelay: 0.4 }}
-            />
-            <motion.path
-              d="M20 78 L 12 68 M20 78 L 29 69"
-              fill="none"
-              stroke="var(--thread)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              vectorEffect="non-scaling-stroke"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [0, 0, 1, 1, 0] }}
-              transition={{ duration: 3, times: [0, 0.33, 0.36, 0.85, 1], repeat: Infinity, repeatDelay: 0.4 }}
+              transition={{ duration: 3.4, times: [0, 0.4, 0.85, 1], ease: "easeInOut", repeat: Infinity, repeatDelay: 0.4 }}
             />
           </svg>
         </div>
