@@ -86,19 +86,29 @@ function BigUpload() {
         <Float className="bottom-4 left-10 rotate-2" delay={0.8}>×10 reels</Float>
         <Float className="bottom-0 right-6 -rotate-3" delay={1.2}>~60s each</Float>
         {/* hand-drawn "start here" arrow */}
-        <div aria-hidden className="pointer-events-none absolute -top-14 left-1/2 hidden translate-x-[80px] items-end gap-1 md:flex">
-          <span className="mb-20 -rotate-6 font-hook text-[20px] text-thread">start here</span>
-          <svg width="76" height="114" viewBox="0 0 56 84" className="overflow-visible">
+        <div aria-hidden className="pointer-events-none absolute -top-9 left-1/2 hidden translate-x-[70px] items-start gap-1 md:flex">
+          <span className="-rotate-6 font-hook text-[20px] text-thread">start here</span>
+          <svg width="88" height="99" viewBox="0 0 80 90" className="-ml-1 mt-2 overflow-visible">
             <motion.path
-              d="M46 3 C 56 18, 50 30, 38 34 C 26 38, 24 28, 32 26 C 42 24, 40 50, 22 77 M 11 67 C 15 71, 18 74, 22 77 C 25 72, 28 69, 33 66"
+              d="M4 10 C 40 0, 70 20, 60 79"
+              fill="none"
+              stroke="var(--thread)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: [0, 1, 1, 1], opacity: [1, 1, 1, 0] }}
+              transition={{ duration: 3.4, times: [0, 0.35, 0.85, 1], ease: "easeInOut", repeat: Infinity, repeatDelay: 0.4 }}
+            />
+            <motion.path
+              d="M55 68 L 60 80 L 69 71"
               fill="none"
               stroke="var(--thread)"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
               initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: [0, 1, 1, 1], opacity: [1, 1, 1, 0] }}
-              transition={{ duration: 3.4, times: [0, 0.4, 0.85, 1], ease: "easeInOut", repeat: Infinity, repeatDelay: 0.4 }}
+              animate={{ pathLength: [0, 0, 1, 1, 1], opacity: [0, 1, 1, 1, 0] }}
+              transition={{ duration: 3.4, times: [0, 0.35, 0.45, 0.85, 1], ease: "easeOut", repeat: Infinity, repeatDelay: 0.4 }}
             />
           </svg>
         </div>
