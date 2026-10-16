@@ -186,6 +186,7 @@ export function Landing() {
   const animY = useTransform(scrollY, [0, 700], [0, 140]);
   const animScale = useTransform(scrollY, [0, 700], [1, 0.88]);
   const animFade = useTransform(scrollY, [250, 750], [1, 0.2]);
+  const cueFade = useTransform(scrollY, [0, 60], [1, 0]);
   const k = lg ? Math.max(0.9, Math.min(xl ? 2.15 : 1.5, (vh - 190) / ANIM_H, (vw - 340 - 64 - 120) / ANIM_W)) : 0.68;
 
   return (
@@ -208,11 +209,15 @@ export function Landing() {
       {/* Scroll cue */}
       <motion.div
         aria-hidden
-        className="absolute bottom-5 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-muted lg:flex"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.6, duration: 0.6 }}
+        className="pointer-events-none absolute bottom-5 left-1/2 z-20 hidden -translate-x-1/2 flex-col items-center gap-2 text-muted lg:flex"
+        style={{ opacity: cueFade }}
       >
+        <motion.div
+          className="flex flex-col items-center gap-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.6, duration: 0.6 }}
+        >
         <span className="relative h-9 w-5 rounded-full border border-muted/60">
           <motion.span
             className="absolute left-1/2 top-1.5 h-1.5 w-1 -translate-x-1/2 rounded-full bg-thread"
@@ -221,6 +226,7 @@ export function Landing() {
           />
         </span>
         <span className="font-mono text-[10px] uppercase tracking-[0.2em]">Scroll</span>
+      </motion.div>
       </motion.div>
     </div>
       <InfoSlide />
