@@ -33,6 +33,8 @@ export default function PrivacyPage() {
         <p>Files, scripts and audio are stored in private, access-controlled storage (Supabase). The app is hosted on Vercel.</p>
         <h2>Your choices</h2>
         <p>Delete individual documents from the reel menu or your library. To delete your account entirely, contact us and we will remove all associated data.</p>
+        <h2 id="do-not-sell">Do Not Sell My Personal Information</h2>
+        <p>We do not sell or share your personal information. If you want to confirm this or ask us to delete your data, email privacy@unspool.cc.</p>
         <h2>Contact</h2>
         <p>Questions? Email privacy@unspool.cc.</p>
       </article>

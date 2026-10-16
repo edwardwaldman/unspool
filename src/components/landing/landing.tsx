@@ -11,6 +11,7 @@ import { usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { motion } from "motion/react";
 import { openAuth } from "../auth/auth-store";
+import { SiteFooter } from "../shell/site-footer";
 import { DocToReel } from "./doc-to-reel";
 
 // Natural size of the DocToReel animation before scaling.
@@ -144,10 +145,11 @@ export function Landing() {
   const lg = useMedia("(min-width: 1024px)");
   const vh = useViewportHeight();
   // Fit the animation to the screen: as big as width allows, never taller than what's left under the headline.
-  const k = lg ? Math.max(0.9, Math.min(xl ? 1.7 : 1.25, (vh - 200) / ANIM_H)) : 0.68;
+  const k = lg ? Math.max(0.9, Math.min(xl ? 1.7 : 1.25, (vh - 260) / ANIM_H)) : 0.68;
 
   return (
-    <div className="flex flex-col items-center gap-8 px-6 pb-24 pt-14 lg:gap-9 lg:pb-6 lg:pt-12">
+    <div>
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-8 px-6 pb-24 pt-16 lg:gap-9 lg:pb-10 lg:pt-20">
       <Headline />
       <div className="flex flex-col items-center gap-12 lg:flex-row lg:gap-16">
         <UploadReel width={lg ? 340 : 300} height={lg ? ANIM_H * k : 360} />
@@ -157,6 +159,8 @@ export function Landing() {
           </div>
         </div>
       </div>
+    </div>
+      <SiteFooter />
     </div>
   );
 }

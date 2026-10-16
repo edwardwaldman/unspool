@@ -23,7 +23,7 @@ function PasswordField({ label, value, onChange, placeholder, autoComplete }: { 
   return (
     <label className="block">
       <span className="label">{label}</span>
-      <div className="relative mt-2">
+      <div className="relative mt-1.5">
         <input
           type={show ? "text" : "password"}
           required
@@ -32,7 +32,7 @@ function PasswordField({ label, value, onChange, placeholder, autoComplete }: { 
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           autoComplete={autoComplete}
-          className="field w-full px-4 py-3 pr-11 text-[15px]"
+          className="field w-full px-3.5 py-2.5 pr-11 text-[14px]"
         />
         <button type="button" onClick={() => setShow((s) => !s)} aria-label={show ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink">
           {show ? <EyeOff size={16} strokeWidth={1.5} /> : <Eye size={16} strokeWidth={1.5} />}
@@ -48,7 +48,6 @@ export function AuthModal() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [agree, setAgree] = useState(false);
   const [updates, setUpdates] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -77,7 +76,6 @@ export function AuthModal() {
     setErr(null);
     if (signup) {
       if (password !== confirm) return setErr("Passwords don't match.");
-      if (!agree) return setErr("Please confirm you're 16 or older and agree to the Terms.");
     }
     setBusy(true);
     const supabase = createClient();
@@ -112,12 +110,12 @@ export function AuthModal() {
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-paper/80" onClick={closeAuth} />
-      <div role="dialog" aria-modal aria-label={signup ? "Create your account" : "Log in"} className="relative max-h-[94dvh] w-full max-w-[520px] overflow-y-auto border border-line border-t-2 border-t-thread bg-surface px-7 pb-7 pt-10 sm:px-12">
+      <div role="dialog" aria-modal aria-label={signup ? "Create your account" : "Log in"} className="relative max-h-[94dvh] w-full max-w-[440px] overflow-y-auto border border-line border-t-2 border-t-thread bg-surface px-6 pb-6 pt-7 sm:px-9">
         <button type="button" onClick={closeAuth} aria-label="Close" className="absolute right-4 top-4 text-muted hover:text-ink">
           <X size={18} strokeWidth={1.5} />
         </button>
-        <h2 className="text-center font-display text-[32px] leading-tight">{signup ? "Create your account" : "Welcome back"}</h2>
-        <p className="mt-2 text-center text-[14.5px] text-muted">
+        <h2 className="text-center font-display text-[26px] leading-tight">{signup ? "Create your account" : "Welcome back"}</h2>
+        <p className="mt-1 text-center text-[13.5px] text-muted">
           {signup ? "Already have an account? " : "New to Unspool? "}
           <button type="button" onClick={() => switchMode(signup ? "login" : "signup")} className="text-thread hover:underline">
             {signup ? "Log in" : "Create an account"}
@@ -125,18 +123,18 @@ export function AuthModal() {
         </p>
 
         {sent ? (
-          <div className="mt-8 border border-line p-5 text-center text-[14.5px]">
+          <div className="mt-6 border border-line p-4 text-center text-[14.5px]">
             Confirm your email: we sent a link to <span className="text-ink">{sent}</span>.
           </div>
         ) : (
           <>
-            <button type="button" onClick={google} disabled={busy} className="btn-secondary mt-8 w-full py-3 text-[15px]">
+            <button type="button" onClick={google} disabled={busy} className="btn-secondary mt-5 w-full py-2.5 text-[14px]">
               <GoogleG /> Google
             </button>
-            <div className="label my-5 flex items-center gap-3 !text-[10px]">
+            <div className="label my-3.5 flex items-center gap-3 !text-[10px]">
               <div className="h-px flex-1 bg-line" /> Or continue with <div className="h-px flex-1 bg-line" />
             </div>
-            <form onSubmit={submit} className="space-y-5">
+            <form onSubmit={submit} className="space-y-3">
               <label className="block">
                 <span className="label">Email</span>
                 <input
@@ -146,7 +144,7 @@ export function AuthModal() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   autoComplete="email"
-                  className="field mt-2 w-full px-4 py-3 text-[15px]"
+                  className="field mt-1.5 w-full px-3.5 py-2.5 text-[14px]"
                 />
               </label>
               <PasswordField
@@ -159,17 +157,9 @@ export function AuthModal() {
               {signup ? (
                 <>
                   <PasswordField label="Confirm password" value={confirm} onChange={setConfirm} placeholder="Confirm your password" autoComplete="new-password" />
-                  <label className="flex items-start gap-3 text-[13.5px] text-muted">
-                    <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[var(--thread)]" />
-                    <span>
-                      I&apos;m 16 or older and I agree to the{" "}
-                      <Link href="/terms" target="_blank" className="text-ink underline underline-offset-2">Terms of Service</Link> and{" "}
-                      <Link href="/privacy" target="_blank" className="text-ink underline underline-offset-2">Privacy Policy</Link>.
-                    </span>
-                  </label>
-                  <label className="flex items-start gap-3 text-[13.5px] text-muted">
+                  <label className="flex items-start gap-2.5 text-[12.5px] leading-snug text-muted">
                     <input type="checkbox" checked={updates} onChange={(e) => setUpdates(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[var(--thread)]" />
-                    <span>Send me occasional product updates and offers. Optional, and you can unsubscribe at any time.</span>
+                    <span>Send me occasional product updates. Optional.</span>
                   </label>
                 </>
               ) : (
@@ -178,9 +168,16 @@ export function AuthModal() {
                 </button>
               )}
               {err && <p className="text-[13px] text-coral">{err}</p>}
-              <button type="submit" disabled={busy} className="btn-primary w-full py-3.5 text-[15px]">
+              <button type="submit" disabled={busy} className="btn-primary w-full py-3 text-[14.5px]">
                 {busy ? "One moment" : "Continue"}
               </button>
+              {signup && (
+                <p className="text-center text-[12px] text-muted">
+                  By continuing you agree to the{" "}
+                  <Link href="/terms" target="_blank" className="text-ink underline underline-offset-2">Terms</Link> and{" "}
+                  <Link href="/privacy" target="_blank" className="text-ink underline underline-offset-2">Privacy Policy</Link>.
+                </p>
+              )}
             </form>
           </>
         )}

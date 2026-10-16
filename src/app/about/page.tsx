@@ -128,7 +128,7 @@ export default function AboutPage() {
         </Link>
       </section>
 
-      <section className="mt-20 max-w-[760px]">
+      <section id="questions" className="mt-20 max-w-[760px]">
         <div className="label">Questions</div>
         <div className="mt-4 border-t border-line">
           {faqs.map(([q, a]) => (
