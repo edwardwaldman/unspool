@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { supabaseConfigured } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import { SAMPLE_SPOOL } from "@/lib/sample";
@@ -11,14 +10,26 @@ import { useMedia } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { motion } from "motion/react";
+import { openAuth } from "../auth/auth-store";
 import { DocToReel } from "./doc-to-reel";
 
 // Natural size of the DocToReel animation before scaling.
 const ANIM_W = 478;
 const ANIM_H = 336;
 
+function useViewportHeight() {
+  return useSyncExternalStore(
+    (cb) => {
+      window.addEventListener("resize", cb);
+      return () => window.removeEventListener("resize", cb);
+    },
+    () => window.innerHeight,
+    () => 900,
+  );
+}
+
 /** Signed in? null while checking. */
-function useSignedIn() {
+function useSignedIn(): [boolean | null, (v: boolean) => void] {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   useEffect(() => {
     if (!supabaseConfigured) {
@@ -34,7 +45,7 @@ function useSignedIn() {
       live = false;
     };
   }, []);
-  return signedIn;
+  return [signedIn, setSignedIn];
 }
 
 /** Blurred, quietly playing reel acting as a sign-up gate (or the upload button once signed in). */
@@ -42,7 +53,7 @@ function UploadReel({ width, height }: { width: number; height: number }) {
   const input = useRef<HTMLInputElement>(null);
   const upload = useUploader();
   const pending = usePendingUpload();
-  const signedIn = useSignedIn();
+  const [signedIn, setSignedIn] = useSignedIn();
   return (
     <div className="relative shrink-0 overflow-hidden border border-line" style={{ width, height }}>
       <div className="pointer-events-none absolute inset-0 scale-105 opacity-40 blur-[7px]" aria-hidden>
@@ -64,31 +75,20 @@ function UploadReel({ width, height }: { width: number; height: number }) {
         <div className="label">Free to try</div>
         <h2 className="mt-2 font-display text-[30px] leading-[1.05]">Try it yourself for free.</h2>
         <p className="mt-2 text-[14px] leading-snug text-muted">
-          {signedIn ? "Upload a document and get your first reel free." : "Sign up, upload a document, and your first reel is on us."}
+          Upload a document and your first reel is on us.
         </p>
         <div className="mt-5">
-          {signedIn ? (
-            <button
-              type="button"
-              onClick={() => input.current?.click()}
-              disabled={Boolean(pending)}
-              className="btn-primary w-full py-4 text-[15px]"
-            >
-              {pending ? "Opening your feed" : (<><UploadIcon size={17} /> Upload a document</>)}
-            </button>
-          ) : (
-            <>
-              <Link href="/login?mode=signup&next=/" className="btn-primary w-full py-4 text-[15px]">
-                Sign up free
-              </Link>
-              <p className="mt-3 text-center text-[13px] text-muted">
-                Have an account?{" "}
-                <Link href="/login?next=/" className="text-ink underline underline-offset-4">
-                  Log in
-                </Link>
-              </p>
-            </>
-          )}
+          <button
+            type="button"
+            onClick={() => {
+              if (signedIn) input.current?.click();
+              else openAuth("signup", { next: "/", onDone: () => setSignedIn(true) });
+            }}
+            disabled={Boolean(pending)}
+            className="btn-primary w-full py-4 text-[15px]"
+          >
+            {pending ? "Opening your feed" : (<><UploadIcon size={17} /> Upload a document</>)}
+          </button>
         </div>
       </div>
     </div>
@@ -142,10 +142,12 @@ function Headline() {
 export function Landing() {
   const xl = useMedia("(min-width: 1280px)");
   const lg = useMedia("(min-width: 1024px)");
-  const k = xl ? 1.7 : lg ? 1.25 : 0.68;
+  const vh = useViewportHeight();
+  // Fit the animation to the screen: as big as width allows, never taller than what's left under the headline.
+  const k = lg ? Math.max(0.9, Math.min(xl ? 1.7 : 1.25, (vh - 200) / ANIM_H)) : 0.68;
 
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-8 px-6 py-20 lg:gap-10 lg:py-24">
+    <div className="flex flex-col items-center gap-8 px-6 pb-24 pt-14 lg:gap-9 lg:pb-6 lg:pt-12">
       <Headline />
       <div className="flex flex-col items-center gap-12 lg:flex-row lg:gap-16">
         <UploadReel width={lg ? 340 : 300} height={lg ? ANIM_H * k : 360} />

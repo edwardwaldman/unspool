@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { GridIcon, HomeIcon, PlusIcon, ReelsIcon, UserIcon, Wordmark } from "../ui/icons";
+import { AuthModal } from "../auth/auth-modal";
+import { openAuth } from "../auth/auth-store";
 import { Toaster } from "../ui/toast";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 
@@ -78,12 +80,12 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
 
       {/* Log in / Sign up: always in the top right */}
       <div className={`fixed right-5 top-3.5 z-50 items-center gap-2 lg:right-10 ${feed ? "hidden lg:flex" : "flex"}`}>
-        <Link href="/login" className="px-3 py-2 text-[14px] text-muted hover:text-ink">
+        <button type="button" onClick={() => openAuth("login")} className="px-3 py-2 text-[14px] text-muted hover:text-ink">
           Log in
-        </Link>
-        <Link href="/login?mode=signup" className="btn-primary px-4 py-2 text-[14px]">
+        </button>
+        <button type="button" onClick={() => openAuth("signup")} className="btn-primary px-4 py-2 text-[14px]">
           Sign up
-        </Link>
+        </button>
       </div>
 
       {/* Top bar: slides in once you scroll */}
@@ -151,6 +153,7 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
           </div>
         </div>
       )}
+      <AuthModal />
       <Toaster />
     </div>
   );
