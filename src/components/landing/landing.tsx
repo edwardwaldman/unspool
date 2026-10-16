@@ -9,11 +9,12 @@ import { UploadIcon } from "../ui/icons";
 import { useMedia } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
-import { motion } from "motion/react";
+import { motion, useTransform } from "motion/react";
 import { openAuth } from "../auth/auth-store";
 import { SiteFooter } from "../shell/site-footer";
 import { DocToReel } from "./doc-to-reel";
 import { InfoSlide } from "./info-slide";
+import { useMainScroll } from "./use-main-scroll";
 
 // Natural size of the DocToReel animation before scaling.
 const ANIM_W = 478;
@@ -170,19 +171,31 @@ export function Landing() {
   const vh = useViewport("innerHeight", 900);
   const vw = useViewport("innerWidth", 1440);
   // Fit the animation to the screen: as big as width allows, never taller than what's left under the headline.
+  const scrollY = useMainScroll();
+  const headY = useTransform(scrollY, [0, 700], [0, -220]);
+  const headFade = useTransform(scrollY, [0, 450], [1, 0]);
+  const cardY = useTransform(scrollY, [0, 700], [0, -90]);
+  const animY = useTransform(scrollY, [0, 700], [0, 140]);
+  const animScale = useTransform(scrollY, [0, 700], [1, 0.88]);
+  const animFade = useTransform(scrollY, [250, 750], [1, 0.2]);
   const k = lg ? Math.max(0.9, Math.min(xl ? 2.15 : 1.5, (vh - 190) / ANIM_H, (vw - 340 - 64 - 120) / ANIM_W)) : 0.68;
 
   return (
     <div>
     <div className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-8 px-6 pb-24 pt-16 lg:gap-7 lg:pb-8 lg:pt-16">
-      <Headline />
+      {/* Parallax: each layer leaves at its own speed as you scroll */}
+      <motion.div style={{ y: headY, opacity: headFade }}>
+        <Headline />
+      </motion.div>
       <div className="flex flex-col items-center gap-12 lg:flex-row lg:gap-16">
-        <UploadReel width={lg ? 340 : 300} height={lg ? ANIM_H * k : 360} />
-        <div style={{ width: ANIM_W * k, height: ANIM_H * k }}>
+        <motion.div style={{ y: cardY }}>
+          <UploadReel width={lg ? 340 : 300} height={lg ? ANIM_H * k : 360} />
+        </motion.div>
+        <motion.div style={{ width: ANIM_W * k, height: ANIM_H * k, y: animY, scale: animScale, opacity: animFade }}>
           <div className="origin-top-left" style={{ width: ANIM_W, height: ANIM_H, transform: `scale(${k})` }}>
             <DocToReel />
           </div>
-        </div>
+        </motion.div>
       </div>
       {/* Scroll cue */}
       <motion.div

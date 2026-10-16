@@ -1,7 +1,9 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useTransform } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { ProcessDemo } from "./process-demo";
+import { useMainScroll } from "./use-main-scroll";
 
 const FACTS = [
   ["10", "reels per document"],
@@ -12,20 +14,39 @@ const FACTS = [
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-/** Second screen under the hero: the process demo and the numbers, revealed as you scroll in. */
+/**
+ * Scroll-scrubbed section: a tall track with a pinned stage. Scrolling through the track plays the
+ * product flow frame by frame (and rewinds when you scroll back up).
+ */
 export function InfoSlide() {
+  const track = useRef<HTMLDivElement>(null);
+  const scrollY = useMainScroll();
+  const [range, setRange] = useState<[number, number]>([0, 1]);
+
+  useEffect(() => {
+    const measure = () => {
+      const el = track.current;
+      const main = document.querySelector("main");
+      if (!el || !main) return;
+      const top = el.getBoundingClientRect().top - main.getBoundingClientRect().top + main.scrollTop;
+      setRange([top, top + el.offsetHeight - main.clientHeight]);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
+  const progress = useTransform(scrollY, range, [0, 1], { clamp: true });
+
   return (
-    <section className="flex min-h-[80dvh] flex-col justify-center border-t border-line px-6 py-20">
-      <div className="mx-auto w-full max-w-[1100px]">
-        <motion.div
-          initial={{ opacity: 0, y: 60, scale: 0.96 }}
-          whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true, amount: 0.25 }}
-          transition={{ duration: 0.9, ease }}
-        >
-          <ProcessDemo />
-        </motion.div>
-        <div className="mt-14 grid grid-cols-2 border-y border-line md:grid-cols-4">
+    <>
+      <section ref={track} className="relative border-t border-line" style={{ height: "320dvh" }}>
+        <div className="sticky top-0 flex h-[100dvh] items-center justify-center px-6">
+          <ProcessDemo progress={progress} />
+        </div>
+      </section>
+      <section className="px-6 pb-20">
+        <div className="mx-auto grid w-full max-w-[1100px] grid-cols-2 border-y border-line md:grid-cols-4">
           {FACTS.map(([n, label], i) => (
             <motion.div
               key={label}
@@ -40,7 +61,7 @@ export function InfoSlide() {
             </motion.div>
           ))}
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
