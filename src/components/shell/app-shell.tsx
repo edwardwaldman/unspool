@@ -41,9 +41,11 @@ function useFilePicker() {
  * App chrome. Desktop: slim left sidebar + content centered as a tall phone column (TikTok web).
  * Mobile: full-bleed content + a floating pill nav (Home · Reels · + · Library · Profile).
  */
-export function AppShell({ active, children, feed = false, aside }: { active: NavKey; children: React.ReactNode; feed?: boolean; aside?: React.ReactNode }) {
+export function AppShell({ active, children, feed = false }: { active: NavKey; children: React.ReactNode; feed?: boolean }) {
   const picker = useFilePicker();
   const [dragging, setDragging] = useState(false);
+  // The top bar stays out of the way until the visitor scrolls (or tries to).
+  const [barShown, setBarShown] = useState(false);
 
   const tab = (key: NavKey, href: string, label: string, icon: (on: boolean) => React.ReactNode) => (
     <Link
@@ -76,8 +78,22 @@ export function AppShell({ active, children, feed = false, aside }: { active: Na
     >
       {picker.el}
 
-      {/* Top bar (hidden over the full-screen feed on phones) */}
-      <header className={`h-16 shrink-0 items-center gap-8 border-b border-line px-5 lg:flex lg:px-10 ${feed ? "hidden" : "flex"}`}>
+      {/* Log in / Sign up: always in the top right */}
+      <div className={`fixed right-5 top-3.5 z-50 items-center gap-2 lg:right-10 ${feed ? "hidden lg:flex" : "flex"}`}>
+        <Link href="/login" className="px-3 py-2 text-[14px] text-muted hover:text-ink">
+          Log in
+        </Link>
+        <Link href="/login?mode=signup" className="btn-primary px-4 py-2 text-[14px]">
+          Sign up
+        </Link>
+      </div>
+
+      {/* Top bar: slides in once you scroll */}
+      <header
+        className={`fixed inset-x-0 top-0 z-40 h-16 items-center gap-8 border-b border-line bg-paper px-5 pr-56 transition-transform duration-300 lg:px-10 lg:pr-64 ${
+          feed ? "hidden lg:flex" : "flex"
+        } ${barShown ? "translate-y-0" : "-translate-y-full"}`}
+      >
         <Link href="/">
           <Wordmark size={24} />
         </Link>
@@ -88,24 +104,25 @@ export function AppShell({ active, children, feed = false, aside }: { active: Na
             </Link>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-3">
-          <Link href="/profile" aria-label="Profile" className={`hidden h-9 w-9 items-center justify-center border border-line md:flex ${active === "profile" ? "text-ink" : "text-muted hover:text-ink"}`}>
-            <UserIcon size={17} />
-          </Link>
-          <button type="button" onClick={picker.open} className="btn-primary px-4 py-2 text-[13.5px]">
-            <UploadIcon size={15} /> Upload
-          </button>
-        </div>
+        <button type="button" onClick={picker.open} className="ml-auto hidden items-center gap-2 text-[14px] text-muted hover:text-ink md:flex">
+          <UploadIcon size={15} /> Upload
+        </button>
       </header>
 
       {/* Content */}
-      <main className={`relative flex min-h-0 min-w-0 flex-1 ${feed ? "items-center justify-center lg:py-5" : "overflow-y-auto"}`}>
+      <main
+        className={`relative flex min-h-0 min-w-0 flex-1 ${feed ? "items-center justify-center lg:py-5" : "overflow-y-auto"}`}
+        onScroll={(e) => setBarShown(e.currentTarget.scrollTop > 12)}
+        onWheel={(e) => {
+          if (e.deltaY > 4) setBarShown(true);
+          else if (e.deltaY < -4 && e.currentTarget.scrollTop <= 12) setBarShown(false);
+        }}
+      >
         {feed ? (
           <div className="relative h-full w-full overflow-hidden lg:aspect-[9/16] lg:h-full lg:w-auto lg:overflow-visible">
             <div className="h-full w-full lg:border lg:border-line">{children}</div>
           </div>
         ) : null}
-        {feed && aside ? <div className="ml-16 hidden xl:block">{aside}</div> : null}
         {feed ? null : (
           <div className="w-full pb-28 lg:pb-0">{children}</div>
         )}

@@ -16,6 +16,7 @@
   --font-display: var(--font-display);
   --font-hook: var(--font-hook);
   --font-mono: var(--font-numeric);
+  --font-wordmark: var(--font-wordmark);
   --radius-*: initial;
   --shadow-*: initial;
   --drop-shadow-*: initial;

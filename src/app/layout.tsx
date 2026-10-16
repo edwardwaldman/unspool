@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Bricolage_Grotesque, Instrument_Sans, Martian_Mono } from "next/font/google";
+import { Archivo, Bricolage_Grotesque, Instrument_Sans, Martian_Mono, Syne } from "next/font/google";
 import "./globals.css";
 
 // Font families are referenced by theme.css (--font-display, --font-hook, --font-ui, --font-numeric).
 const display = Bricolage_Grotesque({ variable: "--font-bricolage", subsets: ["latin"], weight: ["600", "700", "800"] });
 const hook = Archivo({ variable: "--font-archivo", subsets: ["latin"], weight: ["700", "800"] });
 const ui = Instrument_Sans({ variable: "--font-instrument-sans", subsets: ["latin"], weight: ["400", "500", "600"] });
+const wordmark = Syne({ variable: "--font-syne", subsets: ["latin"], weight: ["700", "800"] });
 const numeric = Martian_Mono({ variable: "--font-martian", subsets: ["latin"], weight: ["400", "500"] });
 
 export const metadata: Metadata = {
@@ -32,7 +33,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${display.variable} ${hook.variable} ${ui.variable} ${numeric.variable} h-full antialiased`}>
+    <html lang="en" className={`${display.variable} ${hook.variable} ${ui.variable} ${numeric.variable} ${wordmark.variable} h-full antialiased`}>
       <body className="min-h-full bg-paper text-ink">{children}</body>
     </html>
   );

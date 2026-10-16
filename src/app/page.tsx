@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { HeroCard } from "@/components/landing/hero-card";
 import { Landing } from "@/components/landing/landing";
 import { AppShell } from "@/components/shell/app-shell";
 import { SpoolFeed } from "@/components/spool/spool-feed";
@@ -9,7 +8,7 @@ import { getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 
-/** First-time visitors get the drop zone; returning users land straight in their latest spool. */
+/** First-time visitors get the landing; returning users land straight in their latest spool. */
 export default async function Home() {
   let latest: string | null = null;
   if (supabaseConfigured) {
@@ -27,7 +26,7 @@ export default async function Home() {
     );
   }
   return (
-    <AppShell active="home" feed aside={<HeroCard />}>
+    <AppShell active="home">
       <Landing />
     </AppShell>
   );

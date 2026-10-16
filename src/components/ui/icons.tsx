@@ -47,11 +47,11 @@ export const CloseIcon = (p: P) => <X strokeWidth={sw} {...p} />;
 export const TrashIcon = (p: P) => <Trash2 strokeWidth={sw} {...p} />;
 export const UploadIcon = (p: P) => <Upload strokeWidth={sw} {...p} />;
 
-/** Typographic wordmark: "Unspool." with the period in the thread accent. */
+/** Typographic wordmark in its own face (Syne). */
 export function Wordmark({ size = 26 }: { size?: number }) {
   return (
-    <span className="font-display leading-none" style={{ fontSize: size }}>
-      Unspool<span className="text-thread">.</span>
+    <span className="font-wordmark font-extrabold leading-none tracking-[-0.02em]" style={{ fontSize: size }}>
+      unspool
     </span>
   );
 }

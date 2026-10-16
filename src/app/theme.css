@@ -30,6 +30,7 @@
   --display-tracking: -0.03em;
   --font-hook: var(--font-archivo), "Archivo", system-ui, sans-serif;
   --font-ui: var(--font-instrument-sans), "Instrument Sans", system-ui, sans-serif;
+  --font-wordmark: var(--font-syne), "Syne", system-ui, sans-serif;
   --font-numeric: var(--font-martian), "Martian Mono", ui-monospace, monospace;
 
   color-scheme: dark;
