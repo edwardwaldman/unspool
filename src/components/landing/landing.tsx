@@ -174,7 +174,7 @@ export function Landing() {
 
   return (
     <div>
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-8 px-6 pb-24 pt-16 lg:gap-7 lg:pb-8 lg:pt-16">
+    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-8 px-6 pb-24 pt-16 lg:gap-7 lg:pb-8 lg:pt-16">
       <Headline />
       <div className="flex flex-col items-center gap-12 lg:flex-row lg:gap-16">
         <UploadReel width={lg ? 340 : 300} height={lg ? ANIM_H * k : 360} />
@@ -184,6 +184,23 @@ export function Landing() {
           </div>
         </div>
       </div>
+      {/* Scroll cue */}
+      <motion.div
+        aria-hidden
+        className="absolute bottom-5 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-muted lg:flex"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.6, duration: 0.6 }}
+      >
+        <span className="relative h-9 w-5 rounded-full border border-muted/60">
+          <motion.span
+            className="absolute left-1/2 top-1.5 h-1.5 w-1 -translate-x-1/2 rounded-full bg-thread"
+            animate={{ y: [0, 12, 0], opacity: [1, 0.2, 1] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em]">Scroll</span>
+      </motion.div>
     </div>
       <InfoSlide />
       <SiteFooter />
