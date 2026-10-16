@@ -182,7 +182,25 @@ export function Landing() {
       </div>
     </div>
       {/* Everything below slides up over the pinned hero like a card */}
-      <div className="relative z-10 rounded-t-[32px] border-t border-line bg-paper shadow-[0_-24px_60px_rgba(0,0,0,0.45)]">
+      <div className="relative z-10 -mt-16 rounded-t-[32px] border-t border-line bg-paper shadow-[0_-24px_60px_rgba(0,0,0,0.45)]">
+        {/* Peeking tab: grab-handle + "Pull up" */}
+        <button
+          type="button"
+          onClick={(e) => e.currentTarget.closest("main")?.scrollBy({ top: window.innerHeight * 0.9, behavior: "smooth" })}
+          className="absolute inset-x-0 top-0 z-20 flex h-16 flex-col items-center justify-center gap-1.5 text-muted transition-colors hover:text-ink"
+        >
+          <span className="h-1 w-10 rounded-full bg-muted/50" />
+          <motion.span
+            className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.2em]"
+            animate={{ y: [0, -3, 0] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 15l6-6 6 6" />
+            </svg>
+            Pull up
+          </motion.span>
+        </button>
         <InfoSlide />
         <SiteFooter />
       </div>
