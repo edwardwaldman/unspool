@@ -43,7 +43,7 @@ export function InfoSlide() {
   return (
     <>
       <section ref={track} className="relative border-t border-line" style={{ height: "650dvh" }}>
-        <div className="sticky top-0 flex h-[100dvh] items-center justify-center px-6">
+        <div className="sticky top-0 flex h-[100dvh] items-center justify-center px-4 pt-16 lg:px-6 lg:pt-0">
           <motion.div style={{ opacity: exitOpacity, scale: exitScale, y: exitY }}>
             <ProcessDemo progress={progress} />
           </motion.div>

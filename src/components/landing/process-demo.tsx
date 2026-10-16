@@ -129,7 +129,7 @@ function Stage({ p, narrow, h }: { p: number; narrow: boolean; h: number }) {
       )}
 
       {/* Cursor */}
-      <div className="pointer-events-none absolute left-0 top-0 z-30" style={{ transform: `translate(${c.x}px, ${c.y}px) scale(${c.press ? 0.85 : 1})` }}>
+      <div className="pointer-events-none absolute left-0 top-0 z-30" style={{ transform: `translate(${c.x}px, ${c.y}px) scale(${c.press ? 0.85 : 1})`, opacity: narrow && id === "load" ? 0 : 1, transition: "opacity .2s" }}>
         <svg width="26" height="30" viewBox="0 0 18 20">
           <path d="M1 1 L1 15 L5 11.5 L8 18 L10.5 17 L7.6 10.6 L13 10.6 Z" fill="var(--ink)" stroke="var(--paper)" strokeWidth="1.2" strokeLinejoin="round" />
         </svg>
