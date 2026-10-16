@@ -124,11 +124,11 @@ export function Landing() {
   const animFade = useTransform(easedY, [150, 900], [1, 0.25]);
   const cueFade = useTransform(easedY, [40, 420], [1, 0]);
   const cueY = useTransform(easedY, [0, 420], [0, 24]);
-  const k = lg ? Math.max(1, Math.min(2.8, (vh - 420) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
+  const k = lg ? Math.max(1, Math.min(2.8, (vh - 500) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
 
   return (
     <div>
-    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-center gap-6 overflow-hidden px-3 pb-10 pt-20 lg:gap-6 lg:px-6 lg:pb-24 lg:pt-16">
+    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-center gap-6 overflow-hidden px-3 pb-10 pt-20 lg:gap-6 lg:px-6 lg:pb-20 lg:pt-28">
       {/* Phones: a plain wordmark until the top bar slides in */}
       <Link href="/" aria-label="unspool" className="absolute left-5 top-5 lg:hidden">
         <Wordmark size={24} />
