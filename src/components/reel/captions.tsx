@@ -26,7 +26,7 @@ export function Captions({ text, words, fraction }: { text: string; words: numbe
   const chunk = chunks.find((c) => c.includes(current)) ?? chunks[0] ?? [];
 
   return (
-    <p className="caption-shadow mx-auto max-w-[330px] text-center text-[22px] font-extrabold leading-[1.18] tracking-tight" aria-live="off">
+    <p className="mx-auto max-w-[330px] text-center font-hook text-[21px] font-bold leading-[1.2] tracking-[-0.01em]" aria-live="off">
       {chunk.map((i) => {
         const w = list[i];
         const spoken = i <= current;
@@ -36,9 +36,9 @@ export function Captions({ text, words, fraction }: { text: string; words: numbe
             key={i}
             className="mx-[0.18em] inline-block transition-[transform,opacity] duration-150"
             style={{
-              color: w.color ? COLOR_VAR[w.color] : "var(--text)",
-              opacity: spoken ? 1 : 0.55,
-              transform: isNow ? "scale(1.07) translateY(-1px)" : "scale(1)",
+              color: w.color ? COLOR_VAR[w.color] : "var(--cream)",
+              opacity: spoken ? 1 : 0.4,
+              transform: isNow ? "translateY(-2px)" : "none",
             }}
           >
             {w.text}

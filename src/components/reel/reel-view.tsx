@@ -1,11 +1,9 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useMemo } from "react";
 import type { ReelDTO, SpoolDTO } from "@/lib/spool-types";
 import { MarkedText } from "../ui/marked-text";
 import { PlayIcon, VolumeIcon } from "../ui/icons";
-import { accentFor } from "./accent";
 import { ActionRail } from "./action-rail";
 import { CaptionBlock } from "./caption-block";
 import { Captions } from "./captions";
@@ -42,24 +40,22 @@ export function ReelView({
   preview?: boolean;
 }) {
   const script = reel.script!;
-  const accent = accentFor(script.accent, reel.index);
   const pb = usePlayback({ script, audio: reel.audio, active, onEnded, silent: preview });
   const prefs = usePrefs();
   const fraction = pb.duration > 0 ? pb.t / pb.duration : 0;
   const visualKey = pb.segment.kind === "explain" ? `q${pb.segment.beatIndex}` : pb.segment.kind === "quiz" ? `q${pb.segment.beatIndex}` : pb.segment.key;
-  const style = useMemo(() => ({ "--accent": accent }) as React.CSSProperties, [accent]);
 
   return (
-    <div className="reel-bg relative h-full w-full select-none overflow-hidden" style={style} onClick={pb.toggle}>
-      <ParticleField accent={accent} active={active && pb.playing} pulse={pb.seg} />
+    <div className="relative h-full w-full select-none overflow-hidden bg-ink" onClick={pb.toggle}>
+      <ParticleField active={active && pb.playing} pulse={pb.seg} />
 
       {/* Hook headline + live stat line */}
       <div className="absolute inset-x-0 top-0 z-10 px-5 pt-[60px]">
-        <h2 className="text-[26px] font-black leading-[1.08] tracking-[-0.02em] text-[#e6e9f2] sm:text-[27px]">
+        <h2 className="font-hook text-[26px] font-extrabold leading-[1.08] tracking-[-0.025em] text-cream sm:text-[27px]">
           <MarkedText text={script.headline} />
         </h2>
         <div className="mt-3">
-          <StatLine stats={script.stats} beat={pb.segment.beatIndex} accent={accent} />
+          <StatLine stats={script.stats} beat={pb.segment.beatIndex} />
         </div>
       </div>
 
@@ -78,7 +74,6 @@ export function ReelView({
               <VisualStage
                 visual={pb.segment.visual}
                 script={script}
-                accent={accent}
                 progress={fraction}
                 quiz={pb.quiz}
                 quizWaitLeft={pb.quizWaitLeft}
@@ -115,8 +110,8 @@ export function ReelView({
       </div>
 
       {/* Progress bar */}
-      <div className="absolute inset-x-0 z-20 h-[2.5px] bg-white/15" style={{ bottom: `${chrome.bottomInset + 8}px` }}>
-        <div className="h-full bg-white" style={{ width: `${pb.progress * 100}%` }} />
+      <div className="absolute inset-x-0 z-20 h-[2px] bg-line" style={{ bottom: `${chrome.bottomInset + 8}px` }}>
+        <div className="h-full bg-thread" style={{ width: `${pb.progress * 100}%` }} />
       </div>
 
       {/* Paused / muted affordances */}
@@ -128,8 +123,8 @@ export function ReelView({
             exit={{ opacity: 0 }}
             className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
           >
-            <div className="rounded-full bg-black/35 p-5 text-white/90 backdrop-blur-sm">
-              <PlayIcon size={44} />
+            <div className="flex h-20 w-20 items-center justify-center rounded-full border border-cream/40 bg-ink/50 text-cream">
+              <PlayIcon size={30} />
             </div>
           </motion.div>
         )}
@@ -142,9 +137,9 @@ export function ReelView({
             setPrefs({ muted: false, autoMuted: false });
             pb.replay();
           }}
-          className="absolute left-1/2 top-[52%] z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white px-4 py-2 text-[14px] font-bold text-[#0b1020] shadow-2xl"
+          className="btn-primary absolute left-1/2 top-[52%] z-30 -translate-x-1/2 px-4 py-2 text-[14px]"
         >
-          <VolumeIcon size={18} muted /> Tap for sound
+          <VolumeIcon size={17} muted /> Tap for sound
         </button>
       )}
     </div>

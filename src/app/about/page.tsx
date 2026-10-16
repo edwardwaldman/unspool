@@ -2,90 +2,142 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { MarketingPage } from "@/components/shell/marketing-page";
 import { formatPrice, PRICING } from "@/lib/config";
+import { SAMPLE_SPOOL } from "@/lib/sample";
+import { buildSegments } from "@/lib/segments";
+import { estimateDuration } from "@/lib/timing";
 
 export const metadata: Metadata = { title: "How it works" };
 
 const steps = [
-  { emoji: "📄", title: "Drop a doc", body: "Class notes, a textbook chapter, a work PDF, a contract. PDF, Word, PowerPoint, text or a photo of your notes." },
-  { emoji: "🧵", title: "We unspool it", body: "Unspool reads the whole thing and plans 10 short reels that cover it in order — every definition, number, rule and deadline." },
-  { emoji: "📱", title: "Swipe & absorb", body: "Each reel has a scroll-stopping hook, voiceover, word-by-word captions, animated visuals and a quick quiz." },
+  ["Drop a doc", "Class notes, a textbook chapter, a work PDF, a contract. PDF, Word, PowerPoint, text, or a photo of your notes."],
+  ["We read all of it", "Unspool plans 10 reels that cover the document in order: every definition, number, rule and deadline."],
+  ["Swipe through", "Each reel has a hook, voiceover, word-by-word captions, a visual for every beat and a quick quiz."],
 ];
 
 const faqs = [
-  ["Is it accurate?", "Reels are written only from your document. Unspool doesn't add outside facts — if it isn't in the doc, it isn't in the reel. It's still a summary, so double-check anything high-stakes."],
-  ["Who can see my files?", "Only you. Files are private to your account, never public, and never used to train AI. You can delete a document — file, scripts and audio — anytime."],
-  ["What if I don't sign up?", "You can try it with no account. Anonymous uploads that are never unlocked are deleted automatically after 7 days."],
-  ["How long are documents allowed to be?", "Up to about 60 pages / 40,000 words for now. Bigger files? We'll unspool the first part and tell you."],
-  ["Is this legal or financial advice?", "No. For contracts and financial docs, Unspool summarizes what the document says; it isn't legal or financial advice."],
+  ["Is it accurate?", "Reels are written only from your document. If it isn't in the doc, it isn't in the reel. It is still a summary, so check anything high-stakes against the original."],
+  ["Who can see my files?", "Only you. Files are private, never public and never used to train AI. Delete a document and its file, scripts and audio go with it."],
+  ["Do I need an account?", "No. Anonymous uploads that are never unlocked are deleted after 7 days."],
+  ["How long can a document be?", "About 60 pages or 40,000 words for now. Longer files are cut at that point, and we tell you."],
+  ["Is this legal or financial advice?", "No. For contracts and financial documents, Unspool summarizes what the document says."],
 ];
+
+/** Anatomy of the sample reel: real segment timings from its script. */
+function ReelAnatomy() {
+  const script = SAMPLE_SPOOL.reels[0].script!;
+  const segs = buildSegments(script).map((s) => ({
+    kind: s.kind === "beat" ? (s.beatIndex === 0 ? "Hook" : "Body") : s.kind === "quiz" || s.kind === "explain" ? "Quiz" : "Outro",
+    seconds: estimateDuration(s.speech),
+  }));
+  const total = segs.reduce((a, s) => a + s.seconds, 0);
+  const groups = ["Hook", "Body", "Quiz", "Outro"].map((k) => ({
+    k,
+    seconds: segs.filter((s) => s.kind === k).reduce((a, s) => a + s.seconds, 0),
+    count: segs.filter((s) => s.kind === k).length,
+  }));
+  return (
+    <div className="border border-line p-6">
+      <div className="flex items-baseline justify-between">
+        <span className="label">Anatomy of one reel</span>
+        <span className="font-mono text-[12px] text-muted">{Math.round(total)}s · {segs.length} beats</span>
+      </div>
+      <div className="mt-2 text-[15px]">&ldquo;{script.title}&rdquo;, from the sample spool</div>
+      <div className="mt-6 flex h-8 w-full gap-px">
+        {segs.map((s, i) => (
+          <div
+            key={i}
+            style={{
+              width: `${(s.seconds / total) * 100}%`,
+              background: s.kind === "Hook" || s.kind === "Quiz" ? "var(--thread)" : "var(--border)",
+              opacity: s.kind === "Quiz" ? 0.55 : 1,
+            }}
+          />
+        ))}
+      </div>
+      <div className="mt-4 grid grid-cols-4 border-t border-line">
+        {groups.map((g, i) => (
+          <div key={g.k} className={`pt-3 ${i > 0 ? "border-l border-line pl-3" : ""}`}>
+            <div className="label">{g.k}</div>
+            <div className="mt-1 font-mono text-[14px]">{Math.round(g.seconds)}s</div>
+            <div className="font-mono text-[11px] text-muted">{g.count} {g.count === 1 ? "beat" : "beats"}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function AboutPage() {
   return (
     <MarketingPage>
-      <section className="pt-10 text-center">
-        <div className="font-mono text-[13px] uppercase tracking-[0.3em] text-accent">unspool.cc</div>
-        <h1 className="mt-4 text-[44px] font-black leading-[1] tracking-[-0.035em] sm:text-[64px]">
-          Your textbook,
-          <br />
-          <span className="text-accent glow-text">but it&apos;s reels.</span>
-        </h1>
-        <p className="mx-auto mt-5 max-w-[560px] text-[18px] text-soft">
-          Drag in any document and Unspool turns it into 10 short, swipeable reels with viral hooks, voiceover, animated visuals and a quick quiz — so you actually absorb it.
-        </p>
-        <div className="mt-8 flex justify-center gap-3">
-          <Link href="/" className="rounded-full bg-white px-6 py-3 text-[16px] font-extrabold text-[#0b1020]">
-            Drop a doc
-          </Link>
-          <Link href="/s/demo" className="rounded-full bg-white/10 px-6 py-3 text-[16px] font-extrabold">
-            ▶ Watch a sample
-          </Link>
+      <section className="grid gap-12 pt-16 md:grid-cols-[1.2fr_1fr] md:items-end">
+        <div>
+          <div className="label">How it works</div>
+          <h1 className="mt-3 font-display text-[60px] leading-[0.95] tracking-[-0.015em] sm:text-[80px]">
+            Your textbook,
+            <br />
+            <em className="text-thread">but it&apos;s reels.</em>
+          </h1>
+          <p className="mt-6 max-w-[520px] text-[17px] leading-relaxed text-cream/80">
+            Drop in any document. Unspool turns it into 10 short reels with a hook, voiceover, visuals and a quiz, so you actually remember it.
+          </p>
+          <div className="mt-8 flex gap-3">
+            <Link href="/" className="btn-primary px-6 py-3 text-[15px]">
+              Upload a document
+            </Link>
+            <Link href="/s/demo" className="btn-secondary px-6 py-3 text-[15px]">
+              Watch a sample
+            </Link>
+          </div>
         </div>
+        <ReelAnatomy />
       </section>
 
-      <section className="mt-20 grid gap-4 md:grid-cols-3">
-        {steps.map((s, i) => (
-          <div key={s.title} className="rounded-3xl border border-white/10 bg-white/[0.03] p-7">
-            <div className="text-[36px]">{s.emoji}</div>
-            <div className="mt-3 font-mono text-[12px] text-muted">0{i + 1}</div>
-            <div className="text-[20px] font-black">{s.title}</div>
-            <p className="mt-2 text-[15px] leading-relaxed text-soft">{s.body}</p>
+      <section className="mt-24 grid border-t border-line md:grid-cols-3">
+        {steps.map(([title, body], i) => (
+          <div key={title} className={`py-8 md:pr-8 ${i > 0 ? "border-t border-line md:border-l md:border-t-0 md:pl-8" : ""}`}>
+            <div className="font-mono text-[12px] text-muted">0{i + 1}</div>
+            <h2 className="mt-3 font-display text-[30px] leading-tight">{title}</h2>
+            <p className="mt-2 text-[15px] leading-relaxed text-cream/75">{body}</p>
           </div>
         ))}
       </section>
 
-      <section className="mt-20 grid gap-4 md:grid-cols-2">
-        <div className="rounded-3xl bg-gradient-to-br from-accent/20 to-transparent p-8">
-          <div className="text-[13px] font-bold uppercase tracking-[0.2em] text-accent">For students</div>
-          <h2 className="mt-2 text-[28px] font-black leading-tight">Cram the chapter in the time it takes to scroll.</h2>
-          <p className="mt-3 text-[15px] text-soft">Test tips, common traps, memory hacks and a quiz in every reel. Then binge every spool in one feed the night before.</p>
+      <section className="mt-16 grid border-y border-line md:grid-cols-2">
+        <div className="py-10 md:pr-10">
+          <div className="label">For students</div>
+          <h2 className="mt-3 font-display text-[36px] leading-[1.05]">Cram the chapter in the time it takes to scroll.</h2>
+          <p className="mt-3 text-[15px] text-cream/75">Test tips, common traps, memory hacks and a quiz in every reel. Then review every spool in one feed the night before.</p>
         </div>
-        <div className="rounded-3xl bg-gradient-to-br from-hlcyan/20 to-transparent p-8">
-          <div className="text-[13px] font-bold uppercase tracking-[0.2em] text-hlcyan">For work</div>
-          <h2 className="mt-2 text-[28px] font-black leading-tight">Read the contract in 60 seconds.</h2>
-          <p className="mt-3 text-[15px] text-soft">Policies, onboarding docs, reports and contracts: what you must do, the deadlines, the money and the clauses to watch.</p>
+        <div className="border-t border-line py-10 md:border-l md:border-t-0 md:pl-10">
+          <div className="label">For work</div>
+          <h2 className="mt-3 font-display text-[36px] leading-[1.05]">Read the contract in sixty seconds.</h2>
+          <p className="mt-3 text-[15px] text-cream/75">Policies, onboarding docs, reports and contracts: what you have to do, the deadlines, the money and the clauses to watch.</p>
         </div>
       </section>
 
-      <section className="mt-20 text-center">
-        <h2 className="text-[30px] font-black">Pricing</h2>
-        <p className="mt-2 text-[16px] text-soft">
-          Reel 1 free on every doc · {formatPrice(PRICING.documentCents)} to unlock a doc · {formatPrice(PRICING.subscriptionCents)}/mo unlimited
-        </p>
-        <Link href="/pricing" className="mt-4 inline-block text-[15px] font-bold text-accent">
-          See pricing →
+      <section className="mt-16 flex flex-wrap items-baseline justify-between gap-4">
+        <div>
+          <div className="label">Pricing</div>
+          <p className="mt-2 font-display text-[30px] leading-tight">
+            Reel 1 free · {formatPrice(PRICING.documentCents)} a document · {formatPrice(PRICING.subscriptionCents)}/mo unlimited
+          </p>
+        </div>
+        <Link href="/pricing" className="text-[14px] text-thread underline underline-offset-4">
+          See pricing
         </Link>
       </section>
 
-      <section className="mx-auto mt-20 max-w-[720px]">
-        <h2 className="text-center text-[30px] font-black">FAQ</h2>
-        <div className="mt-6 divide-y divide-white/10">
+      <section className="mt-20 max-w-[760px]">
+        <div className="label">Questions</div>
+        <div className="mt-4 border-t border-line">
           {faqs.map(([q, a]) => (
-            <details key={q} className="group py-4">
-              <summary className="cursor-pointer list-none text-[17px] font-bold">
+            <details key={q} className="group border-b border-line py-4">
+              <summary className="flex cursor-pointer list-none items-center justify-between text-[17px]">
                 {q}
-                <span className="float-right text-muted transition group-open:rotate-45">+</span>
+                <span className="font-mono text-muted transition group-open:rotate-45">+</span>
               </summary>
-              <p className="mt-2 text-[15px] leading-relaxed text-soft">{a}</p>
+              <p className="mt-2 max-w-[640px] text-[15px] leading-relaxed text-cream/75">{a}</p>
             </details>
           ))}
         </div>

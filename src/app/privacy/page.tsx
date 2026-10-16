@@ -6,9 +6,10 @@ export const metadata: Metadata = { title: "Privacy Policy" };
 export default function PrivacyPage() {
   return (
     <MarketingPage>
-      <article className="prose-unspool mx-auto max-w-[720px] pt-8">
-        <h1 className="text-[36px] font-black">Privacy Policy</h1>
-        <p>Last updated: October 2026</p>
+      <article className="prose-unspool max-w-[720px] pt-14">
+        <div className="label">Legal</div>
+        <h1 className="mt-3 font-display text-[52px] leading-none">Privacy Policy</h1>
+        <p className="font-mono !text-[12px] !text-muted">Last updated October 2026</p>
         <h2>The short version</h2>
         <ul>
           <li>Documents you upload are private to you. They are never public and never shared with other users.</li>

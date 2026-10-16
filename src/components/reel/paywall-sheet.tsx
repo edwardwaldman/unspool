@@ -5,7 +5,6 @@ import { useState } from "react";
 import { formatPrice, PRICING } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import type { SpoolDTO, ViewerDTO } from "@/lib/spool-types";
-import { GoogleIcon, LockIcon } from "../ui/icons";
 import { Sheet } from "../ui/sheet";
 
 export type CheckoutKind = "document" | "subscription";
@@ -92,90 +91,81 @@ export function PaywallSheet({
   return (
     <Sheet open={open} onClose={onClose} label="Unlock all reels">
       {spool.demo ? (
-        <div className="pb-2 text-center">
-          <div className="text-[22px] font-black tracking-tight">This is a demo spool</div>
-          <p className="mt-2 text-[15px] text-soft">Drop your own notes, chapter or PDF and Unspool turns it into 10 reels like these.</p>
-          <Link href="/" className="mt-5 block rounded-2xl bg-white py-3.5 text-[16px] font-extrabold text-[#0b1020]">
-            Unspool my doc
+        <div className="pb-1">
+          <div className="label">Sample spool</div>
+          <h2 className="mt-2 font-display text-[34px] leading-[1.05]">This one is a demo.</h2>
+          <p className="mt-2 text-[15px] text-muted">Drop your own notes, chapter or PDF and get 10 reels like these.</p>
+          <Link href="/" className="btn-primary mt-6 w-full py-3.5 text-[15px]">
+            Unspool a document
           </Link>
         </div>
       ) : wanted && !signedIn ? (
         <div className="pb-1">
-          <div className="text-[22px] font-black tracking-tight">Sign in to unlock</div>
-          <p className="mt-1 text-[14px] text-muted">We&apos;ll bring you right back to reel {reel}.</p>
+          <div className="label">Step 1 of 2</div>
+          <h2 className="mt-2 font-display text-[34px] leading-[1.05]">Sign in to unlock.</h2>
+          <p className="mt-2 text-[14px] text-muted">You&apos;ll come back to reel {reel}.</p>
           {sent ? (
-            <div className="mt-5 rounded-2xl bg-white/5 p-4 text-[15px] text-soft">
-              Check <b className="text-ink">{email}</b> for a sign-in link. Open it on this device.
+            <div className="mt-6 border border-line p-4 text-[14.5px] text-cream/85">
+              Sign-in link sent to <span className="text-cream">{email}</span>. Open it on this device.
             </div>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={google}
-                disabled={busy !== null}
-                className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-2xl bg-white py-3.5 text-[16px] font-bold text-[#0b1020] disabled:opacity-60"
-              >
-                <GoogleIcon /> Continue with Google
+              <button type="button" onClick={google} disabled={busy !== null} className="btn-primary mt-6 w-full py-3.5 text-[15px]">
+                Continue with Google
               </button>
-              <div className="my-4 flex items-center gap-3 text-[12px] uppercase tracking-widest text-muted">
-                <div className="h-px flex-1 bg-white/10" /> or <div className="h-px flex-1 bg-white/10" />
+              <div className="label my-4 flex items-center gap-3">
+                <div className="h-px flex-1 bg-line" /> or <div className="h-px flex-1 bg-line" />
               </div>
-              <form onSubmit={magic} className="flex gap-2">
+              <form onSubmit={magic} className="flex">
                 <input
                   type="email"
                   required
                   placeholder="you@school.edu"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="min-w-0 flex-1 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-[16px] outline-none focus:border-accent"
+                  className="field min-w-0 flex-1 px-4 py-3 text-[16px]"
                 />
-                <button type="submit" disabled={busy !== null} className="rounded-2xl bg-accent px-4 text-[15px] font-bold text-[#0b1020] disabled:opacity-60">
-                  {busy === "email" ? "…" : "Send link"}
+                <button type="submit" disabled={busy !== null} className="btn-secondary -ml-px px-4 text-[14px]">
+                  {busy === "email" ? "Sending" : "Email link"}
                 </button>
               </form>
             </>
           )}
-          <button type="button" onClick={() => setWanted(null)} className="mt-4 w-full text-center text-[14px] text-muted">
+          <button type="button" onClick={() => setWanted(null)} className="mt-5 w-full text-center text-[13.5px] text-muted">
             Back
           </button>
         </div>
       ) : (
         <div className="pb-1">
-          <div className="flex items-center gap-2 font-mono text-[12px] uppercase tracking-[0.25em] text-accent">
-            <LockIcon size={15} /> {locked.length} reels locked
+          <div className="label">{spool.title ?? spool.fileName}</div>
+          <h2 className="mt-2 font-display text-[36px] leading-[1.02]">Unlock all 10 reels.</h2>
+          <div className="mt-5 flex items-baseline justify-between border-b border-line pb-2">
+            <span className="label">Locked</span>
+            <span className="font-mono text-[11px] text-muted">{locked.length} of 10</span>
           </div>
-          <div className="mt-2 text-[26px] font-black leading-tight tracking-tight">Unlock all 10 reels</div>
-          <p className="mt-1 text-[14px] text-muted">{spool.title ?? spool.fileName}</p>
-          <div className="no-scrollbar mt-4 max-h-[132px] space-y-1.5 overflow-y-auto">
+          <div className="no-scrollbar max-h-[150px] overflow-y-auto">
             {locked.map((r) => (
-              <div key={r.id} className="flex gap-3 text-[14px]">
-                <span className="w-5 font-mono text-[11px] leading-[20px] text-muted">{String(r.index).padStart(2, "0")}</span>
-                <span className="font-bold text-soft">{r.title}</span>
+              <div key={r.id} className="flex gap-3 border-b border-line py-2 text-[13.5px]">
+                <span className="w-5 font-mono text-[10.5px] leading-[20px] text-muted">{String(r.index).padStart(2, "0")}</span>
+                <span className="text-cream/90">{r.title}</span>
               </div>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={() => choose("document")}
-            disabled={busy !== null}
-            className="mt-5 w-full rounded-2xl bg-white py-3.5 text-[16px] font-extrabold text-[#0b1020] disabled:opacity-60"
-          >
-            {busy === "document" ? "Opening checkout…" : `Unlock this doc · ${formatPrice(PRICING.documentCents)}`}
+          <button type="button" onClick={() => choose("document")} disabled={busy !== null} className="btn-primary mt-6 w-full justify-between px-5 py-3.5 text-[15px]">
+            <span>{busy === "document" ? "Opening checkout" : "Unlock this document"}</span>
+            <span className="font-mono text-[13px]">{formatPrice(PRICING.documentCents)}</span>
           </button>
-          <button
-            type="button"
-            onClick={() => choose("subscription")}
-            disabled={busy !== null}
-            className="mt-2.5 w-full rounded-2xl border border-accent/60 bg-accent/10 py-3.5 text-[16px] font-extrabold text-accent disabled:opacity-60"
-          >
-            {busy === "subscription" ? "Opening checkout…" : `Unlimited docs · ${formatPrice(PRICING.subscriptionCents)}/mo`}
+          <button type="button" onClick={() => choose("subscription")} disabled={busy !== null} className="btn-secondary -mt-px w-full justify-between px-5 py-3.5 text-[15px]">
+            <span>{busy === "subscription" ? "Opening checkout" : "Unlimited documents"}</span>
+            <span className="font-mono text-[13px] text-muted">{formatPrice(PRICING.subscriptionCents)}/mo</span>
           </button>
-          {spool.sensitive && (
-            <p className="mt-3 text-center text-[12px] text-muted">Unspool summarizes; it isn&apos;t legal or financial advice.</p>
-          )}
+          <p className="mt-4 text-center text-[12.5px] text-muted">
+            One-time payment per document. Unlimited renews monthly; cancel anytime.
+          </p>
+          {spool.sensitive && <p className="label mt-2 text-center">A summary, not legal or financial advice</p>}
         </div>
       )}
-      {err && <p className="mt-3 text-center text-[13px] text-warn">{err}</p>}
+      {err && <p className="mt-3 text-center text-[13px] text-coral">{err}</p>}
     </Sheet>
   );
 }

@@ -1,18 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Geist, Instrument_Serif, Inter_Tight, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"] });
-const mono = JetBrains_Mono({ variable: "--font-mono-face", subsets: ["latin"], weight: ["400", "600"] });
+// Font families are referenced by theme.css (--font-display, --font-hook, --font-ui, --font-numeric).
+const display = Instrument_Serif({ variable: "--font-instrument-serif", subsets: ["latin"], weight: "400", style: ["normal", "italic"] });
+const hook = Inter_Tight({ variable: "--font-inter-tight", subsets: ["latin"], weight: ["700", "800"] });
+const ui = Geist({ variable: "--font-geist", subsets: ["latin"] });
+const numeric = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"], weight: ["400", "500"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://unspool.cc"),
   title: { default: "Unspool — Drop a doc. Unspool it.", template: "%s · Unspool" },
   description:
-    "Drag in any document — class notes, a textbook chapter, a work PDF, a contract — and Unspool turns it into 10 swipeable reels with voiceover, animated visuals and a quick quiz.",
+    "Drop in class notes, a textbook chapter, a work PDF or a contract. Unspool turns it into 10 short reels with voiceover, visuals and a quiz.",
   openGraph: {
     title: "Unspool — Drop a doc. Unspool it.",
-    description: "Your textbook, but it's reels. Turn any document into 10 swipeable explainer reels.",
+    description: "Your textbook, but it's reels.",
     siteName: "Unspool",
     type: "website",
   },
@@ -20,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b1020",
+  themeColor: "#0e1220",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -29,8 +32,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} ${mono.variable} h-full antialiased`}>
-      <body className="min-h-full bg-bg0 text-ink">{children}</body>
+    <html lang="en" className={`${display.variable} ${hook.variable} ${ui.variable} ${numeric.variable} h-full antialiased`}>
+      <body className="min-h-full bg-ink text-cream">{children}</body>
     </html>
   );
 }

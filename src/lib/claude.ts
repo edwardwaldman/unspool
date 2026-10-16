@@ -167,23 +167,22 @@ const SCRIPT_GUIDE = `Reel format:
 - outro.say: tease the next reel, e.g. "Next: four sampling methods. Keep scrolling." For the final reel, wrap up instead ("That's the whole doc. Scroll back to review any reel.") and set next_title to "THAT'S A WRAP".
 
 Highlight markup inside "say", "headline", "explain" and quiz text (words get colored and pop on screen as they're spoken):
-- *word* → primary highlight (key terms) · #word# → red warning (traps, mistakes, risks, penalties) · ^word^ → yellow · ~word~ → cyan
-- Use 1–3 highlights per sentence, on the words that matter. Never nest markers. Don't highlight whole sentences.
+- *word* → key term (the main accent) · #word# → warning (traps, mistakes, risks, penalties) · ^word^ → highlight (a number or phrase to remember) · ~word~ → the correct / safe choice
+- Colors carry meaning, so use each marker only for its meaning. Most sentences need just one *key term*. Never nest markers. Don't highlight whole sentences.
 
 Visuals — choose the one that best shows each beat; vary them across the reel (don't repeat the same type more than twice in a row):
-- hook {emoji, tag, color}: big emoji + bold tag. Only for beats[0].
+- hook {icon, tag, color}: one large line icon + a short tag. Only for beats[0].
 - bigword {word, sub, color}: one or two HUGE words + a small subtitle. For a key term or a punchline.
-- split {mode:"vs"|"to", left:{emoji,title,sub}, right:{emoji,title,sub}}: A vs B comparison, or A → B change.
-- flow {steps:[{emoji,title,sub}]}: 2–4 steps of a process, in order.
-- list {title, items:[{emoji,label}]}: 3–5 items revealed one by one.
-- emoji {items:[{emoji,label}], arrow}: 1–3 emoji with short labels; arrow=true shows a left-to-right arrow between them.
+- split {mode:"vs"|"to", left:{icon,title,sub}, right:{icon,title,sub}}: A vs B comparison, or A → B change.
+- flow {steps:[{icon,title,sub}]}: 2–4 steps of a process, in order.
+- list {title, items:[{icon,label}]}: 3–5 items revealed one by one.
+- icons {items:[{icon,label}], arrow}: 1–3 icons with short labels; arrow=true shows a left-to-right arrow between them.
 - crowd {total_label, highlight_label, ratio}: a field of glowing dots (the whole group) with a highlighted subset (ratio 0.02–0.9). Great for population vs sample, "who this applies to", percentages.
 - stat {value, label, color}: one big number with a label, e.g. value "$2,500" label "LATE PENALTY", value "30 DAYS" label "NOTICE REQUIRED". Only use numbers that appear in the document.
-color is one of primary | warn | yellow | cyan. Labels and titles are short (1–4 words), usually ALL CAPS. Emoji are single emoji characters.
+color is one of primary | warn | yellow | cyan, with the same meanings as the markup (primary is the default; warn only for risks). Labels and titles are short (1–4 words), usually ALL CAPS. "icon" is a name from the allowed list (line icons, no emoji). Never put emoji in any text.
 
 Other fields:
 - "headline": the reel's on-screen hook headline that stays at the top: 8–18 words, the key term wrapped in *…*. E.g. "A chef never eats the whole pot. So how does she know the *soup* is salty?"
-- "accent": the reel's accent color (blue is the default; vary across reels so the feed feels alive).
 - "summary": 1–2 sentence plain-text caption summarizing the reel (shown under the reel, no markup).
 - "stats": 0–3 numbers from the document shown in a live monospace stat line, counting up when they're mentioned: {label (1–2 lowercase words), value (number), prefix (e.g. "$" or ""), suffix (e.g. "%", " days" or ""), at_beat (index of the beat where it's first mentioned)}. Only real numbers from the document; use [] if the reel has none.`;
 

@@ -5,23 +5,22 @@ import type { SpoolDTO } from "@/lib/spool-types";
 import type { UploadState } from "../upload/upload-store";
 import { ParticleField } from "./particle-field";
 
-function stageText(spool: SpoolDTO | null, upload: UploadState | null, reelIndex: number) {
-  if (upload?.phase === "error") return upload.error ?? "Upload failed.";
-  if (!spool || spool.status === "uploading") return upload?.phase === "starting" ? "Starting…" : "Uploading your doc…";
+const STAGES = ["Upload", "Read", "Plan", "Write"] as const;
+
+function stageIndex(spool: SpoolDTO | null, upload: UploadState | null) {
+  if (!spool || spool.status === "uploading") return upload?.phase === "starting" ? 1 : 0;
   switch (spool.status) {
     case "uploaded":
     case "extracting":
-      return "Reading your doc…";
+      return 1;
     case "planning":
-      return "Planning 10 reels…";
-    case "failed":
-      return spool.error ?? "Something went wrong.";
+      return 2;
     default:
-      return `Writing reel ${reelIndex}…`;
+      return 3;
   }
 }
 
-/** The skeleton reel shown in the feed while a reel is being generated. */
+/** The reel shown in the feed while generation runs: real pipeline stage + the status of each of the 10 reels. */
 export function LoadingReel({
   spool,
   upload,
@@ -37,33 +36,25 @@ export function LoadingReel({
   onRetry?: () => void;
   bottomInset: number;
 }) {
-  const titles = spool?.reels ?? [];
+  const reels = spool?.reels ?? [];
   const isError = failed || spool?.status === "failed" || upload?.phase === "error";
-  const name = spool?.title ?? spool?.fileName ?? upload?.fileName ?? "your doc";
-  return (
-    <div className="reel-bg relative flex h-full w-full flex-col overflow-hidden px-6" style={{ paddingBottom: bottomInset + 24 }}>
-      <ParticleField accent="#4d9fff" active pulse={titles.length} />
-      <div className="relative z-10 pt-[64px]">
-        <div className="shimmer h-7 w-[85%] rounded-lg" />
-        <div className="shimmer mt-2.5 h-7 w-[62%] rounded-lg" />
-        <div className="shimmer mt-4 h-3.5 w-[45%] rounded" />
-      </div>
+  const errorText = upload?.error ?? spool?.error ?? "Something went wrong.";
+  const name = spool?.title ?? spool?.fileName ?? upload?.fileName ?? "Your document";
+  const stage = stageIndex(spool, upload);
+  const ready = reels.filter((r) => r.status === "ready").length;
 
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center">
-        {!isError && (
-          <div className="relative mb-7 h-24 w-24">
-            <motion.div
-              className="absolute inset-0 rounded-full border-[3px] border-accent/25 border-t-accent"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}
-              style={{ boxShadow: "0 0 30px rgba(77,159,255,0.35)" }}
-            />
-            <div className="absolute inset-0 flex items-center justify-center text-[34px]">🧵</div>
-          </div>
-        )}
-        <div className="text-[24px] font-black tracking-tight">{isError ? "Hmm, that didn't work" : "Unspooling your doc…"}</div>
-        <div className={`mt-2 text-[15px] ${isError ? "text-warn" : "text-muted"}`}>{stageText(spool, upload, reelIndex)}</div>
-        <div className="mt-1 max-w-[280px] truncate text-[13px] text-muted/80">{name}</div>
+  return (
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-ink px-6" style={{ paddingBottom: bottomInset + 28 }}>
+      <ParticleField active pulse={stage} />
+
+      <div className="relative z-10 pt-[64px]">
+        <div className="label">{name}</div>
+        <h2 className="mt-3 font-display text-[40px] leading-[1.02] tracking-[-0.01em]">
+          {isError ? "That didn't work." : reels.length && reelIndex > 1 ? `Writing reel ${reelIndex}.` : "Unspooling your doc."}
+        </h2>
+        <p className="mt-2 text-[14.5px] text-muted">
+          {isError ? errorText : stage < 3 ? "Usually under a minute. Reel 1 plays here when it's ready." : "Reel 1 plays here when it's ready."}
+        </p>
         {isError && onRetry && (
           <button
             type="button"
@@ -71,31 +62,74 @@ export function LoadingReel({
               e.stopPropagation();
               onRetry();
             }}
-            className="mt-5 rounded-full bg-white px-5 py-2.5 text-[15px] font-bold text-[#0b1020]"
+            className="btn-primary mt-5 px-5 py-2.5 text-[15px]"
           >
             Retry
           </button>
         )}
       </div>
 
-      {titles.length > 0 && (
-        <div className="relative z-10 mx-auto w-full max-w-[340px] space-y-1.5">
-          <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.25em] text-muted">Your 10 reels</div>
-          {titles.map((r, i) => (
-            <motion.div
-              key={r.id}
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.08 }}
-              className="flex items-center gap-3 text-[13.5px]"
-            >
-              <span className="w-5 font-mono text-[11px] text-muted">{String(r.index).padStart(2, "0")}</span>
-              <span className={`truncate font-bold ${r.index === reelIndex ? "text-accent" : "text-soft"}`}>{r.title}</span>
-              {r.status === "ready" && <span className="ml-auto text-[11px] text-good">ready</span>}
-            </motion.div>
+      {!isError && (
+        <div className="relative z-10 mt-9 grid grid-cols-4 border-t border-line">
+          {STAGES.map((s, i) => (
+            <div key={s} className="pt-3">
+              <div className="mb-2 h-px" style={{ background: i < stage ? "var(--cream)" : i === stage ? "var(--thread)" : "transparent" }} />
+              <div className="font-mono text-[10.5px] text-muted">0{i + 1}</div>
+              <div className="text-[13px]" style={{ color: i === stage ? "var(--thread)" : i < stage ? "var(--cream)" : "var(--muted)" }}>
+                {s}
+              </div>
+            </div>
           ))}
         </div>
       )}
+
+      <div className="relative z-10 mt-auto">
+        {reels.length > 0 ? (
+          <>
+            <div className="mb-3 flex items-baseline justify-between">
+              <span className="label">Your 10 reels</span>
+              <span className="font-mono text-[11px] text-muted">{ready}/10 ready</span>
+            </div>
+            <div className="mb-4 grid grid-cols-10 gap-1">
+              {reels.map((r) => (
+                <div
+                  key={r.id}
+                  className="h-1"
+                  style={{
+                    background:
+                      r.status === "ready" ? "var(--thread)" : r.status === "generating" ? "color-mix(in srgb, var(--thread) 40%, transparent)" : "var(--border)",
+                  }}
+                />
+              ))}
+            </div>
+            <div className="border-t border-line">
+              {reels.map((r, i) => (
+                <motion.div
+                  key={r.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.06 }}
+                  className="flex items-center gap-3 border-b border-line py-1.5 text-[13px]"
+                >
+                  <span className="w-5 font-mono text-[10.5px] text-muted">{String(r.index).padStart(2, "0")}</span>
+                  <span className={`truncate ${r.index === reelIndex ? "text-thread" : "text-cream/85"}`}>{r.title}</span>
+                  <span className="ml-auto font-mono text-[10.5px] text-muted">
+                    {r.status === "ready" ? "ready" : r.locked ? "locked" : r.status === "generating" ? "writing" : ""}
+                  </span>
+                </motion.div>
+              ))}
+            </div>
+          </>
+        ) : (
+          !isError && (
+            <div className="space-y-2.5">
+              <div className="shimmer h-3 w-[70%]" />
+              <div className="shimmer h-3 w-[55%]" />
+              <div className="shimmer h-3 w-[62%]" />
+            </div>
+          )
+        )}
+      </div>
     </div>
   );
 }

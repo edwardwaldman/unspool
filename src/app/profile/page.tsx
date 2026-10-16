@@ -8,60 +8,62 @@ import { getViewer } from "@/lib/viewer";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Profile", robots: { index: false } };
 
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 border-b border-line py-4">
+      <span className="label">{label}</span>
+      <span className="text-right text-[15px]">{children}</span>
+    </div>
+  );
+}
+
 export default async function ProfilePage() {
   const viewer = supabaseConfigured ? await getViewer() : null;
   return (
     <AppShell active="profile">
-      <div className="mx-auto max-w-[480px] px-5 pt-12">
-        <h1 className="text-[28px] font-black tracking-tight">Profile</h1>
+      <div className="mx-auto max-w-[520px] px-5 pt-10">
+        <div className="label">Account</div>
+        <h1 className="mt-2 font-display text-[44px] leading-none">Profile</h1>
         {!viewer?.userId ? (
-          <div className="mt-6 rounded-3xl bg-white/[0.04] p-6">
-            <p className="text-[16px] font-bold">You&apos;re browsing without an account</p>
+          <div className="mt-8 border-t border-line pt-6">
+            <p className="text-[16px]">You&apos;re not signed in.</p>
             <p className="mt-1 text-[14px] text-muted">Sign in to keep your spools across devices and unlock all 10 reels.</p>
-            <Link href="/login?next=/profile" className="mt-5 block rounded-2xl bg-white py-3.5 text-center text-[16px] font-extrabold text-[#0b1020]">
+            <Link href="/login?next=/profile" className="btn-primary mt-6 w-full py-3.5 text-[15px]">
               Sign in
             </Link>
           </div>
         ) : (
-          <div className="mt-6 space-y-4">
-            <div className="rounded-3xl bg-white/[0.04] p-6">
-              <div className="text-[13px] uppercase tracking-[0.18em] text-muted">Signed in as</div>
-              <div className="mt-1 text-[17px] font-bold">{viewer.email}</div>
-              <div className="mt-5 text-[13px] uppercase tracking-[0.18em] text-muted">Plan</div>
-              <div className="mt-1 text-[17px] font-bold">
-                {viewer.subscribed ? "Unlimited" : "Free"}
-                {viewer.subscribed && viewer.profile?.current_period_end && (
-                  <span className="ml-2 text-[13px] font-medium text-muted">
-                    renews {new Date(viewer.profile.current_period_end).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
-              <div className="mt-5">
-                {viewer.subscribed || viewer.profile?.stripe_customer_id ? (
-                  <BillingButton mode="portal" />
-                ) : null}
-                {!viewer.subscribed && (
-                  <div className="mt-2.5">
-                    <BillingButton mode="subscribe" />
-                    <p className="mt-2 text-center text-[12.5px] text-muted">
-                      {formatPrice(PRICING.subscriptionCents)}/month · unlimited documents · cancel anytime
-                    </p>
-                  </div>
-                )}
-              </div>
+          <div className="mt-8 border-t border-line">
+            <Row label="Email">{viewer.email}</Row>
+            <Row label="Plan">
+              {viewer.subscribed ? "Unlimited" : "Free"}
+              {viewer.subscribed && viewer.profile?.current_period_end && (
+                <span className="ml-2 font-mono text-[12px] text-muted">
+                  renews {new Date(viewer.profile.current_period_end).toLocaleDateString()}
+                </span>
+              )}
+            </Row>
+            <div className="mt-6 space-y-3">
+              {!viewer.subscribed && (
+                <div>
+                  <BillingButton mode="subscribe" label={`Go unlimited · ${formatPrice(PRICING.subscriptionCents)}/mo`} />
+                  <p className="mt-2 text-center text-[12.5px] text-muted">Unlimited documents. Cancel anytime.</p>
+                </div>
+              )}
+              {(viewer.subscribed || viewer.profile?.stripe_customer_id) && <BillingButton mode="portal" />}
+              <form action="/auth/signout" method="post">
+                <button type="submit" className="btn-secondary w-full py-3.5 text-[15px]">
+                  Sign out
+                </button>
+              </form>
             </div>
-            <form action="/auth/signout" method="post">
-              <button type="submit" className="w-full rounded-2xl bg-white/[0.06] py-3.5 text-[16px] font-bold">
-                Sign out
-              </button>
-            </form>
           </div>
         )}
-        <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-[14px] text-muted">
-          <Link href="/about">How it works</Link>
-          <Link href="/pricing">Pricing</Link>
-          <Link href="/privacy">Privacy</Link>
-          <Link href="/terms">Terms</Link>
+        <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-[13.5px] text-muted">
+          <Link href="/about" className="hover:text-cream">How it works</Link>
+          <Link href="/pricing" className="hover:text-cream">Pricing</Link>
+          <Link href="/privacy" className="hover:text-cream">Privacy</Link>
+          <Link href="/terms" className="hover:text-cream">Terms</Link>
         </div>
       </div>
     </AppShell>

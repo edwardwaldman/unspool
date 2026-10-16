@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { fileBadge } from "./accent";
+import { fileLabel } from "./accent";
 
-/** Bottom-left block, like a Reels caption: doc avatar + name + reel pill, then a one-line expandable summary. */
+/** Bottom-left block, like a Reels caption: doc badge + name + reel counter, then a one-line expandable summary. */
 export function CaptionBlock({
   fileName,
   fileType,
@@ -20,20 +20,15 @@ export function CaptionBlock({
   sensitive?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const badge = fileBadge(fileType);
   return (
-    <div className="text-left drop-shadow-[0_1px_8px_rgba(0,0,0,0.7)]">
+    <div className="text-left">
       <div className="flex items-center gap-2.5">
-        <div
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[9px] font-black ring-2 ring-white/70"
-          style={{ background: badge.color, color: "#0b1020" }}
-          aria-hidden
-        >
-          {badge.label}
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center border border-line bg-surface font-mono text-[9px] text-muted" aria-hidden>
+          {fileLabel(fileType)}
         </div>
-        <span className="min-w-0 truncate text-[14.5px] font-bold">{fileName}</span>
-        <span className="shrink-0 rounded-lg border border-white/70 px-2.5 py-0.5 text-[12.5px] font-semibold">
-          Reel {index}/{total}
+        <span className="min-w-0 truncate text-[14px] font-semibold">{fileName}</span>
+        <span className="shrink-0 border border-cream/60 px-2 py-0.5 font-mono text-[11px]">
+          {index}/{total}
         </span>
       </div>
       <button
@@ -42,13 +37,11 @@ export function CaptionBlock({
           e.stopPropagation();
           setOpen((o) => !o);
         }}
-        className={`mt-2 block w-full text-left text-[13.5px] leading-snug text-soft ${open ? "" : "truncate"}`}
+        className={`mt-2 block w-full text-left text-[13.5px] leading-snug text-cream/75 ${open ? "" : "truncate"}`}
       >
         {summary}
       </button>
-      {open && sensitive && (
-        <p className="mt-1.5 text-[11.5px] text-muted">Unspool summarizes; it isn&apos;t legal or financial advice.</p>
-      )}
+      {open && sensitive && <p className="label mt-2">A summary, not legal or financial advice</p>}
     </div>
   );
 }

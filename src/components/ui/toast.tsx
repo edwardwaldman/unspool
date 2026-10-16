@@ -34,10 +34,10 @@ export function Toaster() {
         {list.map((t) => (
           <motion.div
             key={t.id}
-            initial={{ opacity: 0, y: -10, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="rounded-full bg-white/95 px-4 py-2 text-[14px] font-semibold text-[#0b1020] shadow-xl"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="border border-line bg-surface px-4 py-2.5 text-[14px] text-cream"
           >
             {t.text}
           </motion.div>

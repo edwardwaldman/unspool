@@ -108,13 +108,13 @@ export function Feed({
       <div
         ref={scroller}
         onScroll={onScroll}
-        className="no-scrollbar h-full w-full snap-y snap-mandatory overflow-y-scroll overscroll-contain lg:rounded-[22px]"
+        className="no-scrollbar h-full w-full snap-y snap-mandatory overflow-y-scroll overscroll-contain"
       >
         {items.map((it, i) => {
           const near = Math.abs(i - index) <= 1;
           const isActive = i === index;
           let content: React.ReactNode;
-          if (!near) content = <div className="reel-bg h-full w-full" />;
+          if (!near) content = <div className="h-full w-full bg-ink" />;
           else if (!it.reel || (!it.reel.locked && it.reel.status !== "ready")) {
             content = (
               <LoadingReel
@@ -162,21 +162,21 @@ export function Feed({
 
       {/* Top tabs: This doc | All spools */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-center pt-4">
-        <div className="pointer-events-auto flex items-center gap-5 text-[16.5px] font-extrabold drop-shadow-[0_1px_6px_rgba(0,0,0,0.6)]">
+        <div className="pointer-events-auto flex items-center gap-5 text-[15.5px] font-semibold">
           {docHref ? (
-            <Link href={docHref} className={tab === "doc" ? "text-white" : "text-white/55"}>
+            <Link href={docHref} className={tab === "doc" ? "text-cream" : "text-muted"}>
               This doc
             </Link>
           ) : (
-            <span className={tab === "doc" ? "text-white" : "text-white/55"}>This doc</span>
+            <span className={tab === "doc" ? "text-cream" : "text-muted"}>This doc</span>
           )}
-          <span className="h-3.5 w-px bg-white/30" />
-          <Link href="/feed" className={tab === "all" ? "text-white" : "text-white/55"}>
+          <span className="h-3.5 w-px bg-line" />
+          <Link href="/feed" className={tab === "all" ? "text-cream" : "text-muted"}>
             All spools
           </Link>
         </div>
-        <Link href="/library" aria-label="Library" className="pointer-events-auto absolute right-4 top-4 text-white/90 drop-shadow">
-          <FilterIcon size={22} />
+        <Link href="/library" aria-label="Library" className="pointer-events-auto absolute right-4 top-4 text-cream">
+          <FilterIcon size={20} />
         </Link>
       </div>
 
@@ -187,7 +187,7 @@ export function Feed({
           aria-label="Previous reel"
           disabled={index === 0}
           onClick={() => scrollTo(Math.max(0, index - 1))}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-30"
+          className="flex h-11 w-11 items-center justify-center border border-line text-cream hover:border-muted disabled:opacity-30"
         >
           <ChevronUp size={24} />
         </button>
@@ -196,7 +196,7 @@ export function Feed({
           aria-label="Next reel"
           disabled={index >= items.length - 1}
           onClick={() => scrollTo(Math.min(items.length - 1, index + 1))}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-30"
+          className="flex h-11 w-11 items-center justify-center border border-line text-cream hover:border-muted disabled:opacity-30"
         >
           <ChevronDown size={24} />
         </button>

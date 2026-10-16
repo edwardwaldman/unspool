@@ -8,7 +8,6 @@ const reel1: ReelScript = {
   index: 1,
   title: "POPULATION vs SAMPLE",
   headline: "A chef never eats the whole pot. So how does she know the *soup* is salty?",
-  accent: "blue",
   summary: "Population vs sample: why statistics studies a small part to learn about the whole.",
   stats: [
     { label: "population", value: 2000, prefix: "", suffix: "", at_beat: 2 },
@@ -17,11 +16,11 @@ const reel1: ReelScript = {
   beats: [
     {
       say: "A chef never eats the #whole pot# to know if the soup is salty.",
-      visual: { type: "hook", emoji: "🍲", tag: "GUARANTEED QUESTION", color: "primary" },
+      visual: { type: "hook", icon: "soup", tag: "GUARANTEED QUESTION", color: "primary" },
     },
     {
       say: "She tastes *one spoonful.* That's statistics in one sentence.",
-      visual: { type: "emoji", items: [{ emoji: "🍲", label: "THE POT" }, { emoji: "🥄", label: "ONE SPOONFUL" }], arrow: true },
+      visual: { type: "icons", items: [{ icon: "soup", label: "THE POT" }, { icon: "utensils", label: "ONE SPOONFUL" }], arrow: true },
     },
     {
       say: "The whole pot is the *population.* Everyone or everything you want to know about.",
@@ -33,11 +32,11 @@ const reel1: ReelScript = {
     },
     {
       say: "Say a school has two thousand students. You survey fifty. The fifty are your ~sample.~",
-      visual: { type: "split", mode: "vs", left: { emoji: "🏫", title: "2,000", sub: "every student" }, right: { emoji: "📋", title: "50", sub: "the ones you asked" } },
+      visual: { type: "split", mode: "vs", left: { icon: "school", title: "2,000", sub: "every student" }, right: { icon: "clipboard", title: "50", sub: "the ones you asked" } },
     },
     {
       say: "Here's the #trap:# the sample only works if it's mixed well. Stir the pot first.",
-      visual: { type: "flow", steps: [{ emoji: "🥄", title: "STIR", sub: "randomize" }, { emoji: "👅", title: "TASTE", sub: "measure the sample" }, { emoji: "✅", title: "CONCLUDE", sub: "about the population" }] },
+      visual: { type: "flow", steps: [{ icon: "utensils", title: "STIR", sub: "randomize" }, { icon: "search", title: "TASTE", sub: "measure the sample" }, { icon: "check", title: "CONCLUDE", sub: "about the population" }] },
     },
     {
       say: "Memory hack: *P*opulation is the *P*ot. *S*ample is the *S*poon.",
@@ -57,7 +56,6 @@ const reel2: ReelScript = {
   index: 2,
   title: "PARAMETER vs STATISTIC",
   headline: "Mix these two words up and you #lose points#. Here's how to never confuse *parameter* and *statistic*.",
-  accent: "pink",
   summary: "A parameter describes a population; a statistic describes a sample.",
   stats: [
     { label: "true mean", value: 7.2, prefix: "", suffix: " hrs", at_beat: 2 },
@@ -66,7 +64,7 @@ const reel2: ReelScript = {
   beats: [
     {
       say: "Mix these two up and you #lose points.# Every single test.",
-      visual: { type: "hook", emoji: "⚠️", tag: "COMMON TRAP", color: "warn" },
+      visual: { type: "hook", icon: "alert", tag: "COMMON TRAP", color: "warn" },
     },
     {
       say: "A *parameter* is a number that describes the whole *population.*",
@@ -82,11 +80,11 @@ const reel2: ReelScript = {
     },
     {
       say: "We use the statistic to *estimate* the parameter.",
-      visual: { type: "split", mode: "to", left: { emoji: "📋", title: "STATISTIC", sub: "what you measured" }, right: { emoji: "🌍", title: "PARAMETER", sub: "what you want" } },
+      visual: { type: "split", mode: "to", left: { icon: "clipboard", title: "STATISTIC", sub: "what you measured" }, right: { icon: "globe", title: "PARAMETER", sub: "what you want" } },
     },
     {
       say: "Memory hack: *P*arameter goes with *P*opulation. *S*tatistic goes with *S*ample.",
-      visual: { type: "list", title: "MATCH THE LETTERS", items: [{ emoji: "🅿️", label: "Parameter → Population" }, { emoji: "🆂", label: "Statistic → Sample" }] },
+      visual: { type: "list", title: "MATCH THE LETTERS", items: [{ icon: "users", label: "Parameter → Population" }, { icon: "user", label: "Statistic → Sample" }] },
     },
   ],
   quiz: {
@@ -102,25 +100,24 @@ const reel3: ReelScript = {
   index: 3,
   title: "4 SAMPLING METHODS",
   headline: "There are four ways to pick a sample, and only one is *simple random*. Know them all.",
-  accent: "cyan",
   summary: "Simple random, stratified, cluster and systematic sampling, and how to tell them apart.",
   stats: [{ label: "methods", value: 4, prefix: "", suffix: "", at_beat: 1 }],
   beats: [
     {
       say: "Four ways to pick a sample. The test #will# ask you to name one.",
-      visual: { type: "hook", emoji: "🎯", tag: "GUARANTEED QUESTION", color: "primary" },
+      visual: { type: "hook", icon: "target", tag: "GUARANTEED QUESTION", color: "primary" },
     },
     {
       say: "Here they are.",
-      visual: { type: "list", title: "SAMPLING METHODS", items: [{ emoji: "🎲", label: "Simple random (S R S)" }, { emoji: "🧱", label: "Stratified" }, { emoji: "🏘️", label: "Cluster" }, { emoji: "📏", label: "Systematic" }] },
+      visual: { type: "list", title: "SAMPLING METHODS", items: [{ icon: "dice", label: "Simple random (S R S)" }, { icon: "layers", label: "Stratified" }, { icon: "house", label: "Cluster" }, { icon: "ruler", label: "Systematic" }] },
     },
     {
       say: "*Simple random:* every group of that size has an equal chance. Names in a hat.",
-      visual: { type: "emoji", items: [{ emoji: "🎩", label: "ALL NAMES" }, { emoji: "🎲", label: "RANDOM DRAW" }], arrow: true },
+      visual: { type: "icons", items: [{ icon: "shuffle", label: "ALL NAMES" }, { icon: "dice", label: "RANDOM DRAW" }], arrow: true },
     },
     {
       say: "*Stratified:* split into similar groups first, like grades, then sample from #every# group.",
-      visual: { type: "flow", steps: [{ emoji: "🧱", title: "SPLIT", sub: "into similar strata" }, { emoji: "🎲", title: "SAMPLE", sub: "from each stratum" }] },
+      visual: { type: "flow", steps: [{ icon: "layers", title: "SPLIT", sub: "into similar strata" }, { icon: "dice", title: "SAMPLE", sub: "from each stratum" }] },
     },
     {
       say: "*Cluster:* split into groups, then pick a few #whole# groups. Like three entire homerooms.",
@@ -132,7 +129,7 @@ const reel3: ReelScript = {
     },
     {
       say: "Trap: stratified samples from #all# groups. Cluster takes #some# whole groups.",
-      visual: { type: "split", mode: "vs", left: { emoji: "🧱", title: "STRATIFIED", sub: "some from every group" }, right: { emoji: "🏘️", title: "CLUSTER", sub: "all from some groups" } },
+      visual: { type: "split", mode: "vs", left: { icon: "layers", title: "STRATIFIED", sub: "some from every group" }, right: { icon: "house", title: "CLUSTER", sub: "all from some groups" } },
     },
   ],
   quiz: {

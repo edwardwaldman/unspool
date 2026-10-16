@@ -18,7 +18,7 @@ export default async function LibraryPage() {
   if (docs.length) {
     const { data: reels } = await adminClient()
       .from("reels")
-      .select("document_id,index,status,hook,headline:script_json->>headline,accent:script_json->>accent")
+      .select("document_id,index,status,hook,headline:script_json->>headline")
       .in(
         "document_id",
         docs.map((d) => d.id),
@@ -36,38 +36,38 @@ export default async function LibraryPage() {
         createdAt: d.created_at,
         headline: (first?.headline as string | null) ?? null,
         hook: first?.hook ?? null,
-        accent: (first?.accent as LibraryItem["accent"]) ?? null,
       });
     }
   }
   const reelCount = items.reduce((n, i) => n + i.readyCount, 0);
 
+  const stats = [
+    ["Spools", String(items.length)],
+    ["Reels", String(reelCount)],
+    ["Plan", viewer?.subscribed ? "Unlimited" : "Free"],
+  ];
+
   return (
     <AppShell active="library">
       <div className="mx-auto max-w-[720px]">
-        <header className="flex flex-col items-center px-6 pb-6 pt-10 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-accent to-hlcyan text-[30px] font-black text-[#0b1020]">
-            {(viewer?.email ?? "U").slice(0, 1).toUpperCase()}
-          </div>
-          <div className="mt-3 text-[17px] font-bold">{viewer?.email ?? "Your library"}</div>
-          <div className="mt-4 flex gap-10">
-            <div>
-              <div className="text-[19px] font-black">{items.length}</div>
-              <div className="text-[13px] text-muted">Spools</div>
-            </div>
-            <div>
-              <div className="text-[19px] font-black">{reelCount}</div>
-              <div className="text-[13px] text-muted">Reels</div>
-            </div>
-            <div>
-              <div className="text-[19px] font-black">{viewer?.subscribed ? "∞" : "Free"}</div>
-              <div className="text-[13px] text-muted">Plan</div>
-            </div>
+        <header className="px-5 pb-6 pt-10">
+          <div className="label">{viewer?.email ?? "Not signed in"}</div>
+          <h1 className="mt-2 font-display text-[44px] leading-none">Library</h1>
+          <div className="mt-6 grid grid-cols-3 border-y border-line">
+            {stats.map(([label, value], i) => (
+              <div key={label} className={`py-3 ${i > 0 ? "border-l border-line pl-4" : ""}`}>
+                <div className="font-mono text-[18px]">{value}</div>
+                <div className="label mt-0.5">{label}</div>
+              </div>
+            ))}
           </div>
           {!viewer?.userId && items.length > 0 && (
-            <Link href="/login?next=/library" className="mt-5 rounded-xl bg-white/10 px-4 py-2 text-[14px] font-semibold">
-              Sign in to keep your spools · they auto-delete after 7 days
-            </Link>
+            <p className="mt-4 text-[13.5px] text-muted">
+              Anonymous spools are deleted after 7 days.{" "}
+              <Link href="/login?next=/library" className="text-cream underline underline-offset-4">
+                Sign in to keep them.
+              </Link>
+            </p>
           )}
         </header>
         <LibraryGrid initial={items} />

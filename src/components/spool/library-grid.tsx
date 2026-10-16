@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { accentFor, fileBadge } from "../reel/accent";
+import { fileLabel } from "../reel/accent";
 import { MarkedText } from "../ui/marked-text";
 import { TrashIcon } from "../ui/icons";
 import { toast } from "../ui/toast";
-import type { Accent } from "@/lib/schema";
 
 export type LibraryItem = {
   id: string;
@@ -18,17 +17,16 @@ export type LibraryItem = {
   createdAt: string;
   headline: string | null;
   hook: string | null;
-  accent: Accent | null;
 };
 
 function statusLabel(it: LibraryItem) {
   if (it.status === "failed") return "Failed";
-  if (it.status === "uploading" || it.status === "uploaded" || it.status === "extracting" || it.status === "planning") return "Unspooling…";
-  if (!it.unlocked) return "🔒 1 of 10 free";
+  if (["uploading", "uploaded", "extracting", "planning"].includes(it.status)) return "Unspooling";
+  if (!it.unlocked) return "1 of 10 free";
   return it.readyCount >= 10 ? "10 reels" : `${it.readyCount}/10 ready`;
 }
 
-/** TikTok-profile-style grid of spools (one per uploaded document). */
+/** Profile-style grid of spools (one per uploaded document). */
 export function LibraryGrid({ initial }: { initial: LibraryItem[] }) {
   const [items, setItems] = useState(initial);
   const [editing, setEditing] = useState(false);
@@ -44,12 +42,11 @@ export function LibraryGrid({ initial }: { initial: LibraryItem[] }) {
 
   if (!items.length) {
     return (
-      <div className="px-6 py-16 text-center">
-        <div className="text-[44px]">🧵</div>
-        <p className="mt-3 text-[17px] font-bold">No spools yet</p>
-        <p className="mt-1 text-[14px] text-muted">Tap + to drop your first doc.</p>
-        <Link href="/" className="mt-5 inline-block rounded-full bg-white px-5 py-2.5 font-bold text-[#0b1020]">
-          Unspool a doc
+      <div className="border-t border-line px-6 py-16 text-center">
+        <p className="font-display text-[30px] leading-tight">No spools yet.</p>
+        <p className="mt-2 text-[14px] text-muted">Upload a document and it shows up here.</p>
+        <Link href="/" className="btn-primary mt-6 px-5 py-2.5 text-[14px]">
+          Upload a document
         </Link>
       </div>
     );
@@ -57,38 +54,36 @@ export function LibraryGrid({ initial }: { initial: LibraryItem[] }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between px-4 pb-3">
-        <div className="text-[13px] font-semibold uppercase tracking-[0.18em] text-muted">Spools</div>
-        <button type="button" onClick={() => setEditing((e) => !e)} className="text-[14px] font-semibold text-accent">
+      <div className="flex items-center justify-between border-t border-line px-4 py-3">
+        <span className="label">Spools</span>
+        <button type="button" onClick={() => setEditing((e) => !e)} className="text-[13px] text-thread">
           {editing ? "Done" : "Edit"}
         </button>
       </div>
-      <div className="grid grid-cols-3 gap-[3px] sm:grid-cols-4">
-        {items.map((it, i) => {
-          const accent = accentFor(it.accent ?? undefined, i + 1);
-          const badge = fileBadge(it.fileType);
+      <div className="grid grid-cols-3 gap-px bg-line sm:grid-cols-4">
+        {items.map((it) => {
+          const failed = it.status === "failed";
           return (
-            <div key={it.id} className="relative">
-              <Link
-                href={`/s/${it.id}`}
-                className="reel-bg relative block aspect-[9/16] overflow-hidden"
-                style={{ "--accent": accent } as React.CSSProperties}
-              >
+            <div key={it.id} className="relative bg-ink">
+              <Link href={`/s/${it.id}`} className="relative block aspect-[9/16] overflow-hidden bg-ink">
                 <div
-                  className="absolute left-1/2 top-[62%] h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-40 blur-xl"
-                  style={{ background: accent }}
+                  aria-hidden
+                  className="absolute left-1/2 top-[64%] h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-thread opacity-15 blur-2xl"
                 />
-                <div className="relative p-2.5 text-[12.5px] font-black leading-[1.12] tracking-tight text-[#e6e9f2] line-clamp-6">
+                <div className="relative line-clamp-6 p-2.5 font-hook text-[12.5px] font-extrabold leading-[1.12] tracking-[-0.01em] text-cream">
                   {it.headline ? <MarkedText text={it.headline} /> : it.hook ?? it.name}
                 </div>
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2 pt-8">
-                  <div className="flex items-center gap-1.5">
-                    <span className="rounded px-1 py-[1px] text-[8px] font-black text-[#0b1020]" style={{ background: badge.color }}>
-                      {badge.label}
-                    </span>
-                    <span className="truncate text-[11px] font-bold">{it.name}</span>
+                <div className="absolute inset-x-0 bottom-0 bg-ink/85 p-2">
+                  <div className="mb-1.5 grid grid-cols-10 gap-px">
+                    {Array.from({ length: 10 }, (_, i) => (
+                      <div key={i} className="h-[2px]" style={{ background: i < it.readyCount ? "var(--thread)" : "var(--border)" }} />
+                    ))}
                   </div>
-                  <div className="mt-0.5 text-[10.5px] font-semibold text-soft">{statusLabel(it)}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="border border-line px-1 font-mono text-[8px] text-muted">{fileLabel(it.fileType)}</span>
+                    <span className="truncate text-[11px]">{it.name}</span>
+                  </div>
+                  <div className={`mt-0.5 font-mono text-[10px] ${failed ? "text-coral" : "text-muted"}`}>{statusLabel(it)}</div>
                 </div>
               </Link>
               {editing && (
@@ -96,9 +91,9 @@ export function LibraryGrid({ initial }: { initial: LibraryItem[] }) {
                   type="button"
                   aria-label={`Delete ${it.name}`}
                   onClick={() => remove(it.id)}
-                  className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-warn text-[#0b1020]"
+                  className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center border border-coral bg-ink text-coral"
                 >
-                  <TrashIcon size={17} />
+                  <TrashIcon size={15} />
                 </button>
               )}
             </div>

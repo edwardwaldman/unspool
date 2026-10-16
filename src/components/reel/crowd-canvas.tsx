@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { threadHex } from "./accent";
 
 /**
  * A stadium-like field of tiny dots seen from above (the whole group), with a glowing wave sweeping
  * around it and a highlighted subset lighting up (the sample / who it applies to).
  */
-export function CrowdCanvas({ accent, ratio, progress }: { accent: string; ratio: number; progress: number }) {
+export function CrowdCanvas({ ratio, progress }: { ratio: number; progress: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const progressRef = useRef(progress);
   useEffect(() => {
@@ -18,6 +19,8 @@ export function CrowdCanvas({ accent, ratio, progress }: { accent: string; ratio
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    const accent = threadHex();
+    const base = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8a8fa3";
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     let w = 0;
     let h = 0;
@@ -67,19 +70,19 @@ export function CrowdCanvas({ accent, ratio, progress }: { accent: string; ratio
       const time = (now - start) / 1000;
       const p = progressRef.current;
       ctx.clearRect(0, 0, w, h);
-      const waveAngle = (time * 1.6) % (Math.PI * 2);
+      const waveAngle = (time * 1.1) % (Math.PI * 2);
       const reveal = Math.min(1, Math.max(0, (p - 0.25) / 0.45));
       for (const d of dots) {
         let diff = Math.abs(((d.angle - waveAngle + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
         diff = Math.PI - diff;
         const wave = Math.max(0, 1 - diff / 0.55);
         const lit = d.picked && d.jitter / Math.max(ratio, 0.001) <= reveal * 1.0001;
-        const size = 1.3 + wave * 1.4 + (lit ? 0.9 : 0);
-        ctx.globalAlpha = lit ? 0.95 : 0.22 + wave * 0.7;
-        ctx.fillStyle = lit || wave > 0.35 ? accent : "#a9b6d6";
+        const size = 1.2 + wave * 0.9 + (lit ? 0.7 : 0);
+        ctx.globalAlpha = lit ? 0.9 : 0.16 + wave * 0.4;
+        ctx.fillStyle = lit || wave > 0.5 ? accent : base;
         if (lit) {
           ctx.shadowColor = accent;
-          ctx.shadowBlur = 8;
+          ctx.shadowBlur = 10;
         } else {
           ctx.shadowBlur = 0;
         }
@@ -95,7 +98,7 @@ export function CrowdCanvas({ accent, ratio, progress }: { accent: string; ratio
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [accent, ratio]);
+  }, [ratio]);
 
   return <canvas ref={ref} className="h-full w-full" aria-hidden />;
 }

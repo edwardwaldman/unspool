@@ -6,9 +6,10 @@ export const metadata: Metadata = { title: "Terms of Service" };
 export default function TermsPage() {
   return (
     <MarketingPage>
-      <article className="prose-unspool mx-auto max-w-[720px] pt-8">
-        <h1 className="text-[36px] font-black">Terms of Service</h1>
-        <p>Last updated: October 2026</p>
+      <article className="prose-unspool max-w-[720px] pt-14">
+        <div className="label">Legal</div>
+        <h1 className="mt-3 font-display text-[52px] leading-none">Terms of Service</h1>
+        <p className="font-mono !text-[12px] !text-muted">Last updated October 2026</p>
         <h2>Using Unspool</h2>
         <p>
           Unspool turns documents you upload into short explainer reels. Only upload documents you have the right to use. Don&apos;t

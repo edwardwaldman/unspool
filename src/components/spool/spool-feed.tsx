@@ -56,7 +56,7 @@ export function SpoolFeed({ id }: { id: string }) {
     })
       .then((r) => r.json())
       .then((b: { fulfilled?: boolean }) => {
-        if (b.fulfilled) toast("Unlocked! All 10 reels are yours 🎉", 3500);
+        if (b.fulfilled) toast("Unlocked. All 10 reels are yours.", 3500);
         reload();
         router.replace(`/s/${id}?reel=${initialReel + 1}`, { scroll: false });
       })
@@ -67,20 +67,21 @@ export function SpoolFeed({ id }: { id: string }) {
 
   if (error?.status === 404) {
     return (
-      <div className="reel-bg flex h-full flex-col items-center justify-center px-8 text-center">
-        <div className="text-[40px]">🔒</div>
-        <h1 className="mt-3 text-[24px] font-black">This spool isn&apos;t here</h1>
-        <p className="mt-2 text-[15px] text-muted">It may have been deleted, or it belongs to another account.</p>
-        <Link href="/" className="mt-6 rounded-full bg-white px-5 py-2.5 font-bold text-[#0b1020]">
-          Unspool a doc
+      <div className="flex h-full flex-col justify-center bg-ink px-8">
+        <div className="label">Not found</div>
+        <h1 className="mt-3 font-display text-[38px] leading-[1.02]">This spool isn&apos;t here.</h1>
+        <p className="mt-2 text-[15px] text-muted">It was deleted, or it belongs to another account.</p>
+        <Link href="/" className="btn-primary mt-6 self-start px-5 py-2.5 text-[14px]">
+          Upload a document
         </Link>
       </div>
     );
   }
   if (error?.status === 503) {
     return (
-      <div className="reel-bg flex h-full flex-col items-center justify-center px-8 text-center">
-        <h1 className="text-[22px] font-black">Almost there</h1>
+      <div className="flex h-full flex-col justify-center bg-ink px-8">
+        <div className="label">Setup</div>
+        <h1 className="mt-3 font-display text-[34px] leading-[1.05]">Not configured yet.</h1>
         <p className="mt-2 text-[15px] text-muted">{error.message}</p>
       </div>
     );

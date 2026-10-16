@@ -31,16 +31,16 @@ function CountUp({ to, run }: { to: number; run: boolean }) {
 }
 
 /** Monospace "live" numbers under the headline that count up when the voiceover mentions them. */
-export function StatLine({ stats, beat, accent }: { stats: Stat[]; beat: number; accent: string }) {
+export function StatLine({ stats, beat }: { stats: Stat[]; beat: number }) {
   if (!stats.length) return null;
   return (
-    <div className="flex flex-wrap gap-x-5 gap-y-1 font-mono text-[13px]">
+    <div className="flex flex-wrap gap-x-5 gap-y-1 font-mono text-[12.5px]">
       {stats.map((s, i) => {
         const on = beat >= s.at_beat;
         return (
           <span key={i} className="whitespace-nowrap">
             <span className="text-muted">{s.label}</span>{" "}
-            <span className="font-semibold transition-colors" style={{ color: on ? accent : "var(--muted)" }}>
+            <span className="transition-colors" style={{ color: on ? "var(--thread)" : "var(--muted)" }}>
               {s.prefix}
               <CountUp to={s.value} run={on} />
               {s.suffix}

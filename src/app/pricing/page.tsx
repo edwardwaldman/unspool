@@ -6,59 +6,89 @@ import { formatPrice, LIMITS, PRICING } from "@/lib/config";
 
 export const metadata: Metadata = { title: "Pricing" };
 
-const check = "mr-2 text-good";
+function Plan({
+  name,
+  price,
+  unit,
+  note,
+  items,
+  featured,
+  children,
+}: {
+  name: string;
+  price: string;
+  unit?: string;
+  note: string;
+  items: string[];
+  featured?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`flex flex-col border p-7 ${featured ? "border-thread" : "border-line"} -ml-px -mt-px`}>
+      <div className="label" style={featured ? { color: "var(--thread)" } : undefined}>
+        {name}
+      </div>
+      <div className="mt-4 flex items-baseline gap-1">
+        <span className="font-display text-[52px] leading-none">{price}</span>
+        {unit && <span className="text-[15px] text-muted">{unit}</span>}
+      </div>
+      <div className="mt-2 font-mono text-[12px] text-muted">{note}</div>
+      <ul className="mt-6 border-t border-line text-[14.5px]">
+        {items.map((i) => (
+          <li key={i} className="border-b border-line py-2.5 text-cream/85">
+            {i}
+          </li>
+        ))}
+      </ul>
+      <div className="mt-auto pt-7">{children}</div>
+    </div>
+  );
+}
 
 export default function PricingPage() {
+  const perReel = formatPrice(Math.round(PRICING.documentCents / 10));
   return (
     <MarketingPage>
-      <section className="pt-10 text-center">
-        <h1 className="text-[40px] font-black leading-tight tracking-[-0.03em] sm:text-[52px]">Simple pricing</h1>
-        <p className="mx-auto mt-3 max-w-[520px] text-[17px] text-soft">
-          Every document gets reel 1 and all 10 titles free. Unlock the rest when it clicks.
+      <section className="pt-16">
+        <div className="label">Pricing</div>
+        <h1 className="mt-3 max-w-[640px] font-display text-[56px] leading-[0.98] tracking-[-0.01em] sm:text-[72px]">
+          Reel one is free. <em className="text-thread">Every time.</em>
+        </h1>
+        <p className="mt-5 max-w-[520px] text-[16px] text-cream/80">
+          See the first reel and all ten titles for any document before you pay anything.
         </p>
       </section>
-      <section className="mt-12 grid gap-4 md:grid-cols-3">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-7">
-          <div className="text-[15px] font-bold text-muted">Free</div>
-          <div className="mt-2 text-[40px] font-black">$0</div>
-          <ul className="mt-5 space-y-2.5 text-[15px] text-soft">
-            <li><span className={check}>✓</span>Reel 1 of every document</li>
-            <li><span className={check}>✓</span>All 10 titles &amp; hooks</li>
-            <li><span className={check}>✓</span>{LIMITS.freeUploadsPerDay} uploads a day</li>
-            <li><span className={check}>✓</span>No sign-up to try</li>
-          </ul>
-          <Link href="/" className="mt-7 block rounded-2xl bg-white/10 py-3.5 text-center font-extrabold">
-            Drop a doc
+      <section className="mt-14 grid pl-px pt-px md:grid-cols-3">
+        <Plan
+          name="Free"
+          price="$0"
+          note={`${LIMITS.freeUploadsPerDay} documents a day`}
+          items={["Reel 1 of every document", "All 10 titles and hooks", "No account needed"]}
+        >
+          <Link href="/" className="btn-secondary w-full py-3 text-[14px]">
+            Upload a document
           </Link>
-        </div>
-        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-7">
-          <div className="text-[15px] font-bold text-muted">Per document</div>
-          <div className="mt-2 text-[40px] font-black">{formatPrice(PRICING.documentCents)}</div>
-          <ul className="mt-5 space-y-2.5 text-[15px] text-soft">
-            <li><span className={check}>✓</span>All 10 reels for one doc</li>
-            <li><span className={check}>✓</span>Voiceover, visuals &amp; quizzes</li>
-            <li><span className={check}>✓</span>Yours to rewatch anytime</li>
-          </ul>
-          <p className="mt-7 text-center text-[13px] text-muted">Unlock from inside any spool.</p>
-        </div>
-        <div className="rounded-3xl border border-accent/50 bg-accent/[0.07] p-7 shadow-[0_0_60px_rgba(77,159,255,0.15)]">
-          <div className="text-[15px] font-bold text-accent">Unlimited</div>
-          <div className="mt-2 text-[40px] font-black">
-            {formatPrice(PRICING.subscriptionCents)}
-            <span className="text-[17px] font-semibold text-muted">/mo</span>
-          </div>
-          <ul className="mt-5 space-y-2.5 text-[15px] text-soft">
-            <li><span className={check}>✓</span>Unlimited documents</li>
-            <li><span className={check}>✓</span>Every reel unlocked</li>
-            <li><span className={check}>✓</span>&quot;All spools&quot; review feed before tests</li>
-            <li><span className={check}>✓</span>Cancel anytime</li>
-          </ul>
-          <div className="mt-7">
-            <BillingButton mode="subscribe" />
-          </div>
-        </div>
+        </Plan>
+        <Plan
+          name="One document"
+          price={formatPrice(PRICING.documentCents)}
+          note={`${perReel} per reel`}
+          items={["All 10 reels for that document", "Voiceover, visuals and quizzes", "Rewatch anytime"]}
+        >
+          <p className="text-[13px] text-muted">Unlock from inside any spool.</p>
+        </Plan>
+        <Plan
+          name="Unlimited"
+          price={formatPrice(PRICING.subscriptionCents)}
+          unit="/month"
+          note="Cancel anytime"
+          items={["Unlimited documents", "Every reel unlocked", "One review feed across all your docs"]}
+          featured
+        >
+          <BillingButton mode="subscribe" />
+        </Plan>
       </section>
-      <p className="mt-8 text-center text-[13px] text-muted">Prices in USD. Payments are handled securely by Stripe.</p>
+      <p className="mt-6 text-[13px] text-muted">Prices in USD. Payments by Stripe; we never see your card.</p>
     </MarketingPage>
   );
 }

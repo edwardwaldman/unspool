@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { GridIcon, HomeIcon, PlusIcon, ReelsIcon, UploadIcon, UserIcon } from "../ui/icons";
+import { GridIcon, HomeIcon, PlusIcon, ReelsIcon, UploadIcon, UserIcon, Wordmark } from "../ui/icons";
 import { Toaster } from "../ui/toast";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 
@@ -29,11 +29,8 @@ function useFilePicker() {
 
 function Logo() {
   return (
-    <Link href="/" className="flex items-center gap-2.5 px-3 text-[22px] font-black tracking-tight">
-      <span className="relative flex h-8 w-8 items-center justify-center rounded-[10px] bg-gradient-to-br from-accent to-hlcyan text-[#0b1020]">
-        <span className="h-3 w-3 rounded-full border-[3px] border-[#0b1020]" />
-      </span>
-      unspool
+    <Link href="/" className="px-3">
+      <Wordmark size={28} />
     </Link>
   );
 }
@@ -49,8 +46,8 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
   const side = (key: NavKey, href: string, label: string, icon: React.ReactNode) => (
     <Link
       href={href}
-      className={`flex items-center gap-3.5 rounded-xl px-3 py-2.5 text-[17px] font-bold transition ${
-        active === key ? "bg-white/10 text-white" : "text-soft hover:bg-white/5"
+      className={`flex items-center gap-3.5 border-l px-3 py-2.5 text-[15px] transition ${
+        active === key ? "border-thread text-cream" : "border-transparent text-muted hover:text-cream"
       }`}
     >
       {icon}
@@ -62,7 +59,7 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
     <Link
       href={href}
       aria-label={label}
-      className={`flex h-11 flex-1 items-center justify-center rounded-full transition ${active === key ? "bg-white/15 text-white" : "text-white/75"}`}
+      className={`flex h-11 flex-1 items-center justify-center border transition ${active === key ? "border-line bg-surface text-cream" : "border-transparent text-muted"}`}
     >
       {icon(active === key)}
     </Link>
@@ -70,7 +67,7 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
 
   return (
     <div
-      className="flex h-[100dvh] w-full overflow-hidden bg-bg0"
+      className="flex h-[100dvh] w-full overflow-hidden bg-ink"
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes("Files")) {
           e.preventDefault();
@@ -90,22 +87,22 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
       {picker.el}
 
       {/* Desktop sidebar */}
-      <aside className="hidden w-[240px] shrink-0 flex-col gap-1 border-r border-white/5 px-3 py-6 lg:flex">
+      <aside className="hidden w-[232px] shrink-0 flex-col gap-1 border-r border-line px-3 py-7 lg:flex">
         <Logo />
-        <nav className="mt-8 flex flex-col gap-1">
-          {side("home", "/", "Home", <HomeIcon size={24} filled={active === "home"} />)}
-          {side("reels", "/feed", "Reels", <ReelsIcon size={24} filled={active === "reels"} />)}
+        <nav className="mt-10 flex flex-col gap-0.5">
+          {side("home", "/", "Home", <HomeIcon size={20} filled={active === "home"} />)}
+          {side("reels", "/feed", "Reels", <ReelsIcon size={20} filled={active === "reels"} />)}
           <button
             type="button"
             onClick={picker.open}
-            className="flex items-center gap-3.5 rounded-xl px-3 py-2.5 text-left text-[17px] font-bold text-soft hover:bg-white/5"
+            className="flex items-center gap-3.5 border-l border-transparent px-3 py-2.5 text-left text-[15px] text-muted hover:text-cream"
           >
-            <UploadIcon size={24} /> Upload
+            <UploadIcon size={20} /> Upload
           </button>
-          {side("library", "/library", "Library", <GridIcon size={24} filled={active === "library"} />)}
-          {side("profile", "/profile", "Profile", <UserIcon size={24} filled={active === "profile"} />)}
+          {side("library", "/library", "Library", <GridIcon size={20} filled={active === "library"} />)}
+          {side("profile", "/profile", "Profile", <UserIcon size={20} filled={active === "profile"} />)}
         </nav>
-        <div className="mt-auto space-y-1 px-3 text-[12.5px] text-muted">
+        <div className="mt-auto space-y-2 px-3 text-[12.5px] text-muted">
           <div className="flex flex-wrap gap-x-3 gap-y-1">
             <Link href="/about">About</Link>
             <Link href="/pricing">Pricing</Link>
@@ -120,7 +117,7 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
       <main className={`relative flex min-w-0 flex-1 ${feed ? "items-center justify-center lg:py-4" : "overflow-y-auto"}`}>
         {feed ? (
           <div className="relative h-full w-full overflow-hidden lg:aspect-[9/16] lg:h-full lg:w-auto lg:max-w-[calc(100vw-360px)] lg:overflow-visible">
-            <div className="h-full w-full lg:rounded-[22px] lg:ring-1 lg:ring-white/10">{children}</div>
+            <div className="h-full w-full lg:border lg:border-line">{children}</div>
           </div>
         ) : (
           <div className="w-full pb-28 lg:pb-10">{children}</div>
@@ -129,29 +126,29 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
 
       {/* Mobile floating pill nav */}
       <nav className="safe-bottom fixed inset-x-3 bottom-3 z-50 lg:hidden">
-        <div className="flex items-center gap-1 rounded-full border border-white/10 bg-[#141b2f]/85 p-1.5 shadow-2xl backdrop-blur-xl">
-          {tab("home", "/", "Home", (on) => <HomeIcon size={24} filled={on} />)}
-          {tab("reels", "/feed", "Reels", (on) => <ReelsIcon size={24} filled={on} />)}
+        <div className="flex items-center gap-1 border border-line bg-ink/90 p-1 backdrop-blur-md">
+          {tab("home", "/", "Home", (on) => <HomeIcon size={22} filled={on} />)}
+          {tab("reels", "/feed", "Reels", (on) => <ReelsIcon size={22} filled={on} />)}
           <button
             type="button"
             aria-label="Upload a document"
             onClick={picker.open}
             className="flex h-11 flex-1 items-center justify-center"
           >
-            <span className="flex h-9 w-12 items-center justify-center rounded-xl bg-white text-[#0b1020]">
-              <PlusIcon size={22} />
+            <span className="flex h-9 w-12 items-center justify-center bg-cream text-ink">
+              <PlusIcon size={21} />
             </span>
           </button>
-          {tab("library", "/library", "Library", (on) => <GridIcon size={23} filled={on} />)}
-          {tab("profile", "/profile", "Profile", (on) => <UserIcon size={24} filled={on} />)}
+          {tab("library", "/library", "Library", (on) => <GridIcon size={21} filled={on} />)}
+          {tab("profile", "/profile", "Profile", (on) => <UserIcon size={22} filled={on} />)}
         </div>
       </nav>
 
       {dragging && (
-        <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center bg-[#0b1020]/80 backdrop-blur-sm">
-          <div className="rounded-3xl border-2 border-dashed border-accent px-10 py-12 text-center">
-            <div className="text-[44px]">🧵</div>
-            <div className="mt-2 text-[24px] font-black">Drop to unspool it</div>
+        <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center bg-ink/85">
+          <div className="border border-dashed border-thread px-12 py-12 text-center">
+            <div className="label">Release to upload</div>
+            <div className="mt-2 font-display text-[40px] leading-none">Drop to unspool it.</div>
           </div>
         </div>
       )}

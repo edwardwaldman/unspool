@@ -1,36 +1,38 @@
 import { z } from "zod";
+import { ICON_NAMES } from "./icons";
 
 // ---------------------------------------------------------------------------
 // Reel script schema (what the script writer returns, stored in reels.script_json)
 // ---------------------------------------------------------------------------
 
+// Highlight colors (markup): primary = thread accent, warn = coral, yellow = butter, cyan = sage.
 export const ColorSchema = z.enum(["primary", "warn", "yellow", "cyan"]);
-export const AccentSchema = z.enum(["blue", "pink", "cyan", "yellow", "green", "violet", "orange"]);
+export const IconSchema = z.enum(ICON_NAMES);
 
 const Side = z.object({
-  emoji: z.string(),
+  icon: IconSchema,
   title: z.string(),
   sub: z.string(),
 });
 
 const Step = z.object({
-  emoji: z.string(),
+  icon: IconSchema,
   title: z.string(),
   sub: z.string(),
 });
 
 const ListItem = z.object({
-  emoji: z.string(),
+  icon: IconSchema,
   label: z.string(),
 });
 
 export const VisualSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("hook"), emoji: z.string(), tag: z.string(), color: ColorSchema }),
+  z.object({ type: z.literal("hook"), icon: IconSchema, tag: z.string(), color: ColorSchema }),
   z.object({ type: z.literal("bigword"), word: z.string(), sub: z.string(), color: ColorSchema }),
   z.object({ type: z.literal("split"), mode: z.enum(["vs", "to"]), left: Side, right: Side }),
   z.object({ type: z.literal("flow"), steps: z.array(Step) }),
   z.object({ type: z.literal("list"), title: z.string(), items: z.array(ListItem) }),
-  z.object({ type: z.literal("emoji"), items: z.array(ListItem), arrow: z.boolean() }),
+  z.object({ type: z.literal("icons"), items: z.array(ListItem), arrow: z.boolean() }),
   z.object({
     type: z.literal("crowd"),
     total_label: z.string(),
@@ -69,7 +71,6 @@ export const ReelScriptSchema = z.object({
   index: z.number().int(),
   title: z.string(),
   headline: z.string(),
-  accent: AccentSchema,
   summary: z.string(),
   stats: z.array(StatSchema),
   beats: z.array(BeatSchema),
@@ -81,7 +82,6 @@ export type Visual = z.infer<typeof VisualSchema>;
 export type VisualType = Visual["type"] | "quiz" | "outro";
 export type Beat = z.infer<typeof BeatSchema>;
 export type ReelScript = z.infer<typeof ReelScriptSchema>;
-export type Accent = z.infer<typeof AccentSchema>;
 export type HighlightColor = z.infer<typeof ColorSchema>;
 export type Stat = z.infer<typeof StatSchema>;
 
@@ -98,8 +98,8 @@ export function reelScriptProblems(s: ReelScript): string[] {
       problems.push(`beat ${i} flow needs 2–4 steps`);
     if (b.visual.type === "list" && (b.visual.items.length < 2 || b.visual.items.length > 5))
       problems.push(`beat ${i} list needs 2–5 items`);
-    if (b.visual.type === "emoji" && (b.visual.items.length < 1 || b.visual.items.length > 3))
-      problems.push(`beat ${i} emoji needs 1–3 items`);
+    if (b.visual.type === "icons" && (b.visual.items.length < 1 || b.visual.items.length > 3))
+      problems.push(`beat ${i} icons needs 1–3 items`);
   }
   return problems;
 }
@@ -110,7 +110,7 @@ export function normalizeReelScript(s: ReelScript): ReelScript {
     const v = b.visual;
     if (v.type === "flow") return { ...b, visual: { ...v, steps: v.steps.slice(0, 4) } };
     if (v.type === "list") return { ...b, visual: { ...v, items: v.items.slice(0, 5) } };
-    if (v.type === "emoji") return { ...b, visual: { ...v, items: v.items.slice(0, 3) } };
+    if (v.type === "icons") return { ...b, visual: { ...v, items: v.items.slice(0, 3) } };
     if (v.type === "crowd") return { ...b, visual: { ...v, ratio: Math.min(0.9, Math.max(0.02, v.ratio)) } };
     return b;
   });

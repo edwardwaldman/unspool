@@ -31,19 +31,19 @@ export function AllFeed() {
 
   if (failed || (data && items.length === 0)) {
     return (
-      <div className="reel-bg flex h-full flex-col items-center justify-center px-8 text-center">
-        <div className="text-[44px]">🧵</div>
-        <h1 className="mt-3 text-[24px] font-black">No reels yet</h1>
-        <p className="mt-2 max-w-[280px] text-[15px] text-muted">
-          {failed ?? "Drop a doc and your reels from every spool show up here, ready for a pre-test scroll."}
+      <div className="flex h-full flex-col justify-center bg-ink px-8">
+        <div className="label">All spools</div>
+        <h1 className="mt-3 font-display text-[38px] leading-[1.02]">No reels yet.</h1>
+        <p className="mt-2 max-w-[300px] text-[15px] text-muted">
+          {failed ?? "Reels from every document you upload collect here, for one long review before a test."}
         </p>
-        <Link href="/" className="mt-6 rounded-full bg-white px-5 py-2.5 font-bold text-[#0b1020]">
-          Unspool a doc
+        <Link href="/" className="btn-primary mt-6 self-start px-5 py-2.5 text-[14px]">
+          Upload a document
         </Link>
       </div>
     );
   }
-  if (!data) return <div className="reel-bg h-full w-full" />;
+  if (!data) return <div className="h-full w-full bg-ink" />;
 
   const current = items[index]?.spool;
   return <Feed items={items} viewer={data.viewer} tab="all" docHref={current ? `/s/${current.id}` : undefined} onIndexChange={setIndex} />;

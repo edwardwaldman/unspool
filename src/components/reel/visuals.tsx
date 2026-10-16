@@ -1,10 +1,12 @@
 "use client";
 
+import { ArrowRight, Check, ChevronUp, X } from "lucide-react";
 import { motion } from "motion/react";
 import { COLOR_VAR } from "@/lib/markup";
 import type { HighlightColor, ReelScript, Visual } from "@/lib/schema";
 import { MarkedText } from "../ui/marked-text";
 import { CrowdCanvas } from "./crowd-canvas";
+import { ReelIcon } from "./icon";
 import type { QuizState } from "./use-playback";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -13,7 +15,8 @@ function colorOf(c: HighlightColor | undefined) {
   return COLOR_VAR[c ?? "primary"];
 }
 
-function Glow({ color, size = 220, opacity = 0.35 }: { color: string; size?: number; opacity?: number }) {
+/** Soft, heavily blurred halo behind a visual. Never neon. */
+function Halo({ color = "var(--thread)", size = 260 }: { color?: string; size?: number }) {
   return (
     <div
       aria-hidden
@@ -21,22 +24,31 @@ function Glow({ color, size = 220, opacity = 0.35 }: { color: string; size?: num
       style={{
         width: size,
         height: size,
-        background: `radial-gradient(circle, color-mix(in srgb, ${color} ${Math.round(opacity * 100)}%, transparent) 0%, transparent 70%)`,
-        filter: "blur(8px)",
+        background: color,
+        opacity: "var(--glow-strength)",
+        filter: `blur(${Math.round(size / 3)}px)`,
       }}
     />
   );
 }
 
-function Emoji({ children, size = 56, delay = 0 }: { children: string; size?: number; delay?: number }) {
+function Label({ children, color }: { children: React.ReactNode; color?: string }) {
+  return (
+    <div className="font-sans text-[11px] font-medium uppercase tracking-[0.18em]" style={{ color: color ?? "var(--muted)" }}>
+      {children}
+    </div>
+  );
+}
+
+function Icon({ name, size = 44, delay = 0, color = "var(--thread)" }: { name: string; size?: number; delay?: number; color?: string }) {
   return (
     <motion.div
-      initial={{ scale: 0.3, opacity: 0, y: 10 }}
-      animate={{ scale: 1, opacity: 1, y: 0 }}
-      transition={{ type: "spring", stiffness: 260, damping: 16, delay }}
-      style={{ fontSize: size, lineHeight: 1, filter: "drop-shadow(0 0 18px rgba(120,170,255,0.35))" }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease, delay }}
+      style={{ color }}
     >
-      {children}
+      <ReelIcon name={name} size={size} />
     </motion.div>
   );
 }
@@ -44,26 +56,30 @@ function Emoji({ children, size = 56, delay = 0 }: { children: string; size?: nu
 function HookVisual({ v }: { v: Extract<Visual, { type: "hook" }> }) {
   const c = colorOf(v.color);
   return (
-    <div className="relative flex flex-col items-center gap-6">
-      <Glow color={c} size={300} opacity={0.4} />
-      {[0, 1, 2].map((i) => (
-        <motion.div
-          key={i}
-          aria-hidden
-          className="absolute left-1/2 top-[46px] -translate-x-1/2 -translate-y-1/2 rounded-full border"
-          style={{ borderColor: c, width: 120, height: 120 }}
-          initial={{ scale: 0.6, opacity: 0.6 }}
-          animate={{ scale: 2.4, opacity: 0 }}
-          transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.8, ease: "easeOut" }}
-        />
-      ))}
-      <Emoji size={92}>{v.emoji}</Emoji>
+    <div className="relative flex flex-col items-center gap-7">
+      <Halo color={c} size={280} />
       <motion.div
-        initial={{ opacity: 0, y: 14, scale: 0.9 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease }}
+        className="relative flex h-32 w-32 items-center justify-center rounded-full border"
+        style={{ borderColor: `color-mix(in srgb, ${c} 45%, transparent)` }}
+      >
+        <motion.div
+          aria-hidden
+          className="absolute inset-[-14px] rounded-full border"
+          style={{ borderColor: `color-mix(in srgb, ${c} 18%, transparent)` }}
+          animate={{ scale: [1, 1.08, 1], opacity: [0.8, 0.3, 0.8] }}
+          transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <Icon name={v.icon} size={52} color={c} />
+      </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25, duration: 0.5, ease }}
-        className="rounded-full px-4 py-1.5 text-[13px] font-black uppercase tracking-[0.18em]"
-        style={{ color: "#0b1020", background: c, boxShadow: `0 0 28px ${c}` }}
+        className="relative border px-3.5 py-1.5 text-[11.5px] font-medium uppercase tracking-[0.22em]"
+        style={{ borderColor: c, color: c }}
       >
         {v.tag}
       </motion.div>
@@ -75,177 +91,154 @@ function BigWordVisual({ v }: { v: Extract<Visual, { type: "bigword" }> }) {
   const c = colorOf(v.color);
   const long = v.word.length > 10;
   return (
-    <div className="relative flex flex-col items-center px-4 text-center">
-      <Glow color={c} size={320} opacity={0.28} />
+    <div className="relative flex flex-col items-center px-5 text-center">
+      <Halo color={c} size={300} />
       <motion.div
-        initial={{ opacity: 0, scale: 0.6, filter: "blur(10px)" }}
-        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-        transition={{ duration: 0.55, ease }}
-        className={`relative font-black uppercase leading-[0.95] tracking-tight ${long ? "text-[44px]" : "text-[64px]"}`}
-        style={{ color: c, textShadow: `0 0 34px color-mix(in srgb, ${c} 70%, transparent)` }}
+        initial={{ opacity: 0, y: 14, filter: "blur(8px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        transition={{ duration: 0.6, ease }}
+        className={`relative font-hook font-extrabold uppercase leading-[0.95] tracking-[-0.03em] ${long ? "text-[44px]" : "text-[62px]"}`}
+        style={{ color: c }}
       >
         {v.word}
       </motion.div>
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.45, ease }}
-        className="relative mt-4 max-w-[280px] text-[15px] font-semibold uppercase tracking-[0.12em] text-muted"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
+        className="relative mt-5 max-w-[280px]"
       >
-        {v.sub}
+        <Label>{v.sub}</Label>
       </motion.div>
     </div>
   );
 }
 
-function SplitVisual({ v, accent }: { v: Extract<Visual, { type: "split" }>; accent: string }) {
+function SplitVisual({ v }: { v: Extract<Visual, { type: "split" }> }) {
   const side = (s: typeof v.left, i: number) => (
     <motion.div
       key={i}
-      initial={{ opacity: 0, x: i === 0 ? -30 : 30 }}
+      initial={{ opacity: 0, x: i === 0 ? -20 : 20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: i * 0.35, duration: 0.5, ease }}
+      transition={{ delay: i * 0.3, duration: 0.55, ease }}
       className="flex w-[42%] flex-col items-center text-center"
     >
-      <Emoji size={54} delay={i * 0.35}>{s.emoji}</Emoji>
+      <Icon name={s.icon} size={40} delay={i * 0.3} color={i === 0 ? "var(--cream)" : "var(--thread)"} />
       <div
-        className="mt-3 text-[19px] font-black uppercase leading-tight tracking-tight"
-        style={{ color: i === 0 ? "var(--text)" : accent }}
+        className="mt-4 font-hook text-[20px] font-extrabold uppercase leading-tight tracking-[-0.01em]"
+        style={{ color: i === 0 ? "var(--cream)" : "var(--thread)" }}
       >
         {s.title}
       </div>
-      <div className="mt-1.5 text-[13px] font-medium leading-snug text-muted">{s.sub}</div>
+      <div className="mt-1.5 text-[13px] leading-snug text-muted">{s.sub}</div>
     </motion.div>
   );
   return (
     <div className="relative flex w-full items-center justify-between px-5">
+      <Halo size={240} />
       {side(v.left, 0)}
-      <div className="flex flex-col items-center">
+      <div className="relative flex flex-col items-center">
         <motion.div
           initial={{ scaleY: 0 }}
           animate={{ scaleY: 1 }}
           transition={{ duration: 0.6, ease }}
-          className="h-40 w-px origin-top"
-          style={{ background: `linear-gradient(transparent, ${accent}, transparent)`, boxShadow: `0 0 12px ${accent}` }}
+          className="h-40 w-px origin-top bg-line"
         />
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-          className="absolute rounded-full bg-bg0 px-2 py-1 font-mono text-[12px] font-semibold uppercase"
-          style={{ color: accent, border: `1px solid ${accent}` }}
-        >
-          {v.mode === "vs" ? "vs" : "→"}
-        </motion.div>
+        <div className="absolute top-1/2 -translate-y-1/2 border border-line bg-ink px-1.5 py-0.5 font-mono text-[11px] uppercase text-muted">
+          {v.mode === "vs" ? "vs" : <ArrowRight size={12} strokeWidth={1.5} />}
+        </div>
       </div>
       {side(v.right, 1)}
     </div>
   );
 }
 
-function FlowVisual({ v, accent, progress }: { v: Extract<Visual, { type: "flow" }>; accent: string; progress: number }) {
+function FlowVisual({ v, progress }: { v: Extract<Visual, { type: "flow" }>; progress: number }) {
   const n = v.steps.length;
   const shown = Math.max(1, Math.min(n, Math.ceil((progress + 0.15) * n)));
   return (
-    <div className="relative flex w-full flex-col gap-3 px-8">
-      <svg className="absolute left-[60px] top-6 h-[calc(100%-48px)] w-1 overflow-visible" aria-hidden>
-        <motion.line
-          x1="0"
-          y1="0"
-          x2="0"
-          y2="100%"
-          stroke={accent}
-          strokeWidth="2"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: shown / n }}
+    <div className="relative flex w-full flex-col px-8">
+      <div aria-hidden className="absolute bottom-7 left-[59px] top-7 w-px bg-line">
+        <motion.div
+          className="w-px bg-thread"
+          initial={{ height: 0 }}
+          animate={{ height: `${((shown - 1) / Math.max(1, n - 1)) * 100}%` }}
           transition={{ duration: 0.6, ease }}
-          style={{ filter: `drop-shadow(0 0 6px ${accent})` }}
         />
-      </svg>
-      {v.steps.map((s, i) => (
+      </div>
+      {v.steps.map((s, i) => {
+        const on = i < shown;
+        return (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: on ? 1 : 0.25, x: 0 }}
+            transition={{ duration: 0.45, ease }}
+            className="relative flex items-center gap-4 py-2.5"
+          >
+            <div
+              className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center border bg-ink"
+              style={{ borderColor: on ? "var(--thread)" : "var(--border)", color: on ? "var(--thread)" : "var(--muted)" }}
+            >
+              <ReelIcon name={s.icon} size={24} strokeWidth={1.5} />
+            </div>
+            <div>
+              <div className="font-mono text-[10.5px] text-muted">{String(i + 1).padStart(2, "0")}</div>
+              <div className="font-hook text-[18px] font-extrabold uppercase leading-tight">{s.title}</div>
+              <div className="text-[13px] leading-snug text-muted">{s.sub}</div>
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ListVisual({ v, progress }: { v: Extract<Visual, { type: "list" }>; progress: number }) {
+  const n = v.items.length;
+  const shown = Math.max(1, Math.min(n, Math.floor(progress * (n + 0.6)) + 1));
+  return (
+    <div className="flex w-full flex-col px-7">
+      <div className="mb-3 flex items-baseline justify-between border-b border-line pb-2">
+        <Label color="var(--thread)">{v.title}</Label>
+        <span className="font-mono text-[11px] text-muted">
+          {shown}/{n}
+        </span>
+      </div>
+      {v.items.map((it, i) => (
         <motion.div
           key={i}
-          initial={{ opacity: 0, x: 24 }}
-          animate={i < shown ? { opacity: 1, x: 0 } : { opacity: 0.15, x: 0 }}
-          transition={{ duration: 0.45, ease }}
-          className="relative flex items-center gap-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={i < shown ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+          transition={{ duration: 0.4, ease }}
+          className="flex items-center gap-4 border-b border-line py-3"
         >
-          <div
-            className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-bg1 text-[28px]"
-            style={{ boxShadow: i < shown ? `0 0 0 1.5px ${accent}, 0 0 22px color-mix(in srgb, ${accent} 50%, transparent)` : undefined }}
-          >
-            {s.emoji}
-          </div>
-          <div>
-            <div className="text-[18px] font-black uppercase leading-tight tracking-tight">{s.title}</div>
-            <div className="text-[13px] font-medium leading-snug text-muted">{s.sub}</div>
-          </div>
+          <span className="w-5 font-mono text-[12px] text-muted">{String(i + 1).padStart(2, "0")}</span>
+          <span className="text-thread">
+            <ReelIcon name={it.icon} size={20} strokeWidth={1.5} />
+          </span>
+          <span className="text-[18px] font-semibold leading-tight tracking-[-0.01em]">{it.label}</span>
         </motion.div>
       ))}
     </div>
   );
 }
 
-function ListVisual({ v, accent, progress }: { v: Extract<Visual, { type: "list" }>; accent: string; progress: number }) {
-  const n = v.items.length;
-  const shown = Math.max(1, Math.min(n, Math.floor(progress * (n + 0.6)) + 1));
+function IconsVisual({ v }: { v: Extract<Visual, { type: "icons" }> }) {
   return (
-    <div className="flex w-full flex-col px-7">
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-4 font-mono text-[12px] font-semibold uppercase tracking-[0.2em]"
-        style={{ color: accent }}
-      >
-        {v.title}
-      </motion.div>
-      <div className="flex flex-col gap-2.5">
-        {v.items.map((it, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 16 }}
-            animate={i < shown ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
-            transition={{ duration: 0.4, ease }}
-            className="flex items-center gap-3.5 border-b border-line pb-2.5"
-          >
-            <span className="w-6 font-mono text-[13px] text-muted">{String(i + 1).padStart(2, "0")}</span>
-            <span className="text-[26px] leading-none">{it.emoji}</span>
-            <span className="text-[19px] font-extrabold leading-tight tracking-tight">{it.label}</span>
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function EmojiVisual({ v, accent }: { v: Extract<Visual, { type: "emoji" }>; accent: string }) {
-  return (
-    <div className="relative flex w-full items-center justify-center gap-3 px-4">
+    <div className="relative flex w-full items-center justify-center gap-4 px-4">
+      <Halo size={260} />
       {v.items.map((it, i) => (
-        <div key={i} className="flex items-center gap-3">
+        <div key={i} className="relative flex items-center gap-4">
           {i > 0 && v.arrow && (
-            <motion.svg
-              width="44"
-              height="16"
-              viewBox="0 0 44 16"
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.45 - 0.15 }}
-              aria-hidden
-            >
-              <path d="M2 8h36M32 2l7 6-7 6" stroke={accent} strokeWidth="2.2" fill="none" strokeLinecap="round" style={{ filter: `drop-shadow(0 0 5px ${accent})` }} />
-            </motion.svg>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.45 - 0.15 }} className="text-muted">
+              <ArrowRight size={22} strokeWidth={1.25} />
+            </motion.div>
           )}
-          <div className="relative flex flex-col items-center text-center">
-            <Glow color={accent} size={130} opacity={0.22} />
-            <Emoji size={v.items.length > 2 ? 54 : 70} delay={i * 0.45}>{it.emoji}</Emoji>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: i * 0.45 + 0.2 }}
-              className="mt-3 max-w-[110px] text-[13px] font-black uppercase leading-tight tracking-[0.08em] text-soft"
-            >
-              {it.label}
+          <div className="flex flex-col items-center text-center">
+            <Icon name={it.icon} size={v.items.length > 2 ? 46 : 60} delay={i * 0.45} />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.45 + 0.2 }} className="mt-4 max-w-[110px]">
+              <Label color="var(--cream)">{it.label}</Label>
             </motion.div>
           </div>
         </div>
@@ -254,18 +247,22 @@ function EmojiVisual({ v, accent }: { v: Extract<Visual, { type: "emoji" }>; acc
   );
 }
 
-function CrowdVisual({ v, accent, progress }: { v: Extract<Visual, { type: "crowd" }>; accent: string; progress: number }) {
+function CrowdVisual({ v, progress }: { v: Extract<Visual, { type: "crowd" }>; progress: number }) {
+  const pct = Math.round(v.ratio * 100);
   return (
     <div className="flex h-full w-full flex-col items-center justify-center">
       <div className="relative aspect-[1.25] w-[94%]">
-        <CrowdCanvas accent={accent} ratio={v.ratio} progress={progress} />
+        <CrowdCanvas ratio={v.ratio} progress={progress} />
       </div>
-      <div className="mt-3 flex items-center gap-5 font-mono text-[12px] uppercase tracking-wider">
-        <span className="flex items-center gap-2 text-muted">
-          <span className="h-2 w-2 rounded-full bg-[#a9b6d6] opacity-60" /> {v.total_label}
+      <div className="mt-2 flex items-center gap-6">
+        <span className="flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-muted" />
+          <Label>{v.total_label}</Label>
         </span>
-        <span className="flex items-center gap-2" style={{ color: accent }}>
-          <span className="h-2 w-2 rounded-full" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} /> {v.highlight_label}
+        <span className="flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-thread" />
+          <Label color="var(--thread)">{v.highlight_label}</Label>
+          <span className="font-mono text-[11px] text-thread">{pct}%</span>
         </span>
       </div>
     </div>
@@ -276,23 +273,18 @@ function StatVisual({ v }: { v: Extract<Visual, { type: "stat" }> }) {
   const c = colorOf(v.color);
   return (
     <div className="relative flex flex-col items-center text-center">
-      <Glow color={c} size={320} opacity={0.3} />
+      <Halo color={c} size={280} />
       <motion.div
-        initial={{ opacity: 0, scale: 0.7 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.55, ease }}
-        className={`relative font-mono font-semibold leading-none tracking-tight ${v.value.length > 8 ? "text-[48px]" : "text-[72px]"}`}
-        style={{ color: c, textShadow: `0 0 36px color-mix(in srgb, ${c} 70%, transparent)` }}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease }}
+        className={`relative font-mono font-medium leading-none tracking-[-0.04em] ${v.value.length > 8 ? "text-[46px]" : "text-[68px]"}`}
+        style={{ color: c }}
       >
         {v.value}
       </motion.div>
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="relative mt-4 text-[14px] font-black uppercase tracking-[0.2em] text-soft"
-      >
-        {v.label}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="relative mt-5 border-t border-line pt-3">
+        <Label color="var(--cream)">{v.label}</Label>
       </motion.div>
     </div>
   );
@@ -303,48 +295,34 @@ const LETTERS = ["A", "B", "C", "D"];
 function QuizVisual({
   quiz,
   state,
-  accent,
   waitLeft,
   onAnswer,
 }: {
   quiz: ReelScript["quiz"];
   state: QuizState;
-  accent: string;
   waitLeft: number;
   onAnswer: (i: number) => void;
 }) {
+  const result = state.selected === null ? "Answer" : state.selected === quiz.answer ? "Correct" : "Not quite";
   return (
     <div className="flex w-full flex-col px-6">
       <div className="mb-3 flex items-center justify-between">
-        <span className="font-mono text-[12px] font-semibold uppercase tracking-[0.2em]" style={{ color: accent }}>
-          Quick check
-        </span>
+        <Label color="var(--thread)">Quick check</Label>
         {state.waiting && (
-          <svg width="22" height="22" viewBox="0 0 22 22" aria-label="Time left to answer">
-            <circle cx="11" cy="11" r="9" stroke="rgba(255,255,255,0.15)" strokeWidth="2.5" fill="none" />
-            <circle
-              cx="11"
-              cy="11"
-              r="9"
-              stroke={accent}
-              strokeWidth="2.5"
-              fill="none"
-              strokeDasharray={2 * Math.PI * 9}
-              strokeDashoffset={2 * Math.PI * 9 * (1 - waitLeft)}
-              transform="rotate(-90 11 11)"
-            />
-          </svg>
+          <div className="h-px w-16 bg-line" aria-label="Time left to answer">
+            <div className="h-px bg-thread" style={{ width: `${waitLeft * 100}%` }} />
+          </div>
         )}
       </div>
-      <div className="mb-5 text-[21px] font-extrabold leading-snug tracking-tight">
+      <div className="mb-5 text-[20px] font-semibold leading-snug tracking-[-0.01em]">
         <MarkedText text={quiz.question} />
       </div>
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col">
         {quiz.options.map((o, i) => {
           const correct = i === quiz.answer;
           const chosen = state.selected === i;
           const revealed = state.revealed;
-          const border = revealed ? (correct ? "var(--good)" : chosen ? "var(--hl-warn)" : "var(--line)") : "rgba(255,255,255,0.22)";
+          const tone = revealed ? (correct ? "var(--sage)" : chosen ? "var(--coral)" : "var(--border)") : "var(--border)";
           return (
             <motion.button
               key={i}
@@ -354,23 +332,20 @@ function QuizVisual({
                 onAnswer(i);
               }}
               disabled={revealed}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: revealed && !correct && !chosen ? 0.45 : 1, y: 0, scale: revealed && correct ? 1.03 : 1 }}
-              transition={{ delay: revealed ? 0 : 0.15 + i * 0.12, duration: 0.35, ease }}
-              className="flex items-center gap-3 rounded-2xl border bg-white/[0.04] px-4 py-3.5 text-left text-[16px] font-bold backdrop-blur-sm active:scale-[0.98]"
-              style={{
-                borderColor: border,
-                boxShadow: revealed && correct ? "0 0 26px color-mix(in srgb, var(--good) 45%, transparent)" : undefined,
-              }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: revealed && !correct && !chosen ? 0.4 : 1, y: 0 }}
+              transition={{ delay: revealed ? 0 : 0.15 + i * 0.1, duration: 0.35, ease }}
+              className="-mt-px flex items-center gap-3.5 border bg-ink/60 px-4 py-3.5 text-left text-[16px] font-medium hover:bg-surface"
+              style={{ borderColor: tone, position: "relative", zIndex: revealed && (correct || chosen) ? 1 : 0 }}
             >
               <span
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-[12px]"
+                className="flex h-6 w-6 shrink-0 items-center justify-center border font-mono text-[11px]"
                 style={{
-                  background: revealed && correct ? "var(--good)" : revealed && chosen ? "var(--hl-warn)" : "rgba(255,255,255,0.08)",
-                  color: revealed && (correct || chosen) ? "#0b1020" : "var(--text-soft)",
+                  borderColor: revealed && (correct || chosen) ? tone : "var(--border)",
+                  color: revealed && (correct || chosen) ? tone : "var(--muted)",
                 }}
               >
-                {revealed && correct ? "✓" : revealed && chosen ? "✕" : LETTERS[i]}
+                {revealed && correct ? <Check size={13} strokeWidth={2} /> : revealed && chosen ? <X size={13} strokeWidth={2} /> : LETTERS[i]}
               </span>
               <MarkedText text={o} />
             </motion.button>
@@ -378,55 +353,46 @@ function QuizVisual({
         })}
       </div>
       {state.revealed && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-4 text-center text-[14px] font-extrabold uppercase tracking-[0.14em]"
-          style={{ color: state.selected === null ? accent : state.selected === quiz.answer ? "var(--good)" : "var(--hl-warn)" }}
-        >
-          {state.selected === null ? "Here's the answer" : state.selected === quiz.answer ? "Nailed it" : "Not quite"}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4">
+          <Label
+            color={state.selected === null ? "var(--muted)" : state.selected === quiz.answer ? "var(--sage)" : "var(--coral)"}
+          >
+            {result}
+          </Label>
         </motion.div>
       )}
     </div>
   );
 }
 
-function OutroVisual({ outro, accent, last }: { outro: ReelScript["outro"]; accent: string; last: boolean }) {
+function OutroVisual({ outro, last }: { outro: ReelScript["outro"]; last: boolean }) {
   return (
     <div className="relative flex flex-col items-center text-center">
-      <Glow color={accent} size={300} opacity={0.25} />
+      <Halo size={260} />
+      <Label>{last ? "End of document" : "Up next"}</Label>
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="relative font-mono text-[12px] font-semibold uppercase tracking-[0.3em] text-muted"
-      >
-        {last ? "You finished" : "Up next"}
-      </motion.div>
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15, duration: 0.5, ease }}
-        className="relative mt-3 max-w-[300px] text-[34px] font-black uppercase leading-[1.02] tracking-tight"
-        style={{ color: accent, textShadow: `0 0 30px color-mix(in srgb, ${accent} 60%, transparent)` }}
+        transition={{ delay: 0.15, duration: 0.55, ease }}
+        className="relative mt-4 max-w-[300px] font-hook text-[34px] font-extrabold uppercase leading-[1] tracking-[-0.02em] text-thread"
       >
         {outro.next_title}
       </motion.div>
       {!last && (
-        <div className="relative mt-10 flex flex-col items-center gap-1" style={{ color: accent }}>
-          {[0, 1, 2].map((i) => (
-            <motion.svg
+        <div className="relative mt-10 flex flex-col items-center text-thread">
+          {[0, 1].map((i) => (
+            <motion.div
               key={i}
-              width="28"
-              height="14"
-              viewBox="0 0 28 14"
-              animate={{ opacity: [0.15, 1, 0.15], y: [4, -4, 4] }}
-              transition={{ duration: 1.4, repeat: Infinity, delay: (2 - i) * 0.18 }}
-              aria-hidden
+              animate={{ opacity: [0.2, 1, 0.2], y: [3, -3, 3] }}
+              transition={{ duration: 1.6, repeat: Infinity, delay: (1 - i) * 0.2 }}
+              className="-mt-2"
             >
-              <path d="M2 12 14 2l12 10" stroke="currentColor" strokeWidth="2.6" fill="none" strokeLinecap="round" />
-            </motion.svg>
+              <ChevronUp size={26} strokeWidth={1.25} />
+            </motion.div>
           ))}
-          <div className="mt-2 text-[13px] font-extrabold uppercase tracking-[0.2em] text-soft">Keep scrolling</div>
+          <div className="mt-3">
+            <Label>Keep scrolling</Label>
+          </div>
         </div>
       )}
     </div>
@@ -436,7 +402,6 @@ function OutroVisual({ outro, accent, last }: { outro: ReelScript["outro"]; acce
 export type StageProps = {
   visual: Visual | { type: "quiz" } | { type: "outro" };
   script: ReelScript;
-  accent: string;
   progress: number;
   quiz: QuizState;
   quizWaitLeft: number;
@@ -444,27 +409,27 @@ export type StageProps = {
   last: boolean;
 };
 
-export function VisualStage({ visual, script, accent, progress, quiz, quizWaitLeft, onAnswer, last }: StageProps) {
+export function VisualStage({ visual, script, progress, quiz, quizWaitLeft, onAnswer, last }: StageProps) {
   switch (visual.type) {
     case "hook":
       return <HookVisual v={visual} />;
     case "bigword":
       return <BigWordVisual v={visual} />;
     case "split":
-      return <SplitVisual v={visual} accent={accent} />;
+      return <SplitVisual v={visual} />;
     case "flow":
-      return <FlowVisual v={visual} accent={accent} progress={progress} />;
+      return <FlowVisual v={visual} progress={progress} />;
     case "list":
-      return <ListVisual v={visual} accent={accent} progress={progress} />;
-    case "emoji":
-      return <EmojiVisual v={visual} accent={accent} />;
+      return <ListVisual v={visual} progress={progress} />;
+    case "icons":
+      return <IconsVisual v={visual} />;
     case "crowd":
-      return <CrowdVisual v={visual} accent={accent} progress={progress} />;
+      return <CrowdVisual v={visual} progress={progress} />;
     case "stat":
       return <StatVisual v={visual} />;
     case "quiz":
-      return <QuizVisual quiz={script.quiz} state={quiz} accent={accent} waitLeft={quizWaitLeft} onAnswer={onAnswer} />;
+      return <QuizVisual quiz={script.quiz} state={quiz} waitLeft={quizWaitLeft} onAnswer={onAnswer} />;
     case "outro":
-      return <OutroVisual outro={script.outro} accent={accent} last={last} />;
+      return <OutroVisual outro={script.outro} last={last} />;
   }
 }

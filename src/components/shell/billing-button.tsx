@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export function BillingButton({ mode }: { mode: "portal" | "subscribe" }) {
+export function BillingButton({ mode, label }: { mode: "portal" | "subscribe"; label?: string }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   return (
@@ -25,13 +25,11 @@ export function BillingButton({ mode }: { mode: "portal" | "subscribe" }) {
             setBusy(false);
           }
         }}
-        className={`w-full rounded-2xl py-3.5 text-[16px] font-extrabold disabled:opacity-60 ${
-          mode === "portal" ? "bg-white/10" : "bg-white text-[#0b1020]"
-        }`}
+        className={`w-full py-3.5 text-[15px] ${mode === "portal" ? "btn-secondary" : "btn-primary"}`}
       >
-        {busy ? "Opening…" : mode === "portal" ? "Manage subscription" : "Go unlimited"}
+        {busy ? "Opening" : label ?? (mode === "portal" ? "Manage subscription" : "Go unlimited")}
       </button>
-      {err && <p className="mt-2 text-center text-[13px] text-warn">{err}</p>}
+      {err && <p className="mt-2 text-center text-[13px] text-coral">{err}</p>}
     </div>
   );
 }

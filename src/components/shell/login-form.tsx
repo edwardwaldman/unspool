@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { GoogleIcon } from "../ui/icons";
 
 export function LoginForm({ next, error }: { next: string; error?: string }) {
   const [email, setEmail] = useState("");
@@ -14,8 +13,8 @@ export function LoginForm({ next, error }: { next: string; error?: string }) {
   return (
     <div className="w-full max-w-[380px]">
       {sent ? (
-        <div className="rounded-2xl bg-white/5 p-5 text-[15px] text-soft">
-          Check <b className="text-ink">{email}</b> for your sign-in link. Open it on this device.
+        <div className="border border-line p-5 text-[15px] text-cream/85">
+          Sign-in link sent to <span className="text-cream">{email}</span>. Open it on this device.
         </div>
       ) : (
         <>
@@ -30,12 +29,12 @@ export function LoginForm({ next, error }: { next: string; error?: string }) {
                 setBusy(false);
               }
             }}
-            className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-white py-3.5 text-[16px] font-bold text-[#0b1020] disabled:opacity-60"
+            className="btn-primary w-full py-3.5 text-[15px]"
           >
-            <GoogleIcon /> Continue with Google
+            Continue with Google
           </button>
-          <div className="my-5 flex items-center gap-3 text-[12px] uppercase tracking-widest text-muted">
-            <div className="h-px flex-1 bg-white/10" /> or email <div className="h-px flex-1 bg-white/10" />
+          <div className="label my-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-line" /> or email <div className="h-px flex-1 bg-line" />
           </div>
           <form
             onSubmit={async (e) => {
@@ -47,7 +46,6 @@ export function LoginForm({ next, error }: { next: string; error?: string }) {
               if (error) setErr(error.message);
               else setSent(true);
             }}
-            className="space-y-2.5"
           >
             <input
               type="email"
@@ -55,15 +53,15 @@ export function LoginForm({ next, error }: { next: string; error?: string }) {
               placeholder="you@school.edu"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3.5 text-[16px] outline-none focus:border-accent"
+              className="field w-full px-4 py-3.5 text-[16px]"
             />
-            <button type="submit" disabled={busy} className="w-full rounded-2xl bg-accent py-3.5 text-[16px] font-bold text-[#0b1020] disabled:opacity-60">
-              {busy ? "Sending…" : "Email me a magic link"}
+            <button type="submit" disabled={busy} className="btn-secondary -mt-px w-full py-3.5 text-[15px]">
+              {busy ? "Sending" : "Email me a sign-in link"}
             </button>
           </form>
         </>
       )}
-      {err && <p className="mt-3 text-center text-[13px] text-warn">{err}</p>}
+      {err && <p className="mt-3 text-center text-[13px] text-coral">{err}</p>}
     </div>
   );
 }

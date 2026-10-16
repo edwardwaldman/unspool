@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { threadHex } from "./accent";
 
 /**
- * The reel's backdrop: a slow field of glowing dots and faint connecting lines on deep navy,
- * tinted with the reel's accent. `pulse` changes (e.g. per beat) send a soft ripple through it.
+ * The reel's backdrop: a slow field of faint dots and hairline connections on ink, a few tinted
+ * with the thread accent. `pulse` changes (e.g. per beat) send a soft ripple through it.
  */
-export function ParticleField({ accent, active, pulse }: { accent: string; active: boolean; pulse: number }) {
+export function ParticleField({ active, pulse }: { active: boolean; pulse: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const pulseRef = useRef({ value: pulse, at: 0 });
 
@@ -19,6 +20,8 @@ export function ParticleField({ accent, active, pulse }: { accent: string; activ
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    const accent = threadHex();
+    const base = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8a8fa3";
     let raf = 0;
     let w = 0;
     let h = 0;
@@ -33,15 +36,15 @@ export function ParticleField({ accent, active, pulse }: { accent: string; activ
       canvas.width = Math.max(1, Math.floor(w * dpr));
       canvas.height = Math.max(1, Math.floor(h * dpr));
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const n = Math.round((w * h) / 4200);
+      const n = Math.round((w * h) / 5200);
       parts = Array.from({ length: n }, () => ({
         x: Math.random() * w,
         y: Math.random() * h,
         vx: (Math.random() - 0.5) * 0.12,
         vy: (Math.random() - 0.5) * 0.12 - 0.04,
         r: Math.random() * 1.3 + 0.35,
-        a: Math.random() * 0.5 + 0.15,
-        hot: Math.random() < 0.12,
+        a: Math.random() * 0.3 + 0.08,
+        hot: Math.random() < 0.08,
       }));
     };
     resize();
@@ -68,7 +71,7 @@ export function ParticleField({ accent, active, pulse }: { accent: string; activ
           const d2 = dx * dx + dy * dy;
           if (d2 < 110 * 110) {
             ctx.strokeStyle = accent;
-            ctx.globalAlpha = (1 - Math.sqrt(d2) / 110) * 0.18;
+            ctx.globalAlpha = (1 - Math.sqrt(d2) / 110) * 0.1;
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
             ctx.lineTo(b.x, b.y);
@@ -92,8 +95,8 @@ export function ParticleField({ accent, active, pulse }: { accent: string; activ
           const band = Math.abs(d - ripple);
           if (band < 40) boost = (1 - band / 40) * (1 - since / 1.6);
         }
-        ctx.globalAlpha = Math.min(1, p.a + boost * 0.8);
-        ctx.fillStyle = p.hot || boost > 0.2 ? accent : "#9fb0d8";
+        ctx.globalAlpha = Math.min(0.7, p.a + boost * 0.45);
+        ctx.fillStyle = p.hot || boost > 0.2 ? accent : base;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r + boost * 1.6, 0, Math.PI * 2);
         ctx.fill();
@@ -106,7 +109,7 @@ export function ParticleField({ accent, active, pulse }: { accent: string; activ
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [accent, active]);
+  }, [active]);
 
   return <canvas ref={ref} className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden />;
 }

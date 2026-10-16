@@ -1,7 +1,8 @@
 import type { HighlightColor } from "./schema";
 
 // Highlight markup used in scripts:
-//   *word*  -> primary   #word# -> warn (red)   ^word^ -> yellow   ~word~ -> cyan
+//   *word* -> primary (thread accent)   #word# -> warn (coral: traps, risks)
+//   ^word^ -> yellow (butter: highlight)  ~word~ -> cyan (sage: the correct / safe choice)
 
 export type Token = { text: string; color: HighlightColor | null };
 
@@ -67,8 +68,8 @@ export function markupWords(input: string): Word[] {
 }
 
 export const COLOR_VAR: Record<HighlightColor, string> = {
-  primary: "var(--accent)",
-  warn: "var(--hl-warn)",
-  yellow: "var(--hl-yellow)",
-  cyan: "var(--hl-cyan)",
+  primary: "var(--thread)",
+  warn: "var(--coral)",
+  yellow: "var(--butter)",
+  cyan: "var(--sage)",
 };
