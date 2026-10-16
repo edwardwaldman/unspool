@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { GridIcon, HomeIcon, PlusIcon, ReelsIcon, UserIcon, Wordmark } from "../ui/icons";
+import { Wordmark } from "../ui/icons";
 import { AuthModal } from "../auth/auth-modal";
 import { openAuth } from "../auth/auth-store";
 import { useSessionUser } from "../auth/use-session";
@@ -40,7 +40,7 @@ function useFilePicker() {
 
 /**
  * App chrome. Desktop: slim left sidebar + content centered as a tall phone column (TikTok web).
- * Mobile: full-bleed content + a floating pill nav (Home · Reels · + · Library · Profile).
+ * Mobile: full-bleed content under the same top bar.
  */
 export function AppShell({ active, children, feed = false }: { active: NavKey; children: React.ReactNode; feed?: boolean }) {
   const picker = useFilePicker();
@@ -48,16 +48,6 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
   const [dragging, setDragging] = useState(false);
   // The top bar stays out of the way until the visitor scrolls (or tries to).
   const [barShown, setBarShown] = useState(false);
-
-  const tab = (key: NavKey, href: string, label: string, icon: (on: boolean) => React.ReactNode) => (
-    <Link
-      href={href}
-      aria-label={label}
-      className={`flex h-11 flex-1 items-center justify-center border transition ${active === key ? "border-line bg-surface text-ink" : "border-transparent text-muted"}`}
-    >
-      {icon(active === key)}
-    </Link>
-  );
 
   return (
     <div
@@ -134,29 +124,10 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
           </div>
         ) : null}
         {feed ? null : (
-          <div className="w-full pb-28 lg:pb-0">{children}</div>
+          <div className="w-full">{children}</div>
         )}
       </main>
 
-      {/* Mobile floating pill nav */}
-      <nav className="safe-bottom fixed inset-x-3 bottom-3 z-50 lg:hidden">
-        <div className="flex items-center gap-1 border border-line bg-paper/90 p-1 backdrop-blur-md">
-          {tab("home", "/", "Home", (on) => <HomeIcon size={22} filled={on} />)}
-          {tab("reels", "/feed", "Reels", (on) => <ReelsIcon size={22} filled={on} />)}
-          <button
-            type="button"
-            aria-label="Upload a document"
-            onClick={picker.open}
-            className="flex h-11 flex-1 items-center justify-center"
-          >
-            <span className="flex h-9 w-12 items-center justify-center bg-ink text-paper">
-              <PlusIcon size={21} />
-            </span>
-          </button>
-          {tab("library", "/library", "Library", (on) => <GridIcon size={21} filled={on} />)}
-          {tab("profile", "/profile", "Profile", (on) => <UserIcon size={22} filled={on} />)}
-        </div>
-      </nav>
 
       {dragging && (
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center bg-paper/85">

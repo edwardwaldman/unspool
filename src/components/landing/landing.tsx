@@ -163,20 +163,20 @@ export function Landing() {
   const animScale = useTransform(scrollY, [0, 700], [1, 0.88]);
   const animFade = useTransform(scrollY, [250, 750], [1, 0.2]);
   const cueFade = useTransform(scrollY, [0, 60], [1, 0]);
-  const k = lg ? Math.max(0.9, Math.min(xl ? 2.15 : 1.5, (vh - 190) / ANIM_H, (vw - 340 - 64 - 120) / ANIM_W)) : 0.68;
+  const k = lg ? Math.max(0.9, Math.min(xl ? 2.15 : 1.5, (vh - 190) / ANIM_H, (vw - 340 - 64 - 120) / ANIM_W)) : Math.min(1.2, (vw - 32) / ANIM_W);
 
   return (
     <div>
     <div className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-8 px-6 pb-24 pt-16 lg:gap-7 lg:pb-8 lg:pt-16">
       {/* Parallax: each layer leaves at its own speed as you scroll */}
-      <motion.div style={{ y: headY, opacity: headFade }}>
+      <motion.div style={lg ? { y: headY, opacity: headFade } : undefined}>
         <Headline />
       </motion.div>
       <div className="flex flex-col items-center gap-12 lg:flex-row lg:gap-16">
-        <motion.div style={{ y: cardY }}>
+        <motion.div style={lg ? { y: cardY } : undefined}>
           <UploadReel width={lg ? 340 : 300} height={lg ? ANIM_H * k : 360} />
         </motion.div>
-        <motion.div style={{ width: ANIM_W * k, height: ANIM_H * k, y: animY, scale: animScale, opacity: animFade }}>
+        <motion.div className="order-first lg:order-none" style={lg ? { width: ANIM_W * k, height: ANIM_H * k, y: animY, scale: animScale, opacity: animFade } : { width: ANIM_W * k, height: ANIM_H * k }}>
           <div className="origin-top-left" style={{ width: ANIM_W, height: ANIM_H, transform: `scale(${k})` }}>
             <DocToReel />
           </div>
