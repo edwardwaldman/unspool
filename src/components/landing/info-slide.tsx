@@ -38,13 +38,20 @@ export function InfoSlide() {
 
   const raw = useTransform(scrollY, range, [0, 1], { clamp: true });
   // Smooth the scrub so fast flicks still play out gently.
-  const progress = useSpring(raw, { stiffness: 60, damping: 22, mass: 0.6 });
+  const smooth = useSpring(raw, { stiffness: 60, damping: 22, mass: 0.6 });
+  // The demo plays over the first 85% of the track; the rest holds the last frame and eases it out.
+  const progress = useTransform(smooth, [0, 0.85], [0, 1], { clamp: true });
+  const exitOpacity = useTransform(smooth, [0.88, 1], [1, 0]);
+  const exitScale = useTransform(smooth, [0.88, 1], [1, 0.92]);
+  const exitY = useTransform(smooth, [0.88, 1], [0, -60]);
 
   return (
     <>
       <section ref={track} className="relative border-t border-line" style={{ height: "650dvh" }}>
         <div className="sticky top-0 flex h-[100dvh] items-center justify-center px-6">
-          <ProcessDemo progress={progress} />
+          <motion.div style={{ opacity: exitOpacity, scale: exitScale, y: exitY }}>
+            <ProcessDemo progress={progress} />
+          </motion.div>
         </div>
       </section>
       <section className="px-6 pb-20">

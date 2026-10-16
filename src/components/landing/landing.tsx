@@ -83,9 +83,9 @@ function UploadReel({ width, height }: { width: number; height: number }) {
           Your first reel is{" "}
           <span className="relative inline-block text-thread">
             free
-            <svg className="pointer-events-none absolute -left-6 -top-2 h-[calc(100%+16px)] w-[calc(100%+34px)] overflow-visible" viewBox="0 0 100 50" preserveAspectRatio="none" aria-hidden>
+            <svg className="pointer-events-none absolute -left-4 -top-1 h-[calc(100%+10px)] w-[calc(100%+32px)] overflow-visible" viewBox="0 0 100 50" preserveAspectRatio="none" aria-hidden>
               <motion.path
-                d="M8 30 C 6 12, 40 4, 70 7 S 98 22, 92 34 S 50 50, 22 44 S 4 34, 14 20"
+                d="M50 4 C 77 4, 97 13, 97 25 C 97 37, 77 46, 50 46 C 23 46, 3 37, 3 25 C 3 13, 23 4, 56 5"
                 fill="none"
                 stroke="var(--thread)"
                 strokeWidth="2"
@@ -97,7 +97,7 @@ function UploadReel({ width, height }: { width: number; height: number }) {
               />
             </svg>
           </span>
-          <span className="ml-2">.</span>
+          <span className="ml-5">.</span>
         </h2>
         <p className="mt-3 text-[14px] leading-snug text-muted">
           Drop in any doc and watch it turn into reels. No card, no catch.
