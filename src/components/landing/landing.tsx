@@ -157,7 +157,7 @@ export function Landing() {
             className="shrink-0"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ delay: 1.2, type: "spring", stiffness: 220, damping: 14 }}
+            transition={{ delay: 0.3, type: "spring", stiffness: 320, damping: 16 }}
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.94 }}
           >
