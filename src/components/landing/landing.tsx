@@ -18,14 +18,14 @@ import { DocToReel } from "./doc-to-reel";
 const ANIM_W = 478;
 const ANIM_H = 336;
 
-function useViewportHeight() {
+function useViewport(dim: "innerHeight" | "innerWidth", fallback: number) {
   return useSyncExternalStore(
     (cb) => {
       window.addEventListener("resize", cb);
       return () => window.removeEventListener("resize", cb);
     },
-    () => window.innerHeight,
-    () => 900,
+    () => window[dim],
+    () => fallback,
   );
 }
 
@@ -143,13 +143,14 @@ function Headline() {
 export function Landing() {
   const xl = useMedia("(min-width: 1280px)");
   const lg = useMedia("(min-width: 1024px)");
-  const vh = useViewportHeight();
+  const vh = useViewport("innerHeight", 900);
+  const vw = useViewport("innerWidth", 1440);
   // Fit the animation to the screen: as big as width allows, never taller than what's left under the headline.
-  const k = lg ? Math.max(0.9, Math.min(xl ? 1.7 : 1.25, (vh - 260) / ANIM_H)) : 0.68;
+  const k = lg ? Math.max(0.9, Math.min(xl ? 2.15 : 1.5, (vh - 190) / ANIM_H, (vw - 340 - 64 - 120) / ANIM_W)) : 0.68;
 
   return (
     <div>
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-8 px-6 pb-24 pt-16 lg:gap-9 lg:pb-10 lg:pt-20">
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-8 px-6 pb-24 pt-16 lg:gap-7 lg:pb-8 lg:pt-16">
       <Headline />
       <div className="flex flex-col items-center gap-12 lg:flex-row lg:gap-16">
         <UploadReel width={lg ? 340 : 300} height={lg ? ANIM_H * k : 360} />

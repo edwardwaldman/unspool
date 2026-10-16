@@ -97,7 +97,7 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
         <Link href="/">
           <Wordmark size={24} />
         </Link>
-        <nav className="hidden items-center gap-7 text-[14px] md:flex">
+        <nav className="ml-auto hidden items-center gap-7 text-[14px] md:flex">
           {TOP_LINKS.map(([key, href, label]) => (
             <Link key={href} href={href} className={active === key ? "text-ink" : "text-muted hover:text-ink"}>
               {label}
