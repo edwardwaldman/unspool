@@ -13,6 +13,7 @@ import { motion } from "motion/react";
 import { openAuth } from "../auth/auth-store";
 import { SiteFooter } from "../shell/site-footer";
 import { DocToReel } from "./doc-to-reel";
+import { InfoSlide } from "./info-slide";
 
 // Natural size of the DocToReel animation before scaling.
 const ANIM_W = 478;
@@ -162,6 +163,7 @@ export function Landing() {
         </div>
       </div>
     </div>
+      <InfoSlide />
       <SiteFooter />
     </div>
   );
