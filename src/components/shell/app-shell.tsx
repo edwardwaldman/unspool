@@ -2,17 +2,15 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { GridIcon, HomeIcon, PlusIcon, ReelsIcon, UploadIcon, UserIcon, Wordmark } from "../ui/icons";
+import { GridIcon, HomeIcon, PlusIcon, ReelsIcon, UserIcon, Wordmark } from "../ui/icons";
 import { Toaster } from "../ui/toast";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 
 const TOP_LINKS: [string, string, string][] = [
-  ["reels", "/feed", "Reels"],
-  ["library", "/library", "Library"],
   ["about", "/about", "How it works"],
-  ["pricing", "/pricing", "Pricing"],
-  ["privacy", "/privacy", "Privacy"],
   ["terms", "/terms", "Terms"],
+  ["privacy", "/privacy", "Privacy"],
+  ["pricing", "/pricing", "Pricing"],
 ];
 
 export type NavKey = "home" | "reels" | "library" | "profile" | "none";
@@ -104,9 +102,6 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
             </Link>
           ))}
         </nav>
-        <button type="button" onClick={picker.open} className="ml-auto hidden items-center gap-2 text-[14px] text-muted hover:text-ink md:flex">
-          <UploadIcon size={15} /> Upload
-        </button>
       </header>
 
       {/* Content */}
