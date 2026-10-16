@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { supabaseConfigured } from "@/lib/config";
+import { formatPrice, PRICING, supabaseConfigured } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import { SAMPLE_SPOOL } from "@/lib/sample";
 import { ReelView } from "../reel/reel-view";
@@ -74,10 +74,32 @@ function UploadReel({ width, height }: { width: number; height: number }) {
         }}
       />
       <div className="absolute inset-x-6 bottom-6">
-        <div className="label">Free to try</div>
-        <h2 className="mt-2 font-display text-[30px] leading-[1.05]">Try it yourself for free.</h2>
-        <p className="mt-2 text-[14px] leading-snug text-muted">
-          Upload a document and your first reel is on us.
+        <div className="flex items-center gap-2 font-mono text-[12px]">
+          <span className="text-muted line-through decoration-coral decoration-2">{formatPrice(PRICING.documentCents)}</span>
+          <span className="border border-thread px-1.5 py-0.5 text-thread">$0 to start</span>
+        </div>
+        <h2 className="mt-3 font-display text-[32px] leading-[1.05]">
+          Your first reel is{" "}
+          <span className="relative inline-block text-thread">
+            free
+            <svg className="pointer-events-none absolute -left-3 -top-2 h-[calc(100%+16px)] w-[calc(100%+22px)] overflow-visible" viewBox="0 0 100 50" preserveAspectRatio="none" aria-hidden>
+              <motion.path
+                d="M8 30 C 6 12, 40 4, 70 7 S 98 22, 92 34 S 50 50, 22 44 S 4 34, 14 20"
+                fill="none"
+                stroke="var(--thread)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: [0, 1, 1, 1], opacity: [1, 1, 1, 0] }}
+                transition={{ duration: 5, delay: 0.8, times: [0, 0.22, 0.85, 1], ease: "easeInOut", repeat: Infinity, repeatDelay: 0.6 }}
+              />
+            </svg>
+          </span>
+          <span className="ml-2">.</span>
+        </h2>
+        <p className="mt-3 text-[14px] leading-snug text-muted">
+          Drop in any doc and watch it turn into reels. No card, no catch.
         </p>
         <div className="mt-5">
           <button
