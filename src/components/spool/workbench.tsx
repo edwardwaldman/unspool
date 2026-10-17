@@ -7,9 +7,10 @@ import type { ReelDTO, SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { fileLabel } from "../reel/accent";
 import { ReelSlot, SpoolMoreSheet, type FeedItem } from "../reel/feed";
 import { stageIndex, stageLine } from "../reel/loading-reel";
-import { PaywallSheet } from "../reel/paywall-sheet";
+import { UnlockSheet } from "../reel/drip-gate";
 import { ChevronDown, ChevronUp, LockIcon, UploadIcon } from "../ui/icons";
 import { MarkedText } from "../ui/marked-text";
+import { formatCountdown, freeAtFor, useCountdown } from "../ui/use-countdown";
 import { usePendingUpload, type UploadState } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 
@@ -110,6 +111,29 @@ function QuizCard({ quiz }: { quiz: NonNullable<ReelDTO["script"]>["quiz"] }) {
   );
 }
 
+/** "This reel turns free in 1:47:12" for a locked reel further down the drip. */
+function ReelFreeIn({ at }: { at: string | null }) {
+  const left = useCountdown(at);
+  if (!left) return null;
+  return (
+    <p className="text-[13.5px] text-muted">
+      This reel turns free in <span className="font-mono text-ink">{formatCountdown(left)}</span>
+    </p>
+  );
+}
+
+/** Live mm:ss to the next free reel. */
+function NextFreeTimer({ until, big = false }: { until: string; big?: boolean }) {
+  const left = useCountdown(until);
+  if (!left) return null;
+  return (
+    <span className={`flex shrink-0 items-center gap-1 font-mono text-thread ${big ? "text-[15px]" : "text-[10.5px]"}`} title="Next free reel">
+      {!big && <LockIcon size={10} />}
+      {formatCountdown(left)}
+    </span>
+  );
+}
+
 function UnlockCta({ spool, onUnlock, compact = false }: { spool: SpoolDTO; onUnlock: () => void; compact?: boolean }) {
   const locked = spool.reels.filter((r) => r.locked).length;
   if (!locked) return null;
@@ -120,7 +144,15 @@ function UnlockCta({ spool, onUnlock, compact = false }: { spool: SpoolDTO; onUn
           <div className="label flex items-center gap-2">
             <LockIcon size={12} /> {locked} reels locked
           </div>
-          <p className="mt-2 text-[13.5px] leading-snug text-muted">Reel 1 is free. Unlock the rest of this document to keep going.</p>
+          <p className="mt-2 text-[13.5px] leading-snug text-muted">
+            {spool.nextFreeUnlockAt ? "Reel 1 is free, then one more every hour. Or skip the wait." : "Unlock the rest of this document to keep going."}
+          </p>
+          {spool.nextFreeUnlockAt && (
+            <p className="mt-3 flex items-center justify-between border border-line px-3 py-2 text-[13px]">
+              <span className="text-muted">Next free reel in</span>
+              <NextFreeTimer until={spool.nextFreeUnlockAt} big />
+            </p>
+          )}
         </>
       )}
       <button type="button" onClick={onUnlock} className={`btn-primary w-full justify-between px-4 py-3 text-[14.5px] ${compact ? "" : "mt-4"}`}>
@@ -188,7 +220,10 @@ function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; r
           <QuizCard key={reel.id} quiz={script.quiz} />
         </>
       ) : state === "locked" ? (
-        <UnlockCta spool={spool} onUnlock={onUnlock} />
+        <div className="space-y-3">
+          <ReelFreeIn at={freeAtFor(reel.index, spool.freeReels, spool.nextFreeUnlockAt)} />
+          <UnlockCta spool={spool} onUnlock={onUnlock} />
+        </div>
       ) : state === "failed" ? (
         <div>
           <p className="text-[14px] text-coral">{reel.error ?? "This reel didn't come out right."}</p>
@@ -280,6 +315,7 @@ export function Workbench({
   };
 
   const firstLocked = reels.find((r) => r.locked)?.index ?? 2;
+  const closePaywall = useCallback(() => setPaywall(false), []);
   const listed = reels.length ? reels : null;
 
   return (
@@ -335,7 +371,7 @@ export function Workbench({
 
         <div className="flex items-baseline justify-between px-5 pb-2 pt-5">
           <span className="label">Reels</span>
-          {listed && <span className="font-mono text-[11px] text-muted">{lockedCount ? `1 free · ${lockedCount} locked` : "all unlocked"}</span>}
+          {listed && <span className="font-mono text-[11px] text-muted">{lockedCount ? `${spool?.freeReels ?? 1} free · ${lockedCount} locked` : "all unlocked"}</span>}
         </div>
         <ol className="border-t border-line" aria-label="Reels">
           {listed
@@ -359,7 +395,11 @@ export function Workbench({
                         <span className={`block truncate text-[13.5px] ${on ? "text-thread" : state === "locked" ? "text-ink/70" : "text-ink"}`}>{r.title}</span>
                         <span className="block truncate text-[12px] text-muted">{plain(r.hook)}</span>
                       </span>
-                      <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-muted">{STATE_LABEL[state]}</span>
+                      {state === "locked" && spool?.nextFreeUnlockAt && r.index === spool.freeReels + 1 ? (
+                        <NextFreeTimer until={spool.nextFreeUnlockAt} />
+                      ) : (
+                        <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-muted">{STATE_LABEL[state]}</span>
+                      )}
                     </button>
                   </li>
                 );
@@ -438,7 +478,7 @@ export function Workbench({
       </aside>
 
       {spool && (
-        <PaywallSheet open={paywall} onClose={() => setPaywall(false)} spool={spool} viewer={viewer} reel={reel?.locked ? reel.index : firstLocked} />
+        <UnlockSheet open={paywall} onClose={closePaywall} spool={spool} viewer={viewer} reel={reel?.locked ? reel.index : firstLocked} />
       )}
       {spool && <SpoolMoreSheet spool={spool} open={moreOpen} onClose={() => setMoreOpen(false)} onDeleted={onDeleted} />}
     </div>

@@ -10,7 +10,8 @@ import type { UploadState } from "../upload/upload-store";
 import { LoadingReel } from "./loading-reel";
 import { LockedReel } from "./locked-reel";
 import { MoreSheet } from "./more-sheet";
-import { PaywallSheet } from "./paywall-sheet";
+import { freeAtFor } from "../ui/use-countdown";
+import { UnlockSheet } from "./drip-gate";
 import { ReelView } from "./reel-view";
 
 export type FeedItem = { key: string; spool: SpoolDTO | null; reel: ReelDTO | null };
@@ -44,7 +45,10 @@ export function ReelSlot({
   if (!r || (!r.locked && r.status !== "ready")) {
     return <LoadingReel spool={item.spool} upload={upload} reelIndex={r?.index ?? 1} failed={r?.status === "failed"} onRetry={onRetry} bottomInset={bottomInset} />;
   }
-  if (r.locked) return <LockedReel reel={r} bottomInset={bottomInset} onUnlock={onUnlock} />;
+  if (r.locked) {
+    const s = item.spool;
+    return <LockedReel reel={r} bottomInset={bottomInset} onUnlock={onUnlock} freeAt={s ? freeAtFor(r.index, s.freeReels, s.nextFreeUnlockAt) : null} />;
+  }
   return <ReelView spool={item.spool!} reel={r} active={active} total={total} chrome={{ bottomInset }} onMore={onMore} onEnded={onEnded} />;
 }
 
@@ -237,7 +241,7 @@ export function Feed({
       </div>
 
       {paywallItem?.spool && paywallItem.reel && (
-        <PaywallSheet
+        <UnlockSheet
           open={paywallFor !== null}
           onClose={() => {
             dismissedPaywall.current.add(paywallItem.reel!.id);

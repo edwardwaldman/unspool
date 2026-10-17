@@ -194,7 +194,8 @@ export async function generateReel(reelId: string) {
 
 const lastHeal = new Map<string, number>();
 
-export async function healIfStuck(doc: DocumentRow, reels: Pick<ReelRow, "id" | "index" | "status" | "started_at">[], unlocked: boolean) {
+/** `playable`: how many reels the viewer may play now (10 when unlocked, else the hourly free drip). */
+export async function healIfStuck(doc: DocumentRow, reels: Pick<ReelRow, "id" | "index" | "status" | "started_at">[], playable: number) {
   if (Date.now() - (lastHeal.get(doc.id) ?? 0) < 20_000) return;
   lastHeal.set(doc.id, Date.now());
   const age = Date.now() - new Date(doc.updated_at).getTime();
@@ -210,7 +211,7 @@ export async function healIfStuck(doc: DocumentRow, reels: Pick<ReelRow, "id" | 
   if (doc.status !== "scripting") return;
   const firstReady = reels.find((r) => r.index === 1)?.status === "ready";
   for (const r of reels) {
-    const locked = r.index > 1 && !unlocked;
+    const locked = r.index > playable;
     if (locked && !GENERATE_LOCKED_REELS_EAGERLY) continue;
     const stale = r.status === "generating" && r.started_at && Date.now() - new Date(r.started_at).getTime() > STALE_MS;
     const orphaned = r.status === "pending" && age > 60_000 && (r.index === 1 || firstReady);

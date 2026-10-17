@@ -1,4 +1,4 @@
-import { isUnlocked } from "./access";
+import { freeReelLimit, isUnlocked } from "./access";
 import { DOCUMENT_COLUMNS, type DocumentRow, type ReelRow } from "./db-types";
 import { extensionOf } from "./config";
 import { healIfStuck } from "./pipeline";
@@ -14,6 +14,8 @@ type ReelLite = Pick<ReelRow, "id" | "index" | "title" | "hook" | "status" | "er
 export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?: boolean } = {}): Promise<SpoolDTO> {
   const db = adminClient();
   const unlocked = isUnlocked(doc, viewer);
+  // Free accounts: reel 1, then one more every hour (the drip). Only playable reels get scripts and audio.
+  const { playable, nextFreeAt } = freeReelLimit(doc, viewer);
   const { data } = await db
     .from("reels")
     .select("id,index,title,hook,status,error,script_json,audio_paths,started_at")
@@ -21,9 +23,9 @@ export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?
     .order("index");
   const rows = (data ?? []) as ReelLite[];
 
-  if (opts.heal) await healIfStuck(doc, rows, unlocked);
+  if (opts.heal) await healIfStuck(doc, rows, playable);
 
-  const visible = rows.filter((r) => r.index === 1 || unlocked);
+  const visible = rows.filter((r) => r.index <= playable);
   const paths = visible.flatMap((r) =>
     r.status === "ready" ? Object.values(r.audio_paths ?? {}).flatMap((a) => (a.path ? [a.path] : [])) : [],
   );
@@ -34,7 +36,7 @@ export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?
   }
 
   const reels: ReelDTO[] = rows.map((r) => {
-    const locked = r.index > 1 && !unlocked;
+    const locked = r.index > playable;
     const base: ReelDTO = { id: r.id, index: r.index, title: r.title, hook: r.hook, status: r.status, locked, error: r.error };
     if (locked || r.status !== "ready" || !r.script_json) return base;
     const audio = Object.fromEntries(
@@ -56,6 +58,8 @@ export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?
     status: doc.status,
     error: doc.error,
     unlocked,
+    freeReels: playable,
+    nextFreeUnlockAt: nextFreeAt,
     pageCount: doc.page_count,
     wordCount: doc.word_count,
     truncated: doc.truncated,

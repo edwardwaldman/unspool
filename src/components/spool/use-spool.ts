@@ -40,6 +40,8 @@ export function useSpool(id: string, opts: { keepPolling?: boolean } = {}) {
         setSpool(body.spool);
         setViewer(body.viewer);
         if (!settled(body.spool) || keep.current) schedule(2000);
+        // Free drip: refetch the moment the next reel opens, so it unblurs on its own.
+        else if (body.spool.nextFreeUnlockAt) schedule(Math.min(2 ** 31 - 1, Math.max(1000, Date.parse(body.spool.nextFreeUnlockAt) - Date.now() + 1500)));
       } catch {
         schedule(4000);
       }

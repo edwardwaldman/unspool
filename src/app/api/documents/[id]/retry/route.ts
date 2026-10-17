@@ -1,4 +1,4 @@
-import { isUnlocked, loadDocument } from "@/lib/access";
+import { freeReelLimit, isUnlocked, loadDocument } from "@/lib/access";
 import { supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
 import { dispatch } from "@/lib/jobs";
@@ -24,11 +24,12 @@ export async function POST(_req: Request, ctx: RouteContext<"/api/documents/[id]
     }
     await db.from("documents").update({ status: "scripting", error: null }).eq("id", id);
   }
-  // Re-queue failed reels the viewer can see (reel 1, or all when unlocked).
+  // Re-queue failed reels the viewer can play (reel 1 plus any dripped free reels, or all when unlocked).
   const { data: failed } = await db.from("reels").select("id,index").eq("document_id", id).eq("status", "failed");
   const unlocked = isUnlocked(doc, viewer);
+  const { playable } = freeReelLimit(doc, viewer);
   for (const r of failed ?? []) {
-    if (r.index === 1 || unlocked) await dispatch({ name: "reel", reelId: r.id });
+    if (r.index <= playable) await dispatch({ name: "reel", reelId: r.id });
   }
   if (unlocked) await queueRemainingReels(id);
   return json({ ok: true });

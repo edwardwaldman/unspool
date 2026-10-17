@@ -13,6 +13,8 @@ export type LibraryItem = {
   fileType: string;
   status: string;
   unlocked: boolean;
+  /** Reels free to play right now (the hourly drip). */
+  freeReels: number;
   readyCount: number;
   createdAt: string;
   headline: string | null;
@@ -22,7 +24,7 @@ export type LibraryItem = {
 function statusLabel(it: LibraryItem) {
   if (it.status === "failed") return "Failed";
   if (["uploading", "uploaded", "extracting", "planning"].includes(it.status)) return "Unspooling";
-  if (!it.unlocked) return "1 of 10 free";
+  if (!it.unlocked && it.freeReels < 10) return `${it.freeReels} of 10 free`;
   return it.readyCount >= 10 ? "10 reels" : `${it.readyCount}/10 ready`;
 }
 

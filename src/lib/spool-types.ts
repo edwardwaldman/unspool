@@ -27,6 +27,10 @@ export type SpoolDTO = {
   status: DocumentStatus;
   error: string | null;
   unlocked: boolean;
+  /** Reels the viewer may play right now (10 when unlocked; otherwise 1 + one per hour since upload). */
+  freeReels: number;
+  /** When the next free reel opens (ISO), or null when unlocked or all 10 are already free. */
+  nextFreeUnlockAt: string | null;
   pageCount: number | null;
   wordCount: number | null;
   truncated: boolean;

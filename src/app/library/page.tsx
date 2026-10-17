@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { CheckoutReturn, SignInButtons } from "@/components/shell/account-actions";
 import { AppShell } from "@/components/shell/app-shell";
 import { LibraryGrid, type LibraryItem } from "@/components/spool/library-grid";
-import { isUnlocked } from "@/lib/access";
+import { freeReelLimit, isUnlocked } from "@/lib/access";
 import { supabaseConfigured } from "@/lib/config";
 import { listDocuments } from "@/lib/spool";
 import { adminClient } from "@/lib/supabase/admin";
@@ -34,6 +34,7 @@ export default async function LibraryPage() {
         fileType: d.file_type ?? "",
         status: d.status,
         unlocked: isUnlocked(d, viewer!),
+        freeReels: freeReelLimit(d, viewer!).playable,
         readyCount: mine.filter((r) => r.status === "ready").length,
         createdAt: d.created_at,
         headline: (first?.headline as string | null) ?? null,
@@ -76,7 +77,7 @@ export default async function LibraryPage() {
           )}
           {!viewer?.userId && items.length === 0 && supabaseConfigured && (
             <div className="mt-6">
-              <p className="text-[14px] text-muted">Create a free account to unspool a document. Your first reel is free.</p>
+              <p className="text-[14px] text-muted">Create a free account to unspool a document. First reel free, then one more every hour.</p>
               <SignInButtons next="/library" />
             </div>
           )}

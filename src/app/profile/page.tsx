@@ -32,7 +32,7 @@ export default async function ProfilePage() {
         {!viewer?.userId ? (
           <div className="mt-8 border-t border-line pt-6">
             <p className="text-[16px]">You&apos;re not signed in.</p>
-            <p className="mt-1 text-[14px] text-muted">Create a free account to unspool a document. Your first reel is free.</p>
+            <p className="mt-1 text-[14px] text-muted">Create a free account to unspool a document. First reel free, then one more every hour.</p>
             <SignInButtons next="/profile" />
           </div>
         ) : (

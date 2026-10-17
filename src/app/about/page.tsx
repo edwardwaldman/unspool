@@ -120,7 +120,7 @@ export default function AboutPage() {
         <div>
           <div className="label">Pricing</div>
           <p className="mt-2 font-display text-[30px] leading-tight">
-            Reel 1 free · {formatPrice(PRICING.documentCents)} a document · {formatPrice(PRICING.subscriptionCents)}/mo unlimited
+            First reel free, then one an hour · {formatPrice(PRICING.documentCents)} a document · {formatPrice(PRICING.subscriptionCents)}/mo unlimited
           </p>
         </div>
         <Link href="/pricing" className="text-[14px] text-thread underline underline-offset-4">

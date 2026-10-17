@@ -161,6 +161,8 @@ export const SAMPLE_SPOOL: SpoolDTO = {
   status: "scripting",
   error: null,
   unlocked: false,
+  freeReels: 3,
+  nextFreeUnlockAt: null,
   pageCount: 18,
   wordCount: 6400,
   truncated: false,
