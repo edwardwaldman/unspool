@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Your spool", robots: { index: false 
 export default async function SpoolPage({ params }: PageProps<"/s/[id]">) {
   const { id } = await params;
   return (
-    <AppShell active="reels" feed>
+    <AppShell active="reels" workbench>
       {id === "demo" ? (
         <Suspense>
           <DemoFeed />

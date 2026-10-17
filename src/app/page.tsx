@@ -18,7 +18,7 @@ export default async function Home() {
   }
   if (latest) {
     return (
-      <AppShell active="reels" feed>
+      <AppShell active="reels" workbench>
         <Suspense>
           <SpoolFeed id={latest} />
         </Suspense>

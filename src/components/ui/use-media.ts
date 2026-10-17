@@ -15,3 +15,16 @@ export function useMedia(query: string, serverValue = false) {
 }
 
 export const useIsDesktop = () => useMedia("(min-width: 1024px)");
+
+/** "desktop" (>= 1024px) or "mobile", or null before the client has measured (so we never mount the wrong layout first). */
+export function useLayout(): "desktop" | "mobile" | null {
+  return useSyncExternalStore(
+    (cb) => {
+      const m = window.matchMedia("(min-width: 1024px)");
+      m.addEventListener("change", cb);
+      return () => m.removeEventListener("change", cb);
+    },
+    () => (window.matchMedia("(min-width: 1024px)").matches ? "desktop" : "mobile"),
+    () => null,
+  );
+}

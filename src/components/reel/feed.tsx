@@ -16,6 +16,59 @@ import { ReelView } from "./reel-view";
 export type FeedItem = { key: string; spool: SpoolDTO | null; reel: ReelDTO | null };
 
 /**
+ * What one feed slot shows for its reel: the loading reel while it's being written, the locked teaser,
+ * or the playable reel. Shared by the mobile feed and the desktop workbench player.
+ */
+export function ReelSlot({
+  item,
+  upload,
+  active,
+  total,
+  bottomInset,
+  onRetry,
+  onUnlock,
+  onMore,
+  onEnded,
+}: {
+  item: FeedItem;
+  upload: UploadState | null;
+  active: boolean;
+  total: number;
+  bottomInset: number;
+  onRetry: () => void;
+  onUnlock: () => void;
+  onMore: () => void;
+  onEnded: () => void;
+}) {
+  const r = item.reel;
+  if (!r || (!r.locked && r.status !== "ready")) {
+    return <LoadingReel spool={item.spool} upload={upload} reelIndex={r?.index ?? 1} failed={r?.status === "failed"} onRetry={onRetry} bottomInset={bottomInset} />;
+  }
+  if (r.locked) return <LockedReel reel={r} bottomInset={bottomInset} onUnlock={onUnlock} />;
+  return <ReelView spool={item.spool!} reel={r} active={active} total={total} chrome={{ bottomInset }} onMore={onMore} onEnded={onEnded} />;
+}
+
+/** The "more" sheet for a spool's reel (mute, speed, delete the document). */
+export function SpoolMoreSheet({ spool, open, onClose, onDeleted }: { spool: SpoolDTO; open: boolean; onClose: () => void; onDeleted?: (spool: SpoolDTO) => void }) {
+  return (
+    <MoreSheet
+      open={open}
+      onClose={onClose}
+      canDelete={!spool.demo}
+      sensitive={spool.sensitive}
+      onDelete={async () => {
+        const res = await fetch(`/api/documents/${spool.id}`, { method: "DELETE" });
+        onClose();
+        if (res.ok) {
+          toast("Document deleted");
+          onDeleted?.(spool);
+        } else toast("Couldn't delete. Try again.");
+      }}
+    />
+  );
+}
+
+/**
  * Full-screen vertical feed with scroll-snap, like TikTok's For You page: one reel per screen,
  * autoplay on snap, swipe/scroll/arrow keys to move, locked reels open the paywall.
  */
@@ -113,45 +166,26 @@ export function Feed({
         {items.map((it, i) => {
           const near = Math.abs(i - index) <= 1;
           const isActive = i === index;
-          let content: React.ReactNode;
-          if (!near) content = <div className="h-full w-full bg-paper" />;
-          else if (!it.reel || (!it.reel.locked && it.reel.status !== "ready")) {
-            content = (
-              <LoadingReel
-                spool={it.spool}
-                upload={i === 0 ? upload ?? null : null}
-                reelIndex={it.reel?.index ?? 1}
-                failed={it.reel?.status === "failed"}
-                onRetry={() => onRetry?.(it.spool)}
-                bottomInset={bottomInset}
-              />
-            );
-          } else if (it.reel.locked) {
-            content = (
-              <LockedReel
-                reel={it.reel}
-                bottomInset={bottomInset}
-                onUnlock={() => {
-                  dismissedPaywall.current.delete(it.reel!.id);
-                  setPaywallFor(i);
-                }}
-              />
-            );
-          } else {
-            content = (
-              <ReelView
-                spool={it.spool!}
-                reel={it.reel}
-                active={isActive && paywallFor === null && !moreOpen}
-                total={total(it.spool)}
-                chrome={{ bottomInset }}
-                onMore={() => setMoreOpen(true)}
-                onEnded={() => {
-                  if (i + 1 < items.length) setTimeout(() => scrollTo(i + 1), 900);
-                }}
-              />
-            );
-          }
+          const content = !near ? (
+            <div className="h-full w-full bg-paper" />
+          ) : (
+            <ReelSlot
+              item={it}
+              upload={i === 0 ? upload ?? null : null}
+              active={isActive && paywallFor === null && !moreOpen}
+              total={total(it.spool)}
+              bottomInset={bottomInset}
+              onRetry={() => onRetry?.(it.spool)}
+              onUnlock={() => {
+                dismissedPaywall.current.delete(it.reel!.id);
+                setPaywallFor(i);
+              }}
+              onMore={() => setMoreOpen(true)}
+              onEnded={() => {
+                if (i + 1 < items.length) setTimeout(() => scrollTo(i + 1), 900);
+              }}
+            />
+          );
           return (
             <section key={it.key} className="h-full w-full snap-start snap-always" aria-label={it.reel?.title ?? "Loading reel"}>
               {content}
@@ -214,23 +248,7 @@ export function Feed({
           reel={paywallItem.reel.index}
         />
       )}
-      {active?.spool && (
-        <MoreSheet
-          open={moreOpen}
-          onClose={() => setMoreOpen(false)}
-          canDelete={!active.spool.demo}
-          sensitive={active.spool.sensitive}
-          onDelete={async () => {
-            const s = active.spool!;
-            const res = await fetch(`/api/documents/${s.id}`, { method: "DELETE" });
-            setMoreOpen(false);
-            if (res.ok) {
-              toast("Document deleted");
-              onDeleted?.(s);
-            } else toast("Couldn't delete. Try again.");
-          }}
-        />
-      )}
+      {active?.spool && <SpoolMoreSheet spool={active.spool} open={moreOpen} onClose={() => setMoreOpen(false)} onDeleted={onDeleted} />}
     </div>
   );
 }

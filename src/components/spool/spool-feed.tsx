@@ -4,26 +4,47 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef } from "react";
 import { SAMPLE_SPOOL } from "@/lib/sample";
-import type { SpoolDTO } from "@/lib/spool-types";
+import type { SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { Feed, type FeedItem } from "../reel/feed";
 import { startCheckout } from "../reel/paywall-sheet";
 import { toast } from "../ui/toast";
-import { useUpload } from "../upload/upload-store";
+import { useLayout } from "../ui/use-media";
+import { useUpload, type UploadState } from "../upload/upload-store";
 import { useSpool } from "./use-spool";
+import { Workbench } from "./workbench";
 
 function itemsFor(spool: SpoolDTO | null): FeedItem[] {
   if (!spool || spool.reels.length === 0) return [{ key: "loading", spool, reel: null }];
   return spool.reels.map((r) => ({ key: r.id, spool, reel: r }));
 }
 
+type ViewProps = {
+  items: FeedItem[];
+  viewer: ViewerDTO | null;
+  docHref: string;
+  initialIndex: number;
+  upload?: UploadState | null;
+  onIndexChange?: (i: number) => void;
+  onRetry?: () => void;
+  onDeleted?: () => void;
+};
+
+/** Phones and tablets get the vertical reel feed; desktops (>= 1024px) get the workbench around the same player. */
+function SpoolView({ docHref, ...p }: ViewProps) {
+  const layout = useLayout();
+  if (layout === null) return <div className="h-full w-full bg-paper" />;
+  if (layout === "desktop") return <Workbench {...p} />;
+  return <Feed {...p} tab="doc" docHref={docHref} />;
+}
+
 export function DemoFeed() {
   const params = useSearchParams();
   const items = useMemo(() => itemsFor(SAMPLE_SPOOL), []);
   const initial = Math.max(1, Math.min(10, Number(params.get("reel") ?? 1))) - 1;
-  return <Feed items={items} viewer={null} tab="doc" docHref="/s/demo" initialIndex={initial} />;
+  return <SpoolView items={items} viewer={null} docHref="/s/demo" initialIndex={initial} />;
 }
 
-/** The full-screen feed for one document: loading reel → reel 1 → paywall → reels 2–10. */
+/** One document: loading reel → reel 1 → paywall → reels 2–10, as a feed (mobile) or a workbench (desktop). */
 export function SpoolFeed({ id }: { id: string }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -88,10 +109,9 @@ export function SpoolFeed({ id }: { id: string }) {
   }
 
   return (
-    <Feed
+    <SpoolView
       items={items}
       viewer={viewer}
-      tab="doc"
       docHref={`/s/${id}`}
       initialIndex={initialReel}
       upload={upload}
