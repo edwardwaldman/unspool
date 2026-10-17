@@ -77,10 +77,10 @@ function Headline() {
     <div className="relative px-4 md:px-24">
       <Tag className="-left-2 -top-6 -rotate-6" delay={0.4}>.pdf</Tag>
       <Tag className="-right-4 -top-4 rotate-3" delay={0.7}>×10 reels</Tag>
-      <Tag className="-left-20 top-[58%] rotate-2" delay={1}>~60s each</Tag>
-      <h1 className="text-center font-headline text-[42px] font-normal leading-[1.05] tracking-[-0.01em] md:text-[68px]">
+      <Tag className="-right-24 top-[62%] -rotate-2" delay={1}>~60s each</Tag>
+      <h1 className="text-center font-headline text-[30px] font-bold leading-[1.1] tracking-[-0.02em] md:text-[50px]">
         One document{" "}
-        <span className="relative inline-block italic text-thread">
+        <span className="relative inline-block text-thread">
           into reels
           <svg className="absolute -bottom-3 left-0 h-3 w-full overflow-visible" viewBox="0 0 200 12" preserveAspectRatio="none" aria-hidden>
             <motion.path

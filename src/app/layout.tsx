@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Bricolage_Grotesque, Instrument_Sans, Instrument_Serif, Martian_Mono, Syne } from "next/font/google";
+import { Archivo, Bricolage_Grotesque, Instrument_Sans, Martian_Mono, Syne, Unbounded } from "next/font/google";
 import "./globals.css";
 
 // Font families are referenced by theme.css (--font-display, --font-hook, --font-ui, --font-numeric).
@@ -7,7 +7,7 @@ const display = Bricolage_Grotesque({ variable: "--font-bricolage", subsets: ["l
 const hook = Archivo({ variable: "--font-archivo", subsets: ["latin"], weight: ["700", "800"] });
 const ui = Instrument_Sans({ variable: "--font-instrument-sans", subsets: ["latin"], weight: ["400", "500", "600"] });
 const wordmark = Syne({ variable: "--font-syne", subsets: ["latin"], weight: ["700", "800"] });
-const headline = Instrument_Serif({ variable: "--font-instrument-serif", subsets: ["latin"], weight: "400", style: ["normal", "italic"] });
+const headline = Unbounded({ variable: "--font-unbounded", subsets: ["latin"], weight: ["600", "700"] });
 const numeric = Martian_Mono({ variable: "--font-martian", subsets: ["latin"], weight: ["400", "500"] });
 
 export const metadata: Metadata = {
