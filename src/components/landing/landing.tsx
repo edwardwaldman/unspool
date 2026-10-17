@@ -78,9 +78,9 @@ function Headline() {
       <Tag className="-left-2 -top-6 -rotate-6" delay={0.4}>.pdf</Tag>
       <Tag className="-right-4 -top-4 rotate-3" delay={0.7}>×10 reels</Tag>
       <Tag className="-left-20 top-[58%] rotate-2" delay={1}>~60s each</Tag>
-      <h1 className="text-center font-display text-[34px] leading-tight md:text-[52px]">
+      <h1 className="text-center font-headline text-[42px] font-normal leading-[1.05] tracking-[-0.01em] md:text-[68px]">
         One document{" "}
-        <span className="relative inline-block text-thread">
+        <span className="relative inline-block italic text-thread">
           into reels
           <svg className="absolute -bottom-3 left-0 h-3 w-full overflow-visible" viewBox="0 0 200 12" preserveAspectRatio="none" aria-hidden>
             <motion.path
