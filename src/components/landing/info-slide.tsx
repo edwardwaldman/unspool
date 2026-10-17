@@ -4,7 +4,7 @@ import { motion, useSpring, useTransform } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { ProcessDemo } from "./process-demo";
 import { useMainScroll } from "./use-main-scroll";
-import { FILE_ACCEPT, pickFileWithAuth, useUploader } from "../upload/use-uploader";
+import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { UploadIcon } from "../ui/icons";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -122,7 +122,7 @@ function BigUpload() {
         </div>
         <button
           type="button"
-          onClick={() => pickFileWithAuth(() => input.current?.click())}
+          onClick={() => input.current?.click()}
           className="relative z-10 mx-auto flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-8 py-6 text-[20px] md:gap-4 md:px-24 md:py-10 md:text-[36px] font-medium text-paper transition-opacity hover:opacity-90"
         >
           <UploadIcon size={28} /> Upload a document

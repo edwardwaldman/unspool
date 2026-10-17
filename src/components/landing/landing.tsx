@@ -5,7 +5,7 @@ import { useRef, useSyncExternalStore } from "react";
 import { UploadIcon, Wordmark } from "../ui/icons";
 import { useMedia } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
-import { FILE_ACCEPT, pickFileWithAuth, useUploader } from "../upload/use-uploader";
+import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { motion, useSpring, useTransform } from "motion/react";
 import { SiteFooter } from "../shell/site-footer";
 import { DocToReel } from "./doc-to-reel";
@@ -27,7 +27,7 @@ function useViewport(dim: "innerHeight" | "innerWidth", fallback: number) {
   );
 }
 
-/** The hero's call to action: opens the file picker (after sign-up if needed). */
+/** The hero's call to action: opens the file picker right away; sign-up (if needed) comes after the file. */
 function UploadButton() {
   const input = useRef<HTMLInputElement>(null);
   const upload = useUploader();
@@ -47,7 +47,7 @@ function UploadButton() {
       />
       <button
         type="button"
-        onClick={() => pickFileWithAuth(() => input.current?.click())}
+        onClick={() => input.current?.click()}
         disabled={Boolean(pending)}
         className="flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-10 py-4 text-[18px] font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-60 lg:px-14 lg:py-5 lg:text-[22px]"
       >

@@ -33,6 +33,20 @@ export function usePendingUpload() {
   return pending;
 }
 
+// A file picked while signed out waits here (in memory) until the visitor has an account.
+let held: File | null = null;
+
+export function holdFile(file: File | null) {
+  if (held === file) return;
+  held = file;
+  emit();
+}
+
+export function useHeldFile() {
+  useSyncExternalStore(subscribe, () => version, () => 0);
+  return held;
+}
+
 export function validateFile(file: File): string | null {
   if (!(ACCEPTED_EXTENSIONS as readonly string[]).includes(extensionOf(file.name))) {
     return "That file type isn't supported yet. Try PDF, DOCX, PPTX, TXT, MD or a photo of your notes.";

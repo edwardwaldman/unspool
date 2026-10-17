@@ -7,7 +7,7 @@ import { AuthModal } from "../auth/auth-modal";
 import { openAuth } from "../auth/auth-store";
 import { useSessionUser } from "../auth/use-session";
 import { Toaster } from "../ui/toast";
-import { FILE_ACCEPT, pickFileWithAuth, useUploader } from "../upload/use-uploader";
+import { FILE_ACCEPT, ResumeStashedUpload, useUploader } from "../upload/use-uploader";
 
 const TOP_LINKS: [string, string, string][] = [
   ["about", "/about", "How it works"],
@@ -34,7 +34,7 @@ function useFilePicker() {
       }}
     />
   );
-  return { open: () => pickFileWithAuth(() => input.current?.click()), el, upload };
+  return { open: () => input.current?.click(), el, upload };
 }
 
 
@@ -138,6 +138,7 @@ export function AppShell({ active, children, feed = false }: { active: NavKey; c
         </div>
       )}
       <AuthModal />
+      <ResumeStashedUpload />
       <Toaster />
     </div>
   );

@@ -1,12 +1,42 @@
 "use client";
 
-import { Eye, EyeOff, X } from "lucide-react";
+import { ArrowLeft, Check, Eye, EyeOff, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { animate } from "motion/react";
+import { useEffect, useRef, useState } from "react";
+import { supabaseConfigured } from "@/lib/config";
+import type { AuthError, AuthOtpResponse, AuthResponse, AuthTokenResponsePassword, OAuthResponse } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { fileLabel } from "../reel/accent";
 import { toast } from "../ui/toast";
+import { RESUME_PARAM, RESUME_VALUE, stashFile } from "../upload/file-stash";
+import { holdFile, useHeldFile } from "../upload/upload-store";
 import { closeAuth, setAuthMode, useAuthModal } from "./auth-store";
 import { markSignedIn } from "./use-session";
+
+const CODE_LENGTH = 6;
+const RESEND_COOLDOWN_S = 30;
+const MIN_PASSWORD = 8;
+const emptyCode = () => Array<string>(CODE_LENGTH).fill("");
+const TIMEOUT_MS = 15_000;
+const UNREACHABLE = "Couldn't reach the server, try again.";
+
+/** Never let the popup spin forever: give up on a Supabase call after 15 seconds. */
+function withTimeout<T>(p: PromiseLike<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("timeout")), TIMEOUT_MS);
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      },
+    );
+  });
+}
 
 function GoogleG() {
   return (
@@ -19,21 +49,45 @@ function GoogleG() {
   );
 }
 
-function PasswordField({ label, value, onChange, placeholder, autoComplete }: { label: string; value: string; onChange: (v: string) => void; placeholder: string; autoComplete: string }) {
+function PasswordField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+  invalid = false,
+  shake = 0,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  autoComplete: string;
+  /** Red border + ring while the password is the problem. */
+  invalid?: boolean;
+  /** Bump to replay the shake (once per failed submit). */
+  shake?: number;
+}) {
   const [show, setShow] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!shake || !box.current) return;
+    const a = animate(box.current, { x: [0, -8, 8, -6, 6, -3, 3, 0] }, { duration: 0.4, ease: "easeInOut" });
+    return () => a.stop();
+  }, [shake]);
   return (
     <label className="block">
       <span className="label">{label}</span>
-      <div className="relative mt-1.5">
+      <div ref={box} className="relative mt-1.5">
         <input
           type={show ? "text" : "password"}
           required
-          minLength={8}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           autoComplete={autoComplete}
-          className="field w-full px-3.5 py-2.5 pr-11 text-[14px]"
+          aria-invalid={invalid || undefined}
+          className={`field w-full px-3.5 py-2.5 pr-11 text-[14px] ${invalid ? "!border-coral ring-1 ring-coral" : ""}`}
         />
         <button type="button" onClick={() => setShow((s) => !s)} aria-label={show ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink">
           {show ? <EyeOff size={16} strokeWidth={1.5} /> : <Eye size={16} strokeWidth={1.5} />}
@@ -43,114 +97,409 @@ function PasswordField({ label, value, onChange, placeholder, autoComplete }: { 
   );
 }
 
-function friendly(message: string) {
-  if (/invalid login credentials/i.test(message)) return "Wrong email or password.";
-  if (/already (registered|exists)/i.test(message)) return "An account with this email already exists. Log in instead.";
-  if (/email not confirmed/i.test(message)) return "Confirm your email first: check your inbox for the link.";
-  if (/rate limit|too many/i.test(message)) return "Too many attempts. Wait a minute and try again.";
-  return message;
+/** Six single-digit boxes: auto-advance, backspace to go back, paste or SMS/email autofill the whole code. */
+function CodeInput({ value, onChange, onComplete, disabled }: { value: string[]; onChange: (v: string[]) => void; onComplete: (code: string) => void; disabled: boolean }) {
+  const refs = useRef<(HTMLInputElement | null)[]>([]);
+  const focus = (i: number) => refs.current[Math.max(0, Math.min(CODE_LENGTH - 1, i))]?.focus();
+
+  const fill = (from: number, digits: string) => {
+    const next = [...value];
+    for (let k = 0; k < digits.length && from + k < CODE_LENGTH; k++) next[from + k] = digits[k];
+    onChange(next);
+    const filled = next.findIndex((d) => !d);
+    focus(filled === -1 ? CODE_LENGTH - 1 : filled);
+    if (filled === -1) onComplete(next.join(""));
+  };
+
+  return (
+    <div className="flex justify-between gap-2" role="group" aria-label="6-digit code">
+      {value.map((d, i) => (
+        <input
+          key={i}
+          ref={(el) => {
+            refs.current[i] = el;
+          }}
+          value={d}
+          disabled={disabled}
+          autoFocus={i === 0}
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete={i === 0 ? "one-time-code" : "off"}
+          aria-label={`Digit ${i + 1}`}
+          maxLength={i === 0 ? CODE_LENGTH : 1}
+          onFocus={(e) => e.currentTarget.select()}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/\D/g, "");
+            if (!digits) {
+              const next = [...value];
+              next[i] = "";
+              onChange(next);
+              return;
+            }
+            // One typed digit, or a whole autofilled code landing in one box.
+            fill(i, digits.length > 1 && digits.length < CODE_LENGTH ? digits.slice(-1) : digits);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Backspace" && !value[i] && i > 0) {
+              e.preventDefault();
+              const next = [...value];
+              next[i - 1] = "";
+              onChange(next);
+              focus(i - 1);
+            } else if (e.key === "ArrowLeft") focus(i - 1);
+            else if (e.key === "ArrowRight") focus(i + 1);
+          }}
+          onPaste={(e) => {
+            const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, CODE_LENGTH);
+            if (!digits) return;
+            e.preventDefault();
+            fill(digits.length === CODE_LENGTH ? 0 : i, digits);
+          }}
+          className="field h-14 w-full min-w-0 text-center font-mono text-[22px] text-ink"
+        />
+      ))}
+    </div>
+  );
 }
 
-/** Sign up / log in popup: Google, or email + password. */
+type AuthErr = { message: string; code?: string };
+
+function friendly(e: AuthErr) {
+  const m = e.message;
+  if (e.code === "invalid_credentials" || /invalid login credentials/i.test(m)) return "Wrong email or password.";
+  if (e.code === "user_already_exists" || e.code === "email_exists" || /already (registered|exists)/i.test(m))
+    return "An account with this email already exists. Log in instead.";
+  if (e.code === "email_not_confirmed" || /email not confirmed/i.test(m)) return "Confirm your email first: enter the code we sent you.";
+  if (e.code === "otp_expired" || /token has expired|invalid (otp|token)|otp.*(expired|invalid)/i.test(m))
+    return "That code is wrong or has expired. Check the latest email, or resend a new one.";
+  const wait = /after (\d+) seconds?/i.exec(m);
+  if (wait) return `Wait ${wait[1]} seconds before asking for another code.`;
+  if (e.code === "over_email_send_rate_limit" || /email rate limit/i.test(m)) return "We've sent too many emails. Wait a few minutes and try again.";
+  if (/rate limit|too many/i.test(m)) return "Too many attempts. Wait a minute and try again.";
+  if (e.code === "weak_password" || /password should/i.test(m)) return `Pick a stronger password: at least ${MIN_PASSWORD} characters.`;
+  if (e.code === "email_address_invalid" || /unable to validate email|invalid format/i.test(m)) return "That email doesn't look right.";
+  if (/signups? not allowed/i.test(m)) return "Sign-ups are paused right now. Try again later.";
+  if (/failed to fetch|network|timeout/i.test(m)) return UNREACHABLE;
+  return m;
+}
+
+/**
+ * Sign up / log in popup. Sign-up is email + password, confirmed with a 6-digit code from the email,
+ * so a visitor who picked a file never leaves the page. Google stays available (the picked file is
+ * parked in IndexedDB across the redirect).
+ */
 export function AuthModal() {
   const { open, mode, next, onDone } = useAuthModal();
+  const file = useHeldFile();
+  const [step, setStep] = useState<"form" | "code">("form");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [updates, setUpdates] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [sent, setSent] = useState<string | null>(null);
+  const [offerLogin, setOfferLogin] = useState(false);
+  // Password problems show under the password fields, in red, with a shake that replays on every failed submit.
+  const [pwErr, setPwErr] = useState<string | null>(null);
+  const [shake, setShake] = useState(0);
+  const [code, setCode] = useState(emptyCode);
+  const [codeEmail, setCodeEmail] = useState("");
+  const [resendAt, setResendAt] = useState(0);
+  const [now, setNow] = useState(0);
+
+  // Tick the resend cooldown while it's running.
+  useEffect(() => {
+    if (step !== "code" || resendAt === 0) return;
+    const t = setInterval(() => {
+      const n = Date.now();
+      setNow(n);
+      if (n >= resendAt) clearInterval(t);
+    }, 1000);
+    return () => clearInterval(t);
+  }, [step, resendAt]);
 
   if (!open) return null;
   const signup = mode === "signup";
+  const cooldown = Math.max(0, Math.ceil((resendAt - now) / 1000));
   const callback = (to?: string) =>
     `${window.location.origin}/auth/callback?next=${encodeURIComponent(to ?? next ?? window.location.pathname + window.location.search)}`;
-  const switchMode = (m: "signup" | "login") => {
+
+  const passwordFail = (text: string) => {
+    setPwErr(text);
+    setShake((n) => n + 1);
+  };
+  const editPassword = (set: (v: string) => void) => (v: string) => {
+    set(v);
+    setPwErr(null);
+  };
+  const fail = (e: AuthErr) => {
+    if (e.code === "invalid_credentials" || /invalid login credentials/i.test(e.message)) return passwordFail("Wrong email or password");
+    if (e.code === "weak_password" || /password should/i.test(e.message)) return passwordFail(`At least ${MIN_PASSWORD} characters`);
+    const text = friendly(e);
+    setErr(text);
+    setOfferLogin(signup && /already exists/.test(text));
+  };
+  const clearErr = () => {
     setErr(null);
-    setSent(null);
+    setPwErr(null);
+    setOfferLogin(false);
+  };
+  const switchMode = (m: "signup" | "login") => {
+    clearErr();
+    setStep("form");
     setAuthMode(m);
+  };
+  const toCode = (to: string) => {
+    setCodeEmail(to);
+    setCode(emptyCode());
+    const t = Date.now();
+    setNow(t);
+    setResendAt(t + RESEND_COOLDOWN_S * 1000);
+    setStep("code");
+  };
+  const dismiss = () => {
+    closeAuth();
+    holdFile(null);
+    setStep("form");
+    setCode(emptyCode());
+    clearErr();
+  };
+
+  /** A session exists: attach this browser's anonymous spools, close, and continue what the visitor was doing. */
+  const finish = (user: { id: string; email?: string | null }, created: boolean) => {
+    markSignedIn({ id: user.id, email: user.email ?? null });
+    setPassword("");
+    setConfirm("");
+    setCode(emptyCode());
+    setStep("form");
+    clearErr();
+    closeAuth();
+    toast(created ? (file ? "Account created. Unspooling your file." : "Account created") : "Signed in");
+    const claim = fetch("/api/auth/claim", { method: "POST" }).catch(() => undefined);
+    if (onDone) onDone();
+    else void claim.then(() => window.location.reload());
   };
 
   const google = async () => {
+    clearErr();
     setBusy(true);
-    const { error } = await createClient().auth.signInWithOAuth({ provider: "google", options: { redirectTo: callback() } });
-    if (error) {
-      setErr(error.message);
+    let to: string | undefined;
+    if (file) {
+      // The redirect drops in-memory state: park the file in IndexedDB and resume it on /?resume=1.
+      if (!(await stashFile(file))) {
+        setBusy(false);
+        return setErr("Couldn't keep your file through Google sign-in. Use email instead.");
+      }
+      to = `/?${RESUME_PARAM}=${RESUME_VALUE}`;
+    }
+    try {
+      const { error } = await withTimeout<OAuthResponse>(createClient().auth.signInWithOAuth({ provider: "google", options: { redirectTo: callback(to) } }));
+      if (error) {
+        fail(error);
+        setBusy(false);
+      }
+    } catch {
+      setErr(UNREACHABLE);
       setBusy(false);
     }
   };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErr(null);
+    clearErr();
+    const addr = email.trim();
     if (signup) {
-      if (password !== confirm) return setErr("Passwords don't match.");
+      if (password.length < MIN_PASSWORD) return passwordFail(`At least ${MIN_PASSWORD} characters`);
+      if (password !== confirm) return passwordFail("Passwords don't match");
     }
     setBusy(true);
-    const supabase = createClient();
-    if (signup) {
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
+    try {
+      await (signup ? doSignup(addr) : doLogin(addr));
+    } catch {
+      setBusy(false);
+      setErr(UNREACHABLE);
+    }
+  };
+
+  const doSignup = async (addr: string) => {
+    const { data, error } = await withTimeout<AuthResponse>(
+      createClient().auth.signUp({
+        email: addr,
         password,
         options: { emailRedirectTo: callback(), data: { marketing_opt_in: updates, accepted_terms_at: new Date().toISOString() } },
-      });
+      }),
+    );
+    setBusy(false);
+    if (error) return fail(error);
+    // With "Confirm email" on, an already-registered address comes back with no identities and no error.
+    if (data.user && data.user.identities?.length === 0) return fail({ message: "already registered" });
+    if (data.session && data.user) return finish(data.user, true);
+    toCode(addr);
+  };
+
+  const doLogin = async (addr: string) => {
+    const supabase = createClient();
+    const { data, error } = await withTimeout<AuthTokenResponsePassword>(supabase.auth.signInWithPassword({ email: addr, password }));
+    if (error && (error.code === "email_not_confirmed" || /email not confirmed/i.test(error.message))) {
+      // Signed up earlier but never entered the code: send a fresh one and go straight to the code step.
+      const { error: resendErr } = await withTimeout<AuthOtpResponse>(supabase.auth.resend({ type: "signup", email: addr }));
       setBusy(false);
-      if (error) return setErr(friendly(error.message));
-      // With "Confirm email" on, an already-registered address comes back with no identities and no error.
-      if (data.user && data.user.identities?.length === 0) return setErr("An account with this email already exists. Log in instead.");
-      if (!data.session) return setSent(email.trim());
-      if (data.user) markSignedIn({ id: data.user.id, email: data.user.email ?? null });
-    } else {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-      setBusy(false);
-      if (error) return setErr(friendly(error.message));
-      if (data.user) markSignedIn({ id: data.user.id, email: data.user.email ?? null });
+      toCode(addr);
+      if (resendErr) fail(resendErr);
+      else setErr("Confirm your email first: we sent you a new code.");
+      return;
     }
-    setPassword("");
-    setConfirm("");
-    closeAuth();
-    toast(signup ? "Account created" : "Signed in");
-    // Attach any anonymous uploads from this browser to the account, then continue what the visitor was doing.
-    // onDone runs right away so it can still open the file picker inside the click's user activation.
-    const claim = fetch("/api/auth/claim", { method: "POST" }).catch(() => undefined);
-    if (onDone) onDone();
-    else void claim.then(() => window.location.reload());
+    setBusy(false);
+    if (error) return fail(error);
+    if (data.user) finish(data.user, false);
+  };
+
+  const verify = async (token = code.join("")) => {
+    if (busy) return;
+    clearErr();
+    if (!/^\d{6}$/.test(token)) return setErr("Enter all 6 digits.");
+    setBusy(true);
+    let res;
+    try {
+      res = await withTimeout<AuthResponse>(createClient().auth.verifyOtp({ email: codeEmail, token, type: "signup" }));
+    } catch {
+      setBusy(false);
+      return setErr(UNREACHABLE);
+    }
+    const { data, error } = res;
+    setBusy(false);
+    if (error) {
+      fail(error);
+      setCode(emptyCode());
+      return;
+    }
+    if (data.session && data.user) return finish(data.user, true);
+    // Confirmed but no session handed back: the password sign-in finishes the job.
+    setAuthMode("login");
+    setStep("form");
+    setEmail(codeEmail);
+    setErr("Email confirmed. Log in to continue.");
+  };
+
+  const resend = async () => {
+    if (cooldown > 0 || busy) return;
+    clearErr();
+    let error;
+    try {
+      ({ error } = await withTimeout<AuthOtpResponse>(createClient().auth.resend({ type: "signup", email: codeEmail, options: { emailRedirectTo: callback() } })));
+    } catch {
+      return setErr(UNREACHABLE);
+    }
+    if (error) return fail(error);
+    const t = Date.now();
+    setNow(t);
+    setResendAt(t + RESEND_COOLDOWN_S * 1000);
+    setCode(emptyCode());
+    toast("New code sent");
   };
 
   const forgot = async () => {
     if (!email.trim()) return setErr("Enter your email first.");
-    const { error } = await createClient().auth.resetPasswordForEmail(email.trim(), { redirectTo: callback("/profile?reset=1") });
-    if (error) setErr(friendly(error.message));
+    let error;
+    try {
+      ({ error } = await withTimeout<{ error: AuthError | null }>(createClient().auth.resetPasswordForEmail(email.trim(), { redirectTo: callback("/profile?reset=1") })));
+    } catch {
+      return setErr(UNREACHABLE);
+    }
+    if (error) fail(error);
     else toast("Password reset link sent. Check your email.", 4000);
   };
 
+  const heading = step === "code" ? "Check your email" : signup ? (file ? "Create your free account to start" : "Create your account") : file ? "Log in to start" : "Welcome back";
+  const errorBlock = err && (
+    <p className="text-[13px] text-coral" role="alert">
+      {err}
+      {offerLogin && (
+        <>
+          {" "}
+          <button type="button" onClick={() => switchMode("login")} className="text-thread underline underline-offset-2">
+            Log in
+          </button>
+        </>
+      )}
+    </p>
+  );
+
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-paper/80" onClick={closeAuth} />
-      <div role="dialog" aria-modal aria-label={signup ? "Create your account" : "Log in"} className="relative max-h-[94dvh] w-full max-w-[440px] overflow-y-auto border border-line border-t-2 border-t-thread bg-surface px-6 pb-6 pt-7 sm:px-9">
-        <button type="button" onClick={closeAuth} aria-label="Close" className="absolute right-4 top-4 text-muted hover:text-ink">
+      <div className="absolute inset-0 bg-paper/80" onClick={dismiss} />
+      <div role="dialog" aria-modal aria-label={heading} className="relative max-h-[94dvh] w-full max-w-[440px] overflow-y-auto border border-line border-t-2 border-t-thread bg-surface px-6 pb-6 pt-7 sm:px-9">
+        <button type="button" onClick={dismiss} aria-label="Close" className="absolute right-4 top-4 text-muted hover:text-ink">
           <X size={18} strokeWidth={1.5} />
         </button>
-        <h2 className="text-center font-display text-[26px] leading-tight">{signup ? "Create your account" : "Welcome back"}</h2>
-        <p className="mt-1 text-center text-[13.5px] text-muted">
-          {signup ? "Already have an account? " : "New to Unspool? "}
-          <button type="button" onClick={() => switchMode(signup ? "login" : "signup")} className="text-thread hover:underline">
-            {signup ? "Log in" : "Create an account"}
-          </button>
-        </p>
 
-        {sent ? (
-          <div className="mt-6 border border-line p-4 text-center text-[14.5px]">
-            Confirm your email: we sent a link to <span className="text-ink">{sent}</span>.
+        {file && (
+          <div className="mb-5 mr-6 flex items-center gap-3 border border-line bg-paper px-3 py-2" data-testid="file-chip">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-thread font-mono text-[9px] text-thread" aria-hidden>
+              {fileLabel(file.name.split(".").pop() ?? "")}
+            </span>
+            <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">
+              {file.name} <span className="text-muted">· ready to unspool</span>
+            </span>
+            <Check size={15} strokeWidth={2} className="hidden shrink-0 text-thread sm:block" aria-hidden />
           </div>
+        )}
+
+        <h2 className="text-center font-display text-[26px] leading-tight">{heading}</h2>
+
+        {!supabaseConfigured ? (
+          <div className="mt-5 border border-line p-4 text-center text-[14.5px]" role="alert">
+            Sign-up is temporarily unavailable. Please try again in a little while.
+          </div>
+        ) : step === "code" ? (
+          <>
+            <p className="mt-1.5 text-center text-[14px] text-muted">
+              We sent a 6-digit code to <span className="text-ink">{codeEmail}</span>
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void verify();
+              }}
+              className="mt-6 space-y-4"
+            >
+              <CodeInput value={code} onChange={setCode} onComplete={(c) => void verify(c)} disabled={busy} />
+              {errorBlock}
+              <button type="submit" disabled={busy} className="btn-primary w-full py-3 text-[14.5px]">
+                {busy ? "Checking" : "Verify"}
+              </button>
+            </form>
+            <div className="mt-4 flex items-center justify-between text-[13px]">
+              <button
+                type="button"
+                onClick={() => {
+                  clearErr();
+                  setStep("form");
+                }}
+                className="flex items-center gap-1.5 text-muted hover:text-ink"
+              >
+                <ArrowLeft size={14} strokeWidth={1.5} /> Use a different email
+              </button>
+              <button type="button" onClick={resend} disabled={cooldown > 0} className="text-thread hover:underline disabled:text-muted disabled:no-underline">
+                {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
+              </button>
+            </div>
+            <p className="mt-4 text-center text-[12px] text-muted">Not there in a minute? Check spam or promotions.</p>
+          </>
         ) : (
           <>
+            <p className="mt-1 text-center text-[13.5px] text-muted">
+              {signup ? "Already have an account? " : "New to Unspool? "}
+              <button type="button" onClick={() => switchMode(signup ? "login" : "signup")} className="text-thread hover:underline">
+                {signup ? "Log in instead" : "Create an account"}
+              </button>
+            </p>
+
             <button type="button" onClick={google} disabled={busy} className="btn-secondary mt-5 w-full py-2.5 text-[14px]">
-              <GoogleG /> Google
+              <GoogleG /> Continue with Google
             </button>
             <div className="label my-3.5 flex items-center gap-3 !text-[10px]">
-              <div className="h-px flex-1 bg-line" /> Or continue with <div className="h-px flex-1 bg-line" />
+              <div className="h-px flex-1 bg-line" /> Or with email <div className="h-px flex-1 bg-line" />
             </div>
             <form onSubmit={submit} className="space-y-3">
               <label className="block">
@@ -160,7 +509,7 @@ export function AuthModal() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  placeholder="you@example.com"
                   autoComplete="email"
                   className="field mt-1.5 w-full px-3.5 py-2.5 text-[14px]"
                 />
@@ -168,26 +517,48 @@ export function AuthModal() {
               <PasswordField
                 label="Password"
                 value={password}
-                onChange={setPassword}
-                placeholder={signup ? "Create a password" : "Your password"}
+                onChange={editPassword(setPassword)}
+                invalid={Boolean(pwErr)}
+                shake={shake}
+                placeholder={signup ? `At least ${MIN_PASSWORD} characters` : "Your password"}
                 autoComplete={signup ? "new-password" : "current-password"}
               />
               {signup ? (
                 <>
-                  <PasswordField label="Confirm password" value={confirm} onChange={setConfirm} placeholder="Confirm your password" autoComplete="new-password" />
+                  <PasswordField
+                    label="Confirm password"
+                    value={confirm}
+                    onChange={editPassword(setConfirm)}
+                    invalid={Boolean(pwErr)}
+                    shake={shake}
+                    placeholder="Type it again"
+                    autoComplete="new-password"
+                  />
+                  {pwErr && (
+                    <p className="-mt-1 text-[13px] text-coral" role="alert">
+                      {pwErr}
+                    </p>
+                  )}
                   <label className="flex items-start gap-2.5 text-[12.5px] leading-snug text-muted">
                     <input type="checkbox" checked={updates} onChange={(e) => setUpdates(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[var(--thread)]" />
                     <span>Send me occasional product updates. Optional.</span>
                   </label>
                 </>
               ) : (
-                <button type="button" onClick={forgot} className="text-[13px] text-muted hover:text-ink">
-                  Forgot password?
-                </button>
+                <>
+                  {pwErr && (
+                    <p className="-mt-1 text-[13px] text-coral" role="alert">
+                      {pwErr}
+                    </p>
+                  )}
+                  <button type="button" onClick={forgot} className="text-[13px] text-muted hover:text-ink">
+                    Forgot password?
+                  </button>
+                </>
               )}
-              {err && <p className="text-[13px] text-coral">{err}</p>}
+              {errorBlock}
               <button type="submit" disabled={busy} className="btn-primary w-full py-3 text-[14.5px]">
-                {busy ? "One moment" : "Continue"}
+                {busy ? "One moment" : signup ? "Create account" : "Log in"}
               </button>
               {signup && (
                 <p className="text-center text-[12px] text-muted">
