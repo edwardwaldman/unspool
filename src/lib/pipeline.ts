@@ -1,5 +1,5 @@
 import { writeReelScript, planSpool } from "./claude";
-import { GENERATE_LOCKED_REELS_EAGERLY } from "./config";
+import { GENERATE_LOCKED_REELS_EAGERLY, LIMITS } from "./config";
 import type { DocumentRow, ReelRow } from "./db-types";
 import { ExtractionError, extractDocument } from "./extract";
 import { dispatch } from "./jobs";
@@ -123,6 +123,11 @@ export async function generateReel(reelId: string) {
   const { data: reel } = await db.from("reels").select("*").eq("id", reelId).maybeSingle<ReelRow>();
   if (!reel || reel.status === "ready") return;
   if (reel.status === "generating" && reel.started_at && Date.now() - new Date(reel.started_at).getTime() < STALE_MS) return;
+  // Stop retrying a reel that keeps failing, so stuck-healing can't spend on it forever.
+  if (reel.attempts >= LIMITS.maxReelAttempts) {
+    if (reel.status !== "failed") await db.from("reels").update({ status: "failed", error: "Something went wrong while unspooling." }).eq("id", reelId);
+    return;
+  }
 
   // Optimistic claim: only one worker wins.
   const { data: claimed } = await db
