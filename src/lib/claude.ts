@@ -11,8 +11,14 @@ import {
   type ReelScript,
 } from "./schema";
 
+type Effort = "low" | "medium" | "high";
+
+/** OCR of scanned files, and the fallback when the script model declines. */
 const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-opus-5-5";
-const EFFORT = (process.env.ANTHROPIC_EFFORT ?? "medium") as "low" | "medium" | "high";
+const EFFORT = (process.env.ANTHROPIC_EFFORT ?? "medium") as Effort;
+/** Plan + per-reel scripts: the cheapest current model by default (Haiku-class). */
+const SCRIPT_MODEL = process.env.ANTHROPIC_SCRIPT_MODEL ?? "claude-haiku-5-5";
+const SCRIPT_EFFORT = (process.env.ANTHROPIC_SCRIPT_EFFORT ?? "low") as Effort;
 
 let client: Anthropic | null = null;
 function anthropic() {
@@ -21,7 +27,12 @@ function anthropic() {
 }
 
 // Server-side refusal fallback: if the primary model declines, the API retries on a fallback model.
+// Haiku-class models have no server-side fallback (the parameter is rejected or ignored), so for those
+// structured() retries a declined request once on MODEL instead.
 const FALLBACK = { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const };
+function fallbackFor(model: string) {
+  return /haiku/i.test(model) ? {} : FALLBACK;
+}
 
 // ---------------------------------------------------------------------------
 // Shared, cacheable prefix: the same system text + document for the plan call and every script call,
@@ -58,6 +69,8 @@ class InvalidOutput extends Error {}
 
 /** One structured call; if the schema is rejected by the API, fall back to prompted JSON + zod validation. */
 async function structured<T extends z.ZodType>(opts: {
+  model?: string;
+  effort?: Effort;
   schema: T;
   system: Anthropic.Beta.BetaTextBlockParam[];
   prompt: string;
@@ -65,6 +78,9 @@ async function structured<T extends z.ZodType>(opts: {
   validate?: (value: z.infer<T>) => string[];
 }): Promise<z.infer<T>> {
   let lastProblem = "";
+  let model = opts.model ?? SCRIPT_MODEL;
+  let effort = opts.effort ?? (model === SCRIPT_MODEL ? SCRIPT_EFFORT : EFFORT);
+  let escalated = false;
   for (let attempt = 0; attempt < 2; attempt++) {
     const prompt = lastProblem
       ? `${opts.prompt}\n\nYour previous answer was invalid (${lastProblem}). Return corrected output.`
@@ -72,14 +88,24 @@ async function structured<T extends z.ZodType>(opts: {
     let value: z.infer<T> | null = null;
     try {
       const res = await anthropic().beta.messages.parse({
-        model: MODEL,
+        model,
         max_tokens: opts.maxTokens,
-        ...FALLBACK,
-        output_config: { effort: EFFORT, format: betaZodOutputFormat(opts.schema) },
+        ...fallbackFor(model),
+        output_config: { effort, format: betaZodOutputFormat(opts.schema) },
         system: opts.system,
         messages: [{ role: "user", content: prompt }],
       });
-      if (res.stop_reason === "refusal") throw new InvalidOutput("the model declined to process this document");
+      if (res.stop_reason === "refusal") {
+        if (!escalated && model !== MODEL) {
+          // Client-side fallback for models without the server-side one.
+          escalated = true;
+          model = MODEL;
+          effort = EFFORT;
+          attempt--;
+          continue;
+        }
+        throw new InvalidOutput("the model declined to process this document");
+      }
       if (res.stop_reason === "max_tokens") {
         lastProblem = "output was cut off; be more concise";
         continue;
@@ -87,7 +113,7 @@ async function structured<T extends z.ZodType>(opts: {
       value = res.parsed_output as z.infer<T> | null;
     } catch (err) {
       if (err instanceof Anthropic.BadRequestError && /schema|output_config|format/i.test(err.message)) {
-        value = await promptedJson(opts.schema, opts.system, prompt, opts.maxTokens);
+        value = await promptedJson(model, effort, opts.schema, opts.system, prompt, opts.maxTokens);
       } else {
         throw err;
       }
@@ -104,16 +130,18 @@ async function structured<T extends z.ZodType>(opts: {
 }
 
 async function promptedJson<T extends z.ZodType>(
+  model: string,
+  effort: Effort,
   schema: T,
   system: Anthropic.Beta.BetaTextBlockParam[],
   prompt: string,
   maxTokens: number,
 ): Promise<z.infer<T> | null> {
   const res = await anthropic().beta.messages.create({
-    model: MODEL,
+    model,
     max_tokens: maxTokens,
-    ...FALLBACK,
-    output_config: { effort: EFFORT },
+    ...fallbackFor(model),
+    output_config: { effort },
     system,
     messages: [{ role: "user", content: `${prompt}\n\nRespond with only a single JSON object, no prose and no code fences.` }],
   });
@@ -187,6 +215,7 @@ color is one of primary | warn | yellow | cyan, with the same meanings as the ma
 Other fields:
 - "headline": the reel's on-screen hook headline that stays at the top: 8–18 words, the key term wrapped in *…*. E.g. "A chef never eats the whole pot. So how does she know the *soup* is salty?"
 - "summary": 1–2 sentence plain-text caption summarizing the reel (shown under the reel, no markup).
+- "image_prompt" (on every beat): the scene for an illustration shown behind that beat in the video, 8–20 words. Concrete and visual: objects, people, places or a simple visual metaphor for what the beat says (e.g. "a chef tasting one spoon of soup beside a huge steaming pot"). Never ask for words, letters, numbers, charts, logos, UI or real named people in the image, and don't describe an art style (the style is added automatically).
 - "stats": 0–3 numbers from the document shown in a live monospace stat line, counting up when they're mentioned: {label (1–2 lowercase words), value (number), prefix (e.g. "$" or ""), suffix (e.g. "%", " days" or ""), at_beat (index of the beat where it's first mentioned)}. Only real numbers from the document; use [] if the reel has none.`;
 
 export async function writeReelScript(input: {

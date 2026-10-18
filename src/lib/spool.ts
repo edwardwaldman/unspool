@@ -4,11 +4,15 @@ import { extensionOf } from "./config";
 import { healIfStuck } from "./pipeline";
 import type { ReelDTO, SpoolDTO } from "./spool-types";
 import { adminClient } from "./supabase/admin";
+import { VIDEO_BUCKET } from "./video/types";
 import type { Viewer } from "./viewer";
 
 const SIGNED_URL_TTL = 60 * 60 * 6;
 
-type ReelLite = Pick<ReelRow, "id" | "index" | "title" | "hook" | "status" | "error" | "script_json" | "audio_paths" | "started_at">;
+type ReelLite = Pick<
+  ReelRow,
+  "id" | "index" | "title" | "hook" | "status" | "error" | "script_json" | "audio_paths" | "started_at" | "video_path" | "video_meta"
+>;
 
 /** Build the client view of a document: titles/hooks for all reels, full script + audio only where unlocked. */
 export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?: boolean } = {}): Promise<SpoolDTO> {
@@ -16,7 +20,7 @@ export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?
   const unlocked = isUnlocked(doc, viewer);
   const { data } = await db
     .from("reels")
-    .select("id,index,title,hook,status,error,script_json,audio_paths,started_at")
+    .select("id,index,title,hook,status,error,script_json,audio_paths,started_at,video_path,video_meta")
     .eq("document_id", doc.id)
     .order("index");
   const rows = (data ?? []) as ReelLite[];
@@ -34,6 +38,13 @@ export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?
     const { data: signed } = await db.storage.from("audio").createSignedUrls(paths, SIGNED_URL_TTL);
     for (const s of signed ?? []) if (s.path && s.signedUrl) urls.set(s.path, s.signedUrl);
   }
+  // Rendered videos: signed only for playable (unlocked or free) reels; locked reels never get one.
+  const videoPaths = visible.flatMap((r) => (r.status === "ready" && r.video_path && r.video_meta ? [r.video_path] : []));
+  const videoUrls = new Map<string, string>();
+  if (videoPaths.length) {
+    const { data: signed } = await db.storage.from(VIDEO_BUCKET).createSignedUrls(videoPaths, SIGNED_URL_TTL);
+    for (const s of signed ?? []) if (s.path && s.signedUrl) videoUrls.set(s.path, s.signedUrl);
+  }
 
   const reels: ReelDTO[] = rows.map((r) => {
     const locked = r.index > playable;
@@ -45,7 +56,8 @@ export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?
         { url: a.path ? urls.get(a.path) : undefined, duration: a.duration, words: a.words },
       ]),
     );
-    return { ...base, script: r.script_json, audio };
+    const videoUrl = r.video_path ? videoUrls.get(r.video_path) : undefined;
+    return { ...base, script: r.script_json, audio, ...(videoUrl && r.video_meta ? { videoUrl, video: r.video_meta } : {}) };
   });
 
   return {
@@ -102,6 +114,14 @@ export async function deleteDocument(doc: Pick<DocumentRow, "id" | "file_path">)
     for (const f of files ?? []) audioPaths.push(`${doc.id}/${folder.name}/${f.name}`);
   }
   if (audioPaths.length) await db.storage.from("audio").remove(audioPaths);
+  // Videos are stored as {docId}/{reelIndex}/reel-{attempt}.mp4
+  const { data: videoFolders } = await db.storage.from(VIDEO_BUCKET).list(doc.id, { limit: 100 });
+  const videoPaths: string[] = [];
+  for (const folder of videoFolders ?? []) {
+    const { data: files } = await db.storage.from(VIDEO_BUCKET).list(`${doc.id}/${folder.name}`, { limit: 100 });
+    for (const f of files ?? []) videoPaths.push(`${doc.id}/${folder.name}/${f.name}`);
+  }
+  if (videoPaths.length) await db.storage.from(VIDEO_BUCKET).remove(videoPaths);
   if (doc.file_path) await db.storage.from("documents").remove([doc.file_path]);
   await db.from("documents").delete().eq("id", doc.id);
 }

@@ -1,4 +1,5 @@
 import type { AudioMap, ReelScript } from "./schema";
+import type { VideoTimeline } from "./video/types";
 
 export type DocumentStatus = "uploading" | "uploaded" | "extracting" | "planning" | "scripting" | "ready" | "failed";
 export type ReelStatus = "pending" | "generating" | "ready" | "failed";
@@ -37,6 +38,9 @@ export type ReelRow = {
   section: string | null;
   script_json: ReelScript | null;
   audio_paths: AudioMap | null;
+  /** Rendered MP4 in the private `videos` bucket, plus the timeline the player syncs to. Null = animated player. */
+  video_path: string | null;
+  video_meta: VideoTimeline | null;
   status: ReelStatus;
   error: string | null;
   attempts: number;

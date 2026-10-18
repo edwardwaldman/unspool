@@ -5,6 +5,8 @@ import { generateReel } from "@/lib/pipeline";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
+// Node runtime: the reel job may run ffmpeg (video render) after the voiceover.
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   if (req.headers.get("x-job-secret") !== jobSecret()) return error(401, "unauthorized");

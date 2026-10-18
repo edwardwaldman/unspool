@@ -1,5 +1,6 @@
 import type { DocumentStatus, ReelStatus } from "./db-types";
 import type { ReelScript } from "./schema";
+import type { VideoTimeline } from "./video/types";
 
 // Client-facing shapes returned by /api/documents/[id] and /api/feed.
 
@@ -17,6 +18,8 @@ export type ReelDTO = {
   audio?: Record<string, SegmentAudioDTO>;
   /** A rendered MP4 of this reel, once reels are rendered as video. Like script/audio, only sent for playable reels. */
   videoUrl?: string;
+  /** Where each segment sits in the video, so the player can follow the video's clock (sent with videoUrl). */
+  video?: VideoTimeline;
 };
 
 export type SpoolDTO = {

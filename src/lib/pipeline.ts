@@ -8,8 +8,11 @@ import { buildSegments } from "./segments";
 import { adminClient } from "./supabase/admin";
 import { estimateDuration, estimateWordFractions } from "./timing";
 import { synthesize } from "./tts";
+import { renderReelVideo, videoRenderEnabled, type ReelVideo } from "./video/reel-video";
 
 const STALE_MS = 6 * 60 * 1000;
+/** The per-reel job route's maxDuration is 300s; finish (and save) the reel well inside it. */
+const REEL_BUDGET_MS = 285_000;
 
 function friendlyError(err: unknown): string {
   if (err instanceof ExtractionError) return err.message;
@@ -115,6 +118,7 @@ export async function queueRemainingReels(documentId: string, opts: { includeFir
 }
 
 export async function generateReel(reelId: string) {
+  const startedAt = Date.now();
   const db = adminClient();
   const { data: reel } = await db.from("reels").select("*").eq("id", reelId).maybeSingle<ReelRow>();
   if (!reel || reel.status === "ready") return;
@@ -157,6 +161,7 @@ export async function generateReel(reelId: string) {
     }
 
     const segments = buildSegments(script);
+    const clips = new Map<string, Buffer>();
     const entries = await mapLimit(segments, 4, async (seg) => {
       const tts = await synthesize(seg.speech);
       if (!tts) {
@@ -167,14 +172,33 @@ export async function generateReel(reelId: string) {
         .from("audio")
         .upload(path, tts.audio, { contentType: "audio/mpeg", upsert: true });
       if (error) throw error;
+      clips.set(seg.key, tts.audio);
       return [seg.key, { path, duration: tts.duration, words: tts.words, exact: tts.exact }] as const;
     });
     const audio: AudioMap = Object.fromEntries(entries);
 
-    await db
-      .from("reels")
-      .update({ status: "ready", script_json: script, audio_paths: audio, error: null })
-      .eq("id", reelId);
+    // Video (images + ffmpeg). Best effort: any failure keeps the animated player for this reel.
+    let video: ReelVideo | null = null;
+    if (videoRenderEnabled()) {
+      try {
+        video = await renderReelVideo({ reel, script, segments, audio, clips, deadline: startedAt + REEL_BUDGET_MS });
+      } catch (err) {
+        console.error("[pipeline] video render failed, keeping the animated player", reelId, err);
+      }
+    }
+
+    const ready = { status: "ready" as const, script_json: script, audio_paths: audio, error: null };
+    let saved = false;
+    if (video) {
+      const { error } = await db.from("reels").update({ ...ready, video_path: video.path, video_meta: video.timeline }).eq("id", reelId);
+      if (error) console.error("[pipeline] saving the video failed, keeping the animated player", reelId, error);
+      else saved = true;
+    }
+    if (!saved) {
+      const { error } = await db.from("reels").update({ ...ready, video_path: null, video_meta: null }).eq("id", reelId);
+      // Before the video columns exist (migration not applied yet), save without them.
+      if (error) await db.from("reels").update(ready).eq("id", reelId);
+    }
 
     const { count } = await db
       .from("reels")

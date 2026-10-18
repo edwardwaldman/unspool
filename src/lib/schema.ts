@@ -45,6 +45,8 @@ export const VisualSchema = z.discriminatedUnion("type", [
 export const BeatSchema = z.object({
   say: z.string(),
   visual: VisualSchema,
+  /** Scene for this beat's illustration in the rendered video (style is appended in code). Absent on older scripts. */
+  image_prompt: z.string(),
 });
 
 export const StatSchema = z.object({
@@ -80,8 +82,9 @@ export const ReelScriptSchema = z.object({
 
 export type Visual = z.infer<typeof VisualSchema>;
 export type VisualType = Visual["type"] | "quiz" | "outro";
-export type Beat = z.infer<typeof BeatSchema>;
-export type ReelScript = z.infer<typeof ReelScriptSchema>;
+/** image_prompt is required from the model but absent on scripts written before videos (and on the demo). */
+export type Beat = Omit<z.infer<typeof BeatSchema>, "image_prompt"> & { image_prompt?: string };
+export type ReelScript = Omit<z.infer<typeof ReelScriptSchema>, "beats"> & { beats: Beat[] };
 export type HighlightColor = z.infer<typeof ColorSchema>;
 export type Stat = z.infer<typeof StatSchema>;
 
@@ -106,7 +109,8 @@ export function reelScriptProblems(s: ReelScript): string[] {
 
 /** Clamp anything slightly out of range instead of failing the whole reel. */
 export function normalizeReelScript(s: ReelScript): ReelScript {
-  const beats = s.beats.map((b) => {
+  const beats = s.beats.map((raw) => {
+    const b = { ...raw, image_prompt: (raw.image_prompt ?? "").trim().slice(0, 400) };
     const v = b.visual;
     if (v.type === "flow") return { ...b, visual: { ...v, steps: v.steps.slice(0, 4) } };
     if (v.type === "list") return { ...b, visual: { ...v, items: v.items.slice(0, 5) } };

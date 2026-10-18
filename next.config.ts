@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
     },
   },
   serverExternalPackages: ["mammoth"],
+  // The per-reel job renders video in-function: ship the ffmpeg-static binary (resolved by path in
+  // src/lib/video/render.ts, never imported, so no other route carries it) and the caption font.
+  outputFileTracingIncludes: {
+    "/api/jobs/reel": ["./node_modules/ffmpeg-static/ffmpeg", "./assets/fonts/**/*"],
+  },
   async headers() {
     return [
       {
