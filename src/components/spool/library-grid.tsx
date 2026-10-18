@@ -72,10 +72,6 @@ export function LibraryGrid({ initial }: { initial: LibraryItem[] }) {
           return (
             <div key={it.id} className="relative bg-paper">
               <Link href={`/s/${it.id}`} className="relative block aspect-[9/16] overflow-hidden bg-paper">
-                <div
-                  aria-hidden
-                  className="absolute left-1/2 top-[64%] h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-thread opacity-15 blur-2xl"
-                />
                 <div className="relative line-clamp-6 p-2.5 font-hook text-[12.5px] font-extrabold leading-[1.12] tracking-[-0.01em] text-ink">
                   {it.headline ? <MarkedText text={it.headline} /> : it.hook ?? it.name}
                 </div>

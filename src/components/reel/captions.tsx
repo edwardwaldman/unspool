@@ -28,7 +28,7 @@ export function Captions({ text, words, fraction }: { text: string; words: numbe
   return (
     <p
       className="mx-auto max-w-[340px] text-center font-hook text-[25px] font-extrabold leading-[1.28] tracking-[-0.015em] text-white"
-      style={{ textShadow: "0 2px 0 rgba(0,0,0,.28), 0 0 22px rgba(0,0,0,.45)" }}
+      style={{ textShadow: "0 2px 0 rgba(0,0,0,.6)" }}
       aria-live="off"
     >
       {chunk.map((i) => {
@@ -38,7 +38,7 @@ export function Captions({ text, words, fraction }: { text: string; words: numbe
         return (
           <span
             key={i}
-            className="mx-[0.06em] inline-block rounded-[7px] px-[0.16em] transition-transform duration-100"
+            className="mx-[0.06em] inline-block px-[0.16em] transition-transform duration-100"
             style={
               isNow
                 ? { background: "var(--thread)", color: "#08110e", textShadow: "none", transform: "scale(1.06) rotate(-1.5deg)" }

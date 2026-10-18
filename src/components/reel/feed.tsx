@@ -205,7 +205,7 @@ export function Feed({
       </div>
 
       {/* Top tabs: This doc | All spools */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-center pt-5" style={{ textShadow: "0 1px 3px rgba(0,0,0,.5)" }}>
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-center pt-5" style={{ textShadow: "0 1px 0 rgba(0,0,0,.55)" }}>
         <div className="pointer-events-auto flex items-center gap-5 text-[15.5px] font-semibold">
           {docHref ? (
             <Link href={docHref} className={tab === "doc" ? "text-white" : "text-white/60"}>
@@ -231,7 +231,7 @@ export function Feed({
           aria-label="Previous reel"
           disabled={index === 0}
           onClick={() => scrollTo(Math.max(0, index - 1))}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.08] text-ink transition-colors hover:bg-white/[0.16] disabled:opacity-30"
+          className="flex h-11 w-11 items-center justify-center border border-line bg-paper text-ink transition-colors hover:border-muted disabled:opacity-30"
         >
           <ChevronUp size={24} />
         </button>
@@ -240,7 +240,7 @@ export function Feed({
           aria-label="Next reel"
           disabled={index >= items.length - 1}
           onClick={() => scrollTo(Math.min(items.length - 1, index + 1))}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.08] text-ink transition-colors hover:bg-white/[0.16] disabled:opacity-30"
+          className="flex h-11 w-11 items-center justify-center border border-line bg-paper text-ink transition-colors hover:border-muted disabled:opacity-30"
         >
           <ChevronDown size={24} />
         </button>

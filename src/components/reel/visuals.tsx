@@ -10,11 +10,11 @@ import { ReelIcon } from "./icon";
 import { QUIZ_WAIT_MS, type QuizState } from "./use-playback";
 
 // The motion graphics drawn inside a reel's frame. Everything reads the reel's own --thread accent
-// (set on the frame), sits on the tinted backdrop, and uses soft "glass" cards like video overlays.
+// (set on the frame), sits on the flat tinted backdrop, and uses flat, square, bordered panels.
 
 const ease = [0.22, 1, 0.36, 1] as const;
-const TEXT_SHADOW = { textShadow: "0 2px 18px rgba(0,0,0,.35)" };
-const glass = "border border-white/[0.12] bg-white/[0.07] backdrop-blur-[6px]";
+const TEXT_SHADOW = { textShadow: "0 2px 0 rgba(0,0,0,.45)" };
+const glass = "border border-white/[0.14] bg-paper/80";
 
 function colorOf(c: HighlightColor | undefined) {
   return COLOR_VAR[c ?? "primary"];
@@ -40,14 +40,8 @@ function Tile({ name, size = 28, on = true, delay = 0, box = 56 }: { name: strin
       initial={{ opacity: 0, scale: 0.85 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.45, ease, delay }}
-      className="flex shrink-0 items-center justify-center rounded-[16px]"
-      style={{
-        width: box,
-        height: box,
-        background: on ? "var(--thread)" : "rgba(255,255,255,.08)",
-        color: on ? "#08110e" : "rgba(255,255,255,.7)",
-        border: on ? "none" : "1px solid rgba(255,255,255,.12)",
-      }}
+      className="flex shrink-0 items-center justify-center"
+      style={{ width: box, height: box, color: on ? "var(--thread)" : "rgba(255,255,255,.6)" }}
     >
       <ReelIcon name={name} size={size} strokeWidth={1.75} />
     </motion.div>
@@ -62,29 +56,18 @@ function HookVisual({ v }: { v: Extract<Visual, { type: "hook" }> }) {
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, ease }}
-        className="relative flex h-36 w-36 items-center justify-center rounded-full"
-        style={{ background: `color-mix(in srgb, ${c} 20%, transparent)`, border: `1.5px solid color-mix(in srgb, ${c} 55%, transparent)` }}
+        className="relative flex h-36 w-36 items-center justify-center"
       >
-        {[0, 1].map((k) => (
-          <motion.span
-            key={k}
-            aria-hidden
-            className="absolute inset-0 rounded-full border"
-            style={{ borderColor: `color-mix(in srgb, ${c} 40%, transparent)` }}
-            animate={{ scale: [1, 1.55], opacity: [0.7, 0] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut", delay: k * 1.2 }}
-          />
-        ))}
         <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }} style={{ color: c }}>
-          <ReelIcon name={v.icon} size={62} strokeWidth={1.5} />
+          <ReelIcon name={v.icon} size={88} strokeWidth={1.5} />
         </motion.div>
       </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 10, rotate: 0 }}
         animate={{ opacity: 1, y: 0, rotate: -3 }}
         transition={{ delay: 0.3, duration: 0.5, ease }}
-        className="rounded-[10px] px-3.5 py-1.5 font-hook text-[16px] font-extrabold tracking-[-0.01em] text-[#08110e]"
-        style={{ background: c, boxShadow: "0 6px 24px rgba(0,0,0,.25)" }}
+        className="px-3.5 py-1.5 font-hook text-[16px] font-extrabold tracking-[-0.01em] text-[#08110e]"
+        style={{ background: c }}
       >
         {sentence(v.tag)}
       </motion.div>
@@ -98,8 +81,8 @@ function BigWordVisual({ v }: { v: Extract<Visual, { type: "bigword" }> }) {
   return (
     <div className="relative flex flex-col items-center px-6 text-center">
       <motion.div
-        initial={{ opacity: 0, y: 16, scale: 0.94, filter: "blur(8px)" }}
-        animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+        initial={{ opacity: 0, y: 16, scale: 0.94 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6, ease }}
         className="relative font-hook font-extrabold uppercase leading-[0.95] tracking-[-0.035em]"
         // Shrinks with the frame width (the reel root is a size container) so long words never clip on phones.
@@ -111,7 +94,7 @@ function BigWordVisual({ v }: { v: Extract<Visual, { type: "bigword" }> }) {
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.5 }}
-        className={`relative mt-5 max-w-[290px] rounded-full px-4 py-1.5 text-[15px] font-medium text-white ${glass}`}
+        className={`relative mt-5 max-w-[290px] px-4 py-1.5 text-[15px] font-medium text-white ${glass}`}
       >
         {sentence(v.sub)}
       </motion.div>
@@ -126,7 +109,7 @@ function SplitVisual({ v }: { v: Extract<Visual, { type: "split" }> }) {
       initial={{ opacity: 0, x: i === 0 ? -24 : 24 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: i * 0.3, duration: 0.55, ease }}
-      className={`flex flex-1 flex-col items-center rounded-[20px] px-3 py-5 text-center ${glass}`}
+      className={`flex flex-1 flex-col items-center px-3 py-5 text-center ${glass}`}
     >
       <Tile name={s.icon} on={i === 1} delay={i * 0.3} />
       <div className="mt-4 font-hook text-[24px] font-extrabold leading-tight tracking-[-0.02em]" style={{ color: i === 0 ? "#fff" : "var(--thread)" }}>
@@ -142,7 +125,7 @@ function SplitVisual({ v }: { v: Extract<Visual, { type: "split" }> }) {
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.2, duration: 0.4, ease }}
-        className="absolute left-1/2 top-1/2 z-10 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[3px] font-hook text-[12px] font-extrabold uppercase text-[#08110e]"
+        className="absolute left-1/2 top-1/2 z-10 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-[3px] font-hook text-[12px] font-extrabold uppercase text-[#08110e]"
         style={{ background: "var(--thread)", borderColor: "var(--paper)" }}
       >
         {v.mode === "vs" ? "vs" : <ArrowRight size={16} strokeWidth={2.5} />}
@@ -165,7 +148,7 @@ function FlowVisual({ v, progress }: { v: Extract<Visual, { type: "flow" }>; pro
             initial={{ opacity: 0, x: 18 }}
             animate={{ opacity: on ? 1 : 0.35, x: 0 }}
             transition={{ duration: 0.45, ease, delay: i * 0.05 }}
-            className={`relative flex items-center gap-4 rounded-[18px] p-3 pr-4 ${glass}`}
+            className={`relative flex items-center gap-4 p-3 pr-4 ${glass}`}
           >
             <Tile name={s.icon} on={on} size={24} box={50} />
             <div className="min-w-0">
@@ -185,7 +168,7 @@ function ListVisual({ v, progress }: { v: Extract<Visual, { type: "list" }>; pro
   const shown = Math.max(1, Math.min(n, Math.floor(progress * (n + 0.6)) + 1));
   return (
     <div className="w-full px-6">
-    <div className={`flex w-full flex-col rounded-[22px] p-4 ${glass}`}>
+    <div className={`flex w-full flex-col p-4 ${glass}`}>
       <div className="mb-2 flex items-baseline justify-between px-1">
         <Label color="var(--thread)">{v.title}</Label>
         <span className="font-mono text-[11px] text-white/60">
@@ -198,7 +181,7 @@ function ListVisual({ v, progress }: { v: Extract<Visual, { type: "list" }>; pro
           initial={{ opacity: 0, y: 10 }}
           animate={i < shown ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
           transition={{ duration: 0.4, ease }}
-          className="flex items-center gap-3.5 rounded-[14px] px-1 py-2"
+          className="flex items-center gap-3.5 px-1 py-2"
         >
           <Tile name={it.icon} size={20} box={40} on={i === shown - 1} />
           <span className="text-[18px] font-semibold leading-tight tracking-[-0.01em] text-white">{it.label}</span>
@@ -245,12 +228,12 @@ function CrowdVisual({ v, progress }: { v: Extract<Visual, { type: "crowd" }>; p
         <CrowdCanvas ratio={v.ratio} progress={progress} />
       </div>
       <div className="mt-2 flex items-center gap-2">
-        <span className={`flex items-center gap-2 rounded-full px-3 py-1 text-[12.5px] font-medium text-white/85 ${glass}`}>
-          <span className="h-2 w-2 rounded-full bg-white/50" />
+        <span className="flex items-center gap-2 px-1 py-1 text-[12.5px] font-medium text-white/85">
+          <span className="h-2 w-2 bg-white/50" />
           {sentence(v.total_label)}
         </span>
-        <span className="flex items-center gap-2 rounded-full px-3 py-1 text-[12.5px] font-semibold text-[#08110e]" style={{ background: "var(--thread)" }}>
-          <span className="h-2 w-2 rounded-full bg-[#08110e]" />
+        <span className="flex items-center gap-2 px-1 py-1 text-[12.5px] font-semibold text-thread">
+          <span className="h-2 w-2 bg-thread" />
           {sentence(v.highlight_label)} · {pct}%
         </span>
       </div>
@@ -275,7 +258,7 @@ function StatVisual({ v }: { v: Extract<Visual, { type: "stat" }> }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className={`relative mt-5 rounded-full px-4 py-1.5 text-[14.5px] font-medium text-white ${glass}`}
+        className={`relative mt-5 px-4 py-1.5 text-[14.5px] font-medium text-white ${glass}`}
       >
         {sentence(v.label)}
       </motion.div>
@@ -304,21 +287,19 @@ export function QuizCard({
       initial={{ opacity: 0, y: 24, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.45, ease }}
-      className="w-full rounded-[24px] border border-white/[0.14] bg-black/40 p-5 backdrop-blur-[14px]"
-      style={{ boxShadow: "0 20px 60px rgba(0,0,0,.35)" }}
+      className="w-full border border-line bg-paper/90 p-5"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between">
-        <span className="rounded-full px-2.5 py-1 text-[11.5px] font-bold uppercase tracking-[0.12em] text-[#08110e]" style={{ background: "var(--thread)" }}>
+        <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-thread">
           Quick check
         </span>
         {state.waiting ? (
-          <span className="relative h-7 w-7" aria-label="Time left to answer">
-            <svg viewBox="0 0 36 36" className="absolute inset-0 -rotate-90">
-              <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,.15)" strokeWidth="3" />
-              <circle cx="18" cy="18" r="15" fill="none" stroke="var(--thread)" strokeWidth="3" strokeLinecap="round" pathLength={1} strokeDasharray={`${waitLeft} 1`} />
-            </svg>
-            <span className="absolute inset-0 flex items-center justify-center font-mono text-[10px] text-white">{Math.ceil((waitLeft * QUIZ_WAIT_MS) / 1000)}</span>
+          <span className="flex items-center gap-2" aria-label="Time left to answer">
+            <span className="h-[3px] w-14 bg-white/15">
+              <span className="block h-full bg-thread" style={{ width: `${waitLeft * 100}%` }} />
+            </span>
+            <span className="w-5 text-right font-mono text-[11px] tabular-nums text-white">{Math.ceil((waitLeft * QUIZ_WAIT_MS) / 1000)}s</span>
           </span>
         ) : state.revealed ? (
           <motion.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-[13px] font-bold" style={{ color: verdictColor }}>
@@ -347,15 +328,15 @@ export function QuizCard({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: revealed && !correct && !chosen ? 0.45 : 1, y: 0 }}
               transition={{ delay: revealed ? 0 : 0.15 + i * 0.08, duration: 0.35, ease }}
-              className="flex items-center gap-3 rounded-[14px] border px-3.5 py-3 text-left text-[15.5px] font-medium text-white transition-colors enabled:hover:bg-white/[0.14]"
+              className="flex items-center gap-3 border px-3.5 py-3 text-left text-[15.5px] font-medium text-white transition-colors enabled:hover:bg-white/[0.14]"
               style={{
                 borderColor: tone ?? "rgba(255,255,255,.14)",
-                background: tone ? `color-mix(in srgb, ${tone} 18%, transparent)` : "rgba(255,255,255,.07)",
+                background: tone ? `color-mix(in srgb, ${tone} 14%, var(--paper))` : "transparent",
               }}
             >
               <span
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-[11.5px] font-bold"
-                style={{ background: tone ?? "rgba(255,255,255,.12)", color: tone ? "#08110e" : "#fff" }}
+                className="flex w-4 shrink-0 items-center justify-center font-mono text-[12px] font-bold"
+                style={{ color: tone ?? "rgba(255,255,255,.55)" }}
               >
                 {revealed && correct ? <Check size={15} strokeWidth={3} /> : revealed && chosen ? <X size={15} strokeWidth={3} /> : LETTERS[i]}
               </span>
@@ -376,7 +357,7 @@ export function QuizCard({
 function OutroVisual({ outro, last }: { outro: ReelScript["outro"]; last: boolean }) {
   return (
     <div className="relative flex flex-col items-center px-6 text-center">
-      <span className={`rounded-full px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-white/85 ${glass}`}>
+      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/75">
         {last ? "End of document" : "Up next"}
       </span>
       <motion.div

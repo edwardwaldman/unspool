@@ -4,9 +4,8 @@ import { MoreHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ChatIcon, HeartIcon, ReplayIcon, ShareIcon } from "../ui/icons";
 import { toast } from "../ui/toast";
-import { fileLabel } from "./accent";
 
-const SHADOW = { filter: "drop-shadow(0 1px 2px rgba(0,0,0,.45))" };
+const SHADOW = { filter: "drop-shadow(0 1px 0 rgba(0,0,0,.55))" };
 import { loadSaved, toggleSaved } from "./prefs";
 
 function RailButton({ label, count, onClick, children }: { label: string; count?: string; onClick: () => void; children: React.ReactNode }) {
@@ -30,7 +29,6 @@ function RailButton({ label, count, onClick, children }: { label: string; count?
 export function ActionRail({
   reelId,
   title,
-  fileType,
   onReplay,
   onMore,
 }: {
@@ -85,14 +83,6 @@ export function ActionRail({
       <RailButton label="More" onClick={onMore}>
         <MoreHorizontal size={26} strokeWidth={2} />
       </RailButton>
-      {/* "Audio" cover, like the album art at the foot of an Instagram rail: the source document. */}
-      <div
-        className="mt-1 flex h-[30px] w-[30px] items-center justify-center rounded-[8px] border-2 border-white/90 font-mono text-[8px] font-bold text-[#08110e]"
-        style={{ background: "var(--thread)", ...SHADOW }}
-        aria-hidden
-      >
-        {fileLabel(fileType)}
-      </div>
     </div>
   );
 }

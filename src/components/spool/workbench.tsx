@@ -1,12 +1,13 @@
 "use client";
 
-import { Lightbulb, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatPrice, MAX_REELS, PRICING } from "@/lib/config";
 import { stripMarkup } from "@/lib/markup";
 import type { ReelDTO, SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { estimateDuration } from "@/lib/timing";
-import { fileLabel, fileTone, reelAccent, reelTint } from "../reel/accent";
+import { fileLabel, reelAccent, reelTint } from "../reel/accent";
 import { ReelSlot, SpoolMoreSheet, type FeedItem } from "../reel/feed";
 import { stageIndex, stageLine } from "../reel/loading-reel";
 import { UnlockSheet } from "../reel/drip-gate";
@@ -68,24 +69,11 @@ function NewUploadButton() {
         type="button"
         onClick={() => input.current?.click()}
         disabled={Boolean(pending)}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-[12px] border border-line py-2.5 text-[13.5px] font-medium text-ink transition-colors hover:border-muted hover:bg-white/[0.03] disabled:opacity-50"
+        className="mt-3 flex w-full items-center justify-center gap-2 border border-line py-2.5 text-[13.5px] font-medium text-ink transition-colors hover:border-muted hover:bg-white/[0.03] disabled:opacity-50"
       >
         <UploadIcon size={15} /> {pending ? "Starting upload" : "New upload"}
       </button>
     </>
-  );
-}
-
-function FileBadge({ ext, size = 44 }: { ext: string; size?: number }) {
-  const tone = fileTone(ext);
-  return (
-    <div
-      className="flex shrink-0 items-center justify-center rounded-[12px] font-mono text-[10.5px] font-bold"
-      style={{ width: size, height: size, color: tone, background: `color-mix(in srgb, ${tone} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${tone} 35%, transparent)` }}
-      aria-hidden
-    >
-      {fileLabel(ext)}
-    </div>
   );
 }
 
@@ -97,45 +85,36 @@ const PILL_TONE: Record<ReelState, string> = {
   locked: "var(--muted)",
 };
 
-/** READY / WRITING / LOCKED (+ drip timer) pill. */
-function StatePill({ state, until }: { state: ReelState; until?: string | null }) {
+/** READY / WRITING / LOCKED · 42:10 as plain mono text. */
+function StateText({ state, until }: { state: ReelState; until?: string | null }) {
   const left = useCountdown(until ?? null);
-  const tone = PILL_TONE[state];
   return (
-    <span
-      className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-[3px] text-[10.5px] font-semibold uppercase tracking-[0.08em]"
-      style={{ color: tone, background: `color-mix(in srgb, ${tone} 13%, transparent)` }}
-    >
-      {state === "locked" && <LockIcon size={10} strokeWidth={2.25} />}
-      {state === "generating" && <Loader2 size={10} strokeWidth={2.5} className="animate-spin" />}
+    <span className="shrink-0 font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em]" style={{ color: PILL_TONE[state] }}>
       {STATE_LABEL[state]}
-      {state === "locked" && left > 0 && <span className="font-mono normal-case tracking-normal text-thread">· {formatCountdown(left)}</span>}
+      {state === "locked" && left > 0 && <span className="text-thread"> · {formatCountdown(left)}</span>}
     </span>
   );
 }
 
-/** A mini 9:16 frame for the reel list: the reel's tint with its hook burned in, blurred when locked. */
+/** A mini 9:16 frame for the reel list: the reel's flat tint with its hook burned in, dimmed when locked. */
 function ReelThumb({ reel, state, on }: { reel: ReelDTO; state: ReelState; on: boolean }) {
   const accent = reelAccent(reel.index);
   const [first, ...rest] = plain(reel.hook).split(" ");
   return (
     <span
-      className="relative block h-[78px] w-[44px] shrink-0 overflow-hidden rounded-[8px]"
-      style={{ background: reelTint(accent, state === "ready" ? 26 : 14), boxShadow: on ? `0 0 0 2px var(--paper), 0 0 0 3.5px ${accent}` : "inset 0 0 0 1px rgba(255,255,255,.08)" }}
+      className="relative block h-[78px] w-[44px] shrink-0 overflow-hidden"
+      style={{ background: reelTint(accent, state === "ready" ? 26 : 14), border: `1px solid ${on ? accent : "rgba(255,255,255,.08)"}` }}
       aria-hidden
     >
-      <span className={`absolute inset-x-[4px] top-[8px] line-clamp-5 font-hook text-[6.5px] font-extrabold leading-[1.25] text-white ${state === "locked" ? "blur-[1.5px] opacity-60" : ""}`}>
-        <span className="rounded-[2px] px-[1px] text-[#08110e]" style={{ background: accent }}>
+      <span className={`absolute inset-x-[4px] top-[8px] line-clamp-5 font-hook text-[6.5px] font-extrabold leading-[1.25] text-white ${state === "locked" ? "opacity-40" : ""}`}>
+        <span className="px-[1px] text-[#08110e]" style={{ background: accent }}>
           {first}
         </span>{" "}
         {rest.join(" ")}
       </span>
-      <span className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
       {state === "locked" && (
-        <span className="absolute inset-0 flex items-center justify-center">
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black/55 text-white">
-            <LockIcon size={10} strokeWidth={2.25} />
-          </span>
+        <span className="absolute bottom-[5px] left-[5px] text-white/80">
+          <LockIcon size={10} strokeWidth={2.25} />
         </span>
       )}
       {(state === "generating" || state === "queued") && (
@@ -146,7 +125,7 @@ function ReelThumb({ reel, state, on }: { reel: ReelDTO; state: ReelState; on: b
       {on && state === "ready" && (
         <span className="absolute bottom-[5px] left-[5px] flex h-[9px] items-end gap-[1.5px]">
           {[0, 1, 2].map((k) => (
-            <span key={k} className="w-[2px] animate-pulse rounded-full bg-white" style={{ height: `${[9, 5, 7][k]}px`, animationDelay: `${k * 0.2}s` }} />
+            <span key={k} className="w-[2px] animate-pulse bg-white" style={{ height: `${[9, 5, 7][k]}px`, animationDelay: `${k * 0.2}s` }} />
           ))}
         </span>
       )}
@@ -158,7 +137,7 @@ function ReelThumb({ reel, state, on }: { reel: ReelDTO; state: ReelState; on: b
 function Section({ title, meta, children, defaultOpen = true }: { title: string; meta?: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <section className="rounded-[16px] border border-line">
+    <section className="border border-line">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -193,12 +172,12 @@ function QuizPreview({ quiz }: { quiz: NonNullable<ReelDTO["script"]>["quiz"] })
               type="button"
               disabled={shown}
               onClick={() => setPicked(i)}
-              className="flex w-full items-center gap-3 rounded-[12px] border border-line px-3 py-2.5 text-left text-[13.5px] transition-colors enabled:hover:border-muted enabled:hover:bg-white/[0.03]"
+              className="flex w-full items-center gap-3 border border-line px-3 py-2.5 text-left text-[13.5px] transition-colors enabled:hover:border-muted enabled:hover:bg-white/[0.03]"
               style={color ? { borderColor: color, color, background: `color-mix(in srgb, ${color} 10%, transparent)` } : undefined}
             >
               <span
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-[10.5px] font-bold"
-                style={{ background: color ?? "rgba(255,255,255,.07)", color: color ? "var(--paper)" : "var(--muted)" }}
+                className="w-3 shrink-0 font-mono text-[11px] font-bold"
+                style={{ color: color ?? "var(--muted)" }}
               >
                 {String.fromCharCode(65 + i)}
               </span>
@@ -264,12 +243,9 @@ function UnlockCta({ spool, onUnlock }: { spool: SpoolDTO; onUnlock: () => void 
   const locked = spool.reels.filter((r) => r.locked).length;
   if (!locked) return null;
   return (
-    <div className="rounded-[16px] border border-line bg-surface p-4">
-      <div className="flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-thread text-paper">
-          <LockIcon size={16} strokeWidth={2.25} />
-        </span>
-        <div className="min-w-0">
+    <div className="border border-line bg-surface p-4">
+      <div>
+        <div>
           <div className="text-[14.5px] font-semibold text-ink">
             {locked} {locked === 1 ? "reel" : "reels"} locked
           </div>
@@ -279,7 +255,7 @@ function UnlockCta({ spool, onUnlock }: { spool: SpoolDTO; onUnlock: () => void 
         </div>
       </div>
       {spool.nextFreeUnlockAt && (
-        <p className="mt-3 flex items-center justify-between rounded-[10px] bg-white/[0.04] px-3 py-2 text-[12.5px]">
+        <p className="mt-3 flex items-center justify-between border-t border-line pt-3 text-[12.5px]">
           <span className="text-muted">Next free reel in</span>
           <NextFreeTimer until={spool.nextFreeUnlockAt} />
         </p>
@@ -287,7 +263,7 @@ function UnlockCta({ spool, onUnlock }: { spool: SpoolDTO; onUnlock: () => void 
       <button
         type="button"
         onClick={onUnlock}
-        className="mt-3 flex w-full items-center justify-between rounded-[12px] bg-thread px-4 py-3 text-[14px] font-semibold text-paper transition-opacity hover:opacity-90"
+        className="mt-3 flex w-full items-center justify-between bg-thread px-4 py-3 text-[14px] font-semibold text-paper transition-opacity hover:opacity-90"
       >
         <span>Unlock all reels</span>
         <span className="font-mono text-[12.5px]">{formatPrice(PRICING.documentCents)}</span>
@@ -305,9 +281,9 @@ function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; r
         <div className="text-[13px] font-medium text-muted">Up next</div>
         <p className="mt-2 text-[14px] leading-snug text-muted">Your reel titles appear here as soon as the plan is ready. Reel 1 starts playing on its own.</p>
         <div className="mt-5 space-y-2.5">
-          <div className="shimmer h-3 w-[80%] rounded-full" />
-          <div className="shimmer h-3 w-[64%] rounded-full" />
-          <div className="shimmer h-3 w-[72%] rounded-full" />
+          <div className="shimmer h-3 w-[80%]" />
+          <div className="shimmer h-3 w-[64%]" />
+          <div className="shimmer h-3 w-[72%]" />
         </div>
       </div>
     );
@@ -319,7 +295,7 @@ function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; r
       <div>
         <div className="flex items-center justify-between">
           <span className="text-[13px] font-medium text-muted">About this reel</span>
-          <StatePill state={state} />
+          <StateText state={state} />
         </div>
         <h2 className="mt-3 font-display text-[24px] leading-[1.1]">{reel.title}</h2>
         <div className="mt-1.5 text-[12.5px] text-muted">
@@ -331,10 +307,8 @@ function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; r
 
       {script ? (
         <>
-          <div className="rounded-[16px] p-4" style={{ background: "color-mix(in srgb, var(--thread) 9%, transparent)", border: "1px solid color-mix(in srgb, var(--thread) 28%, transparent)" }}>
-            <div className="flex items-center gap-2 text-[12.5px] font-semibold text-thread">
-              <Lightbulb size={14} strokeWidth={2} /> Key point
-            </div>
+          <div className="border-l-2 border-thread py-1 pl-4">
+            <div className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.16em] text-thread">Key point</div>
             <p className="mt-1.5 text-[14.5px] leading-snug text-ink">
               <MarkedText text={script.summary} />
             </p>
@@ -353,9 +327,9 @@ function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; r
           <UnlockCta spool={spool} onUnlock={onUnlock} />
         </div>
       ) : state === "failed" ? (
-        <div className="rounded-[16px] border border-line p-4">
+        <div className="border border-line p-4">
           <p className="text-[14px] text-coral">{reel.error ?? "This reel didn't come out right."}</p>
-          <button type="button" onClick={onRetry} className="mt-3 rounded-[12px] bg-ink px-5 py-2.5 text-[14px] font-semibold text-paper">
+          <button type="button" onClick={onRetry} className="mt-3 bg-ink px-5 py-2.5 text-[14px] font-semibold text-paper">
             Retry
           </button>
         </div>
@@ -363,8 +337,8 @@ function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; r
         <div>
           <p className="text-[14px] leading-snug text-muted">{state === "generating" ? "Writing this reel now." : "Queued."} It plays here the moment it&apos;s ready.</p>
           <div className="mt-4 space-y-2.5">
-            <div className="shimmer h-3 w-[78%] rounded-full" />
-            <div className="shimmer h-3 w-[60%] rounded-full" />
+            <div className="shimmer h-3 w-[78%]" />
+            <div className="shimmer h-3 w-[60%]" />
           </div>
         </div>
       )}
@@ -380,10 +354,186 @@ function NavButton({ label, disabled, onClick, children }: { label: string; disa
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.07] text-ink transition-colors hover:bg-white/[0.14] disabled:opacity-25 disabled:hover:bg-white/[0.07]"
+      className="flex h-10 w-10 items-center justify-center border border-line bg-paper text-ink transition-colors hover:border-muted disabled:opacity-25 disabled:hover:border-line"
     >
       {children}
     </button>
+  );
+}
+
+/** A far-off reel on the track: its tint and hook, no player (cheap to render while gliding past). */
+function SlidePreview({ reel }: { reel: ReelDTO | null }) {
+  if (!reel) return <div className="h-full w-full bg-black" />;
+  const accent = reelAccent(reel.index);
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-black" aria-hidden>
+      <div className="absolute inset-0" style={{ background: `color-mix(in srgb, ${accent} 9%, transparent)` }} />
+      <p className={`absolute inset-x-5 top-[62px] font-hook text-[22px] font-extrabold leading-[1.15] tracking-[-0.02em] text-white ${reel.locked ? "opacity-40" : ""}`}>
+        {plain(reel.hook)}
+      </p>
+    </div>
+  );
+}
+
+const rubber = (p: number, last: number) => (p < 0 ? p * 0.3 : p > last ? last + (p - last) * 0.3 : p);
+
+/**
+ * The player frame as a vertical track, like Reels/TikTok: every reel is stacked one frame-height
+ * apart and changing `index` glides the whole track, so the current reel scrolls out the top and the
+ * next one comes in from below (and back). Wheel/trackpad snaps one reel per gesture; touch or mouse
+ * drag follows the finger with a rubber band at the ends and snaps on release. Only the reels next to
+ * the active one (and the one we're leaving) get a real slot; the rest are static previews.
+ */
+function ReelTrack({
+  items,
+  index,
+  onStep,
+  className,
+  children,
+}: {
+  items: FeedItem[];
+  index: number;
+  onStep: (i: number) => void;
+  className: string;
+  children: (item: FeedItem, i: number) => React.ReactNode;
+}) {
+  const frame = useRef<HTMLDivElement>(null);
+  const pos = useMotionValue(index);
+  const y = useTransform(pos, (p) => `${-p * 100}%`);
+  const reduce = useReducedMotion();
+  const [settled, setSettled] = useState(index);
+  const last = items.length - 1;
+  const latest = useRef({ index, last, onStep });
+  useEffect(() => {
+    latest.current = { index, last, onStep };
+  });
+
+  const glide = useCallback(
+    (to: number) => {
+      const d = Math.abs(pos.get() - to);
+      const done = () => setSettled(to);
+      return reduce
+        ? animate(pos, to, { duration: 0.12, ease: "easeOut", onComplete: done })
+        : // ~450ms for one reel; longer jumps run through the reels in between, a little faster each.
+          animate(pos, to, { type: "spring", visualDuration: Math.min(0.45 + 0.06 * Math.max(0, d - 1), 0.75), bounce: 0, onComplete: done });
+    },
+    [pos, reduce],
+  );
+
+  useEffect(() => {
+    const a = glide(index);
+    return () => a.stop();
+  }, [index, glide]);
+
+  // Wheel / trackpad: accumulate, step one reel, then hold until the gesture (and its inertia) ends.
+  useEffect(() => {
+    const el = frame.current;
+    if (!el) return;
+    const w = { acc: 0, locked: false, lockedAt: 0, lastAbs: 0, gap: 0 };
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      const d = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.clientHeight : 1);
+      const abs = Math.abs(d);
+      const now = performance.now();
+      window.clearTimeout(w.gap);
+      w.gap = window.setTimeout(() => Object.assign(w, { locked: false, acc: 0, lastAbs: 0 }), 160);
+      if (w.locked) {
+        // A new flick mid-inertia shows up as a sharp rise in delta; anything else is the tail.
+        const fresh = now - w.lockedAt > 450 && abs > 12 && abs > w.lastAbs * 1.6;
+        w.lastAbs = abs;
+        if (!fresh) return;
+        w.locked = false;
+        w.acc = 0;
+      }
+      w.lastAbs = abs;
+      if (w.acc && Math.sign(w.acc) !== Math.sign(d)) w.acc = 0;
+      w.acc += d;
+      if (Math.abs(w.acc) < 40) return;
+      const { index: i, last: n, onStep: step } = latest.current;
+      const to = Math.max(0, Math.min(n, i + Math.sign(w.acc)));
+      Object.assign(w, { acc: 0, locked: true, lockedAt: now });
+      if (to !== i) step(to);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      window.clearTimeout(w.gap);
+    };
+  }, []);
+
+  // Touch / pen / mouse drag.
+  const drag = useRef<{ id: number; x0: number; y0: number; p0: number; h: number; moved: boolean } | null>(null);
+  const swallowClickUntil = useRef(0);
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0 || !frame.current) return;
+    drag.current = { id: e.pointerId, x0: e.clientX, y0: e.clientY, p0: pos.get(), h: frame.current.clientHeight, moved: false };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    const dy = e.clientY - d.y0;
+    if (!d.moved) {
+      if (Math.abs(dy) < 8 || Math.abs(dy) < Math.abs(e.clientX - d.x0)) return;
+      d.moved = true;
+      pos.stop();
+      d.p0 = pos.get();
+      d.y0 = e.clientY;
+      frame.current?.setPointerCapture(e.pointerId);
+    }
+    pos.set(rubber(Math.max(index - 1, Math.min(index + 1, d.p0 - (e.clientY - d.y0) / d.h)), last));
+  };
+  const onPointerEnd = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    drag.current = null;
+    if (!d.moved) return;
+    swallowClickUntil.current = performance.now() + 350;
+    const off = pos.get() - index;
+    const v = pos.getVelocity(); // reels per second
+    const dir = Math.abs(v) > 1.2 ? Math.sign(v) : Math.abs(off) > 0.2 ? Math.sign(off) : 0;
+    const to = Math.max(0, Math.min(last, index + dir));
+    if (to !== index) onStep(to);
+    else glide(index);
+  };
+
+  return (
+    <div
+      ref={frame}
+      className={`${className} touch-none`}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerEnd}
+      onPointerCancel={onPointerEnd}
+      onClickCapture={(e) => {
+        // The click that ends a drag shouldn't pause the reel or open the paywall.
+        if (performance.now() < swallowClickUntil.current) {
+          e.stopPropagation();
+          e.preventDefault();
+          swallowClickUntil.current = 0;
+        }
+      }}
+      data-testid="reel-track"
+    >
+      <motion.div className="absolute inset-0 will-change-transform" style={{ y }}>
+        {items.map((it, i) => {
+          const live = Math.abs(i - index) <= 1 || i === settled;
+          return (
+            <section
+              key={it.key}
+              className="absolute inset-x-0 h-full overflow-hidden"
+              style={{ top: `${i * 100}%` }}
+              aria-label={it.reel?.title ?? "Loading reel"}
+              aria-hidden={i !== index}
+              inert={i !== index}
+              data-active={i === index ? "true" : undefined}
+            >
+              {live ? children(it, i) : <SlidePreview reel={it.reel} />}
+            </section>
+          );
+        })}
+      </motion.div>
+    </div>
   );
 }
 
@@ -412,7 +562,6 @@ export function Workbench({
   const [index, setIndex] = useState(initialIndex);
   const [paywall, setPaywall] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const lastWheel = useRef(0);
 
   const spool = items[0]?.spool ?? null;
   const reels = spool?.reels ?? [];
@@ -424,14 +573,19 @@ export function Workbench({
   const writing = reels.filter((r) => r.status === "generating").length;
   const status = docStatus(spool, upload ?? null);
   const ext = spool?.fileType ?? upload?.fileName?.split(".").pop() ?? "";
-  const accent = reelAccent(reel?.index ?? 1);
 
+  const paywallTimer = useRef(0);
+  useEffect(() => () => window.clearTimeout(paywallTimer.current), []);
   const select = useCallback(
     (i: number, opts: { paywall?: boolean } = {}) => {
       if (i < 0 || i >= items.length) return;
-      setIndex(i);
+      window.clearTimeout(paywallTimer.current);
+      setIndex((from) => {
+        // A locked reel's paywall waits for the track to land on it instead of covering the scroll.
+        if (opts.paywall && items[i]?.reel?.locked) paywallTimer.current = window.setTimeout(() => setPaywall(true), Math.min(650, 300 + 70 * Math.abs(i - from)));
+        return i;
+      });
       onIndexChange?.(i);
-      if (opts.paywall && items[i]?.reel?.locked) setPaywall(true);
     },
     [items, onIndexChange],
   );
@@ -453,13 +607,6 @@ export function Workbench({
     return () => window.removeEventListener("keydown", onKey);
   }, [cur, select, paywall, moreOpen]);
 
-  // Scrolling over the player steps one reel at a time, like the feed.
-  const onWheel = (e: React.WheelEvent) => {
-    if (Math.abs(e.deltaY) < 30 || Date.now() - lastWheel.current < 700) return;
-    lastWheel.current = Date.now();
-    select(cur + (e.deltaY > 0 ? 1 : -1));
-  };
-
   const firstLocked = reels.find((r) => r.locked)?.index ?? 2;
   const closePaywall = useCallback(() => setPaywall(false), []);
   const listed = reels.length ? reels : null;
@@ -469,51 +616,45 @@ export function Workbench({
     <div className="flex h-full w-full min-h-0">
       {/* Left: the document and its reels */}
       <aside className="flex w-[320px] shrink-0 flex-col overflow-y-auto border-r border-line">
-        <div className="p-4">
-          <div className="rounded-[18px] border border-line bg-surface p-4">
-            <div className="flex gap-3">
-              <FileBadge ext={ext} />
-              <div className="min-w-0">
-                <div className="line-clamp-2 font-display text-[17px] leading-[1.15]">{spool?.title ?? spool?.fileName ?? upload?.fileName ?? "Your document"}</div>
-                {spool?.title && <div className="mt-1 truncate text-[12px] text-muted">{spool.fileName}</div>}
-              </div>
-            </div>
-            {(spool?.pageCount || spool?.wordCount) && (
-              <div className="mt-3 flex flex-wrap gap-1.5 text-[11.5px] text-muted">
-                {spool?.pageCount ? <span className="rounded-full bg-white/[0.05] px-2 py-0.5">{spool.pageCount} pages</span> : null}
-                {spool?.wordCount ? <span className="rounded-full bg-white/[0.05] px-2 py-0.5">{spool.wordCount.toLocaleString("en-US")} words</span> : null}
-                {spool?.truncated ? <span className="rounded-full bg-white/[0.05] px-2 py-0.5">trimmed</span> : null}
-              </div>
-            )}
-            <div className="mt-4 flex items-center justify-between text-[12.5px]">
-              <span className="flex items-center gap-2 text-ink">
-                <span className="h-2 w-2 rounded-full" style={{ background: status.tone }} />
-                {status.label}
+        <div className="px-5 pb-4 pt-5">
+          <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted" data-testid="doc-meta">
+            {[
+              ext ? fileLabel(ext) : null,
+              spool?.pageCount ? `${spool.pageCount} pages` : null,
+              spool?.wordCount ? `${spool.wordCount.toLocaleString("en-US")} words` : null,
+              spool?.truncated ? "trimmed" : null,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Document"}
+          </div>
+          <h1 className="mt-2 line-clamp-3 font-display text-[22px] leading-[1.1] text-ink">{spool?.title ?? spool?.fileName ?? upload?.fileName ?? "Your document"}</h1>
+          {spool?.title && <div className="mt-1.5 truncate text-[12.5px] text-muted">{spool.fileName}</div>}
+          <div className="mt-4 h-px bg-line" />
+          <div className="mt-3 flex items-baseline justify-between font-mono text-[11px] uppercase tracking-[0.12em]">
+            <span style={{ color: status.tone }}>{status.label}</span>
+            {totalReels > 0 && stageIndex(spool, upload ?? null) >= 4 && (
+              <span className="text-muted">
+                {ready}/{totalReels} reels
               </span>
-              {totalReels > 0 && stageIndex(spool, upload ?? null) >= 4 && (
-                <span className="font-mono text-[11px] text-muted">
-                  {ready}/{totalReels} reels
-                </span>
-              )}
-            </div>
-            <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-white/[0.07]" role="progressbar" aria-valuenow={ready} aria-valuemax={totalReels || 1} aria-label="Reels ready">
-              <div className="h-full rounded-full bg-thread transition-[width] duration-500" style={{ width: `${totalReels ? (ready / totalReels) * 100 : 4}%` }} />
-              {writing > 0 && totalReels > 0 && (
-                <div className="h-full animate-pulse" style={{ width: `${(writing / totalReels) * 100}%`, background: "color-mix(in srgb, var(--thread) 40%, transparent)" }} />
-              )}
-            </div>
-            {(stageIndex(spool, upload ?? null) < 4 || upload?.phase === "error") && (
-              <p className="mt-2 text-[12px] text-muted" aria-live="polite">
-                {upload?.phase === "error" ? upload.error : spool?.status === "failed" ? spool.error : stageLine(spool, upload ?? null)}
-              </p>
             )}
           </div>
+          <div className="mt-2 flex h-[2px] overflow-hidden bg-line" role="progressbar" aria-valuenow={ready} aria-valuemax={totalReels || 1} aria-label="Reels ready">
+            <div className="h-full bg-thread transition-[width] duration-500" style={{ width: `${totalReels ? (ready / totalReels) * 100 : 4}%` }} />
+            {writing > 0 && totalReels > 0 && (
+              <div className="h-full animate-pulse" style={{ width: `${(writing / totalReels) * 100}%`, background: "color-mix(in srgb, var(--thread) 40%, var(--border))" }} />
+            )}
+          </div>
+          {(stageIndex(spool, upload ?? null) < 4 || upload?.phase === "error") && (
+            <p className="mt-2 text-[12px] text-muted" aria-live="polite">
+              {upload?.phase === "error" ? upload.error : spool?.status === "failed" ? spool.error : stageLine(spool, upload ?? null)}
+            </p>
+          )}
           <NewUploadButton />
         </div>
 
-        <div className="flex items-baseline justify-between px-5 pb-2 pt-2">
-          <span className="text-[13px] font-semibold text-ink">Reels</span>
-          {listed && <span className="text-[12px] text-muted">{lockedCount ? `${spool?.freeReels ?? 1} free · ${lockedCount} locked` : "All unlocked"}</span>}
+        <div className="flex items-baseline justify-between border-t border-line px-5 pb-2 pt-4">
+          <span className="label">Reels</span>
+          {listed && <span className="font-mono text-[11px] text-muted">{lockedCount ? `${spool?.freeReels ?? 1} free · ${lockedCount} locked` : "All unlocked"}</span>}
         </div>
         <ol className="space-y-0.5 px-2.5 pb-4" aria-label="Reels">
           {listed
@@ -527,13 +668,13 @@ export function Workbench({
                       type="button"
                       onClick={() => select(i, { paywall: true })}
                       aria-current={on ? "true" : undefined}
-                      className={`flex w-full items-center gap-3 rounded-[14px] p-2 text-left transition-colors ${on ? "bg-surface" : "hover:bg-white/[0.03]"}`}
+                      className={`flex w-full items-center gap-3 p-2 text-left transition-colors ${on ? "bg-surface" : "hover:bg-white/[0.03]"}`}
                     >
                       <ReelThumb reel={r} state={state} on={on} />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center justify-between gap-2">
                           <span className="text-[11px] text-muted">Part {r.index}</span>
-                          <StatePill state={state} until={nextDrip} />
+                          <StateText state={state} until={nextDrip} />
                         </span>
                         <span className={`mt-0.5 block truncate text-[13.5px] font-semibold ${state === "locked" ? "text-ink/70" : "text-ink"}`}>{r.title}</span>
                         <span className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-muted">{plain(r.hook)}</span>
@@ -544,10 +685,10 @@ export function Workbench({
               })
             : Array.from({ length: 5 }, (_, i) => (
                 <li key={i} className="flex items-center gap-3 p-2">
-                  <span className="h-[78px] w-[44px] shrink-0 rounded-[8px] bg-white/[0.05]" />
+                  <span className="h-[78px] w-[44px] shrink-0 bg-white/[0.05]" />
                   <span className="flex-1 space-y-1.5">
-                    <span className="shimmer block h-2.5 rounded-full" style={{ width: `${55 + ((i * 17) % 35)}%` }} />
-                    <span className="shimmer block h-2 w-[40%] rounded-full" />
+                    <span className="shimmer block h-2.5" style={{ width: `${55 + ((i * 17) % 35)}%` }} />
+                    <span className="shimmer block h-2 w-[40%]" />
                   </span>
                 </li>
               ))}
@@ -561,35 +702,30 @@ export function Workbench({
 
       {/* Center: the player */}
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto xl:overflow-hidden">
-        <div className="relative flex min-h-[calc(100dvh-64px)] flex-1 items-center justify-center overflow-hidden px-6 py-6" onWheel={onWheel}>
-          {/* Ambient light from the playing reel */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[70%] w-[460px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.16] blur-[110px] transition-colors duration-700"
-            style={{ background: accent }}
-          />
+        <div className="relative flex min-h-[calc(100dvh-64px)] flex-1 items-center justify-center overflow-hidden px-6 py-6">
           <div className="relative flex items-center gap-4 pl-14">
-            <div
-              className="relative aspect-[9/16] h-[calc(100dvh-112px)] max-h-[920px] min-h-[520px] shrink-0 overflow-hidden rounded-[20px] bg-black"
-              style={{ boxShadow: "0 0 0 1px rgba(255,255,255,.08), 0 30px 80px rgba(0,0,0,.45)" }}
+            <ReelTrack
+              items={items}
+              index={cur}
+              onStep={select}
+              className="relative aspect-[9/16] h-[calc(100dvh-112px)] max-h-[920px] min-h-[520px] shrink-0 overflow-hidden border border-line bg-black"
             >
-              {item && (
+              {(it, i) => (
                 <ReelSlot
-                  key={item.key}
-                  item={item}
-                  upload={cur === 0 ? upload ?? null : null}
-                  active={!paywall && !moreOpen}
+                  item={it}
+                  upload={i === 0 ? upload ?? null : null}
+                  active={i === cur && !paywall && !moreOpen}
                   total={reels.length || MAX_REELS}
                   bottomInset={0}
-                  onRetry={() => onRetry?.(item.spool)}
+                  onRetry={() => onRetry?.(it.spool)}
                   onUnlock={() => setPaywall(true)}
                   onMore={() => setMoreOpen(true)}
                   onEnded={() => {
-                    if (cur + 1 < items.length) setTimeout(() => select(cur + 1, { paywall: true }), 900);
+                    if (i + 1 < items.length) setTimeout(() => select(i + 1, { paywall: true }), 900);
                   }}
                 />
               )}
-            </div>
+            </ReelTrack>
             <nav className="flex w-10 flex-col items-center gap-2.5" aria-label="Switch reel">
               <NavButton label="Previous reel (↑)" disabled={cur === 0} onClick={() => select(cur - 1)}>
                 <ChevronUp size={20} strokeWidth={2} />
@@ -603,9 +739,9 @@ export function Workbench({
             </nav>
           </div>
           <p className="pointer-events-none absolute bottom-2 left-1/2 hidden -translate-x-1/2 items-center gap-1.5 whitespace-nowrap text-[11.5px] text-muted/80 [@media(min-height:760px)]:flex">
-            Scroll or press
-            <kbd className="rounded-[5px] border border-line px-1.5 py-px font-mono text-[10px]">↑</kbd>
-            <kbd className="rounded-[5px] border border-line px-1.5 py-px font-mono text-[10px]">↓</kbd>
+            Scroll, drag or press
+            <kbd className="border border-line px-1.5 py-px font-mono text-[10px]">↑</kbd>
+            <kbd className="border border-line px-1.5 py-px font-mono text-[10px]">↓</kbd>
             to switch reels · click the video to pause
           </p>
         </div>

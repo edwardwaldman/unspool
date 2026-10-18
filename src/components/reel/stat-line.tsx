@@ -30,7 +30,7 @@ function CountUp({ to, run }: { to: number; run: boolean }) {
   return <>{format(value, decimals)}</>;
 }
 
-/** Live numbers as glass chips at the top of the frame; each counts up when the voiceover reaches it. */
+/** Live numbers as flat boxes at the top of the frame; each counts up when the voiceover reaches it. */
 export function StatLine({ stats, beat }: { stats: Stat[]; beat: number }) {
   if (!stats.length) return null;
   return (
@@ -40,10 +40,10 @@ export function StatLine({ stats, beat }: { stats: Stat[]; beat: number }) {
         return (
           <span
             key={i}
-            className="flex items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 text-[12.5px] backdrop-blur-[6px] transition-colors duration-300"
+            className="flex items-center gap-2 whitespace-nowrap border px-3 py-1.5 text-[12.5px] transition-colors duration-300"
             style={{
-              borderColor: on ? "color-mix(in srgb, var(--thread) 55%, transparent)" : "rgba(255,255,255,.12)",
-              background: on ? "color-mix(in srgb, var(--thread) 16%, rgba(0,0,0,.25))" : "rgba(0,0,0,.22)",
+              borderColor: on ? "var(--thread)" : "rgba(255,255,255,.16)",
+              background: "rgba(8,17,14,.78)",
             }}
           >
             <span className="font-medium text-white/75">{s.label}</span>

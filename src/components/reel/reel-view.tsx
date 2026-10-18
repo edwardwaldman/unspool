@@ -27,7 +27,7 @@ function clock(sec: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-const SHADOW = { textShadow: "0 1px 3px rgba(0,0,0,.5)" };
+const SHADOW = { textShadow: "0 1px 0 rgba(0,0,0,.55)" };
 
 /**
  * One playable reel, laid out like an Instagram Reel: story-style progress at the top, the media layer
@@ -84,9 +84,9 @@ export function ReelView({
         }
       />
 
-      {/* Scrims so the overlays read on any frame */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-[6] h-40 bg-gradient-to-b from-black/45 to-transparent" />
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] h-[46%] bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
+      {/* Flat bands so the overlays read on any frame: the controls on top, the account row below */}
+      {!preview && <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-[6] border-b border-white/[0.08] bg-paper/70" style={{ height: top + 56 }} />}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] border-t border-line bg-paper/85" style={{ height: bottom + 112 }} />
 
       {/* Story-style progress: one segment per beat */}
       {!preview && (
@@ -94,8 +94,8 @@ export function ReelView({
           {pb.segments.map((s, i) => {
             const fill = pb.ended || i < pb.seg ? 1 : i === pb.seg ? Math.min(1, fraction) : 0;
             return (
-              <div key={s.key} className="h-[2.5px] flex-1 overflow-hidden rounded-full bg-white/25">
-                <div className="h-full rounded-full bg-white" style={{ width: `${fill * 100}%` }} />
+              <div key={s.key} className="h-[2.5px] flex-1 overflow-hidden bg-white/25">
+                <div className="h-full bg-white" style={{ width: `${fill * 100}%` }} />
               </div>
             );
           })}
@@ -112,7 +112,7 @@ export function ReelView({
               pb.toggle();
             }}
             aria-label={pb.playing ? "Pause" : "Play"}
-            className="flex h-8 items-center gap-1.5 rounded-full bg-black/30 pl-2.5 pr-3 text-[12px] font-semibold text-white backdrop-blur-[6px] hover:bg-black/45"
+            className="flex h-8 items-center gap-1.5 border border-white/[0.16] bg-paper/80 pl-2.5 pr-3 text-[12px] font-semibold text-white hover:border-white/40"
           >
             {pb.playing ? <Pause size={13} fill="currentColor" strokeWidth={0} /> : <Play size={13} fill="currentColor" strokeWidth={0} />}
             <span className="font-mono tabular-nums">-{clock(pb.total - pb.elapsed)}</span>
@@ -124,7 +124,7 @@ export function ReelView({
               setPrefs({ muted: !muted, autoMuted: false });
             }}
             aria-label={muted ? "Unmute" : "Mute"}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-[6px] hover:bg-black/45"
+            className="flex h-8 w-8 items-center justify-center border border-white/[0.16] bg-paper/80 text-white hover:border-white/40"
           >
             <VolumeIcon size={16} muted={muted} strokeWidth={2} />
           </button>
@@ -193,7 +193,7 @@ export function ReelView({
             exit={{ opacity: 0, scale: 0.9 }}
             className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
           >
-            <div className="flex h-[76px] w-[76px] items-center justify-center rounded-full bg-black/40 pl-1 text-white backdrop-blur-[8px]">
+            <div className="flex h-[72px] w-[72px] items-center justify-center border border-white/20 bg-paper/85 pl-1 text-white">
               <PlayIcon size={34} />
             </div>
           </motion.div>
@@ -207,8 +207,7 @@ export function ReelView({
             setPrefs({ muted: false, autoMuted: false });
             pb.replay();
           }}
-          className="absolute left-1/2 top-[50%] z-30 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white px-4 py-2.5 text-[14px] font-semibold text-[#08110e]"
-          style={{ boxShadow: "0 8px 30px rgba(0,0,0,.35)" }}
+          className="absolute left-1/2 top-[50%] z-30 flex -translate-x-1/2 items-center gap-2 bg-thread px-4 py-2.5 text-[14px] font-semibold text-[#08110e]"
         >
           <VolumeIcon size={17} muted strokeWidth={2} /> Tap for sound
         </button>

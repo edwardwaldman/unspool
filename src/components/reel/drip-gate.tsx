@@ -59,20 +59,20 @@ export function DripGate({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/55 px-4 py-8 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/55 px-4 py-8 sm:items-center"
       role="dialog"
       aria-modal
       aria-label="Next free reel"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="relative w-full max-w-[420px] rounded-[24px] border border-line bg-surface p-6" style={{ boxShadow: "0 30px 80px rgba(0,0,0,.45)" }}>
-        <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.06] text-muted hover:text-ink">
+      <div className="relative w-full max-w-[420px] border border-line bg-surface p-6">
+        <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center border border-line text-muted hover:text-ink">
           <X size={18} strokeWidth={1.5} />
         </button>
 
         {left > 0 && (
           <div
-            className="mr-10 rounded-[18px] px-4 py-5 text-center"
+            className="mr-10 px-4 py-5 text-center"
             style={{ background: "color-mix(in srgb, var(--thread) 10%, var(--paper))", border: "1px solid color-mix(in srgb, var(--thread) 45%, transparent)" }}
             data-testid="drip-countdown"
           >
@@ -83,7 +83,7 @@ export function DripGate({
           </div>
         )}
 
-        <p className="mt-5 inline-flex rounded-full bg-thread px-2.5 py-0.5 text-[11.5px] font-bold uppercase tracking-[0.1em] text-paper">Premium</p>
+        <p className="mt-5 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-thread">Premium</p>
         <h2 className="mt-2.5 font-display text-[26px] leading-[1.1]">Don&apos;t want to wait? Unlock them all now.</h2>
         <p className="mt-2 text-[14px] leading-snug text-muted">Free accounts get reel 1, then one more every hour.</p>
 
@@ -100,10 +100,10 @@ export function DripGate({
           ))}
         </ul>
 
-        <button type="button" onClick={() => go("subscription")} disabled={busy !== null} className="mt-5 min-h-[48px] w-full rounded-[14px] bg-thread px-4 text-[15px] font-semibold text-paper hover:opacity-90 disabled:opacity-60">
+        <button type="button" onClick={() => go("subscription")} disabled={busy !== null} className="mt-5 min-h-[48px] w-full bg-thread px-4 text-[15px] font-semibold text-paper hover:opacity-90 disabled:opacity-60">
           {busy === "subscription" ? "Opening checkout" : "Upgrade to Premium"}
         </button>
-        <button type="button" onClick={() => go("document")} disabled={busy !== null} className="btn-secondary mt-2 w-full justify-between rounded-[14px] px-4 py-3 text-[14.5px]">
+        <button type="button" onClick={() => go("document")} disabled={busy !== null} className="btn-secondary mt-2 w-full justify-between px-4 py-3 text-[14.5px]">
           <span>{busy === "document" ? "Opening checkout" : "Unlock this doc"}</span>
           <span className="font-mono text-[13px] text-muted">{formatPrice(PRICING.documentCents)}</span>
         </button>

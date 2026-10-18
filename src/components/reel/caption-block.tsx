@@ -24,17 +24,17 @@ export function CaptionBlock({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="text-left text-white" style={{ textShadow: "0 1px 2px rgba(0,0,0,.45)" }}>
+    <div className="text-left text-white" style={{ textShadow: "0 1px 0 rgba(0,0,0,.55)" }}>
       <div className="flex items-center gap-2">
         <span
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-wordmark text-[14px] font-bold text-[#08110e] ring-2 ring-white/85"
+          className="flex h-8 w-8 shrink-0 items-center justify-center font-wordmark text-[14px] font-bold text-[#08110e]"
           style={{ background: "var(--thread)", textShadow: "none" }}
           aria-hidden
         >
           u
         </span>
         <span className="min-w-0 truncate text-[14px] font-semibold tracking-[-0.01em]">{fileName}</span>
-        <span className="shrink-0 rounded-[8px] border border-white/70 px-2 py-[3px] text-[11.5px] font-semibold leading-none">
+        <span className="shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/75">
           Part {index}/{total}
         </span>
       </div>
