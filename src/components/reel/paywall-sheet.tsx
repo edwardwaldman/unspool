@@ -55,7 +55,7 @@ export function PaywallSheet({
   };
 
   return (
-    <Sheet open={open} onClose={onClose} label="Sign in">
+    <Sheet open={open} onClose={onClose} label="Sign in" locked={spool.demo}>
       {spool.demo ? (
         <div className="pb-1">
           <div className="label">That&apos;s the sample</div>

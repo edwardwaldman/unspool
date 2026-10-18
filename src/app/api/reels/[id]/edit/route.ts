@@ -1,5 +1,5 @@
 import { supabaseConfigured } from "@/lib/config";
-import { tierOf } from "@/lib/credits";
+import { entitlementFor } from "@/lib/credits";
 import { error, json, notConfigured } from "@/lib/http";
 import { dispatch } from "@/lib/jobs";
 import { loadReelWithDoc, ownerCanPlay } from "@/lib/shares";
@@ -8,12 +8,9 @@ import { getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 
-// Each edit rewrites and re-voices a whole reel, so it's capped: per reel, and per account per day.
-const PER_REEL = 3;
-const PER_DAY = { free: 1, paid: 10 };
 const MAX_LEN = 300;
 
-/** Owner-only: rewrite one reel the way they ask. Body: { request: string }. The reel keeps playing its old version until the new one is ready. */
+/** Owner-only: rewrite one reel the way they ask. Body: { request: string }. Costs one credit (this period's allowance, then top-ups), refunded if the edit fails. */
 export async function POST(req: Request, ctx: RouteContext<"/api/reels/[id]/edit">) {
   if (!supabaseConfigured) return notConfigured();
   const viewer = await getViewer();
@@ -29,15 +26,6 @@ export async function POST(req: Request, ctx: RouteContext<"/api/reels/[id]/edit
   if (!(await ownerCanPlay(doc, reel, viewer))) return error(403, "Only reels you can play can be edited");
 
   const db = adminClient();
-  const since = new Date(Date.now() - 864e5).toISOString();
-  const [{ count: onReel }, { count: today }] = await Promise.all([
-    db.from("reel_edits").select("id", { count: "exact", head: true }).eq("reel_id", reel.id),
-    db.from("reel_edits").select("id", { count: "exact", head: true }).eq("user_id", viewer.userId).gte("created_at", since),
-  ]);
-  if ((onReel ?? 0) >= PER_REEL) return error(429, `Each reel can be edited ${PER_REEL} times`);
-  const daily = tierOf(viewer.profile) === "free" ? PER_DAY.free : PER_DAY.paid;
-  if ((today ?? 0) >= daily) return error(429, daily === 1 ? "Free accounts get 1 edit a day. Upgrade for more." : "That's today's edits. Try again tomorrow.");
-
   // Claim the reel only if it's still ready (no double edits).
   const { data: claimed } = await db
     .from("reels")
@@ -47,6 +35,19 @@ export async function POST(req: Request, ctx: RouteContext<"/api/reels/[id]/edit
     .select("id")
     .maybeSingle();
   if (!claimed) return error(409, "This reel is already being updated");
+  const ent = entitlementFor(viewer.profile);
+  const { data: paid, error: rpcErr } = await db.rpc("claim_edit_credit", {
+    p_subject: ent.subject,
+    p_reel_id: reel.id,
+    p_document_id: doc.id,
+    p_allowance: ent.tier === "free" ? 0 : ent.allowance,
+    p_period_start: ent.periodStart,
+  });
+  if (rpcErr || paid !== true) {
+    await db.from("reels").update({ status: "ready", edit_request: null }).eq("id", reel.id);
+    if (rpcErr) console.error("[edit] claim_edit_credit failed", rpcErr);
+    return error(402, ent.tier === "free" ? "Edits cost 1 credit. Upgrade or buy a top-up to edit reels." : "You're out of credits. Top up to keep editing.");
+  }
   await db.from("reel_edits").insert({ reel_id: reel.id, user_id: viewer.userId, request });
   await dispatch({ name: "reel", reelId: reel.id });
   return json({ ok: true }, { status: 202 });

@@ -254,6 +254,9 @@ export async function generateReel(reelId: string) {
     // A failed edit leaves the reel as it was: its old script, audio and video are untouched until success.
     if (edit && reel.script_json) {
       await db.from("reels").update({ status: "ready", edit_request: null, error: null }).eq("id", reelId);
+      // The edit's credit comes back.
+      const { error: refundErr } = await db.rpc("refund_edit_credit", { p_reel_id: reelId });
+      if (refundErr) console.error("[pipeline] refund_edit_credit failed", reelId, refundErr);
       return;
     }
     await db.from("reels").update({ status: "failed", error: friendlyError(err) }).eq("id", reelId);

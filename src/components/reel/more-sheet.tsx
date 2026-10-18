@@ -164,7 +164,7 @@ function EditReel({ reelId, onCancel, onDone }: { reelId: string; onCancel: () =
           {busy ? "Sending…" : "Rewrite reel"}
         </button>
       </div>
-      <p className="mt-3 text-[12px] text-muted">Up to 3 edits per reel. Free accounts get 1 edit a day.</p>
+      <p className="mt-3 text-[12px] text-muted">Each edit costs 1 credit. If it fails, you get the credit back.</p>
     </div>
   );
 }

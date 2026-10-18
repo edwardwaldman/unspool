@@ -253,7 +253,7 @@ function UnlockCta({ spool, viewer, onUnlock }: { spool: SpoolDTO; viewer: Viewe
         {locked} {locked === 1 ? "reel" : "reels"} locked
       </div>
       <p className="mt-0.5 text-[12.5px] leading-snug text-muted">
-        {free ? "One more free reel every 30 minutes, or skip the wait." : "Out of credits for this document. Upgrade or top up to keep going."}
+        {spool.demo ? "That's the sample. Upload your own notes to get reels like these." : free ? "One more free reel every 30 minutes, or skip the wait." : "Out of credits for this document. Upgrade or top up to keep going."}
       </p>
       {free && spool.nextFreeUnlockAt && (
         <p className="mt-3 flex items-center justify-between border-t border-line pt-3 text-[12.5px]">
@@ -266,7 +266,7 @@ function UnlockCta({ spool, viewer, onUnlock }: { spool: SpoolDTO; viewer: Viewe
         onClick={onUnlock}
         className="mt-3 flex w-full items-center justify-between bg-thread px-4 py-3 text-[14px] font-semibold text-paper transition-opacity hover:opacity-90"
       >
-        <span>{free ? (viewer?.usage?.trialEligible ? "Start 1-day free trial" : "Unlock more reels") : "Upgrade or top up"}</span>
+        <span>{spool.demo ? "Make your own reels" : free ? (viewer?.usage?.trialEligible ? "Start 1-day free trial" : "Unlock more reels") : "Upgrade or top up"}</span>
       </button>
     </div>
   );
