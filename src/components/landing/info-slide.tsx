@@ -86,11 +86,11 @@ function BigUpload() {
           if (f) void upload(f);
         }}
       />
-      <div className="relative mx-auto w-fit py-10 md:px-40 md:py-16">
-        <Float className="left-0 top-2 -rotate-6" delay={0}>.pdf</Float>
-        <Float className="right-4 top-0 rotate-3" delay={0.4}>.docx</Float>
-        <Float className="bottom-0 right-6 -rotate-3" delay={1.2}>captions on</Float>
-        <Float className="bottom-2 left-8 rotate-2" delay={0.8}>.pptx</Float>
+      <div className="relative mx-auto w-fit py-24 md:px-40 md:py-16">
+        <Float mobile className="left-0 top-4 -rotate-6 md:top-2" delay={0}>.pdf</Float>
+        <Float mobile className="right-2 top-10 rotate-3 md:right-4 md:top-0" delay={0.4}>.docx</Float>
+        <Float mobile className="bottom-4 right-2 -rotate-3 md:bottom-0 md:right-6" delay={1.2}>captions on</Float>
+        <Float mobile className="bottom-9 left-3 rotate-2 md:bottom-2 md:left-8" delay={0.8}>.pptx</Float>
         <Float className="-left-24 top-1/2 -translate-y-1/2 -rotate-3" delay={1}>♪ voiceover</Float>
         <Float className="-right-40 top-[46%] rotate-2 border-thread/60 text-thread" delay={1.4}>✓ quiz in every reel</Float>
         {/* hand-drawn "start here" arrow */}
@@ -138,11 +138,11 @@ function BigUpload() {
   );
 }
 
-function Float({ children, className, delay }: { children: React.ReactNode; className: string; delay: number }) {
+function Float({ children, className, delay, mobile = false }: { children: React.ReactNode; className: string; delay: number; mobile?: boolean }) {
   return (
     <motion.span
       aria-hidden
-      className={`absolute hidden border border-line bg-paper px-4 py-2 font-mono text-[17px] text-muted md:block ${className}`}
+      className={`absolute border border-line bg-paper px-2.5 py-1 font-mono text-[12px] text-muted md:block md:px-4 md:py-2 md:text-[17px] ${mobile ? "block" : "hidden"} ${className}`}
       initial={{ opacity: 0, y: 8 }}
       whileInView={{ opacity: 1, y: [0, -6, 0] }}
       viewport={{ once: true }}
