@@ -2,7 +2,7 @@ import { after } from "next/server";
 import { siteUrl } from "./config";
 
 // Long-running generation work runs in its own function invocation per job, so a document's
-// 10 reels generate in parallel and no single request hits the platform time limit.
+// reels generate in parallel and no single request hits the platform time limit.
 
 export type Job = { name: "process"; documentId: string } | { name: "reel"; reelId: string };
 

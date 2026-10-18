@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef } from "react";
+import { MAX_REELS } from "@/lib/config";
 import { SAMPLE_SPOOL } from "@/lib/sample";
 import type { SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { Feed, type FeedItem } from "../reel/feed";
@@ -40,18 +41,18 @@ function SpoolView({ docHref, ...p }: ViewProps) {
 export function DemoFeed() {
   const params = useSearchParams();
   const items = useMemo(() => itemsFor(SAMPLE_SPOOL), []);
-  const initial = Math.max(1, Math.min(10, Number(params.get("reel") ?? 1))) - 1;
+  const initial = Math.max(1, Math.min(SAMPLE_SPOOL.reels.length, Number(params.get("reel") ?? 1))) - 1;
   return <SpoolView items={items} viewer={null} docHref="/s/demo" initialIndex={initial} />;
 }
 
-/** One document: loading reel → reel 1 → paywall → reels 2–10, as a feed (mobile) or a workbench (desktop). */
+/** One document: loading reel → reel 1 → paywall → the rest, as a feed (mobile) or a workbench (desktop). */
 export function SpoolFeed({ id }: { id: string }) {
   const router = useRouter();
   const params = useSearchParams();
   const upload = useUpload(id);
   const uploading = upload?.phase === "uploading" || upload?.phase === "starting";
   const { spool, viewer, error, reload } = useSpool(id, { keepPolling: uploading });
-  const initialReel = Math.max(1, Math.min(10, Number(params.get("reel") ?? 1))) - 1;
+  const initialReel = Math.max(1, Math.min(MAX_REELS, Number(params.get("reel") ?? 1))) - 1;
 
   // Back from sign-in with an intended purchase → straight to Stripe Checkout.
   const checkoutIntent = params.get("checkout");
@@ -77,7 +78,7 @@ export function SpoolFeed({ id }: { id: string }) {
     })
       .then((r) => r.json())
       .then((b: { fulfilled?: boolean }) => {
-        if (b.fulfilled) toast("Unlocked. All 10 reels are yours.", 3500);
+        if (b.fulfilled) toast("Unlocked. All reels are yours.", 3500);
         reload();
         router.replace(`/s/${id}?reel=${initialReel + 1}`, { scroll: false });
       })

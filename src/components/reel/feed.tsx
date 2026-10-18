@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReelDTO, SpoolDTO, ViewerDTO } from "@/lib/spool-types";
+import { MAX_REELS } from "@/lib/config";
 import { ChevronDown, ChevronUp, FilterIcon } from "../ui/icons";
 import { toast } from "../ui/toast";
 import { useIsDesktop } from "../ui/use-media";
@@ -47,7 +48,7 @@ export function ReelSlot({
   }
   if (r.locked) {
     const s = item.spool;
-    return <LockedReel reel={r} bottomInset={bottomInset} onUnlock={onUnlock} freeAt={s ? freeAtFor(r.index, s.freeReels, s.nextFreeUnlockAt) : null} />;
+    return <LockedReel reel={r} total={total} bottomInset={bottomInset} onUnlock={onUnlock} freeAt={s ? freeAtFor(r.index, s.freeReels, s.nextFreeUnlockAt) : null} />;
   }
   return <ReelView spool={item.spool!} reel={r} active={active} total={total} chrome={{ bottomInset }} onMore={onMore} onEnded={onEnded} />;
 }
@@ -157,7 +158,7 @@ export function Feed({
     return () => clearTimeout(t);
   }, [active?.reel, index]);
 
-  const total = (s: SpoolDTO | null) => s?.reels.length || 10;
+  const total = (s: SpoolDTO | null) => s?.reels.length || s?.totalReels || MAX_REELS;
   const paywallItem = paywallFor !== null ? items[paywallFor] : null;
 
   return (

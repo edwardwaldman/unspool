@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://unspool.cc"),
   title: { default: "Unspool — Drop a doc. Unspool it.", template: "%s · Unspool" },
   description:
-    "Drop in class notes, a textbook chapter, a work PDF or a contract. Unspool turns it into 10 short reels with voiceover, visuals and a quiz.",
+    "Drop in class notes, a textbook chapter, a work PDF or a contract. Unspool turns it into short reels with voiceover, visuals and a quiz.",
   openGraph: {
     title: "Unspool — Drop a doc. Unspool it.",
     description: "Your textbook, but it's reels.",

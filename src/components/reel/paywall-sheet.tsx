@@ -24,7 +24,7 @@ export async function startCheckout(kind: CheckoutKind, documentId: string, reel
   return body.error ?? "Couldn't open checkout.";
 }
 
-/** "Unlock all 10 reels" → sign in (Google / magic link / password) → Stripe Checkout → back to the same reel. */
+/** "Unlock all reels" → sign in (Google / magic link / password) → Stripe Checkout → back to the same reel. */
 export function PaywallSheet({
   open,
   onClose,
@@ -95,7 +95,7 @@ export function PaywallSheet({
         <div className="pb-1">
           <div className="label">Sample spool</div>
           <h2 className="mt-2 font-display text-[34px] leading-[1.05]">This one is a demo.</h2>
-          <p className="mt-2 text-[15px] text-muted">Drop your own notes, chapter or PDF and get 10 reels like these.</p>
+          <p className="mt-2 text-[15px] text-muted">Drop your own notes, chapter or PDF and get reels like these.</p>
           <Link href="/" className="btn-primary mt-6 w-full py-3.5 text-[15px]">
             Unspool a document
           </Link>
@@ -162,10 +162,10 @@ export function PaywallSheet({
       ) : (
         <div className="pb-1">
           <div className="label">{spool.title ?? spool.fileName}</div>
-          <h2 className="mt-2 font-display text-[36px] leading-[1.02]">Unlock all 10 reels.</h2>
+          <h2 className="mt-2 font-display text-[36px] leading-[1.02]">Unlock all reels.</h2>
           <div className="mt-5 flex items-baseline justify-between border-b border-line pb-2">
             <span className="label">Locked</span>
-            <span className="font-mono text-[11px] text-muted">{locked.length} of 10</span>
+            <span className="font-mono text-[11px] text-muted">{locked.length} of {spool.reels.length}</span>
           </div>
           <div className="no-scrollbar max-h-[150px] overflow-y-auto">
             {locked.map((r) => (

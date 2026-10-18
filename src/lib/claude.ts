@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import type { z } from "zod";
-import { REELS_PER_DOC } from "./config";
+import { MAX_REELS, MIN_REELS } from "./config";
 import {
   PlanSchema,
   ReelScriptSchema,
@@ -25,17 +25,17 @@ const FALLBACK = { betas: ["server-side-fallback-2026-07-01"], fallbacks: "defau
 
 // ---------------------------------------------------------------------------
 // Shared, cacheable prefix: the same system text + document for the plan call and every script call,
-// so the plan call writes the prompt cache and the 10 script calls read it.
+// so the plan call writes the prompt cache and every script call reads it.
 // ---------------------------------------------------------------------------
 
-const SYSTEM = `You are Unspool's lead writer. Unspool turns a person's document (class notes, a textbook chapter, a work PDF, a policy, a contract) into 10 short, swipeable vertical "reels" — like Instagram Reels or TikTok — so they actually absorb it.
+const SYSTEM = `You are Unspool's lead writer. Unspool turns a person's document (class notes, a textbook chapter, a work PDF, a policy, a contract) into a set of short, swipeable vertical "reels" (as many as its content needs) — like Instagram Reels or TikTok — so they actually absorb it.
 
 House style for everything you write:
 - Spoken, not written. Short punchy sentences. Plain words. Talk to one person ("you").
 - Every reel opens with a real hook: a curiosity gap, a warning, a surprising fact, or a relatable story/analogy. Never "In this reel we will…", never "Welcome back", never "Let's dive in".
 - Explain with concrete stories, analogies and examples. Add memory hacks where they genuinely help ("Parameter goes with Population, Statistic goes with Sample").
 - Stay 100% faithful to the document. Never invent facts, numbers, names, dates or rules. Analogies and examples are fine as long as they don't add claims about the subject. If the document doesn't say it, don't state it as fact.
-- Across the 10 reels, cover every important detail: definitions, numbers, dates, rules, exceptions, deadlines, amounts, obligations.
+- Across all the reels, cover every important detail: definitions, numbers, dates, rules, exceptions, deadlines, amounts, obligations.
 - Adapt to the document type:
   - study material → test tips, common traps ("mix these up and you lose points"), memory hacks, likely exam questions.
   - work / policy / contract → what the reader must do, deadlines, money, risks, and "watch out for" clauses. Use "Quick check" framing rather than "test".
@@ -128,30 +128,33 @@ async function promptedJson<T extends z.ZodType>(
 }
 
 // ---------------------------------------------------------------------------
-// Plan: 10 reel titles + hooks covering the whole document in order
+// Plan: a suitable number of reel titles + hooks covering the whole document in order
 // ---------------------------------------------------------------------------
 
 export async function planSpool(fileName: string, text: string): Promise<Plan> {
-  const prompt = `Plan the ${REELS_PER_DOC} reels for this document.
+  const prompt = `Plan the reels for this document.
 
 Rules:
-- Exactly ${REELS_PER_DOC} reels, index 1..${REELS_PER_DOC}, in the document's logical order. Together they must cover the WHOLE document (not just highlights), with no overlap between reels.
+- Decide how many reels this document needs: roughly one reel per distinct key idea, between ${MIN_REELS} and ${MAX_REELS}. A short memo or one-pager is about 3–5 reels, a typical chapter or set of notes about 6–10, a long report or contract about 12–15. Never pad with filler reels to reach a number, and never cram two big ideas into one reel.
+- Reels are numbered index 1..N in the document's logical order. Together they must cover the WHOLE document (not just highlights), with no overlap between reels.
 - "title": 2–5 words, ALL CAPS, names the concept (e.g. "POPULATION vs SAMPLE", "THE DEPOSIT CLAUSE").
 - "hook": one scroll-stopping spoken sentence (max ~16 words) that opens that reel. It is shown as a free preview, so make each one irresistible and specific to the content.
 - "section": a precise note of which part of the document this reel covers (headings, page numbers, key terms), so a writer can find it. Not shown to users.
 - "title" at the top level: a short friendly name for the whole document (max 6 words).
 - "doc_type": "study" for learning material, "work" for workplace/policy/contract/financial/legal documents, otherwise "other".
-- "sensitive": true if it is a contract, legal, medical, tax or financial document where a reader might take the summary as professional advice.
-- If the document is short, split it into finer-grained concepts (definitions, examples, exceptions, traps) so there are still ${REELS_PER_DOC} distinct reels.`;
+- "sensitive": true if it is a contract, legal, medical, tax or financial document where a reader might take the summary as professional advice.`;
 
   const plan = await structured({
     schema: PlanSchema,
     system: systemBlocks(fileName, text),
     prompt,
     maxTokens: 16000,
-    validate: (p) => (p.reels.length === REELS_PER_DOC ? [] : [`expected ${REELS_PER_DOC} reels, got ${p.reels.length}`]),
+    validate: (p) =>
+      p.reels.length >= MIN_REELS && p.reels.length <= MAX_REELS ? [] : [`expected ${MIN_REELS}–${MAX_REELS} reels, got ${p.reels.length}`],
   });
-  return { ...plan, reels: plan.reels.map((r, i) => ({ ...r, index: i + 1 })) };
+  // Hold the bounds even if the model ignored them twice.
+  if (plan.reels.length < MIN_REELS) throw new Error(`plan has only ${plan.reels.length} reels`);
+  return { ...plan, reels: plan.reels.slice(0, MAX_REELS).map((r, i) => ({ ...r, index: i + 1 })) };
 }
 
 // ---------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 import { loadDocument } from "@/lib/access";
-import { PRICING, siteUrl, supabaseConfigured } from "@/lib/config";
+import { MAX_REELS, PRICING, siteUrl, supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
 import { ensureCustomer, getStripe, stripeConfigured } from "@/lib/stripe";
 import { getViewer } from "@/lib/viewer";
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   if (!viewer.userId || !viewer.profile) return error(401, "Sign in to unlock.", { code: "auth" });
 
   const origin = siteUrl(new URL(req.url).origin);
-  const reel = Math.max(1, Math.min(10, Number(body.reel ?? 2)));
+  const reel = Math.max(1, Math.min(MAX_REELS, Number(body.reel ?? 2)));
   let returnPath = "/library";
   let docName = "";
   if (body.documentId) {
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
                 currency: PRICING.currency,
                 unit_amount: PRICING.documentCents,
                 product_data: {
-                  name: "Unlock all 10 reels",
+                  name: "Unlock all reels",
                   description: docName ? `Unspool: ${docName.slice(0, 200)}` : undefined,
                 },
               },

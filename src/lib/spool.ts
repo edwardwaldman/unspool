@@ -14,14 +14,14 @@ type ReelLite = Pick<ReelRow, "id" | "index" | "title" | "hook" | "status" | "er
 export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?: boolean } = {}): Promise<SpoolDTO> {
   const db = adminClient();
   const unlocked = isUnlocked(doc, viewer);
-  // Free accounts: reel 1, then one more every hour (the drip). Only playable reels get scripts and audio.
-  const { playable, nextFreeAt } = freeReelLimit(doc, viewer);
   const { data } = await db
     .from("reels")
     .select("id,index,title,hook,status,error,script_json,audio_paths,started_at")
     .eq("document_id", doc.id)
     .order("index");
   const rows = (data ?? []) as ReelLite[];
+  // Free accounts: reel 1, then one more every hour (the drip). Only playable reels get scripts and audio.
+  const { playable, nextFreeAt } = freeReelLimit(doc, viewer, { reelRows: rows.length });
 
   if (opts.heal) await healIfStuck(doc, rows, playable);
 
@@ -58,6 +58,7 @@ export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?
     status: doc.status,
     error: doc.error,
     unlocked,
+    totalReels: doc.reel_count || rows.length || null,
     freeReels: playable,
     nextFreeUnlockAt: nextFreeAt,
     pageCount: doc.page_count,

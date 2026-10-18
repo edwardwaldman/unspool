@@ -11,6 +11,8 @@ import { ReelMock } from "./reel-mock";
 const W = 900;
 const H = 520;
 const REELS = SAMPLE_SPOOL.reels.slice(0, 5);
+/** How many reels the sample document plans; the loading bar fills one segment per reel. */
+const PLANNED = SAMPLE_SPOOL.reels.length;
 const FILES = ["Q3-report.pdf", "board-deck.pptx", "onboarding-guide.docx"];
 const STAGES = ["Read", "Plan", "Write"];
 const TILE = 420;
@@ -45,8 +47,9 @@ function Stage({ p, narrow, h }: { p: number; narrow: boolean; h: number }) {
   const raw = cursorFor(id, t);
   // Cursor paths are authored for the 900px stage; squeeze them toward the centre of the phone stage.
   const c = narrow ? { ...raw, x: (raw.x - 450) * 0.4 + 180, y: (raw.y - 240) * 0.85 + (h - 40) / 2 } : raw;
-  const loaded = id === "load" ? Math.round(t * 10) : id === "reels" ? 10 : 0;
-  const stage = loaded < 3 ? 0 : loaded < 7 ? 1 : loaded < 10 ? 2 : 3;
+  const loaded = id === "load" ? Math.round(t * PLANNED) : id === "reels" ? PLANNED : 0;
+  const done = loaded / PLANNED;
+  const stage = done < 0.3 ? 0 : done < 0.7 ? 1 : done < 1 ? 2 : 3;
   const reelPos = id === "reels" ? t * (REELS.length - 1) : 0;
   const reelIdx = Math.round(reelPos);
 
@@ -98,12 +101,12 @@ function Stage({ p, narrow, h }: { p: number; narrow: boolean; h: number }) {
               </div>
             ))}
           </div>
-          <div className="mt-8 grid grid-cols-10 gap-1.5" style={{ width: narrow ? 280 : 460 }}>
-            {Array.from({ length: 10 }, (_, i) => (
-              <div key={i} className="h-2" style={{ background: i < loaded ? "var(--thread)" : "var(--border)" }} />
+          <div className="mt-8 flex gap-1.5" style={{ width: narrow ? 280 : 460 }}>
+            {Array.from({ length: PLANNED }, (_, i) => (
+              <div key={i} className="h-2 flex-1" style={{ background: i < loaded ? "var(--thread)" : "var(--border)" }} />
             ))}
           </div>
-          <div className="mt-3 font-mono text-[12px] text-muted">{loaded}/10 reels</div>
+          <div className="mt-3 font-mono text-[12px] text-muted">{loaded === PLANNED ? "All reels ready" : `${loaded} ${loaded === 1 ? "reel" : "reels"} ready`}</div>
         </div>
       )}
 

@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "How it works" };
 
 const steps = [
   ["Drop a doc", "Class notes, a textbook chapter, a work PDF, a contract. PDF, Word, PowerPoint, text, or a photo of your notes."],
-  ["We read all of it", "Unspool plans 10 reels that cover the document in order: every definition, number, rule and deadline."],
+  ["We read all of it", "Unspool plans one reel per key idea, in order, covering the whole document: every definition, number, rule and deadline."],
   ["Swipe through", "Each reel has a hook, voiceover, word-by-word captions, a visual for every beat and a quick quiz."],
 ];
 
@@ -79,7 +79,7 @@ export default function AboutPage() {
             <em className="text-thread">but it&apos;s reels.</em>
           </h1>
           <p className="mt-6 max-w-[520px] text-[17px] leading-relaxed text-ink/80">
-            Drop in any document. Unspool turns it into 10 short reels with a hook, voiceover, visuals and a quiz, so you actually remember it.
+            Drop in any document. Unspool turns it into short reels with a hook, voiceover, visuals and a quiz, so you actually remember it.
           </p>
           <div className="mt-8 flex gap-3">
             <Link href="/" className="btn-primary px-6 py-3 text-[15px]">

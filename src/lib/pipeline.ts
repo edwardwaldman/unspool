@@ -83,7 +83,7 @@ export async function processDocument(documentId: string) {
 
     await db
       .from("documents")
-      .update({ status: "scripting", title: plan.title, doc_type: plan.doc_type, sensitive: plan.sensitive })
+      .update({ status: "scripting", title: plan.title, doc_type: plan.doc_type, sensitive: plan.sensitive, reel_count: plan.reels.length })
       .eq("id", documentId);
 
     // Reel 1 first; it queues the rest once its script is written (so they reuse the warm prompt cache).
@@ -194,7 +194,7 @@ export async function generateReel(reelId: string) {
 
 const lastHeal = new Map<string, number>();
 
-/** `playable`: how many reels the viewer may play now (10 when unlocked, else the hourly free drip). */
+/** `playable`: how many reels the viewer may play now (all when unlocked, else the hourly free drip). */
 export async function healIfStuck(doc: DocumentRow, reels: Pick<ReelRow, "id" | "index" | "status" | "started_at">[], playable: number) {
   if (Date.now() - (lastHeal.get(doc.id) ?? 0) < 20_000) return;
   lastHeal.set(doc.id, Date.now());

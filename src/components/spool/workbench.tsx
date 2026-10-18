@@ -2,7 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { formatPrice, PRICING } from "@/lib/config";
+import { formatPrice, MAX_REELS, PRICING } from "@/lib/config";
 import type { ReelDTO, SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { fileLabel } from "../reel/accent";
 import { ReelSlot, SpoolMoreSheet, type FeedItem } from "../reel/feed";
@@ -156,7 +156,7 @@ function UnlockCta({ spool, onUnlock, compact = false }: { spool: SpoolDTO; onUn
         </>
       )}
       <button type="button" onClick={onUnlock} className={`btn-primary w-full justify-between px-4 py-3 text-[14.5px] ${compact ? "" : "mt-4"}`}>
-        <span>Unlock all 10 reels</span>
+        <span>Unlock all reels</span>
         <span className="font-mono text-[12.5px]">{formatPrice(PRICING.documentCents)}</span>
       </button>
     </div>
@@ -169,7 +169,7 @@ function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; r
     return (
       <div>
         <div className="label">Up next</div>
-        <p className="mt-2 text-[14px] leading-snug text-muted">Your 10 reel titles appear here as soon as the plan is ready. Reel 1 starts playing on its own.</p>
+        <p className="mt-2 text-[14px] leading-snug text-muted">Your reel titles appear here as soon as the plan is ready. Reel 1 starts playing on its own.</p>
         <div className="mt-5 space-y-2.5">
           <div className="shimmer h-3 w-[80%]" />
           <div className="shimmer h-3 w-[64%]" />
@@ -185,7 +185,7 @@ function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; r
       <div>
         <div className="label flex items-center justify-between">
           <span>
-            Reel {reel.index} of {spool.reels.length || 10}
+            Reel {reel.index} of {spool.reels.length}
           </span>
           <span className="flex items-center gap-1.5" style={{ color: state === "ready" ? "var(--sage)" : state === "failed" ? "var(--coral)" : undefined }}>
             {state === "locked" && <LockIcon size={11} />}
@@ -245,7 +245,7 @@ function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; r
 }
 
 /**
- * Desktop document view: the document and its 10 reels on the left, the active reel playing big in
+ * Desktop document view: the document and its reels on the left, the active reel playing big in
  * the middle, and what that reel covers (script, quiz, unlock) on the right. Same reels and player
  * as the mobile feed; this is just a wider frame around them.
  */
@@ -345,15 +345,19 @@ export function Workbench({
               <span className="h-2 w-2 rounded-full" style={{ background: status.tone }} />
               {status.label}
             </span>
-            <span className="font-mono text-[11px] text-muted">{ready}/10 ready</span>
+            {reels.length > 0 && (
+              <span className="font-mono text-[11px] text-muted">
+                {ready}/{reels.length} ready
+              </span>
+            )}
           </div>
-          <div className="mt-2 grid grid-cols-10 gap-1">
-            {Array.from({ length: 10 }, (_, i) => {
+          <div className="mt-2 flex gap-1">
+            {Array.from({ length: reels.length || 1 }, (_, i) => {
               const r = reels[i];
               return (
                 <div
                   key={i}
-                  className="h-1"
+                  className="h-1 flex-1"
                   style={{
                     background: r?.status === "ready" ? "var(--thread)" : r?.status === "generating" ? "color-mix(in srgb, var(--thread) 40%, transparent)" : "var(--border)",
                   }}
@@ -404,9 +408,9 @@ export function Workbench({
                   </li>
                 );
               })
-            : Array.from({ length: 10 }, (_, i) => (
+            : Array.from({ length: 5 }, (_, i) => (
                 <li key={i} className="flex items-center gap-3 border-b border-line px-5 py-2.5">
-                  <span className="flex h-11 w-[25px] shrink-0 items-center justify-center border border-line font-mono text-[11px] text-muted">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="h-11 w-[25px] shrink-0 border border-line" />
                   <span className="flex-1 space-y-1.5">
                     <span className="shimmer block h-2.5" style={{ width: `${55 + ((i * 17) % 35)}%` }} />
                     <span className="shimmer block h-2 w-[40%]" />
@@ -432,7 +436,7 @@ export function Workbench({
                 item={item}
                 upload={cur === 0 ? upload ?? null : null}
                 active={!paywall && !moreOpen}
-                total={reels.length || 10}
+                total={reels.length || MAX_REELS}
                 bottomInset={0}
                 onRetry={() => onRetry?.(item.spool)}
                 onUnlock={() => setPaywall(true)}

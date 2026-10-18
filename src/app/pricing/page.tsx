@@ -46,7 +46,6 @@ function Plan({
 }
 
 export default function PricingPage() {
-  const perReel = formatPrice(Math.round(PRICING.documentCents / 10));
   return (
     <MarketingPage>
       <section className="pt-16">
@@ -55,7 +54,7 @@ export default function PricingPage() {
           Reel one is free. <em className="text-thread">Every time.</em>
         </h1>
         <p className="mt-5 max-w-[520px] text-[16px] text-ink/80">
-          First reel free, then one more every hour. See all ten titles for any document before you pay anything.
+          First reel free, then one more every hour. See every reel title for any document before you pay anything.
         </p>
       </section>
       <section className="mt-14 grid pl-px pt-px md:grid-cols-3">
@@ -63,7 +62,7 @@ export default function PricingPage() {
           name="Free"
           price="$0"
           note={`${LIMITS.freeUploadsPerDay} documents a day`}
-          items={["Reel 1 now, then one more every hour", "All 10 titles and hooks", "Free account, no card"]}
+          items={["Reel 1 now, then one more every hour", "Every title and hook", "Free account, no card"]}
         >
           <Link href="/" className="btn-secondary w-full py-3 text-[14px]">
             Upload a document
@@ -72,8 +71,8 @@ export default function PricingPage() {
         <Plan
           name="One document"
           price={formatPrice(PRICING.documentCents)}
-          note={`${perReel} per reel`}
-          items={["All 10 reels for that document", "Voiceover, visuals and quizzes", "Rewatch anytime"]}
+          note="One payment, every reel"
+          items={["All reels for that document", "Voiceover, visuals and quizzes", "Rewatch anytime"]}
         >
           <p className="text-[13px] text-muted">Unlock from inside any spool.</p>
         </Plan>

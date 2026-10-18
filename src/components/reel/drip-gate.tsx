@@ -8,7 +8,7 @@ import type { SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { formatCountdown, useCountdown } from "../ui/use-countdown";
 import { PaywallSheet, startCheckout, type CheckoutKind } from "./paywall-sheet";
 
-const PREMIUM_CHECKS = ["All 10 reels of every document, no waiting", "Unlimited documents", "Cancel any time"];
+const PREMIUM_CHECKS = ["All reels of every document, no waiting", "Unlimited documents", "Cancel any time"];
 
 /**
  * The free-trial gate: reel 1 is free, then one more every hour. Shown when the viewer reaches a reel
@@ -80,7 +80,7 @@ export function DripGate({
         )}
 
         <p className="label mt-5 !text-thread">Premium</p>
-        <h2 className="mt-1.5 font-display text-[26px] leading-[1.1]">Don&apos;t want to wait? Unlock all 10 now.</h2>
+        <h2 className="mt-1.5 font-display text-[26px] leading-[1.1]">Don&apos;t want to wait? Unlock them all now.</h2>
         <p className="mt-2 text-[14px] leading-snug text-muted">Free accounts get reel 1, then one more every hour.</p>
 
         <p className="mt-5 font-mono leading-none">

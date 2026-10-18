@@ -16,6 +16,8 @@ export type DocumentRow = {
   word_count: number | null;
   truncated: boolean;
   title: string | null;
+  /** How many reels the planner chose for this document (null until planned). */
+  reel_count: number | null;
   doc_type: "study" | "work" | "other" | null;
   sensitive: boolean;
   status: DocumentStatus;
@@ -45,4 +47,4 @@ export type ReelRow = {
 
 /** Columns safe to load for listing (excludes the large extracted_text). */
 export const DOCUMENT_COLUMNS =
-  "id,user_id,anon_token,ip_hash,file_name,file_path,file_type,file_size,page_count,word_count,truncated,title,doc_type,sensitive,status,error,unlocked,created_at,updated_at";
+  "id,user_id,anon_token,ip_hash,file_name,file_path,file_type,file_size,page_count,word_count,truncated,title,reel_count,doc_type,sensitive,status,error,unlocked,created_at,updated_at";

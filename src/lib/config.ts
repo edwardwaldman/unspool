@@ -1,6 +1,8 @@
 // Central place for product knobs and environment lookups.
 
-export const REELS_PER_DOC = 10;
+/** A document gets as many reels as it has distinct key ideas, within these bounds (the planner decides). */
+export const MIN_REELS = 3;
+export const MAX_REELS = 15;
 export const FREE_REELS = 1;
 
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
@@ -22,7 +24,7 @@ export const LIMITS = {
   anonymousRetentionDays: 7,
 };
 
-/** Generate reels 2–10 right away (best UX) or only after the document is unlocked (cheapest). */
+/** Generate every reel after the first right away (best UX) or only once it's playable (cheapest). */
 export const GENERATE_LOCKED_REELS_EAGERLY = process.env.GENERATE_LOCKED_REELS_EAGERLY !== "false";
 
 export const ANON_COOKIE = "unspool_anon";

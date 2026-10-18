@@ -8,7 +8,19 @@ import { LockIcon } from "../ui/icons";
  * A locked reel: its title and hook over a blurred, frozen frame. Swiping onto it opens the unlock
  * gate. While the free drip is running, it also says when this reel turns free on its own.
  */
-export function LockedReel({ reel, onUnlock, bottomInset, freeAt = null }: { reel: ReelDTO; onUnlock: () => void; bottomInset: number; freeAt?: string | null }) {
+export function LockedReel({
+  reel,
+  total,
+  onUnlock,
+  bottomInset,
+  freeAt = null,
+}: {
+  reel: ReelDTO;
+  total: number;
+  onUnlock: () => void;
+  bottomInset: number;
+  freeAt?: string | null;
+}) {
   const left = useCountdown(freeAt);
   return (
     <div className="relative h-full w-full overflow-hidden bg-paper" onClick={onUnlock} data-testid="locked-reel">
@@ -25,7 +37,7 @@ export function LockedReel({ reel, onUnlock, bottomInset, freeAt = null }: { ree
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-paper/10 via-paper/40 to-paper/90" aria-hidden />
       <div className="relative z-10 flex h-full flex-col justify-center px-7" style={{ paddingBottom: bottomInset + 160 }}>
         <div className="label flex items-center gap-2">
-          <LockIcon size={13} /> Reel {reel.index} of 10
+          <LockIcon size={13} /> Reel {reel.index} of {total}
         </div>
         <h2 className="mt-4 font-hook text-[34px] font-extrabold uppercase leading-[1] tracking-[-0.02em]">{reel.title}</h2>
         <p className="mt-4 text-[18px] leading-snug text-ink/80">{reel.hook}</p>

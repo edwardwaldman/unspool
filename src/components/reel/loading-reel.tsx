@@ -28,21 +28,22 @@ export function stageLine(spool: SpoolDTO | null, upload: UploadState | null) {
   const stage = stageIndex(spool, upload);
   const reels = spool?.reels ?? [];
   const ready = reels.filter((r) => r.status === "ready").length;
+  const total = spool?.totalReels || reels.length;
   const n = (v: number | null | undefined, unit: string) => (v ? `${v.toLocaleString("en-US")} ${unit}` : null);
   if (stage === 0) return upload?.phase === "creating" ? "Preparing your upload" : "Uploading your file";
   if (stage === 1) return "Reading your document";
   if (stage === 2) {
     const size = n(spool?.pageCount, spool?.pageCount === 1 ? "page" : "pages") ?? n(spool?.wordCount, "words");
-    return size ? `Planning 10 reels from ${size}` : "Planning your 10 reels";
+    return size ? `Planning your reels from ${size}` : "Planning your reels";
   }
   if (stage === 3) {
     const writing = reels.find((r) => r.status === "generating");
-    return writing ? `Writing reel ${writing.index} · ${ready}/10 ready` : `Writing reels · ${ready}/10 ready`;
+    return writing ? `Writing reel ${writing.index} · ${ready}/${total} ready` : `Writing reels · ${ready}/${total} ready`;
   }
-  return "All 10 reels written";
+  return "All reels written";
 }
 
-/** The reel shown in the feed while generation runs: real pipeline stage + the status of each of the 10 reels. */
+/** The reel shown in the feed while generation runs: real pipeline stage + the status of each planned reel. */
 export function LoadingReel({
   spool,
   upload,
@@ -121,14 +122,16 @@ export function LoadingReel({
         {reels.length > 0 ? (
           <>
             <div className="mb-3 flex items-baseline justify-between">
-              <span className="label">Your 10 reels</span>
-              <span className="font-mono text-[11px] text-muted">{ready}/10 ready</span>
+              <span className="label">Your {reels.length} reels</span>
+              <span className="font-mono text-[11px] text-muted">
+                {ready}/{reels.length} ready
+              </span>
             </div>
-            <div className="mb-4 grid grid-cols-10 gap-1">
+            <div className="mb-4 flex gap-1">
               {reels.map((r) => (
                 <div
                   key={r.id}
-                  className="h-1"
+                  className="h-1 flex-1"
                   style={{
                     background:
                       r.status === "ready" ? "var(--thread)" : r.status === "generating" ? "color-mix(in srgb, var(--thread) 40%, transparent)" : "var(--border)",

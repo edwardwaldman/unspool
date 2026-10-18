@@ -15,6 +15,8 @@ export type LibraryItem = {
   unlocked: boolean;
   /** Reels free to play right now (the hourly drip). */
   freeReels: number;
+  /** Planned reel count; null while planning. */
+  total: number | null;
   readyCount: number;
   createdAt: string;
   headline: string | null;
@@ -24,8 +26,10 @@ export type LibraryItem = {
 function statusLabel(it: LibraryItem) {
   if (it.status === "failed") return "Failed";
   if (["uploading", "uploaded", "extracting", "planning"].includes(it.status)) return "Unspooling";
-  if (!it.unlocked && it.freeReels < 10) return `${it.freeReels} of 10 free`;
-  return it.readyCount >= 10 ? "10 reels" : `${it.readyCount}/10 ready`;
+  const total = it.total ?? 0;
+  if (!total) return "Planning";
+  if (!it.unlocked && it.freeReels < total) return `${it.freeReels} of ${total} free`;
+  return it.readyCount >= total ? `${total} reels` : `${it.readyCount}/${total} ready`;
 }
 
 /** Profile-style grid of spools (one per uploaded document). */
@@ -76,9 +80,9 @@ export function LibraryGrid({ initial }: { initial: LibraryItem[] }) {
                   {it.headline ? <MarkedText text={it.headline} /> : it.hook ?? it.name}
                 </div>
                 <div className="absolute inset-x-0 bottom-0 bg-paper/85 p-2">
-                  <div className="mb-1.5 grid grid-cols-10 gap-px">
-                    {Array.from({ length: 10 }, (_, i) => (
-                      <div key={i} className="h-[2px]" style={{ background: i < it.readyCount ? "var(--thread)" : "var(--border)" }} />
+                  <div className="mb-1.5 flex gap-px">
+                    {Array.from({ length: Math.max(1, it.total ?? 0) }, (_, i) => (
+                      <div key={i} className="h-[2px] flex-1" style={{ background: i < it.readyCount ? "var(--thread)" : "var(--border)" }} />
                     ))}
                   </div>
                   <div className="flex items-center gap-1.5">
