@@ -14,7 +14,7 @@ import { getPrefs, setPrefs, usePrefs } from "./prefs";
 import { ReelMedia } from "./reel-media";
 import { StatLine } from "./stat-line";
 import { usePlayback } from "./use-playback";
-import { BeatPop, ReactionStream, useDoubleTapHeart, ViewfinderHud } from "./gimmicks";
+import { BeatPop, Callout, ContextChip, ReactionStream, useDoubleTapHeart, ViewfinderHud } from "./gimmicks";
 import { QuizCard } from "./visuals";
 
 export type ReelChrome = {
@@ -92,6 +92,7 @@ export function ReelView({
   const hits = useHitCount(script.headline, pb.segments[0]?.text ?? "", opening ? pb.words : [], opening ? fraction : 0);
   const below = top + 64 + headH + 18;
   const heart = useDoubleTapHeart();
+  const callout = useMemo(() => markupWords(pb.segment.text).find((w) => w.color)?.text.replace(/[.,!?;:…]+$/, ""), [pb.segment.text]);
   const terms = useMemo(() => {
     const seen = new Set<string>();
     for (const sg of pb.segments) for (const w of markupWords(sg.text)) if (w.color) seen.add(w.text.replace(/[.,!?;:]+$/, ""));
@@ -222,6 +223,8 @@ export function ReelView({
       {!preview && (
         <>
           <ViewfinderHud playing={active && pb.playing} progress={(pb.seg + fraction) / Math.max(1, pb.segments.length)} top={top} bottom={bottom + BAND} />
+          <ContextChip text={`${(spool.title ?? spool.fileName).split(/[:·-]/)[0].trim().slice(0, 24)} · part ${reel.index}`} top={top} />
+          {!isQuiz && !opening && <Callout term={callout} beat={pb.seg} top={below} bottom={bottom + RAIL_TOP} />}
           {active && <BeatPop seg={pb.seg} top={top} />}
           <ReactionStream terms={terms} playing={active && pb.playing} bottom={bottom + RAIL_TOP + 10} />
           {heart.layer}

@@ -149,3 +149,36 @@ export function ViewfinderHud({ playing, progress, top, bottom }: { playing: boo
     </div>
   );
 }
+
+/** A documentary callout pinned onto the graphic: an uppercase tag with a leader line down to a dot. */
+export function Callout({ term, beat, top, bottom }: { term: string | undefined; beat: number; top: number; bottom: number }) {
+  if (!term) return null;
+  const left = [18, 46, 28, 54][beat % 4];
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 z-[14]" style={{ top, bottom }}>
+      <AnimatePresence mode="wait">
+        <motion.div key={`${beat}-${term}`} className="absolute flex flex-col items-start" style={{ left: `${left}%`, top: "12%" }} exit={{ opacity: 0, transition: { duration: 0.15 } }}>
+          <motion.span
+            className="whitespace-nowrap rounded-[3px] bg-black/75 px-2 py-[3px] font-hook text-[11px] font-extrabold uppercase tracking-[0.06em] text-white"
+            initial={{ opacity: 0, y: 6, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 500, damping: 22, delay: 0.15 }}
+          >
+            {term}
+          </motion.span>
+          <motion.span className="ml-3 w-px origin-top bg-[#ff4d3d]" initial={{ height: 0 }} animate={{ height: 46 }} transition={{ delay: 0.3, duration: 0.25 }} />
+          <motion.span className="-mt-[3px] ml-[9px] h-[7px] w-[7px] rounded-full bg-[#ff4d3d]" initial={{ scale: 0 }} animate={{ scale: [0, 1.6, 1] }} transition={{ delay: 0.55, duration: 0.3 }} />
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/** Context chip in the top-left, like a documentary location card: "AP STATS · PART 3". */
+export function ContextChip({ text, top }: { text: string; top: number }) {
+  return (
+    <div aria-hidden className="pointer-events-none absolute left-6 z-[13] flex items-center gap-1.5 bg-black/70 px-2 py-[3px] font-hook text-[10px] font-extrabold uppercase tracking-[0.08em] text-white" style={{ top: top + 30 }}>
+      <span className="h-3 w-[2px] bg-thread" /> {text}
+    </div>
+  );
+}
