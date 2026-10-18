@@ -3,23 +3,10 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
-// Attention-grabbing extras layered over a playing reel: story-style progress segments, a white flash
+// Attention-grabbing extras layered over a playing reel: a white flash
 // and "+XP" pop on every new beat, a running streak counter, and a live stream of floating reactions.
 
-const REACTIONS = ["🔥", "🤯", "💡", "👀", "😳", "✅", "🧠", "💯"];
-
-/** Story-style bars across the top: one per beat, the current one filling as it plays. */
-export function SegmentBar({ count, current, fraction, top }: { count: number; current: number; fraction: number; top: number }) {
-  return (
-    <div className="pointer-events-none absolute inset-x-3 z-30 flex gap-[3px]" style={{ top: top + 6 }}>
-      {Array.from({ length: count }, (_, i) => (
-        <div key={i} className="h-[3px] flex-1 overflow-hidden bg-white/25">
-          <div className="h-full bg-white" style={{ width: i < current ? "100%" : i === current ? `${Math.min(1, fraction) * 100}%` : "0%" }} />
-        </div>
-      ))}
-    </div>
-  );
-}
+const REACTIONS = ["🔥", "🤯", "💡", "🧠"];
 
 /** A quick white flash + "+10 XP" stamp + streak chip each time the reel moves to a new beat. */
 export function BeatPop({ seg, top }: { seg: number; top: number }) {
@@ -65,8 +52,8 @@ export function BeatPop({ seg, top }: { seg: number; top: number }) {
   );
 }
 
-/** Emoji reactions floating up the right side, like a live stream. Faster while playing. */
-export function ReactionStream({ playing, bottom }: { playing: boolean; bottom: number }) {
+/** The reel's own key terms (plus the odd emoji) floating up the right side, like a live stream. */
+export function ReactionStream({ terms, playing, bottom }: { terms: string[]; playing: boolean; bottom: number }) {
   const reduce = useReducedMotion();
   const [items, setItems] = useState<{ id: number; e: string; x: number; r: number }[]>([]);
   const id = useRef(0);
@@ -74,17 +61,17 @@ export function ReactionStream({ playing, bottom }: { playing: boolean; bottom: 
     if (!playing || reduce) return;
     const t = setInterval(() => {
       const n = ++id.current;
-      setItems((list) => [...list.slice(-10), { id: n, e: REACTIONS[n % REACTIONS.length], x: Math.random() * 30 - 15, r: Math.random() * 40 - 20 }]);
+      setItems((list) => [...list.slice(-10), { id: n, e: terms.length && n % 3 ? terms[n % terms.length] : REACTIONS[n % REACTIONS.length], x: Math.random() * 30 - 15, r: Math.random() * 40 - 20 }]);
     }, 650);
     return () => clearInterval(t);
-  }, [playing, reduce]);
+  }, [playing, reduce, terms]);
   return (
     <div aria-hidden className="pointer-events-none absolute right-4 z-[15] w-[50px]" style={{ bottom, height: 260 }}>
       <AnimatePresence>
         {items.map((it) => (
           <motion.span
             key={it.id}
-            className="absolute bottom-0 left-1/2 text-[24px]"
+            className={`absolute bottom-0 right-0 whitespace-nowrap ${it.e.length > 2 ? "bg-thread px-1.5 py-0.5 font-hook text-[13px] font-extrabold text-[#08110e]" : "text-[24px]"}`}
             initial={{ y: 0, x: 0, opacity: 0, scale: 0.4 }}
             animate={{ y: -240, x: it.x, opacity: [0, 1, 1, 0], scale: [0.4, 1.2, 1, 0.9], rotate: it.r }}
             exit={{ opacity: 0 }}

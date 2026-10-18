@@ -1,7 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { markupWords } from "@/lib/markup";
 import type { ReelDTO, SpoolDTO } from "@/lib/spool-types";
 import { PlayIcon, VolumeIcon } from "../ui/icons";
 import { reelVars } from "./accent";
@@ -13,7 +14,7 @@ import { getPrefs, setPrefs, usePrefs } from "./prefs";
 import { ReelMedia } from "./reel-media";
 import { StatLine } from "./stat-line";
 import { usePlayback } from "./use-playback";
-import { BeatPop, ReactionStream, SegmentBar, useDoubleTapHeart } from "./gimmicks";
+import { BeatPop, ReactionStream, useDoubleTapHeart } from "./gimmicks";
 import { QuizCard } from "./visuals";
 
 export type ReelChrome = {
@@ -91,6 +92,11 @@ export function ReelView({
   const hits = useHitCount(script.headline, pb.segments[0]?.text ?? "", opening ? pb.words : [], opening ? fraction : 0);
   const below = top + 30 + headH + 18;
   const heart = useDoubleTapHeart();
+  const terms = useMemo(() => {
+    const seen = new Set<string>();
+    for (const sg of pb.segments) for (const w of markupWords(sg.text)) if (w.color) seen.add(w.text.replace(/[.,!?;:]+$/, ""));
+    return [...seen].slice(0, 12);
+  }, [pb.segments]);
   const toggleMute = () => setPrefs({ muted: !getPrefs().muted, autoMuted: false });
 
   // M mutes / unmutes the reel that's playing.
@@ -215,9 +221,8 @@ export function ReelView({
       )}
       {!preview && (
         <>
-          <SegmentBar count={pb.segments.length} current={pb.seg} fraction={fraction} top={top} />
           {active && <BeatPop seg={pb.seg} top={top} />}
-          <ReactionStream playing={active && pb.playing} bottom={bottom + RAIL_TOP + 10} />
+          <ReactionStream terms={terms} playing={active && pb.playing} bottom={bottom + RAIL_TOP + 10} />
           {heart.layer}
         </>
       )}
