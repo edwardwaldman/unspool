@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, Check, ChevronUp, X } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { COLOR_VAR } from "@/lib/markup";
 import type { HighlightColor, ReelScript, Visual } from "@/lib/schema";
 import { MarkedText } from "../ui/marked-text";
@@ -394,7 +394,45 @@ export type StageProps = {
 };
 
 /** One beat's motion graphic. The quiz is not part of the stage: it's an interactive overlay (QuizCard). */
-export function VisualStage({ visual, script, progress, last, pulse = 0 }: StageProps) {
+/** One beat's motion graphic, staged in 3D: a perspective floor grid, a slow camera orbit, and an extruded drop shadow. */
+export function VisualStage(props: StageProps) {
+  const reduce = useReducedMotion();
+  const inner = <StageInner {...props} />;
+  if (props.visual.type === "quiz") return inner;
+  return (
+    <div className="relative flex h-full w-full items-center justify-center" style={{ perspective: 900 }}>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -inset-x-[40%] bottom-[-18%] h-[70%]"
+        style={{
+          transform: "rotateX(74deg)",
+          transformOrigin: "50% 100%",
+          backgroundImage:
+            "linear-gradient(color-mix(in srgb, var(--thread) 45%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--thread) 45%, transparent) 1px, transparent 1px)",
+          backgroundSize: "34px 34px",
+          maskImage: "linear-gradient(to top, #000 10%, transparent 85%)",
+          WebkitMaskImage: "linear-gradient(to top, #000 10%, transparent 85%)",
+        }}
+      />
+      <div aria-hidden className="pointer-events-none absolute bottom-[6%] left-1/2 h-[26px] w-[58%] -translate-x-1/2 rounded-[50%] bg-black/45 blur-[10px]" />
+      <motion.div
+        className="relative"
+        style={{
+          transformStyle: "preserve-3d",
+          filter:
+            "drop-shadow(1px 1px 0 rgba(0,0,0,.55)) drop-shadow(1px 1px 0 rgba(0,0,0,.55)) drop-shadow(1px 1px 0 rgba(0,0,0,.5)) drop-shadow(1px 1px 0 rgba(0,0,0,.45)) drop-shadow(2px 2px 0 rgba(0,0,0,.4)) drop-shadow(0 14px 18px rgba(0,0,0,.45))",
+        }}
+        initial={reduce ? false : { rotateX: 30, rotateY: -30, z: -120, opacity: 0 }}
+        animate={reduce ? undefined : { rotateX: [14, 8, 14], rotateY: [-16, 16, -16], z: 0, opacity: 1 }}
+        transition={{ rotateX: { duration: 7, repeat: Infinity, ease: "easeInOut" }, rotateY: { duration: 7, repeat: Infinity, ease: "easeInOut" }, z: { duration: 0.6 }, opacity: { duration: 0.3 } }}
+      >
+        {inner}
+      </motion.div>
+    </div>
+  );
+}
+
+function StageInner({ visual, script, progress, last, pulse = 0 }: StageProps) {
   switch (visual.type) {
     case "hook":
       return <HookVisual v={visual} pulse={pulse} progress={progress} />;
