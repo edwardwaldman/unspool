@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildSegments, type Segment } from "@/lib/segments";
 import type { ReelScript } from "@/lib/schema";
 import type { SegmentAudioDTO } from "@/lib/spool-types";
+import type { VideoTimeline } from "@/lib/video/types";
 import { estimateDuration, estimateWordFractions } from "@/lib/timing";
 import { getPrefs, setPrefs, usePrefs } from "./prefs";
 
@@ -32,6 +33,11 @@ export type Playback = {
   toggle: () => void;
   replay: () => void;
   answer: (i: number) => void;
+  /** Playing a rendered MP4: attach this ref to the <video>; the clock follows it. */
+  videoMode: boolean;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
+  /** The video has captions burned in (hide the caption overlay). */
+  burnedCaptions: boolean;
 };
 
 type Snapshot = {
@@ -82,6 +88,10 @@ function canSpeak() {
 /**
  * Drives one reel: plays each segment's voiceover clip in order (or a silent clock / device voice when
  * there's no audio), pauses for the quiz answer, and reports timing for captions and visuals.
+ *
+ * Video mode (a rendered MP4 with its timeline): one <video> carries picture + voice, so the clock is
+ * the video's currentTime. Segments are located on the timeline; the quiz holds the video paused at the
+ * end of the question and seeks to the explanation once answered (or after the wait).
  */
 export function usePlayback(opts: {
   script: ReelScript;
@@ -90,14 +100,31 @@ export function usePlayback(opts: {
   onEnded?: () => void;
   /** Background/preview mode: never plays sound, restarts at the end. */
   silent?: boolean;
+  /** A rendered MP4 of this reel and where each segment sits in it. */
+  video?: { url: string; timeline: VideoTimeline };
 }): Playback {
   const { script, active, silent } = opts;
   const audio = silent ? undefined : opts.audio;
   const prefs = usePrefs();
   const segments = useMemo(() => buildSegments(script), [script]);
+  const timeline = opts.video?.timeline;
+  // Per-segment [start, duration] in the video, or null when there's no usable video timeline.
+  const vt = useMemo(() => {
+    if (!timeline) return null;
+    const byKey = new Map(timeline.segments.map((s) => [s.key, s]));
+    if (!segments.every((s) => byKey.has(s.key))) return null;
+    return {
+      start: segments.map((s) => byKey.get(s.key)!.start),
+      dur: segments.map((s) => Math.max(0.05, byKey.get(s.key)!.duration)),
+      total: timeline.duration,
+      captions: timeline.captions,
+    };
+  }, [segments, timeline]);
+  const videoMode = vt !== null;
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const initialDurations = useMemo(
-    () => segments.map((s) => audio?.[s.key]?.duration ?? estimateDuration(s.speech)),
-    [segments, audio],
+    () => vt?.dur ?? segments.map((s) => audio?.[s.key]?.duration ?? estimateDuration(s.speech)),
+    [segments, audio, vt],
   );
   const wordsFor = useCallback(
     (i: number) => {
@@ -151,7 +178,7 @@ export function usePlayback(opts: {
   useEffect(() => {
     engine.current = freshEngine([...initialDurations]);
     const els = segments.map((s, i) => {
-      const url = audio?.[s.key]?.url;
+      const url = videoMode ? undefined : audio?.[s.key]?.url;
       if (!url) return null;
       const el = new Audio();
       el.preload = "auto";
@@ -170,10 +197,12 @@ export function usePlayback(opts: {
         el.load();
       });
     };
-  }, [segments, audio, initialDurations]);
+  }, [segments, audio, initialDurations, videoMode]);
 
   const stopAll = useCallback(() => {
     audios.current.forEach((el) => el && !el.paused && el.pause());
+    const v = videoRef.current;
+    if (v && !v.paused) v.pause();
     if (engine.current.speaking && canSpeak()) window.speechSynthesis.cancel();
     engine.current.speaking = false;
   }, []);
@@ -183,6 +212,22 @@ export function usePlayback(opts: {
       const e = engine.current;
       const el = audios.current[i];
       const p = getPrefs();
+      if (vt) {
+        // Video mode: seek to the segment and play (picture and voice come from the same element).
+        const v = videoRef.current;
+        if (!v) return;
+        v.currentTime = vt.start[i];
+        v.muted = silent || p.muted;
+        v.playbackRate = p.speed;
+        v.play().catch((err: DOMException) => {
+          if (err?.name === "NotAllowedError" && !v.muted) {
+            setPrefs({ muted: true, autoMuted: true });
+            v.muted = true;
+            v.play().catch(() => undefined);
+          }
+        });
+        return;
+      }
       if (el) {
         el.currentTime = 0;
         el.muted = p.muted;
@@ -212,7 +257,7 @@ export function usePlayback(opts: {
         window.speechSynthesis.speak(u);
       }
     },
-    [segments, silent],
+    [segments, silent, vt],
   );
 
   const startSeg = useCallback(
@@ -285,6 +330,34 @@ export function usePlayback(opts: {
         } else render();
         return;
       }
+      if (vt) {
+        const v = videoRef.current;
+        if (!v) return;
+        const now = v.currentTime;
+        let k = segments.length - 1;
+        while (k > 0 && now < vt.start[k] - 0.001) k--;
+        if (k > e.seg) {
+          // Crossing into a later segment: hold on the quiz question until it's answered.
+          const q = segments.findIndex((s, i) => s.kind === "quiz" && i >= e.seg && i < k);
+          if (q >= 0 && !e.quiz.revealed) {
+            v.pause();
+            v.currentTime = Math.max(vt.start[q], vt.start[q] + vt.dur[q] - 0.04);
+            e.seg = q;
+            e.t = vt.dur[q];
+            finishSeg();
+            render();
+            return;
+          }
+        }
+        e.seg = k;
+        e.t = Math.min(vt.dur[k], Math.max(0, now - vt.start[k]));
+        if (v.ended || now >= vt.total - 0.05) {
+          // The file is done (it may be a hair shorter than the timeline): finish from the last segment.
+          e.seg = segments.length - 1;
+          finishSeg();
+        } else render();
+        return;
+      }
       const el = audios.current[e.seg];
       const dur = e.durations[e.seg];
       let done = false;
@@ -306,7 +379,7 @@ export function usePlayback(opts: {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [active, finishSeg, initialDurations, render, segments, startSeg]);
+  }, [active, finishSeg, initialDurations, render, segments, startSeg, vt]);
 
   // Start from the top whenever the reel snaps into view; stop when it leaves.
   useEffect(() => {
@@ -329,14 +402,18 @@ export function usePlayback(opts: {
   useEffect(() => {
     const e = engine.current;
     const el = audios.current[e.seg];
-    if (el) {
+    const v = videoRef.current;
+    if (vt && v) {
+      v.muted = silent || prefs.muted;
+      v.playbackRate = prefs.speed;
+    } else if (el) {
       el.muted = prefs.muted;
       el.playbackRate = prefs.speed;
     } else if (prefs.muted && e.speaking && canSpeak()) {
       window.speechSynthesis.cancel();
       e.speechDone = true;
     }
-  }, [prefs.muted, prefs.speed]);
+  }, [prefs.muted, prefs.speed, silent, vt]);
 
   const toggle = useCallback(() => {
     const e = engine.current;
@@ -347,6 +424,14 @@ export function usePlayback(opts: {
       return;
     }
     e.playing = !e.playing;
+    const v = vt ? videoRef.current : null;
+    if (v) {
+      // While the quiz waits for an answer the video stays parked at the question's end.
+      if (e.playing && !e.quiz.waiting) v.play().catch(() => undefined);
+      else v.pause();
+      render();
+      return;
+    }
     const el = audios.current[e.seg];
     if (e.playing) {
       if (el) el.play().catch(() => undefined);
@@ -356,7 +441,7 @@ export function usePlayback(opts: {
       else if (e.speaking && canSpeak()) window.speechSynthesis.pause();
     }
     render();
-  }, [playClip, render]);
+  }, [playClip, render, vt]);
 
   const replay = useCallback(() => {
     stopAll();
@@ -384,5 +469,8 @@ export function usePlayback(opts: {
     toggle,
     replay,
     answer,
+    videoMode,
+    videoRef,
+    burnedCaptions: Boolean(vt?.captions),
   };
 }

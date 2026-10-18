@@ -55,7 +55,8 @@ export function ReelView({
   preview?: boolean;
 }) {
   const script = reel.script!;
-  const pb = usePlayback({ script, audio: reel.audio, active, onEnded, silent: preview });
+  const video = reel.videoUrl && reel.video ? { url: reel.videoUrl, timeline: reel.video } : undefined;
+  const pb = usePlayback({ script, audio: reel.audio, active, onEnded, silent: preview, video });
   const prefs = usePrefs();
   const fraction = pb.duration > 0 ? pb.t / pb.duration : 0;
   const kind = pb.segment.kind;
@@ -72,9 +73,10 @@ export function ReelView({
         index={reel.index}
         active={active}
         playing={pb.playing}
-        muted={muted}
+        muted={muted || preview}
         pulse={pb.seg}
-        videoUrl={reel.videoUrl}
+        videoUrl={pb.videoMode ? reel.videoUrl : undefined}
+        videoRef={pb.videoRef}
         stageKey={stageKey}
         stageBox={{ top: top + (opening ? 190 : 120), bottom: bottom + 236 }}
         stage={
@@ -160,8 +162,8 @@ export function ReelView({
         </div>
       )}
 
-      {/* Burned-in captions, lower third */}
-      {!isQuiz && (
+      {/* Burned-in captions, lower third (already in the frames when playing a rendered video) */}
+      {!isQuiz && !pb.burnedCaptions && (
         <div className="absolute left-3 right-[60px] z-10" style={{ bottom: bottom + 150 }}>
           <Captions text={pb.segment.text} words={pb.words} fraction={fraction} />
         </div>

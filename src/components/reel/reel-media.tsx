@@ -1,7 +1,6 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef } from "react";
 import { ParticleField } from "./particle-field";
 import { VisualStage, type StageProps } from "./visuals";
 
@@ -10,7 +9,8 @@ import { VisualStage, type StageProps } from "./visuals";
  * current beat). Overlays (captions, rail, quiz, controls) live in ReelView on top of it.
  *
  * When a reel has a rendered MP4 (`videoUrl`), this swaps to a plain <video> and the generated
- * graphics are skipped; ReelView's overlays stay as they are.
+ * graphics are skipped; ReelView's overlays stay as they are. The video is driven by usePlayback
+ * (via `videoRef`): it plays, pauses and seeks it, and reads its clock.
  */
 export function ReelMedia({
   active,
@@ -21,6 +21,7 @@ export function ReelMedia({
   stage,
   stageBox,
   videoUrl,
+  videoRef,
 }: {
   index: number;
   active: boolean;
@@ -33,8 +34,9 @@ export function ReelMedia({
   /** Where the motion graphic sits inside the frame. */
   stageBox: React.CSSProperties;
   videoUrl?: string;
+  videoRef?: React.RefObject<HTMLVideoElement | null>;
 }) {
-  if (videoUrl) return <ReelVideo src={videoUrl} active={active} playing={playing} muted={muted} />;
+  if (videoUrl && videoRef) return <ReelVideo src={videoUrl} videoRef={videoRef} muted={muted} />;
   return (
     <>
       <div
@@ -61,16 +63,6 @@ export function ReelMedia({
   );
 }
 
-function ReelVideo({ src, active, playing, muted }: { src: string; active: boolean; playing: boolean; muted: boolean }) {
-  const ref = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (!active) {
-      el.pause();
-      el.currentTime = 0;
-    } else if (playing) el.play().catch(() => undefined);
-    else el.pause();
-  }, [active, playing]);
-  return <video ref={ref} src={src} className="absolute inset-0 h-full w-full object-cover" playsInline muted={muted} preload="auto" />;
+function ReelVideo({ src, videoRef, muted }: { src: string; videoRef: React.RefObject<HTMLVideoElement | null>; muted: boolean }) {
+  return <video ref={videoRef} src={src} className="absolute inset-0 h-full w-full object-cover" playsInline muted={muted} preload="auto" />;
 }
