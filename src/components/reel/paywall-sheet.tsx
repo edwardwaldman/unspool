@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { SpoolDTO, ViewerDTO } from "@/lib/spool-types";
@@ -61,12 +60,14 @@ export function PaywallSheet({
           <div className="label">That&apos;s the sample</div>
           <h2 className="mt-2 font-display text-[34px] leading-[1.05]">Now make reels from your own notes.</h2>
           <p className="mt-2 text-[15px] text-muted">Drop a PDF, chapter or slides and get reels like these.</p>
-          <Link href="/?upload=1" className="btn-primary mt-6 w-full py-3.5 text-[15px]">
+          {/* No close, no second option: uploading needs an account, so this opens sign-up, then the file picker. */}
+          <button
+            type="button"
+            onClick={() => openAuth("signup", { next: "/?upload=1", onDone: () => (window.location.href = "/?upload=1") })}
+            className="btn-primary mt-6 w-full py-3.5 text-[15px]"
+          >
             Upload a document
-          </Link>
-          <Link href="/login" className="btn-secondary mt-2 w-full py-3.5 text-[15px]">
-            Sign up free
-          </Link>
+          </button>
         </div>
       ) : wanted && !signedIn ? (
         <div className="pb-1">
