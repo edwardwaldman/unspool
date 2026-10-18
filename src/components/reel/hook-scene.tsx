@@ -4,7 +4,11 @@ import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { COLOR_VAR, markupWords } from "@/lib/markup";
 import type { HighlightColor } from "@/lib/schema";
+import dynamic from "next/dynamic";
+import { threadHex } from "./accent";
 import { ReelIcon } from "./icon";
+
+const Soup3D = dynamic(() => import("./soup-3d"), { ssr: false });
 import { sentenceCase } from "./text";
 
 // The opening beat of a reel: a kinetic headline that builds word by word and lands accent "hits" on
@@ -355,9 +359,23 @@ export function HookScene({ icon, tag, color, pulse, progress }: { icon: string;
       <Sticker text={tag} color={color} delay={0.95} />
       <div className="relative flex justify-center" style={{ height: natural * scale, width: 240 * scale }}>
         <div className="absolute left-1/2 top-0 origin-top" style={{ transform: `translateX(-50%) scale(${scale})` }}>
-          {soup ? <SoupScene pulse={pulse} salt={progress > 0.8} /> : <IconScene icon={icon} color={color} pulse={pulse} />}
+          {soup ? <SoupStage pulse={pulse} salt={progress > 0.8} /> : <IconScene icon={icon} color={color} pulse={pulse} />}
         </div>
       </div>
     </motion.div>
+  );
+}
+
+/** The soup hook in real 3D (three.js); the flat SVG version stays for reduced motion. */
+function SoupStage({ pulse, salt }: { pulse: number; salt: boolean }) {
+  const reduce = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const [accent, setAccent] = useState("#d3f05a");
+  useEffect(() => setAccent(threadHex(ref.current)), []);
+  if (reduce) return <SoupScene pulse={pulse} salt={salt} />;
+  return (
+    <div ref={ref} className="h-[196px] w-[240px]" aria-hidden>
+      <Soup3D accent={accent} pulse={pulse} salt={salt} />
+    </div>
   );
 }
