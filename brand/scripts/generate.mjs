@@ -477,7 +477,7 @@ for (const [name, size] of [
 function heroFit(W, x, y, o) {
   const h = heroStrip(0, 0, o);
   const k = Math.min(1, (W - 64 - x) / h.width);
-  return { svg: `<g transform="translate(${r2(x)} ${r2(y)}) scale(${r2(k * 1000) / 1000})">${h.svg}</g>`, width: h.width * k };
+  return { svg: `<g transform="translate(${r2(x)} ${r2(y)}) scale(${r2(k * 1000) / 1000})">${h.svg}</g>`, width: h.width * k, height: h.height * k };
 }
 
 /* ---- marketing graphics ---- */
@@ -569,18 +569,23 @@ add(tall("social/tiktok-cover-1080x1920.png", { cover: true }));
   const SX = (W - 1546) / 2, SY = (H - 423) / 2; // 507, 508.5
   let b = "";
   // Outer area (TV / desktop-wide only): a quiet field of reel outlines on surface
-  for (let i = -1; i < 12; i++) {
-    for (const [ry, tint] of [[60, C.surface], [1000, C.surface]]) {
-      const rx = i * 236 + (ry > 500 ? 118 : 0);
-      b += `<rect x="${rx}" y="${ry}" width="200" height="356" fill="${tint}"/>`;
-    }
-  }
-  b += `<rect x="0" y="${SY - 40}" width="${W}" height="${423 + 80}" fill="${C.paper}"/>`;
-  const hl = headline(HERO_2, { x: SX + 40, y: SY + 70, size: 104 });
-  b += hl.svg;
-  b += text("Skip the 40-page read.", { f: F.ui5, size: 40, x: SX + 40, y: hl.bottom + 82, fill: C.muted });
-  b += heroFit(W, SX + 1546 - 40 - (30 * 6 + 2 * 128 + 18), SY + 30, { u: 6, rw: 128, n: 2, gap: 18 }).svg;
-  b += lockupH(SX + 40, hl.bottom + 138, 40).svg;
+  // Symmetric bands: equal margins top and bottom, tiles aligned in both rows
+  const TW = 200, TH = 356, GAP = 36, M = 60;
+  const cols = Math.ceil(W / (TW + GAP)) + 1, x0 = (W - (cols * (TW + GAP) - GAP)) / 2;
+  for (let i = 0; i < cols; i++) for (const ry of [M, H - M - TH]) b += `<rect x="${x0 + i * (TW + GAP)}" y="${ry}" width="${TW}" height="${TH}" fill="${C.surface}"/>`;
+  // Content group laid out at y=0, then centred vertically in the band between the tile rows
+  let c = "";
+  const hl = headline(HERO_2, { x: SX + 40, y: 104 * 0.82, size: 104 });
+  c += hl.svg;
+  c += text("Skip the 40-page read.", { f: F.ui5, size: 40, x: SX + 40, y: hl.bottom + 82, fill: C.muted });
+  const lk = lockupH(SX + 40, hl.bottom + 138, 40);
+  c += lk.svg;
+  const groupH = hl.bottom + 138 + 46;
+  const art = heroFit(W, SX + 1546 - 40 - (30 * 6 + 2 * 128 + 18), 0, { u: 6, rw: 128, n: 2, gap: 18 });
+  const artH = art.height ?? groupH;
+  c += `<g transform="translate(0 ${(groupH - artH) / 2})">${art.svg}</g>`;
+  const bandTop = M + TH, bandBot = H - M - TH;
+  b += `<g transform="translate(0 ${bandTop + (bandBot - bandTop - groupH) / 2 - 34})">${c}</g>`;
   add({ out: "social/youtube-banner-2560x1440.png", w: W, h: H, master: "masters/social/youtube-banner-2560x1440.svg", svg: svgDoc(W, H, b, { bg: C.paper }) });
 }
 
