@@ -29,7 +29,7 @@ export function BeatPop({ seg, top }: { seg: number; top: number }) {
           key={`xp-${seg}`}
           aria-hidden
           className="pointer-events-none absolute left-1/2 z-30 -translate-x-1/2 bg-thread px-3 py-1 font-hook text-[18px] font-extrabold text-[#08110e]"
-          style={{ top: top + 120 }}
+          style={{ top: top + 8 }}
           initial={{ scale: 0.3, rotate: -14, opacity: 0, y: 0 }}
           animate={{ scale: [0.3, 1.25, 1], rotate: [-14, 6, -3], opacity: [0, 1, 1, 0], y: [0, 0, -40] }}
           transition={{ duration: 1.3, times: [0, 0.25, 1] }}
@@ -42,7 +42,7 @@ export function BeatPop({ seg, top }: { seg: number; top: number }) {
 }
 
 /** The reel's own key terms (plus the odd emoji) floating up the right side, like a live stream. */
-export function ReactionStream({ terms, playing, bottom }: { terms: string[]; playing: boolean; bottom: number }) {
+export function ReactionStream({ terms, playing, top, bottom }: { terms: string[]; playing: boolean; top: number; bottom: number }) {
   const reduce = useReducedMotion();
   const [items, setItems] = useState<{ id: number; e: string; x: number; r: number }[]>([]);
   const id = useRef(0);
@@ -50,19 +50,19 @@ export function ReactionStream({ terms, playing, bottom }: { terms: string[]; pl
     if (!playing || reduce) return;
     const t = setInterval(() => {
       const n = ++id.current;
-      setItems((list) => [...list.slice(-10), { id: n, e: terms.length && n % 3 ? terms[n % terms.length] : REACTIONS[n % REACTIONS.length], x: Math.random() * 30 - 15, r: Math.random() * 40 - 20 }]);
+      setItems((list) => [...list.slice(-10), { id: n, e: terms.length && n % 3 ? terms[n % terms.length] : REACTIONS[n % REACTIONS.length], x: Math.random() * 8 - 4, r: Math.random() * 16 - 8 }]);
     }, 650);
     return () => clearInterval(t);
   }, [playing, reduce, terms]);
   return (
-    <div aria-hidden className="pointer-events-none absolute right-4 z-[15] w-[50px]" style={{ bottom, height: 260 }}>
+    <div aria-hidden className="pointer-events-none absolute right-1 z-[15] w-[64px] overflow-hidden" style={{ top, bottom }}>
       <AnimatePresence>
         {items.map((it) => (
           <motion.span
             key={it.id}
-            className={`absolute bottom-0 right-0 whitespace-nowrap ${it.e.length > 2 ? "bg-thread px-1.5 py-0.5 font-hook text-[13px] font-extrabold text-[#08110e]" : "text-[24px]"}`}
+            className={`absolute bottom-0 right-1 max-w-[60px] truncate whitespace-nowrap ${it.e.length > 2 ? "bg-thread px-1 py-0.5 font-hook text-[10px] font-extrabold text-[#08110e]" : "text-[24px]"}`}
             initial={{ y: 0, x: 0, opacity: 0, scale: 0.4 }}
-            animate={{ y: -240, x: it.x, opacity: [0, 1, 1, 0], scale: [0.4, 1.2, 1, 0.9], rotate: it.r }}
+            animate={{ y: -200, x: it.x, opacity: [0, 1, 1, 0], scale: [0.4, 1.2, 1, 0.9], rotate: it.r }}
             exit={{ opacity: 0 }}
             transition={{ duration: 2.6, ease: "easeOut" }}
             onAnimationComplete={() => setItems((l) => l.filter((x) => x.id !== it.id))}
@@ -108,46 +108,6 @@ export function useDoubleTapHeart() {
     </div>
   );
   return { onTap, layer };
-}
-
-const pad = (n: number, w = 2) => String(Math.floor(n)).padStart(w, "0");
-
-/**
- * Camera-viewfinder HUD, like a slow-mo macro shot: corner brackets, a REC timecode, a "watching" timer,
- * and a frames-to-payoff countdown that ticks down to 000 (in the accent) on the reel's last beat.
- */
-export function ViewfinderHud({ playing, progress, top, bottom }: { playing: boolean; progress: number; top: number; bottom: number }) {
-  const [t, setT] = useState(0);
-  useEffect(() => {
-    if (!playing) return;
-    const start = performance.now() - t * 1000;
-    const id = setInterval(() => setT((performance.now() - start) / 1000), 1000 / 30);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playing]);
-  const left = Math.max(0, Math.round((1 - progress) * 240));
-  const corner = "absolute h-5 w-5 border-white/70";
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-x-3 z-[12] font-mono text-white" style={{ top: top + 8, bottom: bottom + 8 }}>
-      <span className={`${corner} left-0 top-0 border-l border-t`} />
-      <span className={`${corner} right-0 top-0 border-r border-t`} />
-      <span className={`${corner} bottom-0 left-0 border-b border-l`} />
-      <span className={`${corner} bottom-0 right-0 border-b border-r`} />
-      <div className="absolute left-6 top-1 flex items-center gap-1.5 text-[9px] tracking-[0.12em] text-white/80">
-        <motion.span className="h-1.5 w-1.5 rounded-full bg-[#ff4d3d]" animate={{ opacity: playing ? [1, 0.2, 1] : 1 }} transition={{ duration: 1, repeat: Infinity }} />
-        REC {pad(t / 3600)}:{pad((t / 60) % 60)}:{pad(t % 60)}:{pad((t * 30) % 30)}
-      </div>
-      <div className="absolute right-6 top-1 flex items-center gap-1 border border-white/25 bg-black/40 px-1.5 py-[1px] text-[9px] text-white/85">
-        <span className="h-1.5 w-1.5 rounded-full bg-thread" /> watching {t.toFixed(1)}s
-      </div>
-      <div className="absolute right-6 top-6 text-right">
-        <div className="text-[8px] tracking-[0.18em] text-white/60">FRAMES TO PAYOFF</div>
-        <div className="text-[22px] font-bold leading-none tabular-nums" style={{ color: left < 20 ? "var(--thread)" : "#fff" }}>
-          {pad(left, 3)}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 /** A documentary callout pinned onto the graphic: an uppercase tag with a leader line down to a dot. */

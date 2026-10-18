@@ -398,12 +398,12 @@ export type StageProps = {
 export function VisualStage(props: StageProps) {
   const reduce = useReducedMotion();
   const inner = <StageInner {...props} />;
-  if (props.visual.type === "quiz") return inner;
+  if (props.visual.type === "quiz" || props.visual.type === "hook") return inner;
   return (
-    <div className="relative flex h-full w-full items-center justify-center" style={{ perspective: 900 }}>
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden" style={{ perspective: 900 }}>
       <div
         aria-hidden
-        className="pointer-events-none absolute -inset-x-[40%] bottom-[-18%] h-[70%]"
+        className="pointer-events-none absolute inset-x-0 bottom-[-18%] h-[70%]"
         style={{
           transform: "rotateX(74deg)",
           transformOrigin: "50% 100%",

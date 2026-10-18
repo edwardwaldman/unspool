@@ -14,7 +14,7 @@ import { getPrefs, setPrefs, usePrefs } from "./prefs";
 import { ReelMedia } from "./reel-media";
 import { StatLine } from "./stat-line";
 import { usePlayback } from "./use-playback";
-import { BeatPop, Callout, ContextChip, ReactionStream, useDoubleTapHeart, ViewfinderHud } from "./gimmicks";
+import { BeatPop, Callout, ContextChip, ReactionStream, useDoubleTapHeart } from "./gimmicks";
 import { QuizCard } from "./visuals";
 
 export type ReelChrome = {
@@ -90,7 +90,7 @@ export function ReelView({
   const muted = prefs.muted;
   const [headRef, headH] = useHeight<HTMLDivElement>(opening ? 110 : 40);
   const hits = useHitCount(script.headline, pb.segments[0]?.text ?? "", opening ? pb.words : [], opening ? fraction : 0);
-  const below = top + 64 + headH + 18;
+  const below = top + 58 + headH + 18;
   const heart = useDoubleTapHeart();
   const callout = useMemo(() => markupWords(pb.segment.text).find((w) => w.color)?.text.replace(/[.,!?;:…]+$/, ""), [pb.segment.text]);
   const terms = useMemo(() => {
@@ -133,7 +133,7 @@ export function ReelView({
         videoUrl={pb.videoMode ? reel.videoUrl : undefined}
         videoRef={pb.videoRef}
         stageKey={stageKey}
-        stageBox={{ top: below, bottom: bottom + RAIL_TOP }}
+        stageBox={{ top: below, bottom: bottom + RAIL_TOP, right: preview ? 0 : GUTTER - 8, left: preview ? 0 : 8 }}
         stage={
           (active || pb.seg > 0) && !isQuiz
             ? { visual: pb.segment.visual, script, progress: fraction, last: reel.index === total, pulse: hits }
@@ -146,7 +146,7 @@ export function ReelView({
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] border-t border-line bg-paper/85" style={{ height: bottom + BAND }} />
 
       {/* Kinetic headline on the opening beat, then the live stats */}
-      <div ref={headRef} className="absolute inset-x-0 z-10 px-5" style={{ top: top + 64 }}>
+      <div ref={headRef} className="absolute inset-x-0 z-10 px-5" style={{ top: top + 58 }}>
         <AnimatePresence mode="wait">
           {opening ? (
             <motion.div key="hook" exit={{ opacity: 0, y: -8, transition: { duration: 0.2 } }}>
@@ -222,11 +222,10 @@ export function ReelView({
       )}
       {!preview && (
         <>
-          <ViewfinderHud playing={active && pb.playing} progress={(pb.seg + fraction) / Math.max(1, pb.segments.length)} top={top} bottom={bottom + BAND} />
-          <ContextChip text={`${(spool.title ?? spool.fileName).split(/[:·-]/)[0].trim().slice(0, 24)} · part ${reel.index}`} top={top} />
+          <ContextChip text={`${(spool.title ?? spool.fileName).split(/[:·-]/)[0].trim().slice(0, 24)} · part ${reel.index}`} top={top - 12} />
           {!isQuiz && !opening && <Callout term={callout} beat={pb.seg} top={below} bottom={bottom + RAIL_TOP} />}
-          {active && <BeatPop seg={pb.seg} top={top} />}
-          <ReactionStream terms={terms} playing={active && pb.playing} bottom={bottom + RAIL_TOP + 10} />
+          {active && <BeatPop seg={pb.seg} top={below} />}
+          <ReactionStream terms={terms} playing={active && pb.playing} top={below + 40} bottom={bottom + RAIL_TOP + 10} />
           {heart.layer}
         </>
       )}
