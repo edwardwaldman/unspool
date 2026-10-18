@@ -127,7 +127,7 @@ export function Landing() {
 
   return (
     <div>
-    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-[safe_center] gap-6 overflow-hidden px-3 pb-10 pt-20 lg:gap-4 lg:px-6 lg:pb-6 lg:pt-16">
+    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-[safe_center] gap-6 overflow-hidden px-3 pb-10 pt-20 lg:gap-8 lg:px-6 lg:pb-6 lg:pt-16">
       {/* Wordmark under the top bar: the bar slides down over it on scroll */}
       <Link href="/" aria-label="unspool" className="absolute left-5 top-5 lg:left-10 lg:top-[22px]">
         <Wordmark size={24} />
@@ -157,7 +157,7 @@ export function Landing() {
             type="button"
             aria-label="See how it works"
             onClick={(e) => e.currentTarget.closest("main")?.scrollBy({ top: window.innerHeight * 0.9, behavior: "smooth" })}
-            className="shrink-0"
+            className="shrink-0 lg:-my-5"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.3, type: "spring", stiffness: 320, damping: 16 }}
