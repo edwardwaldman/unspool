@@ -2,6 +2,7 @@
 
 import { Music2 } from "lucide-react";
 import { useState } from "react";
+import { sentenceCase } from "./text";
 
 /**
  * Bottom-left block, like an Instagram Reel: account row (avatar, source document, part counter),
@@ -34,8 +35,8 @@ export function CaptionBlock({
           u
         </span>
         <span className="min-w-0 truncate text-[14px] font-semibold tracking-[-0.01em]">{fileName}</span>
-        <span className="shrink-0 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-white/75">
-          Part {index}/{total}
+        <span className="shrink-0 text-[12px] font-medium tabular-nums text-white/70">
+          Part {index} of {total}
         </span>
       </div>
       <button
@@ -46,13 +47,13 @@ export function CaptionBlock({
         }}
         className={`mt-2 block w-full text-left text-[13.5px] leading-snug text-white/90 ${open ? "" : "truncate"}`}
       >
-        <span className="font-semibold text-white">{title}</span> <span className="text-white/80">{summary}</span>
+        <span className="font-semibold text-white">{sentenceCase(title)}</span> <span className="text-white/80">{summary}</span>
         {!open && <span className="sr-only"> (more)</span>}
       </button>
-      {open && sensitive && <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-white/60">A summary, not legal or financial advice</p>}
+      {open && sensitive && <p className="mt-2 text-[12px] text-white/60">A summary, not legal or financial advice</p>}
       <div className="mt-2 flex items-center gap-1.5 text-[12px] text-white/80">
         <Music2 size={12} strokeWidth={2} aria-hidden />
-        <span className="min-w-0 truncate">Original audio · unspool</span>
+        <span className="min-w-0 truncate">Original audio by Unspool</span>
       </div>
     </div>
   );

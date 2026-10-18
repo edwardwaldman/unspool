@@ -1,15 +1,15 @@
 "use client";
 
-import { Pause, Play } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import type { ReelDTO, SpoolDTO } from "@/lib/spool-types";
-import { MarkedText } from "../ui/marked-text";
 import { PlayIcon, VolumeIcon } from "../ui/icons";
 import { reelVars } from "./accent";
 import { ActionRail } from "./action-rail";
 import { CaptionBlock } from "./caption-block";
 import { Captions } from "./captions";
-import { setPrefs, usePrefs } from "./prefs";
+import { KineticHeadline, useHitCount } from "./hook-scene";
+import { getPrefs, setPrefs, usePrefs } from "./prefs";
 import { ReelMedia } from "./reel-media";
 import { StatLine } from "./stat-line";
 import { usePlayback } from "./use-playback";
@@ -22,17 +22,32 @@ export type ReelChrome = {
   topInset?: number;
 };
 
-function clock(sec: number) {
-  const s = Math.max(0, Math.ceil(sec));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+// Frame layout (px). The right gutter belongs to the action rail; captions and the account block stay
+// left of it. The motion graphic sits between the headline/stats at the top and the top of the rail,
+// so nothing in the frame ever overlaps, at any frame size.
+const GUTTER = 76;
+const RAIL_TOP = 300;
+const BAND = 104;
+
+/** Height of an element, kept up to date (the headline's height decides where the graphic starts). */
+function useHeight<T extends HTMLElement>(initial: number) {
+  const ref = useRef<T>(null);
+  const [h, setH] = useState(initial);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setH(Math.round(el.getBoundingClientRect().height)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, h] as const;
 }
 
-const SHADOW = { textShadow: "0 1px 0 rgba(0,0,0,.55)" };
-
 /**
- * One playable reel, laid out like an Instagram Reel: story-style progress at the top, the media layer
- * (tinted backdrop + this beat's motion graphic) full-bleed, burned-in captions in the lower third,
- * the action rail on the right, and the account / title / audio rows at the bottom.
+ * One playable reel, laid out like an Instagram Reel: the headline (opening beat) or live stats at the
+ * top, the media layer (tinted backdrop + this beat's motion graphic) full-bleed, burned-in captions in
+ * the lower third, the action rail on the right, and the account / title / audio rows at the bottom.
+ * No player chrome on top: click the video to pause, mute from the rail or with M.
  */
 export function ReelView({
   spool,
@@ -66,9 +81,27 @@ export function ReelView({
   const bottom = chrome.bottomInset;
   const opening = pb.seg === 0;
   const muted = prefs.muted;
+  const [headRef, headH] = useHeight<HTMLDivElement>(opening ? 110 : 40);
+  const hits = useHitCount(script.headline, pb.segments[0]?.text ?? "", opening ? pb.words : [], opening ? fraction : 0);
+  const below = top + 20 + headH + 18;
+  const toggleMute = () => setPrefs({ muted: !getPrefs().muted, autoMuted: false });
+
+  // M mutes / unmutes the reel that's playing.
+  useEffect(() => {
+    if (!active || preview) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "m" && e.key !== "M") return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target;
+      if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || (t instanceof HTMLElement && t.isContentEditable)) return;
+      setPrefs({ muted: !getPrefs().muted, autoMuted: false });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [active, preview]);
 
   return (
-    <div className="relative h-full w-full select-none overflow-hidden text-white [container-type:inline-size]" style={reelVars(reel.index)} onClick={pb.toggle} data-testid="reel-view">
+    <div className="relative h-full w-full select-none overflow-hidden text-white [container-type:inline-size]" style={reelVars(reel.index)} onClick={pb.toggle} data-testid="reel-view" data-seg={pb.segment.key} data-playing={pb.playing ? "1" : "0"}>
       <ReelMedia
         index={reel.index}
         active={active}
@@ -78,75 +111,25 @@ export function ReelView({
         videoUrl={pb.videoMode ? reel.videoUrl : undefined}
         videoRef={pb.videoRef}
         stageKey={stageKey}
-        stageBox={{ top: top + (opening ? 190 : 120), bottom: bottom + 236 }}
+        stageBox={{ top: below, bottom: bottom + RAIL_TOP }}
         stage={
           (active || pb.seg > 0) && !isQuiz
-            ? { visual: pb.segment.visual, script, progress: fraction, last: reel.index === total }
+            ? { visual: pb.segment.visual, script, progress: fraction, last: reel.index === total, pulse: hits }
             : null
         }
       />
 
-      {/* Flat bands so the overlays read on any frame: the controls on top, the account row below */}
-      {!preview && <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-[6] border-b border-white/[0.08] bg-paper/70" style={{ height: top + 56 }} />}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] border-t border-line bg-paper/85" style={{ height: bottom + 112 }} />
+      {/* Flat band so the account row reads on any frame */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] border-t border-line bg-paper/85" style={{ height: bottom + BAND }} />
 
-      {/* Story-style progress: one segment per beat */}
-      {!preview && (
-        <div className="absolute inset-x-3 top-2 z-20 flex gap-[3px]" aria-hidden>
-          {pb.segments.map((s, i) => {
-            const fill = pb.ended || i < pb.seg ? 1 : i === pb.seg ? Math.min(1, fraction) : 0;
-            return (
-              <div key={s.key} className="h-[2.5px] flex-1 overflow-hidden bg-white/25">
-                <div className="h-full bg-white" style={{ width: `${fill * 100}%` }} />
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Player controls: play/pause + time left, mute */}
-      {!preview && (
-        <div className="absolute inset-x-3 z-20 flex items-center justify-between" style={{ top: top + 16 }}>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              pb.toggle();
-            }}
-            aria-label={pb.playing ? "Pause" : "Play"}
-            className="flex h-8 items-center gap-1.5 border border-white/[0.16] bg-paper/80 pl-2.5 pr-3 text-[12px] font-semibold text-white hover:border-white/40"
-          >
-            {pb.playing ? <Pause size={13} fill="currentColor" strokeWidth={0} /> : <Play size={13} fill="currentColor" strokeWidth={0} />}
-            <span className="font-mono tabular-nums">-{clock(pb.total - pb.elapsed)}</span>
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setPrefs({ muted: !muted, autoMuted: false });
-            }}
-            aria-label={muted ? "Unmute" : "Mute"}
-            className="flex h-8 w-8 items-center justify-center border border-white/[0.16] bg-paper/80 text-white hover:border-white/40"
-          >
-            <VolumeIcon size={16} muted={muted} strokeWidth={2} />
-          </button>
-        </div>
-      )}
-
-      {/* Hook text on the opening beat, then the live stats */}
-      <div className="absolute inset-x-0 z-10 px-5" style={{ top: top + 62 }}>
-        <AnimatePresence mode="wait" initial={false}>
+      {/* Kinetic headline on the opening beat, then the live stats */}
+      <div ref={headRef} className="absolute inset-x-0 z-10 px-5" style={{ top: top + 20 }}>
+        <AnimatePresence mode="wait">
           {opening ? (
-            <motion.h2
-              key="hook"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="font-hook text-[22px] font-extrabold leading-[1.15] tracking-[-0.02em] text-white"
-              style={SHADOW}
-            >
-              <MarkedText text={script.headline} />
-            </motion.h2>
+            <motion.div key="hook" exit={{ opacity: 0, y: -8, transition: { duration: 0.2 } }}>
+              {/* Remounts when the reel comes into view, so the headline builds as it starts playing. */}
+              <KineticHeadline key={active ? "on" : "off"} headline={script.headline} beatText={pb.segments[0]?.text ?? ""} words={pb.words} fraction={active ? fraction : 1} />
+            </motion.div>
           ) : (
             <motion.div key="stats" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               <StatLine stats={script.stats} beat={pb.segment.beatIndex} />
@@ -157,25 +140,25 @@ export function ReelView({
 
       {/* Quiz: an overlay card inside the frame */}
       {isQuiz && (
-        <div className="absolute left-3 right-[64px] z-20 flex items-center" style={{ top: top + 104, bottom: bottom + 150 }}>
+        <div className="absolute left-3 z-20 flex items-center" style={{ right: GUTTER, top: below - 6, bottom: bottom + BAND + 10 }}>
           <QuizCard quiz={script.quiz} state={pb.quiz} waitLeft={pb.quizWaitLeft} onAnswer={pb.answer} />
         </div>
       )}
 
       {/* Burned-in captions, lower third (already in the frames when playing a rendered video) */}
       {!isQuiz && !pb.burnedCaptions && (
-        <div className="absolute left-3 right-[60px] z-10" style={{ bottom: bottom + 150 }}>
+        <div className="absolute left-4 z-10" style={{ right: GUTTER, bottom: bottom + BAND + 12 }}>
           <Captions text={pb.segment.text} words={pb.words} fraction={fraction} />
         </div>
       )}
 
       {/* Right action rail */}
-      <div className="absolute right-2.5 z-20" style={{ bottom: bottom + 22 }}>
-        <ActionRail reelId={reel.id} title={script.title} fileType={spool.fileType} onReplay={pb.replay} onMore={onMore} />
+      <div className="absolute right-2 z-20 flex w-[60px] justify-center" style={{ bottom: bottom + 14 }}>
+        <ActionRail reelId={reel.id} title={script.title} muted={muted || preview} onToggleMute={toggleMute} onReplay={pb.replay} onMore={onMore} />
       </div>
 
       {/* Account row, title, audio */}
-      <div className="absolute left-3.5 right-[68px] z-20" style={{ bottom: bottom + 20 }}>
+      <div className="absolute left-3.5 z-20" style={{ right: GUTTER, bottom: bottom + 14 }}>
         <CaptionBlock
           fileName={spool.title ?? spool.fileName}
           title={script.title}

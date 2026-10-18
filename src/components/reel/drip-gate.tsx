@@ -83,7 +83,7 @@ export function DripGate({
           </div>
         )}
 
-        <p className="mt-5 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-thread">Premium</p>
+        <p className="mt-5 text-[13px] font-semibold text-thread">Premium</p>
         <h2 className="mt-2.5 font-display text-[26px] leading-[1.1]">Don&apos;t want to wait? Unlock them all now.</h2>
         <p className="mt-2 text-[14px] leading-snug text-muted">Free accounts get reel 1, then one more every hour.</p>
 

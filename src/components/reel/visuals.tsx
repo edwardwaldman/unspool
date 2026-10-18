@@ -6,7 +6,9 @@ import { COLOR_VAR } from "@/lib/markup";
 import type { HighlightColor, ReelScript, Visual } from "@/lib/schema";
 import { MarkedText } from "../ui/marked-text";
 import { CrowdCanvas } from "./crowd-canvas";
+import { HookScene } from "./hook-scene";
 import { ReelIcon } from "./icon";
+import { sentenceCase, splitDots } from "./text";
 import { QUIZ_WAIT_MS, type QuizState } from "./use-playback";
 
 // The motion graphics drawn inside a reel's frame. Everything reads the reel's own --thread accent
@@ -20,16 +22,12 @@ function colorOf(c: HighlightColor | undefined) {
   return COLOR_VAR[c ?? "primary"];
 }
 
-/** "GUARANTEED QUESTION" → "Guaranteed question" (scripts write tags and labels in caps). */
-function sentence(s: string) {
-  const t = s.trim().toLowerCase();
-  return t.charAt(0).toUpperCase() + t.slice(1);
-}
+const sentence = sentenceCase;
 
 function Label({ children, color }: { children: React.ReactNode; color?: string }) {
   return (
-    <div className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: color ?? "rgba(255,255,255,.72)" }}>
-      {children}
+    <div className="text-[13px] font-semibold" style={{ color: color ?? "rgba(255,255,255,.72)" }}>
+      {typeof children === "string" ? sentence(children) : children}
     </div>
   );
 }
@@ -48,47 +46,48 @@ function Tile({ name, size = 28, on = true, delay = 0, box = 56 }: { name: strin
   );
 }
 
-function HookVisual({ v }: { v: Extract<Visual, { type: "hook" }> }) {
-  const c = colorOf(v.color);
-  return (
-    <div className="relative flex flex-col items-center gap-8">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.85 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, ease }}
-        className="relative flex h-36 w-36 items-center justify-center"
-      >
-        <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }} style={{ color: c }}>
-          <ReelIcon name={v.icon} size={88} strokeWidth={1.5} />
-        </motion.div>
-      </motion.div>
-      <motion.div
-        initial={{ opacity: 0, y: 10, rotate: 0 }}
-        animate={{ opacity: 1, y: 0, rotate: -3 }}
-        transition={{ delay: 0.3, duration: 0.5, ease }}
-        className="px-3.5 py-1.5 font-hook text-[16px] font-extrabold tracking-[-0.01em] text-[#08110e]"
-        style={{ background: c }}
-      >
-        {sentence(v.tag)}
-      </motion.div>
-    </div>
-  );
+function HookVisual({ v, pulse, progress }: { v: Extract<Visual, { type: "hook" }>; pulse: number; progress: number }) {
+  return <HookScene icon={v.icon} tag={v.tag} color={colorOf(v.color)} pulse={pulse} progress={progress} />;
 }
 
 function BigWordVisual({ v }: { v: Extract<Visual, { type: "bigword" }> }) {
   const c = colorOf(v.color);
-  const long = v.word.length > 10;
+  const parts = splitDots(v.word).map(sentence);
+  const subs = splitDots(v.sub);
+  // "POT · SPOON" / "population · sample": a stacked pair, each word with its own line under it.
+  if (parts.length > 1 && subs.length === parts.length) {
+    return (
+      <div className="relative flex flex-col items-stretch gap-3 px-6">
+        {parts.map((p, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: i % 2 ? 24 : -24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease, delay: i * 0.22 }}
+            className={`flex items-baseline justify-between gap-5 px-5 py-3 ${glass}`}
+          >
+            <span className="font-hook text-[44px] font-extrabold leading-none tracking-[-0.035em]" style={{ color: c }}>
+              {p}
+            </span>
+            <span className="text-[16px] font-medium text-white/85">{sentence(subs[i])}</span>
+          </motion.div>
+        ))}
+      </div>
+    );
+  }
+  const word = parts.join(" ");
+  const long = word.length > 10;
   return (
     <div className="relative flex flex-col items-center px-6 text-center">
       <motion.div
         initial={{ opacity: 0, y: 16, scale: 0.94 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6, ease }}
-        className="relative font-hook font-extrabold uppercase leading-[0.95] tracking-[-0.035em]"
+        className="relative font-hook font-extrabold leading-[0.95] tracking-[-0.035em]"
         // Shrinks with the frame width (the reel root is a size container) so long words never clip on phones.
-        style={{ color: c, fontSize: `min(${long ? 46 : 66}px, ${(125 / Math.max(4, v.word.length)).toFixed(1)}cqw)`, ...TEXT_SHADOW }}
+        style={{ color: c, fontSize: `min(${long ? 48 : 68}px, ${(135 / Math.max(4, word.length)).toFixed(1)}cqw)`, ...TEXT_SHADOW }}
       >
-        {v.word}
+        {word}
       </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 6 }}
@@ -96,7 +95,7 @@ function BigWordVisual({ v }: { v: Extract<Visual, { type: "bigword" }> }) {
         transition={{ delay: 0.3, duration: 0.5 }}
         className={`relative mt-5 max-w-[290px] px-4 py-1.5 text-[15px] font-medium text-white ${glass}`}
       >
-        {sentence(v.sub)}
+        {sentence(subs.join(", "))}
       </motion.div>
     </div>
   );
@@ -113,9 +112,9 @@ function SplitVisual({ v }: { v: Extract<Visual, { type: "split" }> }) {
     >
       <Tile name={s.icon} on={i === 1} delay={i * 0.3} />
       <div className="mt-4 font-hook text-[24px] font-extrabold leading-tight tracking-[-0.02em]" style={{ color: i === 0 ? "#fff" : "var(--thread)" }}>
-        {s.title}
+        {sentence(s.title)}
       </div>
-      <div className="mt-1 text-[13.5px] leading-snug text-white/70">{s.sub}</div>
+      <div className="mt-1 text-[13.5px] leading-snug text-white/70">{sentence(s.sub)}</div>
     </motion.div>
   );
   return (
@@ -125,7 +124,7 @@ function SplitVisual({ v }: { v: Extract<Visual, { type: "split" }> }) {
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.2, duration: 0.4, ease }}
-        className="absolute left-1/2 top-1/2 z-10 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-[3px] font-hook text-[12px] font-extrabold uppercase text-[#08110e]"
+        className="absolute left-1/2 top-1/2 z-10 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-[3px] font-hook text-[13px] font-extrabold text-[#08110e]"
         style={{ background: "var(--thread)", borderColor: "var(--paper)" }}
       >
         {v.mode === "vs" ? "vs" : <ArrowRight size={16} strokeWidth={2.5} />}
@@ -152,9 +151,9 @@ function FlowVisual({ v, progress }: { v: Extract<Visual, { type: "flow" }>; pro
           >
             <Tile name={s.icon} on={on} size={24} box={50} />
             <div className="min-w-0">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">Step {i + 1}</div>
+              <div className="text-[12px] font-medium text-white/55">Step {i + 1}</div>
               <div className="font-hook text-[19px] font-extrabold leading-tight tracking-[-0.01em] text-white">{sentence(s.title)}</div>
-              <div className="text-[13px] leading-snug text-white/70">{s.sub}</div>
+              <div className="text-[13px] leading-snug text-white/70">{sentence(s.sub)}</div>
             </div>
           </motion.div>
         );
@@ -171,8 +170,8 @@ function ListVisual({ v, progress }: { v: Extract<Visual, { type: "list" }>; pro
     <div className={`flex w-full flex-col p-4 ${glass}`}>
       <div className="mb-2 flex items-baseline justify-between px-1">
         <Label color="var(--thread)">{v.title}</Label>
-        <span className="font-mono text-[11px] text-white/60">
-          {shown}/{n}
+        <span className="text-[12px] tabular-nums text-white/60">
+          {shown} of {n}
         </span>
       </div>
       {v.items.map((it, i) => (
@@ -184,7 +183,7 @@ function ListVisual({ v, progress }: { v: Extract<Visual, { type: "list" }>; pro
           className="flex items-center gap-3.5 px-1 py-2"
         >
           <Tile name={it.icon} size={20} box={40} on={i === shown - 1} />
-          <span className="text-[18px] font-semibold leading-tight tracking-[-0.01em] text-white">{it.label}</span>
+          <span className="text-[18px] font-semibold leading-tight tracking-[-0.01em] text-white">{sentence(it.label)}</span>
         </motion.div>
       ))}
     </div>
@@ -224,7 +223,8 @@ function CrowdVisual({ v, progress }: { v: Extract<Visual, { type: "crowd" }>; p
   const pct = Math.round(v.ratio * 100);
   return (
     <div className="flex h-full w-full flex-col items-center justify-center">
-      <div className="relative aspect-[1.25] w-[94%]">
+      {/* Fits the stage either way: as wide as it can be, but never taller than the space above the captions. */}
+      <div className="relative aspect-[1.25] max-h-[calc(100%-40px)] w-[94%]">
         <CrowdCanvas ratio={v.ratio} progress={progress} />
       </div>
       <div className="mt-2 flex items-center gap-2">
@@ -234,7 +234,7 @@ function CrowdVisual({ v, progress }: { v: Extract<Visual, { type: "crowd" }>; p
         </span>
         <span className="flex items-center gap-2 px-1 py-1 text-[12.5px] font-semibold text-thread">
           <span className="h-2 w-2 bg-thread" />
-          {sentence(v.highlight_label)} · {pct}%
+          {sentence(v.highlight_label)}, {pct}%
         </span>
       </div>
     </div>
@@ -252,7 +252,7 @@ function StatVisual({ v }: { v: Extract<Visual, { type: "stat" }> }) {
         className={`relative font-mono font-bold leading-none tracking-[-0.05em] ${v.value.length > 8 ? "text-[48px]" : "text-[76px]"}`}
         style={{ color: c, ...TEXT_SHADOW }}
       >
-        {v.value}
+        {sentence(v.value)}
       </motion.div>
       <motion.div
         initial={{ opacity: 0 }}
@@ -291,15 +291,13 @@ export function QuizCard({
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-thread">
-          Quick check
-        </span>
+        <span className="text-[13px] font-semibold text-thread">Quick check</span>
         {state.waiting ? (
           <span className="flex items-center gap-2" aria-label="Time left to answer">
             <span className="h-[3px] w-14 bg-white/15">
               <span className="block h-full bg-thread" style={{ width: `${waitLeft * 100}%` }} />
             </span>
-            <span className="w-5 text-right font-mono text-[11px] tabular-nums text-white">{Math.ceil((waitLeft * QUIZ_WAIT_MS) / 1000)}s</span>
+            <span className="w-6 text-right text-[12px] tabular-nums text-white">{Math.ceil((waitLeft * QUIZ_WAIT_MS) / 1000)}s</span>
           </span>
         ) : state.revealed ? (
           <motion.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-[13px] font-bold" style={{ color: verdictColor }}>
@@ -335,7 +333,7 @@ export function QuizCard({
               }}
             >
               <span
-                className="flex w-4 shrink-0 items-center justify-center font-mono text-[12px] font-bold"
+                className="flex w-4 shrink-0 items-center justify-center text-[13px] font-bold"
                 style={{ color: tone ?? "rgba(255,255,255,.55)" }}
               >
                 {revealed && correct ? <Check size={15} strokeWidth={3} /> : revealed && chosen ? <X size={15} strokeWidth={3} /> : LETTERS[i]}
@@ -357,17 +355,15 @@ export function QuizCard({
 function OutroVisual({ outro, last }: { outro: ReelScript["outro"]; last: boolean }) {
   return (
     <div className="relative flex flex-col items-center px-6 text-center">
-      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/75">
-        {last ? "End of document" : "Up next"}
-      </span>
+      <span className="text-[14px] font-medium text-white/75">{last ? "End of document" : "Up next"}</span>
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15, duration: 0.55, ease }}
-        className="relative mt-5 max-w-[320px] font-hook text-[36px] font-extrabold uppercase leading-[1] tracking-[-0.03em] text-thread"
+        className="relative mt-4 max-w-[320px] font-hook text-[38px] font-extrabold leading-[1.02] tracking-[-0.03em] text-thread"
         style={TEXT_SHADOW}
       >
-        {outro.next_title}
+        {sentence(outro.next_title)}
       </motion.div>
       {!last && (
         <div className="relative mt-10 flex flex-col items-center text-white">
@@ -393,13 +389,15 @@ export type StageProps = {
   script: ReelScript;
   progress: number;
   last: boolean;
+  /** Voiceover hits reached so far in the opening beat (the hook graphic pulses on each). */
+  pulse?: number;
 };
 
 /** One beat's motion graphic. The quiz is not part of the stage: it's an interactive overlay (QuizCard). */
-export function VisualStage({ visual, script, progress, last }: StageProps) {
+export function VisualStage({ visual, script, progress, last, pulse = 0 }: StageProps) {
   switch (visual.type) {
     case "hook":
-      return <HookVisual v={visual} />;
+      return <HookVisual v={visual} pulse={pulse} progress={progress} />;
     case "bigword":
       return <BigWordVisual v={visual} />;
     case "split":

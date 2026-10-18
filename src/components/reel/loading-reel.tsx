@@ -39,7 +39,7 @@ export function stageLine(spool: SpoolDTO | null, upload: UploadState | null) {
   }
   if (stage === 3) {
     const writing = reels.find((r) => r.status === "generating");
-    return writing ? `Writing reel ${writing.index} · ${ready}/${total} ready` : `Writing reels · ${ready}/${total} ready`;
+    return writing ? `Writing reel ${writing.index}, ${ready} of ${total} ready` : `Writing reels, ${ready} of ${total} ready`;
   }
   return "All reels written";
 }
@@ -73,7 +73,7 @@ export function LoadingReel({
       <ParticleField active pulse={stage} />
 
       <div className="relative z-10 pt-[64px]">
-        <div className="truncate font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">{name}</div>
+        <div className="truncate text-[13px] font-medium text-white/70">{name}</div>
         <h2 className="mt-4 font-display text-[32px] leading-[1.02]">
           {isError ? "That didn't work." : reels.length && reelIndex > 1 ? `Writing reel ${reelIndex}.` : "Unspooling your doc."}
         </h2>

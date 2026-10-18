@@ -47,7 +47,7 @@ export function StatLine({ stats, beat }: { stats: Stat[]; beat: number }) {
             }}
           >
             <span className="font-medium text-white/75">{s.label}</span>
-            <span className="font-mono font-bold" style={{ color: on ? "var(--thread)" : "rgba(255,255,255,.5)" }}>
+            <span className="font-bold tabular-nums" style={{ color: on ? "var(--thread)" : "rgba(255,255,255,.5)" }}>
               {s.prefix}
               <CountUp to={s.value} run={on} />
               {s.suffix}

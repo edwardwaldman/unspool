@@ -11,7 +11,8 @@ export function Captions({ text, words, fraction }: { text: string; words: numbe
     let cur: number[] = [];
     list.forEach((w, i) => {
       cur.push(i);
-      const breakHere = /[.!?,;:—]$/.test(w.text) || cur.length >= 5;
+      const chars = cur.reduce((n, k) => n + list[k].text.length + 1, 0);
+      const breakHere = /[.!?,;:—]$/.test(w.text) || cur.length >= 5 || chars >= 24;
       if (breakHere) {
         out.push(cur);
         cur = [];
@@ -27,8 +28,8 @@ export function Captions({ text, words, fraction }: { text: string; words: numbe
 
   return (
     <p
-      className="mx-auto max-w-[340px] text-center font-hook text-[25px] font-extrabold leading-[1.28] tracking-[-0.015em] text-white"
-      style={{ textShadow: "0 2px 0 rgba(0,0,0,.6)" }}
+      className="text-center font-hook font-extrabold leading-[1.3] tracking-[-0.015em] text-white"
+      style={{ textShadow: "0 2px 0 rgba(0,0,0,.6)", fontSize: "min(24px, 5.8cqw)" }}
       aria-live="off"
     >
       {chunk.map((i) => {
@@ -38,10 +39,10 @@ export function Captions({ text, words, fraction }: { text: string; words: numbe
         return (
           <span
             key={i}
-            className="mx-[0.06em] inline-block px-[0.16em] transition-transform duration-100"
+            className="mx-[0.04em] inline-block px-[0.14em] transition-transform duration-100"
             style={
               isNow
-                ? { background: "var(--thread)", color: "#08110e", textShadow: "none", transform: "scale(1.06) rotate(-1.5deg)" }
+                ? { background: "var(--thread)", color: "#08110e", textShadow: "none", transform: "scale(1.04) rotate(-1.5deg)" }
                 : { color: w.color ? COLOR_VAR[w.color] : "#fff", opacity: spoken ? 1 : 0.72 }
             }
           >

@@ -2,26 +2,41 @@
 
 import { MoreHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
-import { ChatIcon, HeartIcon, ReplayIcon, ShareIcon } from "../ui/icons";
+import { ChatIcon, HeartIcon, ReplayIcon, ShareIcon, VolumeIcon } from "../ui/icons";
 import { toast } from "../ui/toast";
 
-const SHADOW = { filter: "drop-shadow(0 1px 0 rgba(0,0,0,.55))" };
 import { loadSaved, toggleSaved } from "./prefs";
 
-function RailButton({ label, count, onClick, children }: { label: string; count?: string; onClick: () => void; children: React.ReactNode }) {
+const SHADOW = { filter: "drop-shadow(0 1px 0 rgba(0,0,0,.55))" };
+
+function RailButton({
+  label,
+  count,
+  onClick,
+  pressed,
+  children,
+}: {
+  label: string;
+  count?: string;
+  onClick: () => void;
+  pressed?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <button
       type="button"
       aria-label={label}
+      title={label}
+      aria-pressed={pressed}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
       }}
-      className="flex flex-col items-center gap-1 text-white transition-transform hover:scale-110 active:scale-95"
+      className="flex flex-col items-center gap-[3px] text-white transition-transform hover:scale-110 active:scale-95"
       style={SHADOW}
     >
       {children}
-      {count !== undefined && <span className="text-[11.5px] font-semibold tracking-[-0.01em] text-white">{count}</span>}
+      {count !== undefined && <span className="text-[11px] font-semibold leading-none text-white">{count}</span>}
     </button>
   );
 }
@@ -29,12 +44,15 @@ function RailButton({ label, count, onClick, children }: { label: string; count?
 export function ActionRail({
   reelId,
   title,
+  muted,
+  onToggleMute,
   onReplay,
   onMore,
 }: {
   reelId: string;
   title: string;
-  fileType: string;
+  muted: boolean;
+  onToggleMute: () => void;
   onReplay: () => void;
   onMore: () => void;
 }) {
@@ -59,7 +77,7 @@ export function ActionRail({
   };
 
   return (
-    <div className="flex flex-col items-center gap-[18px]">
+    <div className="flex flex-col items-center gap-[14px]">
       <RailButton
         label={saved ? "Unsave" : "Save"}
         count={saved ? "Saved" : "Save"}
@@ -69,19 +87,24 @@ export function ActionRail({
           if (on) toast("Saved for review");
         }}
       >
-        <HeartIcon size={28} strokeWidth={2} filled={saved} style={{ color: saved ? "#ff4d6d" : undefined }} />
+        <HeartIcon size={26} strokeWidth={2} filled={saved} style={{ color: saved ? "#ff4d6d" : undefined }} />
       </RailButton>
       <RailButton label="Ask a question" count="Ask" onClick={() => toast("Questions about a reel are coming soon")}>
-        <ChatIcon size={27} strokeWidth={2} />
+        <ChatIcon size={25} strokeWidth={2} />
       </RailButton>
       <RailButton label="Replay" count="Replay" onClick={onReplay}>
-        <ReplayIcon size={26} strokeWidth={2} />
+        <ReplayIcon size={24} strokeWidth={2} />
       </RailButton>
       <RailButton label="Share" count="Share" onClick={share}>
-        <ShareIcon size={25} strokeWidth={2} />
+        <ShareIcon size={23} strokeWidth={2} />
+      </RailButton>
+      <RailButton label={muted ? "Unmute (M)" : "Mute (M)"} pressed={muted} onClick={onToggleMute}>
+        <span className={muted ? "text-white" : "text-white/70"}>
+          <VolumeIcon size={20} muted={muted} strokeWidth={2} />
+        </span>
       </RailButton>
       <RailButton label="More" onClick={onMore}>
-        <MoreHorizontal size={26} strokeWidth={2} />
+        <MoreHorizontal size={24} strokeWidth={2} />
       </RailButton>
     </div>
   );

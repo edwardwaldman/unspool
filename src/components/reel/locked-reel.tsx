@@ -4,6 +4,7 @@ import type { ReelDTO } from "@/lib/spool-types";
 import { formatCountdown, useCountdown } from "../ui/use-countdown";
 import { LockIcon } from "../ui/icons";
 import { reelVars } from "./accent";
+import { sentenceCase } from "./text";
 
 /**
  * A locked reel: its title and hook on a flat frame in the reel's own tint. It never has
@@ -31,24 +32,17 @@ export function LockedReel({
       {/* Flat frame in the reel's tint */}
       <div className="pointer-events-none absolute inset-0" style={{ background: "color-mix(in srgb, var(--thread) 10%, #08110e)" }} aria-hidden />
 
-      {/* Empty progress, so it still reads as a clip */}
-      <div className="absolute inset-x-3 top-2 z-10 flex gap-[3px]" aria-hidden>
-        {Array.from({ length: 8 }, (_, i) => (
-          <div key={i} className="h-[2.5px] flex-1 bg-white/20" />
-        ))}
-      </div>
-
       <div className="relative z-10 flex h-full flex-col items-center justify-center px-8 text-center" style={{ paddingTop: topInset, paddingBottom: bottomInset + 40 }}>
-        <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">
-          <LockIcon size={13} strokeWidth={2.25} /> Part {reel.index} of {total} · Locked
+        <div className="flex items-center gap-2 text-[13px] font-medium text-white/70">
+          <LockIcon size={13} strokeWidth={2.25} /> Part {reel.index} of {total}, locked
         </div>
         <span aria-hidden className="mt-4 block h-px w-10 bg-thread" />
-        <h2 className="mt-4 font-hook text-[30px] font-extrabold uppercase leading-[1.02] tracking-[-0.025em]">
-          {reel.title}
+        <h2 className="mt-4 font-hook text-[32px] font-extrabold leading-[1.04] tracking-[-0.025em]">
+          {sentenceCase(reel.title)}
         </h2>
         <p className="mt-3 max-w-[320px] text-[16px] leading-snug text-white/80">{reel.hook}</p>
         {left > 0 && (
-          <div className="mt-6 font-mono text-[12px] font-semibold uppercase tracking-[0.12em] text-thread">
+          <div className="mt-6 text-[14px] font-semibold tabular-nums text-thread">
             Free in {formatCountdown(left)}
           </div>
         )}

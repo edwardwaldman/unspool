@@ -11,6 +11,7 @@ import { fileLabel, reelAccent, reelTint } from "../reel/accent";
 import { ReelSlot, SpoolMoreSheet, type FeedItem } from "../reel/feed";
 import { stageIndex, stageLine } from "../reel/loading-reel";
 import { UnlockSheet } from "../reel/drip-gate";
+import { joinComma, sentenceCase } from "../reel/text";
 import { ChevronDown, ChevronUp, LockIcon, UploadIcon } from "../ui/icons";
 import { MarkedText } from "../ui/marked-text";
 import { formatCountdown, freeAtFor, useCountdown } from "../ui/use-countdown";
@@ -85,13 +86,13 @@ const PILL_TONE: Record<ReelState, string> = {
   locked: "var(--muted)",
 };
 
-/** READY / WRITING / LOCKED · 42:10 as plain mono text. */
+/** "Ready", "Writing", "Locked, free in 42:10" as small plain text in the state's color. */
 function StateText({ state, until }: { state: ReelState; until?: string | null }) {
   const left = useCountdown(until ?? null);
   return (
-    <span className="shrink-0 font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em]" style={{ color: PILL_TONE[state] }}>
+    <span className="shrink-0 text-[12px] font-medium tabular-nums" style={{ color: PILL_TONE[state] }}>
       {STATE_LABEL[state]}
-      {state === "locked" && left > 0 && <span className="text-thread"> · {formatCountdown(left)}</span>}
+      {state === "locked" && left > 0 && <span className="text-thread">, free in {formatCountdown(left)}</span>}
     </span>
   );
 }
@@ -176,7 +177,7 @@ function QuizPreview({ quiz }: { quiz: NonNullable<ReelDTO["script"]>["quiz"] })
               style={color ? { borderColor: color, color, background: `color-mix(in srgb, ${color} 10%, transparent)` } : undefined}
             >
               <span
-                className="w-3 shrink-0 font-mono text-[11px] font-bold"
+                className="w-3 shrink-0 text-[12px] font-bold"
                 style={{ color: color ?? "var(--muted)" }}
               >
                 {String.fromCharCode(65 + i)}
@@ -207,7 +208,7 @@ function Transcript({ reel }: { reel: ReelDTO }) {
     <ol className="space-y-3">
       {rows.map((r, i) => (
         <li key={i} className="flex gap-3 text-[13.5px] leading-[1.5] text-ink/85">
-          <span className="w-9 shrink-0 pt-[2px] font-mono text-[11px] text-muted">{clock(r.start)}</span>
+          <span className="w-9 shrink-0 pt-[1px] text-[12px] tabular-nums text-muted">{clock(r.start)}</span>
           <span>
             <MarkedText text={r.say} />
           </span>
@@ -223,7 +224,7 @@ function ReelFreeIn({ at }: { at: string | null }) {
   if (!left) return null;
   return (
     <p className="text-[13.5px] text-muted">
-      This reel turns free in <span className="font-mono text-ink">{formatCountdown(left)}</span>
+      This reel turns free in <span className="tabular-nums text-ink">{formatCountdown(left)}</span>
     </p>
   );
 }
@@ -233,7 +234,7 @@ function NextFreeTimer({ until }: { until: string }) {
   const left = useCountdown(until);
   if (!left) return null;
   return (
-    <span className="shrink-0 font-mono text-[14px] font-semibold text-thread" title="Next free reel">
+    <span className="shrink-0 text-[14px] font-semibold tabular-nums text-thread" title="Next free reel">
       {formatCountdown(left)}
     </span>
   );
@@ -266,7 +267,7 @@ function UnlockCta({ spool, onUnlock }: { spool: SpoolDTO; onUnlock: () => void 
         className="mt-3 flex w-full items-center justify-between bg-thread px-4 py-3 text-[14px] font-semibold text-paper transition-opacity hover:opacity-90"
       >
         <span>Unlock all reels</span>
-        <span className="font-mono text-[12.5px]">{formatPrice(PRICING.documentCents)}</span>
+        <span className="text-[13px] tabular-nums">{formatPrice(PRICING.documentCents)}</span>
       </button>
       <p className="mt-2 text-center text-[11.5px] text-muted">One-time payment for this document.</p>
     </div>
@@ -297,10 +298,10 @@ function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; r
           <span className="text-[13px] font-medium text-muted">About this reel</span>
           <StateText state={state} />
         </div>
-        <h2 className="mt-3 font-display text-[24px] leading-[1.1]">{reel.title}</h2>
+        <h2 className="mt-3 font-display text-[24px] leading-[1.1]">{sentenceCase(reel.title)}</h2>
         <div className="mt-1.5 text-[12.5px] text-muted">
           Part {reel.index} of {spool.reels.length}
-          {script ? ` · ${script.beats.length} beats + quick check` : ""}
+          {script ? `, ${script.beats.length} beats and a quick check` : ""}
         </div>
         <p className="mt-3 text-[14.5px] leading-snug text-ink/80">{plain(reel.hook)}</p>
       </div>
@@ -308,7 +309,7 @@ function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; r
       {script ? (
         <>
           <div className="border-l-2 border-thread py-1 pl-4">
-            <div className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.16em] text-thread">Key point</div>
+            <div className="text-[13px] font-semibold text-thread">Key point</div>
             <p className="mt-1.5 text-[14.5px] leading-snug text-ink">
               <MarkedText text={script.summary} />
             </p>
@@ -617,24 +618,24 @@ export function Workbench({
       {/* Left: the document and its reels */}
       <aside className="flex w-[320px] shrink-0 flex-col overflow-y-auto border-r border-line">
         <div className="px-5 pb-4 pt-5">
-          <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted" data-testid="doc-meta">
-            {[
+          <div className="text-[12.5px] text-muted" data-testid="doc-meta">
+            {joinComma([
               ext ? fileLabel(ext) : null,
-              spool?.pageCount ? `${spool.pageCount} pages` : null,
+              spool?.pageCount ? `${spool.pageCount} ${spool.pageCount === 1 ? "page" : "pages"}` : null,
               spool?.wordCount ? `${spool.wordCount.toLocaleString("en-US")} words` : null,
               spool?.truncated ? "trimmed" : null,
-            ]
-              .filter(Boolean)
-              .join(" · ") || "Document"}
+            ]) || "Document"}
           </div>
           <h1 className="mt-2 line-clamp-3 font-display text-[22px] leading-[1.1] text-ink">{spool?.title ?? spool?.fileName ?? upload?.fileName ?? "Your document"}</h1>
           {spool?.title && <div className="mt-1.5 truncate text-[12.5px] text-muted">{spool.fileName}</div>}
           <div className="mt-4 h-px bg-line" />
-          <div className="mt-3 flex items-baseline justify-between font-mono text-[11px] uppercase tracking-[0.12em]">
-            <span style={{ color: status.tone }}>{status.label}</span>
-            {totalReels > 0 && stageIndex(spool, upload ?? null) >= 4 && (
-              <span className="text-muted">
-                {ready}/{totalReels} reels
+          <div className="mt-3 flex items-baseline justify-between text-[13px]">
+            <span className="font-medium" style={{ color: status.tone }}>
+              {status.label}
+            </span>
+            {totalReels > 0 && stageIndex(spool, upload ?? null) >= 3 && (
+              <span className="tabular-nums text-muted">
+                {ready} of {totalReels} ready
               </span>
             )}
           </div>
@@ -644,7 +645,7 @@ export function Workbench({
               <div className="h-full animate-pulse" style={{ width: `${(writing / totalReels) * 100}%`, background: "color-mix(in srgb, var(--thread) 40%, var(--border))" }} />
             )}
           </div>
-          {(stageIndex(spool, upload ?? null) < 4 || upload?.phase === "error") && (
+          {(stageIndex(spool, upload ?? null) < 3 || upload?.phase === "error" || spool?.status === "failed") && (
             <p className="mt-2 text-[12px] text-muted" aria-live="polite">
               {upload?.phase === "error" ? upload.error : spool?.status === "failed" ? spool.error : stageLine(spool, upload ?? null)}
             </p>
@@ -653,8 +654,8 @@ export function Workbench({
         </div>
 
         <div className="flex items-baseline justify-between border-t border-line px-5 pb-2 pt-4">
-          <span className="label">Reels</span>
-          {listed && <span className="font-mono text-[11px] text-muted">{lockedCount ? `${spool?.freeReels ?? 1} free · ${lockedCount} locked` : "All unlocked"}</span>}
+          <span className="text-[13px] font-medium text-ink">Reels</span>
+          {listed && <span className="text-[12px] tabular-nums text-muted">{lockedCount ? `${spool?.freeReels ?? 1} free, ${lockedCount} locked` : "All unlocked"}</span>}
         </div>
         <ol className="space-y-0.5 px-2.5 pb-4" aria-label="Reels">
           {listed
@@ -676,7 +677,7 @@ export function Workbench({
                           <span className="text-[11px] text-muted">Part {r.index}</span>
                           <StateText state={state} until={nextDrip} />
                         </span>
-                        <span className={`mt-0.5 block truncate text-[13.5px] font-semibold ${state === "locked" ? "text-ink/70" : "text-ink"}`}>{r.title}</span>
+                        <span className={`mt-0.5 block truncate text-[13.5px] font-semibold ${state === "locked" ? "text-ink/70" : "text-ink"}`}>{sentenceCase(r.title)}</span>
                         <span className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-muted">{plain(r.hook)}</span>
                       </span>
                     </button>
@@ -730,8 +731,8 @@ export function Workbench({
               <NavButton label="Previous reel (↑)" disabled={cur === 0} onClick={() => select(cur - 1)}>
                 <ChevronUp size={20} strokeWidth={2} />
               </NavButton>
-              <span className="py-1 font-mono text-[11px] tabular-nums text-muted">
-                {cur + 1}/{items.length}
+              <span className="whitespace-nowrap py-1 text-[11.5px] tabular-nums text-muted" aria-label={`Reel ${cur + 1} of ${items.length}`}>
+                {cur + 1} of {items.length}
               </span>
               <NavButton label="Next reel (↓)" disabled={cur >= items.length - 1} onClick={() => select(cur + 1)}>
                 <ChevronDown size={20} strokeWidth={2} />
@@ -740,9 +741,11 @@ export function Workbench({
           </div>
           <p className="pointer-events-none absolute bottom-2 left-1/2 hidden -translate-x-1/2 items-center gap-1.5 whitespace-nowrap text-[11.5px] text-muted/80 [@media(min-height:760px)]:flex">
             Scroll, drag or press
-            <kbd className="border border-line px-1.5 py-px font-mono text-[10px]">↑</kbd>
-            <kbd className="border border-line px-1.5 py-px font-mono text-[10px]">↓</kbd>
-            to switch reels · click the video to pause
+            <kbd className="border border-line px-1.5 py-px text-[10px]">↑</kbd>
+            <kbd className="border border-line px-1.5 py-px text-[10px]">↓</kbd>
+            to switch reels. Click the video to pause,
+            <kbd className="border border-line px-1.5 py-px text-[10px]">M</kbd>
+            to mute.
           </p>
         </div>
         {/* Below the player on narrower desktops */}
