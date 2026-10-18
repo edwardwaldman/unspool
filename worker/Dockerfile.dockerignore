@@ -1,0 +1,6 @@
+# Build context is the repo root; send only what the worker needs.
+*
+!worker/package.json
+!worker/server.ts
+!src/lib/video/**
+!assets/fonts/**

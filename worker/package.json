@@ -1,0 +1,13 @@
+{
+  "name": "unspool-render-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Standalone reel video renderer (ffmpeg) for Unspool. Build context is the repository root.",
+  "scripts": {
+    "build": "esbuild server.ts --bundle --platform=node --target=node22 --format=cjs --external:ffmpeg-static --outfile=dist/server.cjs",
+    "start": "node dist/server.cjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10"
+  }
+}
