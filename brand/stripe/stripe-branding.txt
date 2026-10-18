@@ -1,0 +1,10 @@
+Stripe Dashboard -> Settings -> Business -> Branding
+
+Icon:          stripe/stripe-icon-512.png   (square mark)
+Logo:          stripe/stripe-logo-1200x300.png   (horizontal lockup, transparent)
+Brand color:   #d3f05a
+Accent color:  #0f1d18
+
+Brand color (#d3f05a) fills the Checkout / invoice header; the logo is dark
+so it reads on it. Accent (#0f1d18) is used for buttons and links, which
+keeps white button text legible.

@@ -20,8 +20,14 @@ export const metadata: Metadata = {
     description: "Your textbook, but it's reels.",
     siteName: "Unspool",
     type: "website",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Unspool — One document into reels" }],
   },
-  icons: { icon: "/icon.svg" },
+  twitter: { card: "summary_large_image", images: ["/og-image.png"] },
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/favicon.ico", sizes: "16x16 32x32 48x48" }],
+    apple: [{ url: "/apple-touch-icon-180.png", sizes: "180x180" }],
+  },
+  manifest: "/site.webmanifest",
 };
 
 export const viewport: Viewport = {

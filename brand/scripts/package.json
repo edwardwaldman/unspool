@@ -1,0 +1,9 @@
+{
+  "name": "unspool-brand-generator",
+  "private": true,
+  "type": "module",
+  "description": "Renders brand/ assets. Run: npm install && node generate.mjs",
+  "dependencies": {
+    "opentype.js": "1.3.4"
+  }
+}
