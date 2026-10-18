@@ -37,9 +37,11 @@ export function InfoSlide() {
   // The demo plays over the first 85% of the track; the rest holds the last frame and eases it out.
   const progress = useTransform(smooth, [0, 0.85], [0, 1], { clamp: true });
   // Then the demo slides up and away, handing off to the upload section below.
-  const exitOpacity = useTransform(smooth, [0.94, 1], [1, 0]);
-  const exitScale = useTransform(smooth, [0.86, 1], [1, 0.96]);
-  const exitY = useTransform(smooth, [0.86, 1], ["0dvh", "-70dvh"]);
+  // The exit follows the raw scroll position (not the spring) so a fast flick can't leave the demo
+  // lagging on screen while the upload section arrives over it.
+  const exitOpacity = useTransform(raw, [0.9, 0.98], [1, 0]);
+  const exitScale = useTransform(raw, [0.86, 1], [1, 0.96]);
+  const exitY = useTransform(raw, [0.86, 1], ["0dvh", "-70dvh"]);
 
   return (
     <>
@@ -85,7 +87,7 @@ function BigUpload() {
       <div className="relative mx-auto w-fit py-10 md:px-40 md:py-16">
         <Float className="left-0 top-2 -rotate-6" delay={0}>.pdf</Float>
         <Float className="right-4 top-0 rotate-3" delay={0.4}>.docx</Float>
-        <Float className="bottom-0 right-6 -rotate-3" delay={1.2}>~60s each</Float>
+        <Float className="bottom-0 right-6 -rotate-3" delay={1.2}>captions on</Float>
         <Float className="bottom-2 left-8 rotate-2" delay={0.8}>.pptx</Float>
         <Float className="-left-24 top-1/2 -translate-y-1/2 -rotate-3" delay={1}>♪ voiceover</Float>
         <Float className="-right-40 top-[46%] rotate-2 border-thread/60 text-thread" delay={1.4}>✓ quiz in every reel</Float>
