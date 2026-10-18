@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { motion, useSpring, useTransform } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { ProcessDemo } from "./process-demo";
 import { useMainScroll } from "./use-main-scroll";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
-import { UploadIcon } from "../ui/icons";
+import { PlayIcon, UploadIcon } from "../ui/icons";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -133,6 +134,9 @@ function BigUpload() {
         >
           <UploadIcon size={28} /> Upload a document
         </button>
+          <Link href="/s/demo" className="relative z-10 mt-5 flex items-center justify-center gap-2 text-[15px] text-muted underline decoration-line underline-offset-4 transition-colors hover:text-ink lg:text-[17px]">
+            <PlayIcon size={14} /> Watch a demo
+          </Link>
       </div>
     </>
   );

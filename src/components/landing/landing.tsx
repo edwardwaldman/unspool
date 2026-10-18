@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import { UploadIcon, Wordmark } from "../ui/icons";
+import { PlayIcon, UploadIcon, Wordmark } from "../ui/icons";
 import { useMedia } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
@@ -65,6 +65,9 @@ function UploadButton() {
       >
         {pending ? "Opening your feed" : (<><UploadIcon size={22} /> Upload a document</>)}
       </button>
+      <Link href="/s/demo" className="mt-4 flex items-center justify-center gap-2 text-[15px] text-muted underline decoration-line underline-offset-4 transition-colors hover:text-ink lg:text-[17px]">
+        <PlayIcon size={14} /> Watch a demo
+      </Link>
     </>
   );
 }
