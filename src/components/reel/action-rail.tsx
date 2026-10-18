@@ -1,9 +1,12 @@
 "use client";
 
+import { MoreHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
-import { ChatIcon, HeartIcon, MoreIcon, ReplayIcon, ShareIcon } from "../ui/icons";
+import { ChatIcon, HeartIcon, ReplayIcon, ShareIcon } from "../ui/icons";
 import { toast } from "../ui/toast";
 import { fileLabel } from "./accent";
+
+const SHADOW = { filter: "drop-shadow(0 1px 2px rgba(0,0,0,.45))" };
 import { loadSaved, toggleSaved } from "./prefs";
 
 function RailButton({ label, count, onClick, children }: { label: string; count?: string; onClick: () => void; children: React.ReactNode }) {
@@ -15,10 +18,11 @@ function RailButton({ label, count, onClick, children }: { label: string; count?
         e.stopPropagation();
         onClick();
       }}
-      className="flex flex-col items-center gap-1 text-ink active:opacity-60"
+      className="flex flex-col items-center gap-1 text-white transition-transform hover:scale-110 active:scale-95"
+      style={SHADOW}
     >
       {children}
-      {count !== undefined && <span className="text-[11px] text-ink/80">{count}</span>}
+      {count !== undefined && <span className="text-[11.5px] font-semibold tracking-[-0.01em] text-white">{count}</span>}
     </button>
   );
 }
@@ -57,7 +61,7 @@ export function ActionRail({
   };
 
   return (
-    <div className="flex flex-col items-center gap-5">
+    <div className="flex flex-col items-center gap-[18px]">
       <RailButton
         label={saved ? "Unsave" : "Save"}
         count={saved ? "Saved" : "Save"}
@@ -67,21 +71,26 @@ export function ActionRail({
           if (on) toast("Saved for review");
         }}
       >
-        <HeartIcon size={27} filled={saved} style={{ color: saved ? "var(--thread)" : undefined }} />
+        <HeartIcon size={28} strokeWidth={2} filled={saved} style={{ color: saved ? "#ff4d6d" : undefined }} />
       </RailButton>
       <RailButton label="Ask a question" count="Ask" onClick={() => toast("Questions about a reel are coming soon")}>
-        <ChatIcon size={26} />
+        <ChatIcon size={27} strokeWidth={2} />
       </RailButton>
       <RailButton label="Replay" count="Replay" onClick={onReplay}>
-        <ReplayIcon size={26} />
+        <ReplayIcon size={26} strokeWidth={2} />
       </RailButton>
       <RailButton label="Share" count="Share" onClick={share}>
-        <ShareIcon size={25} />
+        <ShareIcon size={25} strokeWidth={2} />
       </RailButton>
       <RailButton label="More" onClick={onMore}>
-        <MoreIcon size={24} />
+        <MoreHorizontal size={26} strokeWidth={2} />
       </RailButton>
-      <div className="mt-1 flex h-9 w-9 items-center justify-center border border-ink/70 font-mono text-[9px] text-ink" aria-hidden>
+      {/* "Audio" cover, like the album art at the foot of an Instagram rail: the source document. */}
+      <div
+        className="mt-1 flex h-[30px] w-[30px] items-center justify-center rounded-[8px] border-2 border-white/90 font-mono text-[8px] font-bold text-[#08110e]"
+        style={{ background: "var(--thread)", ...SHADOW }}
+        aria-hidden
+      >
         {fileLabel(fileType)}
       </div>
     </div>

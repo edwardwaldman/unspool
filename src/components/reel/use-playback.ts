@@ -7,7 +7,7 @@ import type { SegmentAudioDTO } from "@/lib/spool-types";
 import { estimateDuration, estimateWordFractions } from "@/lib/timing";
 import { getPrefs, setPrefs, usePrefs } from "./prefs";
 
-const QUIZ_WAIT_MS = 7000;
+export const QUIZ_WAIT_MS = 7000;
 
 export type QuizState = { selected: number | null; revealed: boolean; waiting: boolean };
 
@@ -22,6 +22,9 @@ export type Playback = {
   words: number[];
   /** 0..1 through the whole reel. */
   progress: number;
+  /** Seconds in the whole reel (current best estimate) and seconds played so far. */
+  total: number;
+  elapsed: number;
   playing: boolean;
   ended: boolean;
   quiz: QuizState;
@@ -36,6 +39,8 @@ type Snapshot = {
   t: number;
   duration: number;
   progress: number;
+  total: number;
+  elapsed: number;
   playing: boolean;
   ended: boolean;
   quiz: QuizState;
@@ -120,6 +125,8 @@ export function usePlayback(opts: {
       t: e.t,
       duration: e.durations[e.seg] ?? 1,
       progress: e.ended ? 1 : Math.min(1, (before + e.t) / total),
+      total,
+      elapsed: e.ended ? total : Math.min(total, before + e.t),
       playing: e.playing,
       ended: e.ended,
       quiz: e.quiz,
@@ -131,6 +138,8 @@ export function usePlayback(opts: {
     t: 0,
     duration: initialDurations[0] ?? 1,
     progress: 0,
+    total: initialDurations.reduce((a, b) => a + b, 0) || 1,
+    elapsed: 0,
     playing: false,
     ended: false,
     quiz: { selected: null, revealed: false, waiting: false },
@@ -366,6 +375,8 @@ export function usePlayback(opts: {
     duration: snap.duration,
     words: wordsFor(snap.seg),
     progress: snap.progress,
+    total: snap.total,
+    elapsed: snap.elapsed,
     playing: snap.playing,
     ended: snap.ended,
     quiz: snap.quiz,

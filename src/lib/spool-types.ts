@@ -15,6 +15,8 @@ export type ReelDTO = {
   error?: string | null;
   script?: ReelScript;
   audio?: Record<string, SegmentAudioDTO>;
+  /** A rendered MP4 of this reel, once reels are rendered as video. Like script/audio, only sent for playable reels. */
+  videoUrl?: string;
 };
 
 export type SpoolDTO = {

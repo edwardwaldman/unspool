@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { threadHex } from "./accent";
+import { mutedColor, threadHex } from "./accent";
 
 /**
  * A stadium-like field of tiny dots seen from above (the whole group), with a glowing wave sweeping
@@ -19,8 +19,8 @@ export function CrowdCanvas({ ratio, progress }: { ratio: number; progress: numb
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const accent = threadHex();
-    const base = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8ea595";
+    const accent = threadHex(canvas);
+    const base = mutedColor(canvas);
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     let w = 0;
     let h = 0;

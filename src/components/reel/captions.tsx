@@ -3,7 +3,7 @@
 import { COLOR_VAR, markupWords } from "@/lib/markup";
 import { useMemo } from "react";
 
-/** TikTok-style live captions: a short chunk of words, the spoken word popping as it's said. */
+/** Burned-in TikTok-style captions: a short chunk of words, the word being said lit up in the reel's accent. */
 export function Captions({ text, words, fraction }: { text: string; words: number[]; fraction: number }) {
   const list = useMemo(() => markupWords(text), [text]);
   const chunks = useMemo(() => {
@@ -26,7 +26,11 @@ export function Captions({ text, words, fraction }: { text: string; words: numbe
   const chunk = chunks.find((c) => c.includes(current)) ?? chunks[0] ?? [];
 
   return (
-    <p className="mx-auto max-w-[330px] text-center font-hook text-[21px] font-bold leading-[1.2] tracking-[-0.01em]" aria-live="off">
+    <p
+      className="mx-auto max-w-[340px] text-center font-hook text-[25px] font-extrabold leading-[1.28] tracking-[-0.015em] text-white"
+      style={{ textShadow: "0 2px 0 rgba(0,0,0,.28), 0 0 22px rgba(0,0,0,.45)" }}
+      aria-live="off"
+    >
       {chunk.map((i) => {
         const w = list[i];
         const spoken = i <= current;
@@ -34,12 +38,12 @@ export function Captions({ text, words, fraction }: { text: string; words: numbe
         return (
           <span
             key={i}
-            className="mx-[0.18em] inline-block transition-[transform,opacity] duration-150"
-            style={{
-              color: w.color ? COLOR_VAR[w.color] : "var(--ink)",
-              opacity: spoken ? 1 : 0.4,
-              transform: isNow ? "translateY(-2px)" : "none",
-            }}
+            className="mx-[0.06em] inline-block rounded-[7px] px-[0.16em] transition-transform duration-100"
+            style={
+              isNow
+                ? { background: "var(--thread)", color: "#08110e", textShadow: "none", transform: "scale(1.06) rotate(-1.5deg)" }
+                : { color: w.color ? COLOR_VAR[w.color] : "#fff", opacity: spoken ? 1 : 0.72 }
+            }
           >
             {w.text}
           </span>

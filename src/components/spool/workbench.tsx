@@ -1,10 +1,12 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Lightbulb, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatPrice, MAX_REELS, PRICING } from "@/lib/config";
+import { stripMarkup } from "@/lib/markup";
 import type { ReelDTO, SpoolDTO, ViewerDTO } from "@/lib/spool-types";
-import { fileLabel } from "../reel/accent";
+import { estimateDuration } from "@/lib/timing";
+import { fileLabel, fileTone, reelAccent, reelTint } from "../reel/accent";
 import { ReelSlot, SpoolMoreSheet, type FeedItem } from "../reel/feed";
 import { stageIndex, stageLine } from "../reel/loading-reel";
 import { UnlockSheet } from "../reel/drip-gate";
@@ -40,6 +42,11 @@ function docStatus(spool: SpoolDTO | null, upload: UploadState | null) {
 
 const plain = (s: string) => s.replace(/[*#^~]/g, "");
 
+function clock(sec: number) {
+  const s = Math.max(0, Math.round(sec));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
 function NewUploadButton() {
   const input = useRef<HTMLInputElement>(null);
   const upload = useUploader();
@@ -57,30 +64,124 @@ function NewUploadButton() {
           if (f) void upload(f);
         }}
       />
-      <button type="button" onClick={() => input.current?.click()} disabled={Boolean(pending)} className="btn-secondary mt-5 w-full py-2.5 text-[14px]">
-        <UploadIcon size={16} /> {pending ? "Starting upload" : "New upload"}
+      <button
+        type="button"
+        onClick={() => input.current?.click()}
+        disabled={Boolean(pending)}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-[12px] border border-line py-2.5 text-[13.5px] font-medium text-ink transition-colors hover:border-muted hover:bg-white/[0.03] disabled:opacity-50"
+      >
+        <UploadIcon size={15} /> {pending ? "Starting upload" : "New upload"}
       </button>
     </>
   );
 }
 
-function StateMark({ state, index, active }: { state: ReelState; index: number; active: boolean }) {
-  if (state === "locked") return <LockIcon size={14} className="text-muted" />;
-  if (state === "generating") return <Loader2 size={14} strokeWidth={1.75} className="animate-spin text-thread" />;
+function FileBadge({ ext, size = 44 }: { ext: string; size?: number }) {
+  const tone = fileTone(ext);
   return (
-    <span className="font-mono text-[11px]" style={{ color: state === "failed" ? "var(--coral)" : state === "ready" ? (active ? "var(--thread)" : "var(--ink)") : "var(--muted)" }}>
-      {String(index).padStart(2, "0")}
+    <div
+      className="flex shrink-0 items-center justify-center rounded-[12px] font-mono text-[10.5px] font-bold"
+      style={{ width: size, height: size, color: tone, background: `color-mix(in srgb, ${tone} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${tone} 35%, transparent)` }}
+      aria-hidden
+    >
+      {fileLabel(ext)}
+    </div>
+  );
+}
+
+const PILL_TONE: Record<ReelState, string> = {
+  ready: "var(--sage)",
+  generating: "var(--thread)",
+  queued: "var(--muted)",
+  failed: "var(--coral)",
+  locked: "var(--muted)",
+};
+
+/** READY / WRITING / LOCKED (+ drip timer) pill. */
+function StatePill({ state, until }: { state: ReelState; until?: string | null }) {
+  const left = useCountdown(until ?? null);
+  const tone = PILL_TONE[state];
+  return (
+    <span
+      className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-[3px] text-[10.5px] font-semibold uppercase tracking-[0.08em]"
+      style={{ color: tone, background: `color-mix(in srgb, ${tone} 13%, transparent)` }}
+    >
+      {state === "locked" && <LockIcon size={10} strokeWidth={2.25} />}
+      {state === "generating" && <Loader2 size={10} strokeWidth={2.5} className="animate-spin" />}
+      {STATE_LABEL[state]}
+      {state === "locked" && left > 0 && <span className="font-mono normal-case tracking-normal text-thread">· {formatCountdown(left)}</span>}
     </span>
   );
 }
 
-/** Quiz card for the details panel: pick an answer, see why. */
-function QuizCard({ quiz }: { quiz: NonNullable<ReelDTO["script"]>["quiz"] }) {
+/** A mini 9:16 frame for the reel list: the reel's tint with its hook burned in, blurred when locked. */
+function ReelThumb({ reel, state, on }: { reel: ReelDTO; state: ReelState; on: boolean }) {
+  const accent = reelAccent(reel.index);
+  const [first, ...rest] = plain(reel.hook).split(" ");
+  return (
+    <span
+      className="relative block h-[78px] w-[44px] shrink-0 overflow-hidden rounded-[8px]"
+      style={{ background: reelTint(accent, state === "ready" ? 26 : 14), boxShadow: on ? `0 0 0 2px var(--paper), 0 0 0 3.5px ${accent}` : "inset 0 0 0 1px rgba(255,255,255,.08)" }}
+      aria-hidden
+    >
+      <span className={`absolute inset-x-[4px] top-[8px] line-clamp-5 font-hook text-[6.5px] font-extrabold leading-[1.25] text-white ${state === "locked" ? "blur-[1.5px] opacity-60" : ""}`}>
+        <span className="rounded-[2px] px-[1px] text-[#08110e]" style={{ background: accent }}>
+          {first}
+        </span>{" "}
+        {rest.join(" ")}
+      </span>
+      <span className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
+      {state === "locked" && (
+        <span className="absolute inset-0 flex items-center justify-center">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black/55 text-white">
+            <LockIcon size={10} strokeWidth={2.25} />
+          </span>
+        </span>
+      )}
+      {(state === "generating" || state === "queued") && (
+        <span className="absolute inset-0 flex items-center justify-center">
+          <Loader2 size={14} strokeWidth={2} className={`text-white/80 ${state === "generating" ? "animate-spin" : ""}`} />
+        </span>
+      )}
+      {on && state === "ready" && (
+        <span className="absolute bottom-[5px] left-[5px] flex h-[9px] items-end gap-[1.5px]">
+          {[0, 1, 2].map((k) => (
+            <span key={k} className="w-[2px] animate-pulse rounded-full bg-white" style={{ height: `${[9, 5, 7][k]}px`, animationDelay: `${k * 0.2}s` }} />
+          ))}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** A collapsible card section in the details panel. */
+function Section({ title, meta, children, defaultOpen = true }: { title: string; meta?: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section className="rounded-[16px] border border-line">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-[14px] font-semibold text-ink"
+      >
+        {title}
+        <span className="flex items-center gap-2 text-[12px] font-normal text-muted">
+          {meta}
+          <ChevronDown size={16} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        </span>
+      </button>
+      {open && <div className="px-4 pb-4">{children}</div>}
+    </section>
+  );
+}
+
+/** Quiz preview for the details panel: pick an answer, see why. */
+function QuizPreview({ quiz }: { quiz: NonNullable<ReelDTO["script"]>["quiz"] }) {
   const [picked, setPicked] = useState<number | null>(null);
   return (
-    <div className="border border-line bg-paper p-4">
-      <div className="label">Quick check</div>
-      <p className="mt-2 text-[14.5px] leading-snug text-ink">{plain(quiz.question)}</p>
+    <div>
+      <p className="text-[14.5px] leading-snug text-ink">{plain(quiz.question)}</p>
       <div className="mt-3 space-y-1.5">
         {quiz.options.map((o, i) => {
           const shown = picked !== null;
@@ -92,22 +193,48 @@ function QuizCard({ quiz }: { quiz: NonNullable<ReelDTO["script"]>["quiz"] }) {
               type="button"
               disabled={shown}
               onClick={() => setPicked(i)}
-              className="flex w-full items-center gap-3 border border-line px-3 py-2 text-left text-[13.5px] hover:border-muted disabled:hover:border-line"
-              style={color ? { borderColor: color, color } : undefined}
+              className="flex w-full items-center gap-3 rounded-[12px] border border-line px-3 py-2.5 text-left text-[13.5px] transition-colors enabled:hover:border-muted enabled:hover:bg-white/[0.03]"
+              style={color ? { borderColor: color, color, background: `color-mix(in srgb, ${color} 10%, transparent)` } : undefined}
             >
-              <span className="font-mono text-[10.5px] text-muted">{String.fromCharCode(65 + i)}</span>
-              {o}
+              <span
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-[10.5px] font-bold"
+                style={{ background: color ?? "rgba(255,255,255,.07)", color: color ? "var(--paper)" : "var(--muted)" }}
+              >
+                {String.fromCharCode(65 + i)}
+              </span>
+              {plain(o)}
             </button>
           );
         })}
       </div>
       {picked !== null && (
         <p className="mt-3 text-[13.5px] leading-snug text-ink/85">
-          <span style={{ color: picked === quiz.answer ? "var(--sage)" : "var(--coral)" }}>{picked === quiz.answer ? "Correct. " : "Not quite. "}</span>
+          <span className="font-semibold" style={{ color: picked === quiz.answer ? "var(--sage)" : "var(--coral)" }}>
+            {picked === quiz.answer ? "Correct. " : "Not quite. "}
+          </span>
           <MarkedText text={quiz.explain} />
         </p>
       )}
     </div>
+  );
+}
+
+/** The reel's script as a transcript, with each beat's start time. */
+function Transcript({ reel }: { reel: ReelDTO }) {
+  const script = reel.script!;
+  const lengths = script.beats.map((b, i) => reel.audio?.[`b${i}`]?.duration ?? estimateDuration(stripMarkup(b.say)));
+  const rows = script.beats.map((b, i) => ({ start: lengths.slice(0, i).reduce((x, y) => x + y, 0), say: b.say }));
+  return (
+    <ol className="space-y-3">
+      {rows.map((r, i) => (
+        <li key={i} className="flex gap-3 text-[13.5px] leading-[1.5] text-ink/85">
+          <span className="w-9 shrink-0 pt-[2px] font-mono text-[11px] text-muted">{clock(r.start)}</span>
+          <span>
+            <MarkedText text={r.say} />
+          </span>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -122,58 +249,65 @@ function ReelFreeIn({ at }: { at: string | null }) {
   );
 }
 
-/** Live mm:ss to the next free reel. */
-function NextFreeTimer({ until, big = false }: { until: string; big?: boolean }) {
+/** Live countdown to the next free reel. */
+function NextFreeTimer({ until }: { until: string }) {
   const left = useCountdown(until);
   if (!left) return null;
   return (
-    <span className={`flex shrink-0 items-center gap-1 font-mono text-thread ${big ? "text-[15px]" : "text-[10.5px]"}`} title="Next free reel">
-      {!big && <LockIcon size={10} />}
+    <span className="shrink-0 font-mono text-[14px] font-semibold text-thread" title="Next free reel">
       {formatCountdown(left)}
     </span>
   );
 }
 
-function UnlockCta({ spool, onUnlock, compact = false }: { spool: SpoolDTO; onUnlock: () => void; compact?: boolean }) {
+function UnlockCta({ spool, onUnlock }: { spool: SpoolDTO; onUnlock: () => void }) {
   const locked = spool.reels.filter((r) => r.locked).length;
   if (!locked) return null;
   return (
-    <div className={compact ? "" : "border border-line border-t-2 border-t-thread bg-paper p-4"}>
-      {!compact && (
-        <>
-          <div className="label flex items-center gap-2">
-            <LockIcon size={12} /> {locked} reels locked
+    <div className="rounded-[16px] border border-line bg-surface p-4">
+      <div className="flex items-start gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-thread text-paper">
+          <LockIcon size={16} strokeWidth={2.25} />
+        </span>
+        <div className="min-w-0">
+          <div className="text-[14.5px] font-semibold text-ink">
+            {locked} {locked === 1 ? "reel" : "reels"} locked
           </div>
-          <p className="mt-2 text-[13.5px] leading-snug text-muted">
-            {spool.nextFreeUnlockAt ? "Reel 1 is free, then one more every hour. Or skip the wait." : "Unlock the rest of this document to keep going."}
+          <p className="mt-0.5 text-[12.5px] leading-snug text-muted">
+            {spool.nextFreeUnlockAt ? "One more turns free every hour, or skip the wait." : "Unlock the rest of this document to keep going."}
           </p>
-          {spool.nextFreeUnlockAt && (
-            <p className="mt-3 flex items-center justify-between border border-line px-3 py-2 text-[13px]">
-              <span className="text-muted">Next free reel in</span>
-              <NextFreeTimer until={spool.nextFreeUnlockAt} big />
-            </p>
-          )}
-        </>
+        </div>
+      </div>
+      {spool.nextFreeUnlockAt && (
+        <p className="mt-3 flex items-center justify-between rounded-[10px] bg-white/[0.04] px-3 py-2 text-[12.5px]">
+          <span className="text-muted">Next free reel in</span>
+          <NextFreeTimer until={spool.nextFreeUnlockAt} />
+        </p>
       )}
-      <button type="button" onClick={onUnlock} className={`btn-primary w-full justify-between px-4 py-3 text-[14.5px] ${compact ? "" : "mt-4"}`}>
+      <button
+        type="button"
+        onClick={onUnlock}
+        className="mt-3 flex w-full items-center justify-between rounded-[12px] bg-thread px-4 py-3 text-[14px] font-semibold text-paper transition-opacity hover:opacity-90"
+      >
         <span>Unlock all reels</span>
         <span className="font-mono text-[12.5px]">{formatPrice(PRICING.documentCents)}</span>
       </button>
+      <p className="mt-2 text-center text-[11.5px] text-muted">One-time payment for this document.</p>
     </div>
   );
 }
 
-/** Right-hand panel: what the active reel covers, its script, its quiz, or the unlock pitch. */
+/** Right-hand panel: what the active reel covers, its transcript, its quiz, or the unlock pitch. */
 function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; reel: ReelDTO | null; onUnlock: () => void; onRetry: () => void }) {
   if (!spool || !reel) {
     return (
       <div>
-        <div className="label">Up next</div>
+        <div className="text-[13px] font-medium text-muted">Up next</div>
         <p className="mt-2 text-[14px] leading-snug text-muted">Your reel titles appear here as soon as the plan is ready. Reel 1 starts playing on its own.</p>
         <div className="mt-5 space-y-2.5">
-          <div className="shimmer h-3 w-[80%]" />
-          <div className="shimmer h-3 w-[64%]" />
-          <div className="shimmer h-3 w-[72%]" />
+          <div className="shimmer h-3 w-[80%] rounded-full" />
+          <div className="shimmer h-3 w-[64%] rounded-full" />
+          <div className="shimmer h-3 w-[72%] rounded-full" />
         </div>
       </div>
     );
@@ -181,53 +315,47 @@ function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; r
   const state = reelState(reel);
   const script = reel.script;
   return (
-    <div className="space-y-6">
+    <div className="space-y-4" style={{ "--thread": reelAccent(reel.index) } as React.CSSProperties}>
       <div>
-        <div className="label flex items-center justify-between">
-          <span>
-            Reel {reel.index} of {spool.reels.length}
-          </span>
-          <span className="flex items-center gap-1.5" style={{ color: state === "ready" ? "var(--sage)" : state === "failed" ? "var(--coral)" : undefined }}>
-            {state === "locked" && <LockIcon size={11} />}
-            {STATE_LABEL[state]}
-          </span>
+        <div className="flex items-center justify-between">
+          <span className="text-[13px] font-medium text-muted">About this reel</span>
+          <StatePill state={state} />
         </div>
-        <h2 className="mt-3 font-hook text-[24px] font-extrabold uppercase leading-[1.02] tracking-[-0.02em]">{reel.title}</h2>
-        <p className="mt-2 text-[14.5px] leading-snug text-ink/80">{plain(reel.hook)}</p>
+        <h2 className="mt-3 font-display text-[24px] leading-[1.1]">{reel.title}</h2>
+        <div className="mt-1.5 text-[12.5px] text-muted">
+          Part {reel.index} of {spool.reels.length}
+          {script ? ` · ${script.beats.length} beats + quick check` : ""}
+        </div>
+        <p className="mt-3 text-[14.5px] leading-snug text-ink/80">{plain(reel.hook)}</p>
       </div>
 
       {script ? (
         <>
-          <div>
-            <div className="label">Key point</div>
-            <p className="mt-2 text-[14.5px] leading-snug text-ink">
+          <div className="rounded-[16px] p-4" style={{ background: "color-mix(in srgb, var(--thread) 9%, transparent)", border: "1px solid color-mix(in srgb, var(--thread) 28%, transparent)" }}>
+            <div className="flex items-center gap-2 text-[12.5px] font-semibold text-thread">
+              <Lightbulb size={14} strokeWidth={2} /> Key point
+            </div>
+            <p className="mt-1.5 text-[14.5px] leading-snug text-ink">
               <MarkedText text={script.summary} />
             </p>
           </div>
-          <div>
-            <div className="label">Script</div>
-            <ol className="mt-2 border-t border-line">
-              {script.beats.map((b, i) => (
-                <li key={i} className="flex gap-3 border-b border-line py-2 text-[13px] leading-snug text-ink/85">
-                  <span className="w-4 shrink-0 font-mono text-[10.5px] leading-[18px] text-muted">{i + 1}</span>
-                  <span>
-                    <MarkedText text={b.say} />
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </div>
-          <QuizCard key={reel.id} quiz={script.quiz} />
+          <Section title="Transcript" meta={`${script.beats.length} lines`}>
+            <Transcript reel={reel} />
+          </Section>
+          <Section title="Quick check" meta={`${script.quiz.options.length} options`}>
+            <QuizPreview key={reel.id} quiz={script.quiz} />
+          </Section>
         </>
       ) : state === "locked" ? (
         <div className="space-y-3">
           <ReelFreeIn at={freeAtFor(reel.index, spool.freeReels, spool.nextFreeUnlockAt)} />
+          <p className="text-[13.5px] leading-snug text-muted">The script, voiceover and quiz for this reel open when it&apos;s unlocked.</p>
           <UnlockCta spool={spool} onUnlock={onUnlock} />
         </div>
       ) : state === "failed" ? (
-        <div>
+        <div className="rounded-[16px] border border-line p-4">
           <p className="text-[14px] text-coral">{reel.error ?? "This reel didn't come out right."}</p>
-          <button type="button" onClick={onRetry} className="btn-primary mt-3 px-5 py-2.5 text-[14px]">
+          <button type="button" onClick={onRetry} className="mt-3 rounded-[12px] bg-ink px-5 py-2.5 text-[14px] font-semibold text-paper">
             Retry
           </button>
         </div>
@@ -235,8 +363,8 @@ function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; r
         <div>
           <p className="text-[14px] leading-snug text-muted">{state === "generating" ? "Writing this reel now." : "Queued."} It plays here the moment it&apos;s ready.</p>
           <div className="mt-4 space-y-2.5">
-            <div className="shimmer h-3 w-[78%]" />
-            <div className="shimmer h-3 w-[60%]" />
+            <div className="shimmer h-3 w-[78%] rounded-full" />
+            <div className="shimmer h-3 w-[60%] rounded-full" />
           </div>
         </div>
       )}
@@ -244,10 +372,25 @@ function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; r
   );
 }
 
+function NavButton({ label, disabled, onClick, children }: { label: string; disabled: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.07] text-ink transition-colors hover:bg-white/[0.14] disabled:opacity-25 disabled:hover:bg-white/[0.07]"
+    >
+      {children}
+    </button>
+  );
+}
+
 /**
- * Desktop document view: the document and its reels on the left, the active reel playing big in
- * the middle, and what that reel covers (script, quiz, unlock) on the right. Same reels and player
- * as the mobile feed; this is just a wider frame around them.
+ * Desktop document view: the document and its reels on the left, the active reel playing in a phone-
+ * sized frame in the middle, and what that reel covers (transcript, quiz, unlock) on the right. Same
+ * reels and player as the mobile feed; this is just a wider frame around them.
  */
 export function Workbench({
   items,
@@ -278,7 +421,10 @@ export function Workbench({
   const reel = item?.reel ?? null;
   const lockedCount = reels.filter((r) => r.locked).length;
   const ready = reels.filter((r) => r.status === "ready").length;
+  const writing = reels.filter((r) => r.status === "generating").length;
   const status = docStatus(spool, upload ?? null);
+  const ext = spool?.fileType ?? upload?.fileName?.split(".").pop() ?? "";
+  const accent = reelAccent(reel?.index ?? 1);
 
   const select = useCallback(
     (i: number, opts: { paywall?: boolean } = {}) => {
@@ -317,156 +463,151 @@ export function Workbench({
   const firstLocked = reels.find((r) => r.locked)?.index ?? 2;
   const closePaywall = useCallback(() => setPaywall(false), []);
   const listed = reels.length ? reels : null;
+  const totalReels = reels.length || spool?.totalReels || 0;
 
   return (
     <div className="flex h-full w-full min-h-0">
       {/* Left: the document and its reels */}
-      <aside className="flex w-[300px] shrink-0 flex-col overflow-y-auto border-r border-line">
-        <div className="border-b border-line p-5">
-          <div className="label">Document</div>
-          <div className="mt-3 flex gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-line bg-surface font-mono text-[10px] text-muted" aria-hidden>
-              {fileLabel(spool?.fileType ?? upload?.fileName?.split(".").pop() ?? "")}
+      <aside className="flex w-[320px] shrink-0 flex-col overflow-y-auto border-r border-line">
+        <div className="p-4">
+          <div className="rounded-[18px] border border-line bg-surface p-4">
+            <div className="flex gap-3">
+              <FileBadge ext={ext} />
+              <div className="min-w-0">
+                <div className="line-clamp-2 font-display text-[17px] leading-[1.15]">{spool?.title ?? spool?.fileName ?? upload?.fileName ?? "Your document"}</div>
+                {spool?.title && <div className="mt-1 truncate text-[12px] text-muted">{spool.fileName}</div>}
+              </div>
             </div>
-            <div className="min-w-0">
-              <div className="line-clamp-2 font-display text-[19px] leading-tight">{spool?.title ?? spool?.fileName ?? upload?.fileName ?? "Your document"}</div>
-              {spool?.title && <div className="mt-1 truncate text-[12.5px] text-muted">{spool.fileName}</div>}
-            </div>
-          </div>
-          {(spool?.pageCount || spool?.wordCount) && (
-            <div className="mt-3 flex gap-3 font-mono text-[11px] text-muted">
-              {spool?.pageCount ? <span>{spool.pageCount} pages</span> : null}
-              {spool?.wordCount ? <span>{spool.wordCount.toLocaleString("en-US")} words</span> : null}
-              {spool?.truncated ? <span>trimmed</span> : null}
-            </div>
-          )}
-          <div className="mt-4 flex items-center justify-between text-[13px]">
-            <span className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full" style={{ background: status.tone }} />
-              {status.label}
-            </span>
-            {reels.length > 0 && (
-              <span className="font-mono text-[11px] text-muted">
-                {ready}/{reels.length} ready
+            {(spool?.pageCount || spool?.wordCount) && (
+              <div className="mt-3 flex flex-wrap gap-1.5 text-[11.5px] text-muted">
+                {spool?.pageCount ? <span className="rounded-full bg-white/[0.05] px-2 py-0.5">{spool.pageCount} pages</span> : null}
+                {spool?.wordCount ? <span className="rounded-full bg-white/[0.05] px-2 py-0.5">{spool.wordCount.toLocaleString("en-US")} words</span> : null}
+                {spool?.truncated ? <span className="rounded-full bg-white/[0.05] px-2 py-0.5">trimmed</span> : null}
+              </div>
+            )}
+            <div className="mt-4 flex items-center justify-between text-[12.5px]">
+              <span className="flex items-center gap-2 text-ink">
+                <span className="h-2 w-2 rounded-full" style={{ background: status.tone }} />
+                {status.label}
               </span>
+              {totalReels > 0 && stageIndex(spool, upload ?? null) >= 4 && (
+                <span className="font-mono text-[11px] text-muted">
+                  {ready}/{totalReels} reels
+                </span>
+              )}
+            </div>
+            <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-white/[0.07]" role="progressbar" aria-valuenow={ready} aria-valuemax={totalReels || 1} aria-label="Reels ready">
+              <div className="h-full rounded-full bg-thread transition-[width] duration-500" style={{ width: `${totalReels ? (ready / totalReels) * 100 : 4}%` }} />
+              {writing > 0 && totalReels > 0 && (
+                <div className="h-full animate-pulse" style={{ width: `${(writing / totalReels) * 100}%`, background: "color-mix(in srgb, var(--thread) 40%, transparent)" }} />
+              )}
+            </div>
+            {(stageIndex(spool, upload ?? null) < 4 || upload?.phase === "error") && (
+              <p className="mt-2 text-[12px] text-muted" aria-live="polite">
+                {upload?.phase === "error" ? upload.error : spool?.status === "failed" ? spool.error : stageLine(spool, upload ?? null)}
+              </p>
             )}
           </div>
-          <div className="mt-2 flex gap-1">
-            {Array.from({ length: reels.length || 1 }, (_, i) => {
-              const r = reels[i];
-              return (
-                <div
-                  key={i}
-                  className="h-1 flex-1"
-                  style={{
-                    background: r?.status === "ready" ? "var(--thread)" : r?.status === "generating" ? "color-mix(in srgb, var(--thread) 40%, transparent)" : "var(--border)",
-                  }}
-                />
-              );
-            })}
-          </div>
-          {(stageIndex(spool, upload ?? null) < 4 || upload?.phase === "error") && (
-            <p className="mt-2 font-mono text-[11px] text-muted" aria-live="polite">
-              {upload?.phase === "error" ? upload.error : spool?.status === "failed" ? spool.error : stageLine(spool, upload ?? null)}
-            </p>
-          )}
           <NewUploadButton />
         </div>
 
-        <div className="flex items-baseline justify-between px-5 pb-2 pt-5">
-          <span className="label">Reels</span>
-          {listed && <span className="font-mono text-[11px] text-muted">{lockedCount ? `${spool?.freeReels ?? 1} free · ${lockedCount} locked` : "all unlocked"}</span>}
+        <div className="flex items-baseline justify-between px-5 pb-2 pt-2">
+          <span className="text-[13px] font-semibold text-ink">Reels</span>
+          {listed && <span className="text-[12px] text-muted">{lockedCount ? `${spool?.freeReels ?? 1} free · ${lockedCount} locked` : "All unlocked"}</span>}
         </div>
-        <ol className="border-t border-line" aria-label="Reels">
+        <ol className="space-y-0.5 px-2.5 pb-4" aria-label="Reels">
           {listed
             ? listed.map((r, i) => {
                 const state = reelState(r);
                 const on = i === cur;
+                const nextDrip = state === "locked" && spool?.nextFreeUnlockAt && r.index === spool.freeReels + 1 ? spool.nextFreeUnlockAt : null;
                 return (
                   <li key={r.id}>
                     <button
                       type="button"
                       onClick={() => select(i, { paywall: true })}
                       aria-current={on ? "true" : undefined}
-                      className={`flex w-full items-center gap-3 border-b border-l-2 border-b-line px-5 py-2.5 text-left transition-colors ${
-                        on ? "border-l-thread bg-surface" : "border-l-transparent hover:bg-surface/60"
-                      }`}
+                      className={`flex w-full items-center gap-3 rounded-[14px] p-2 text-left transition-colors ${on ? "bg-surface" : "hover:bg-white/[0.03]"}`}
                     >
-                      <span className={`flex h-11 w-[25px] shrink-0 items-center justify-center border bg-paper ${on ? "border-thread" : "border-line"}`} aria-hidden>
-                        <StateMark state={state} index={r.index} active={on} />
-                      </span>
+                      <ReelThumb reel={r} state={state} on={on} />
                       <span className="min-w-0 flex-1">
-                        <span className={`block truncate text-[13.5px] ${on ? "text-thread" : state === "locked" ? "text-ink/70" : "text-ink"}`}>{r.title}</span>
-                        <span className="block truncate text-[12px] text-muted">{plain(r.hook)}</span>
+                        <span className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] text-muted">Part {r.index}</span>
+                          <StatePill state={state} until={nextDrip} />
+                        </span>
+                        <span className={`mt-0.5 block truncate text-[13.5px] font-semibold ${state === "locked" ? "text-ink/70" : "text-ink"}`}>{r.title}</span>
+                        <span className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-muted">{plain(r.hook)}</span>
                       </span>
-                      {state === "locked" && spool?.nextFreeUnlockAt && r.index === spool.freeReels + 1 ? (
-                        <NextFreeTimer until={spool.nextFreeUnlockAt} />
-                      ) : (
-                        <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-muted">{STATE_LABEL[state]}</span>
-                      )}
                     </button>
                   </li>
                 );
               })
             : Array.from({ length: 5 }, (_, i) => (
-                <li key={i} className="flex items-center gap-3 border-b border-line px-5 py-2.5">
-                  <span className="h-11 w-[25px] shrink-0 border border-line" />
+                <li key={i} className="flex items-center gap-3 p-2">
+                  <span className="h-[78px] w-[44px] shrink-0 rounded-[8px] bg-white/[0.05]" />
                   <span className="flex-1 space-y-1.5">
-                    <span className="shimmer block h-2.5" style={{ width: `${55 + ((i * 17) % 35)}%` }} />
-                    <span className="shimmer block h-2 w-[40%]" />
+                    <span className="shimmer block h-2.5 rounded-full" style={{ width: `${55 + ((i * 17) % 35)}%` }} />
+                    <span className="shimmer block h-2 w-[40%] rounded-full" />
                   </span>
                 </li>
               ))}
         </ol>
         {spool && lockedCount > 0 && (
-          <div className="sticky bottom-0 mt-auto border-t border-line bg-paper p-5">
-            <UnlockCta spool={spool} onUnlock={() => setPaywall(true)} compact />
-            <p className="mt-2 text-center text-[11.5px] text-muted">One-time payment for this document.</p>
+          <div className="sticky bottom-0 mt-auto bg-paper px-4 pb-4 pt-2">
+            <UnlockCta spool={spool} onUnlock={() => setPaywall(true)} />
           </div>
         )}
       </aside>
 
       {/* Center: the player */}
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto xl:overflow-hidden">
-        <div className="flex min-h-[calc(100dvh-64px)] flex-1 items-center justify-center gap-5 px-6 py-5" onWheel={onWheel}>
-          <div className="relative aspect-[9/16] h-[calc(100dvh-104px)] min-h-[520px] shrink-0 overflow-hidden border border-line">
-            {item && (
-              <ReelSlot
-                key={item.key}
-                item={item}
-                upload={cur === 0 ? upload ?? null : null}
-                active={!paywall && !moreOpen}
-                total={reels.length || MAX_REELS}
-                bottomInset={0}
-                onRetry={() => onRetry?.(item.spool)}
-                onUnlock={() => setPaywall(true)}
-                onMore={() => setMoreOpen(true)}
-                onEnded={() => {
-                  if (cur + 1 < items.length) setTimeout(() => select(cur + 1, { paywall: true }), 900);
-                }}
-              />
-            )}
-          </div>
-          <div className="flex flex-col gap-4">
-            <button
-              type="button"
-              aria-label="Previous reel"
-              disabled={cur === 0}
-              onClick={() => select(cur - 1)}
-              className="flex h-11 w-11 items-center justify-center border border-line text-ink hover:border-muted disabled:opacity-30"
+        <div className="relative flex min-h-[calc(100dvh-64px)] flex-1 items-center justify-center overflow-hidden px-6 py-6" onWheel={onWheel}>
+          {/* Ambient light from the playing reel */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[70%] w-[460px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.16] blur-[110px] transition-colors duration-700"
+            style={{ background: accent }}
+          />
+          <div className="relative flex items-center gap-4 pl-14">
+            <div
+              className="relative aspect-[9/16] h-[calc(100dvh-112px)] max-h-[920px] min-h-[520px] shrink-0 overflow-hidden rounded-[20px] bg-black"
+              style={{ boxShadow: "0 0 0 1px rgba(255,255,255,.08), 0 30px 80px rgba(0,0,0,.45)" }}
             >
-              <ChevronUp size={24} />
-            </button>
-            <button
-              type="button"
-              aria-label="Next reel"
-              disabled={cur >= items.length - 1}
-              onClick={() => select(cur + 1)}
-              className="flex h-11 w-11 items-center justify-center border border-line text-ink hover:border-muted disabled:opacity-30"
-            >
-              <ChevronDown size={24} />
-            </button>
+              {item && (
+                <ReelSlot
+                  key={item.key}
+                  item={item}
+                  upload={cur === 0 ? upload ?? null : null}
+                  active={!paywall && !moreOpen}
+                  total={reels.length || MAX_REELS}
+                  bottomInset={0}
+                  onRetry={() => onRetry?.(item.spool)}
+                  onUnlock={() => setPaywall(true)}
+                  onMore={() => setMoreOpen(true)}
+                  onEnded={() => {
+                    if (cur + 1 < items.length) setTimeout(() => select(cur + 1, { paywall: true }), 900);
+                  }}
+                />
+              )}
+            </div>
+            <nav className="flex w-10 flex-col items-center gap-2.5" aria-label="Switch reel">
+              <NavButton label="Previous reel (↑)" disabled={cur === 0} onClick={() => select(cur - 1)}>
+                <ChevronUp size={20} strokeWidth={2} />
+              </NavButton>
+              <span className="py-1 font-mono text-[11px] tabular-nums text-muted">
+                {cur + 1}/{items.length}
+              </span>
+              <NavButton label="Next reel (↓)" disabled={cur >= items.length - 1} onClick={() => select(cur + 1)}>
+                <ChevronDown size={20} strokeWidth={2} />
+              </NavButton>
+            </nav>
           </div>
+          <p className="pointer-events-none absolute bottom-2 left-1/2 hidden -translate-x-1/2 items-center gap-1.5 whitespace-nowrap text-[11.5px] text-muted/80 [@media(min-height:760px)]:flex">
+            Scroll or press
+            <kbd className="rounded-[5px] border border-line px-1.5 py-px font-mono text-[10px]">↑</kbd>
+            <kbd className="rounded-[5px] border border-line px-1.5 py-px font-mono text-[10px]">↓</kbd>
+            to switch reels · click the video to pause
+          </p>
         </div>
         {/* Below the player on narrower desktops */}
         <div className="border-t border-line px-8 py-8 xl:hidden">
@@ -477,7 +618,7 @@ export function Workbench({
       </div>
 
       {/* Right: details for the active reel (wide desktops) */}
-      <aside className="hidden w-[340px] shrink-0 overflow-y-auto border-l border-line p-6 xl:block">
+      <aside className="hidden w-[360px] shrink-0 overflow-y-auto border-l border-line p-5 xl:block">
         <Details spool={spool} reel={reel} onUnlock={() => setPaywall(true)} onRetry={() => onRetry?.(spool)} />
       </aside>
 

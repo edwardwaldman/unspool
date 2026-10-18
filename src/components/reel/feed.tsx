@@ -27,6 +27,7 @@ export function ReelSlot({
   active,
   total,
   bottomInset,
+  topInset = 0,
   onRetry,
   onUnlock,
   onMore,
@@ -37,6 +38,8 @@ export function ReelSlot({
   active: boolean;
   total: number;
   bottomInset: number;
+  /** Room for overlays drawn over the top of the frame (the feed's tabs). */
+  topInset?: number;
   onRetry: () => void;
   onUnlock: () => void;
   onMore: () => void;
@@ -48,9 +51,9 @@ export function ReelSlot({
   }
   if (r.locked) {
     const s = item.spool;
-    return <LockedReel reel={r} total={total} bottomInset={bottomInset} onUnlock={onUnlock} freeAt={s ? freeAtFor(r.index, s.freeReels, s.nextFreeUnlockAt) : null} />;
+    return <LockedReel reel={r} total={total} bottomInset={bottomInset} topInset={topInset} onUnlock={onUnlock} freeAt={s ? freeAtFor(r.index, s.freeReels, s.nextFreeUnlockAt) : null} />;
   }
-  return <ReelView spool={item.spool!} reel={r} active={active} total={total} chrome={{ bottomInset }} onMore={onMore} onEnded={onEnded} />;
+  return <ReelView spool={item.spool!} reel={r} active={active} total={total} chrome={{ bottomInset, topInset }} onMore={onMore} onEnded={onEnded} />;
 }
 
 /** The "more" sheet for a spool's reel (mute, speed, delete the document). */
@@ -104,7 +107,8 @@ export function Feed({
   const [moreOpen, setMoreOpen] = useState(false);
   const dismissedPaywall = useRef<Set<string>>(new Set());
   const isDesktop = useIsDesktop();
-  const bottomInset = isDesktop ? 0 : 84;
+  // No floating nav sits over the feed any more; just keep the overlays off the home indicator.
+  const bottomInset = isDesktop ? 0 : 14;
 
   const scrollTo = useCallback((i: number, smooth = true) => {
     const el = scroller.current;
@@ -180,6 +184,7 @@ export function Feed({
               active={isActive && paywallFor === null && !moreOpen}
               total={total(it.spool)}
               bottomInset={bottomInset}
+              topInset={40}
               onRetry={() => onRetry?.(it.spool)}
               onUnlock={() => {
                 dismissedPaywall.current.delete(it.reel!.id);
@@ -200,33 +205,33 @@ export function Feed({
       </div>
 
       {/* Top tabs: This doc | All spools */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-center pt-4">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-center pt-5" style={{ textShadow: "0 1px 3px rgba(0,0,0,.5)" }}>
         <div className="pointer-events-auto flex items-center gap-5 text-[15.5px] font-semibold">
           {docHref ? (
-            <Link href={docHref} className={tab === "doc" ? "text-ink" : "text-muted"}>
+            <Link href={docHref} className={tab === "doc" ? "text-white" : "text-white/60"}>
               This doc
             </Link>
           ) : (
-            <span className={tab === "doc" ? "text-ink" : "text-muted"}>This doc</span>
+            <span className={tab === "doc" ? "text-white" : "text-white/60"}>This doc</span>
           )}
-          <span className="h-3.5 w-px bg-line" />
-          <Link href="/feed" className={tab === "all" ? "text-ink" : "text-muted"}>
+          <span className="h-3.5 w-px bg-white/30" />
+          <Link href="/feed" className={tab === "all" ? "text-white" : "text-white/60"}>
             All spools
           </Link>
         </div>
-        <Link href="/library" aria-label="Library" className="pointer-events-auto absolute right-4 top-4 text-ink">
+        <Link href="/library" aria-label="Library" className="pointer-events-auto absolute right-4 top-5 text-white">
           <FilterIcon size={20} />
         </Link>
       </div>
 
       {/* Desktop up/down buttons, like TikTok web */}
-      <div className="absolute -right-[76px] top-1/2 z-30 hidden -translate-y-1/2 flex-col gap-4 lg:flex">
+      <div className="absolute -right-[68px] top-1/2 z-30 hidden -translate-y-1/2 flex-col gap-3 lg:flex">
         <button
           type="button"
           aria-label="Previous reel"
           disabled={index === 0}
           onClick={() => scrollTo(Math.max(0, index - 1))}
-          className="flex h-11 w-11 items-center justify-center border border-line text-ink hover:border-muted disabled:opacity-30"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.08] text-ink transition-colors hover:bg-white/[0.16] disabled:opacity-30"
         >
           <ChevronUp size={24} />
         </button>
@@ -235,7 +240,7 @@ export function Feed({
           aria-label="Next reel"
           disabled={index >= items.length - 1}
           onClick={() => scrollTo(Math.min(items.length - 1, index + 1))}
-          className="flex h-11 w-11 items-center justify-center border border-line text-ink hover:border-muted disabled:opacity-30"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/[0.08] text-ink transition-colors hover:bg-white/[0.16] disabled:opacity-30"
         >
           <ChevronDown size={24} />
         </button>

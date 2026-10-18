@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import type { SpoolDTO } from "@/lib/spool-types";
 import type { UploadState } from "../upload/upload-store";
+import { reelAccent, reelVars } from "./accent";
 import { ParticleField } from "./particle-field";
 
 const STAGES = ["Upload", "Read", "Plan", "Write"] as const;
@@ -68,12 +69,14 @@ export function LoadingReel({
   const line = stageLine(spool, upload);
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden bg-paper px-6" style={{ paddingBottom: bottomInset + 28 }}>
+    <div className="relative flex h-full w-full flex-col overflow-hidden px-6 text-white" style={{ ...reelVars(reelIndex), paddingBottom: bottomInset + 28 }}>
       <ParticleField active pulse={stage} />
 
       <div className="relative z-10 pt-[64px]">
-        <div className="label">{name}</div>
-        <h2 className="mt-3 font-display text-[32px] leading-[1.02]">
+        <div className="inline-flex max-w-full items-center gap-2 rounded-full bg-black/25 px-3 py-1 text-[12.5px] font-medium text-white/85 backdrop-blur-[6px]">
+          <span className="truncate">{name}</span>
+        </div>
+        <h2 className="mt-4 font-display text-[32px] leading-[1.02]">
           {isError ? "That didn't work." : reels.length && reelIndex > 1 ? `Writing reel ${reelIndex}.` : "Unspooling your doc."}
         </h2>
         <p className="mt-2 text-[14.5px] text-muted">
@@ -88,7 +91,7 @@ export function LoadingReel({
               e.stopPropagation();
               onRetry();
             }}
-            className="btn-primary mt-5 px-5 py-2.5 text-[15px]"
+            className="mt-5 rounded-full bg-white px-5 py-2.5 text-[15px] font-semibold text-[#08110e]"
           >
             Retry
           </button>
@@ -96,12 +99,16 @@ export function LoadingReel({
       </div>
 
       {!isError && (
-        <div className="relative z-10 mt-9 grid grid-cols-4 border-t border-line">
+        <div className="relative z-10 mt-9 grid grid-cols-4 gap-1.5">
           {STAGES.map((s, i) => (
-            <div key={s} className="pt-3">
-              <div className="mb-2 h-px" style={{ background: i < stage ? "var(--ink)" : i === stage ? "var(--thread)" : "transparent" }} />
-              <div className="font-mono text-[10.5px] text-muted">0{i + 1}</div>
-              <div className="text-[13px]" style={{ color: i === stage ? "var(--thread)" : i < stage ? "var(--ink)" : "var(--muted)" }}>
+            <div key={s}>
+              <div className="h-[3px] overflow-hidden rounded-full bg-white/15">
+                <div
+                  className={`h-full rounded-full ${i === stage ? "animate-pulse" : ""}`}
+                  style={{ width: i <= stage ? "100%" : "0%", background: i < stage ? "#fff" : "var(--thread)" }}
+                />
+              </div>
+              <div className="mt-2 text-[13px] font-medium" style={{ color: i === stage ? "var(--thread)" : i < stage ? "#fff" : "rgba(255,255,255,.5)" }}>
                 {s}
               </div>
             </div>
@@ -131,7 +138,7 @@ export function LoadingReel({
               {reels.map((r) => (
                 <div
                   key={r.id}
-                  className="h-1 flex-1"
+                  className="h-1 flex-1 rounded-full"
                   style={{
                     background:
                       r.status === "ready" ? "var(--thread)" : r.status === "generating" ? "color-mix(in srgb, var(--thread) 40%, transparent)" : "var(--border)",
@@ -139,18 +146,18 @@ export function LoadingReel({
                 />
               ))}
             </div>
-            <div className="border-t border-line">
+            <div className="space-y-1">
               {reels.map((r, i) => (
                 <motion.div
                   key={r.id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.06 }}
-                  className="flex items-center gap-3 border-b border-line py-1.5 text-[13px]"
+                  className="flex items-center gap-3 rounded-[10px] bg-black/20 px-2.5 py-1.5 text-[13px]"
                 >
-                  <span className="w-5 font-mono text-[10.5px] text-muted">{String(r.index).padStart(2, "0")}</span>
-                  <span className={`truncate ${r.index === reelIndex ? "text-thread" : "text-ink/85"}`}>{r.title}</span>
-                  <span className="ml-auto font-mono text-[10.5px] text-muted">
+                  <span className="h-[18px] w-[10px] shrink-0 rounded-[3px]" style={{ background: reelAccent(r.index), opacity: r.status === "ready" ? 1 : 0.4 }} aria-hidden />
+                  <span className={`truncate ${r.index === reelIndex ? "text-thread" : "text-white/85"}`}>{r.title}</span>
+                  <span className="ml-auto text-[11px] font-medium text-white/60">
                     {r.status === "ready" ? "ready" : r.status === "generating" ? "writing" : r.locked ? "locked" : r.status === "failed" ? "failed" : "queued"}
                   </span>
                 </motion.div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { threadHex } from "./accent";
+import { mutedColor, threadHex } from "./accent";
 
 /**
  * The reel's backdrop: a slow field of faint dots and hairline connections on ink, a few tinted
@@ -20,8 +20,8 @@ export function ParticleField({ active, pulse }: { active: boolean; pulse: numbe
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const accent = threadHex();
-    const base = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8ea595";
+    const accent = threadHex(canvas);
+    const base = mutedColor(canvas);
     let raf = 0;
     let w = 0;
     let h = 0;
