@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/app-shell";
-import { DemoFeed, SpoolFeed } from "@/components/spool/spool-feed";
+import { DemoVideos } from "@/components/spool/demo-videos";
+import { SpoolFeed } from "@/components/spool/spool-feed";
 
 export const metadata: Metadata = { title: "Your spool", robots: { index: false } };
 
@@ -10,9 +11,7 @@ export default async function SpoolPage({ params }: PageProps<"/s/[id]">) {
   return (
     <AppShell active="reels" workbench>
       {id === "demo" ? (
-        <Suspense>
-          <DemoFeed />
-        </Suspense>
+        <DemoVideos />
       ) : (
         <Suspense>
           <SpoolFeed id={id} />

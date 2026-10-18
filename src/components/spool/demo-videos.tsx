@@ -79,7 +79,7 @@ export function DemoVideos() {
                 loop
                 muted
                 preload={i === 0 ? "auto" : "metadata"}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
                 onClick={() => {
                   if (muted) setMuted(false);
                   else setPaused((p) => !p);
