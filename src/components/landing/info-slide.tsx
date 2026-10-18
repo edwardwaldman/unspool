@@ -86,6 +86,9 @@ function BigUpload() {
         <Float className="left-0 top-2 -rotate-6" delay={0}>.pdf</Float>
         <Float className="right-4 top-0 rotate-3" delay={0.4}>.docx</Float>
         <Float className="bottom-0 right-6 -rotate-3" delay={1.2}>~60s each</Float>
+        <Float className="bottom-2 left-8 rotate-2" delay={0.8}>.pptx</Float>
+        <Float className="-left-24 top-1/2 -translate-y-1/2 -rotate-3" delay={1}>♪ voiceover</Float>
+        <Float className="-right-40 top-[46%] rotate-2 border-thread/60 text-thread" delay={1.4}>✓ quiz in every reel</Float>
         {/* hand-drawn "start here" arrow */}
         <div aria-hidden className="pointer-events-none absolute -top-12 left-1/2 hidden translate-x-[70px] items-start gap-1 md:flex">
           <span className="-rotate-6 font-hook text-[20px] text-thread">start here</span>
