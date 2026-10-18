@@ -12,9 +12,14 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   let latest: string | null = null;
   if (supabaseConfigured) {
-    const viewer = await getViewer();
-    const docs = await listDocuments(viewer, 5);
-    latest = docs.find((d) => d.status !== "failed" && d.status !== "uploading")?.id ?? null;
+    // A missing server key or a database hiccup must never take the landing page down.
+    try {
+      const viewer = await getViewer();
+      const docs = await listDocuments(viewer, 5);
+      latest = docs.find((d) => d.status !== "failed" && d.status !== "uploading")?.id ?? null;
+    } catch (err) {
+      console.error("home: could not load documents", err);
+    }
   }
   if (latest) {
     return (

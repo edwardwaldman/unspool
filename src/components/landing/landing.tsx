@@ -76,7 +76,6 @@ function Headline() {
   return (
     <div className="relative px-4 md:px-24">
       <Tag className="-left-2 -top-6 -rotate-6" delay={0.4}>.pdf</Tag>
-      <Tag className="-right-4 -top-4 rotate-3" delay={0.7}>×10 reels</Tag>
       <Tag className="-right-24 top-[62%] -rotate-2" delay={1}>~60s each</Tag>
       <h1 className="text-center font-headline text-[30px] font-bold leading-[1.1] tracking-[-0.02em] md:text-[50px]">
         One document{" "}

@@ -85,7 +85,6 @@ function BigUpload() {
       <div className="relative mx-auto w-fit py-10 md:px-40 md:py-16">
         <Float className="left-0 top-2 -rotate-6" delay={0}>.pdf</Float>
         <Float className="right-4 top-0 rotate-3" delay={0.4}>.docx</Float>
-        <Float className="-bottom-2 -left-6 rotate-2" delay={0.8}>×10 reels</Float>
         <Float className="bottom-0 right-6 -rotate-3" delay={1.2}>~60s each</Float>
         {/* hand-drawn "start here" arrow */}
         <div aria-hidden className="pointer-events-none absolute -top-12 left-1/2 hidden translate-x-[70px] items-start gap-1 md:flex">

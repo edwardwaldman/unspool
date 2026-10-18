@@ -15,7 +15,8 @@ export const metadata: Metadata = { title: "Library", robots: { index: false } }
 
 export default async function LibraryPage() {
   const viewer = supabaseConfigured ? await getViewer() : null;
-  const docs = viewer ? await listDocuments(viewer, 100) : [];
+  // A missing server key or a database hiccup shows an empty library rather than an error page.
+  const docs = viewer ? await listDocuments(viewer, 100).catch((err) => (console.error("library: could not load documents", err), [])) : [];
   const items: LibraryItem[] = [];
   if (docs.length) {
     const { data: reels } = await adminClient()
