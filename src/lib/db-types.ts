@@ -51,6 +51,8 @@ export type ReelRow = {
   status: ReelStatus;
   error: string | null;
   attempts: number;
+  /** The owner's pending change request while an edited reel regenerates (null otherwise). */
+  edit_request?: string | null;
   started_at: string | null;
   created_at: string;
   updated_at: string;

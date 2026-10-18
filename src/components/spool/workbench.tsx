@@ -785,7 +785,7 @@ export function Workbench({
           viewer={viewer}
         />
       )}
-      {spool && <SpoolMoreSheet spool={spool} open={moreOpen} onClose={() => setMoreOpen(false)} onDeleted={onDeleted} />}
+      {spool && <SpoolMoreSheet spool={spool} reel={items[cur]?.reel} open={moreOpen} onClose={() => setMoreOpen(false)} onDeleted={onDeleted} />}
     </div>
   );
 }

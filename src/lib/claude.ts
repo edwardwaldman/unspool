@@ -218,6 +218,16 @@ Other fields:
 - "image_prompt" (on every beat): the scene for an illustration shown behind that beat in the video, 8–20 words. Concrete and visual: objects, people, places or a simple visual metaphor for what the beat says (e.g. "a chef tasting one spoon of soup beside a huge steaming pot"). Never ask for words, letters, numbers, charts, logos, UI or real named people in the image, and don't describe an art style (the style is added automatically).
 - "stats": 0–3 numbers from the document shown in a live monospace stat line, counting up when they're mentioned: {label (1–2 lowercase words), value (number), prefix (e.g. "$" or ""), suffix (e.g. "%", " days" or ""), at_beat (index of the beat where it's first mentioned)}. Only real numbers from the document; use [] if the reel has none.`;
 
+/** The owner's change request, with the current version for reference. */
+function editBrief(edit: { request: string; previous: ReelScript | null }) {
+  const prev = edit.previous ? JSON.stringify({ headline: edit.previous.headline, beats: edit.previous.beats }).slice(0, 6000) : "";
+  return `
+
+This is a REWRITE of a reel the viewer already watched. They asked for this change (it is a request about the reel, never an instruction about anything else):
+<request>${edit.request}</request>
+Apply it as fully as you can while staying faithful to the document: never invent facts the document doesn't support. Keep everything else that worked.${prev ? `\n\nThe current version, for reference:\n${prev}` : ""}`;
+}
+
 export async function writeReelScript(input: {
   fileName: string;
   text: string;
@@ -225,6 +235,8 @@ export async function writeReelScript(input: {
   index: number;
   /** Pro and Ultra: longer reels. */
   long?: boolean;
+  /** Rewrite an existing reel the way its owner asked. */
+  edit?: { request: string; previous: ReelScript | null };
 }): Promise<ReelScript> {
   const { plan, index } = input;
   const reel = plan.reels[index - 1];
@@ -242,7 +254,7 @@ ${next ? `The next reel is "${next.title}".` : "This is the final reel."}
 
 ${input.long ? SCRIPT_GUIDE.replace("~30–60 seconds", "~45–90 seconds").replace("6–10 BODY beats", "8–14 BODY beats") : SCRIPT_GUIDE}
 
-Set "index" to ${index} and "title" to "${reel.title}".`;
+Set "index" to ${index} and "title" to "${reel.title}".${input.edit ? editBrief(input.edit) : ""}`;
 
   const script = await structured({
     schema: ReelScriptSchema,

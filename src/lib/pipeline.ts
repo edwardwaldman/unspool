@@ -150,6 +150,7 @@ export async function generateReel(reelId: string) {
   const db = adminClient();
   const { data: reel } = await db.from("reels").select("*").eq("id", reelId).maybeSingle<ReelRow>();
   if (!reel || reel.status === "ready") return;
+  const edit = reel.edit_request ? { request: reel.edit_request, previous: reel.script_json } : undefined;
   if (reel.status === "generating" && reel.started_at && Date.now() - new Date(reel.started_at).getTime() < STALE_MS) return;
   // Stop retrying a reel that keeps failing, so stuck-healing can't spend on it forever.
   if (reel.attempts >= LIMITS.maxReelAttempts) {
@@ -195,10 +196,10 @@ export async function generateReel(reelId: string) {
       reels: (siblings ?? []).map((s) => ({ index: s.index, title: s.title, hook: s.hook, section: s.section ?? "" })),
     };
 
-    const script = await writeReelScript({ fileName: doc.file_name, text: doc.extracted_text, plan, index: reel.index, long: doc.long_reels });
+    const script = await writeReelScript({ fileName: doc.file_name, text: doc.extracted_text, plan, index: reel.index, long: doc.long_reels, edit });
 
     // Then the rest of the reels that are paid for (none on free: the drip generates on demand).
-    if (reel.index === 1) await queueRemainingReels(reel.document_id);
+    if (reel.index === 1 && !edit) await queueRemainingReels(reel.document_id);
 
     const segments = buildSegments(script);
     const clips = new Map<string, Buffer>();
@@ -207,7 +208,7 @@ export async function generateReel(reelId: string) {
       if (!tts) {
         return [seg.key, { duration: estimateDuration(seg.speech), words: estimateWordFractions(seg.speech) }] as const;
       }
-      const path = `${reel.document_id}/${reel.index}/${seg.key}-${reel.attempts + 1}.mp3`;
+      const path = `${reel.document_id}/${reel.index}/${seg.key}-${edit ? `e${Date.now()}` : reel.attempts + 1}.mp3`;
       const { error } = await db.storage
         .from("audio")
         .upload(path, tts.audio, { contentType: "audio/mpeg", upsert: true });
@@ -229,7 +230,7 @@ export async function generateReel(reelId: string) {
       }
     }
 
-    const ready = { status: "ready" as const, script_json: script, audio_paths: audio, error: null };
+    const ready = { status: "ready" as const, script_json: script, audio_paths: audio, error: null, ...(edit ? { edit_request: null } : {}) };
     let saved = false;
     if (video) {
       const { error } = await db.from("reels").update({ ...ready, video_path: video.path, video_meta: video.timeline }).eq("id", reelId);
@@ -250,6 +251,11 @@ export async function generateReel(reelId: string) {
     if (count === 0) await db.from("documents").update({ status: "ready" }).eq("id", reel.document_id);
   } catch (err) {
     console.error("[pipeline] generateReel failed", reelId, err);
+    // A failed edit leaves the reel as it was: its old script, audio and video are untouched until success.
+    if (edit && reel.script_json) {
+      await db.from("reels").update({ status: "ready", edit_request: null, error: null }).eq("id", reelId);
+      return;
+    }
     await db.from("reels").update({ status: "failed", error: friendlyError(err) }).eq("id", reelId);
     // Out of attempts: this reel failed for good, so give its credit back.
     if (reel.attempts + 1 >= LIMITS.maxReelAttempts) await refundReel(reelId);

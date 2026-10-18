@@ -38,9 +38,12 @@ function SpoolView({ docHref, ...p }: ViewProps) {
   return <Feed {...p} tab="doc" docHref={docHref} />;
 }
 
+const DEMO_FREE = 3;
+
 export function DemoFeed() {
   const params = useSearchParams();
-  const items = useMemo(() => itemsFor(SAMPLE_SPOOL), []);
+  // Three free sample reels, then the rest are locked: scrolling on hits the sign-up / upload gate.
+  const items = useMemo(() => itemsFor({ ...SAMPLE_SPOOL, reels: SAMPLE_SPOOL.reels.map((r) => (r.index > DEMO_FREE ? { ...r, locked: true } : r)) }), []);
   const initial = Math.max(1, Math.min(SAMPLE_SPOOL.reels.length, Number(params.get("reel") ?? 1))) - 1;
   return <SpoolView items={items} viewer={null} docHref="/s/demo" initialIndex={initial} />;
 }

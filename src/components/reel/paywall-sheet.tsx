@@ -58,11 +58,14 @@ export function PaywallSheet({
     <Sheet open={open} onClose={onClose} label="Sign in">
       {spool.demo ? (
         <div className="pb-1">
-          <div className="label">Sample spool</div>
-          <h2 className="mt-2 font-display text-[34px] leading-[1.05]">This one is a demo.</h2>
-          <p className="mt-2 text-[15px] text-muted">Drop your own notes, chapter or PDF and get reels like these.</p>
-          <Link href="/" className="btn-primary mt-6 w-full py-3.5 text-[15px]">
-            Unspool a document
+          <div className="label">That&apos;s the sample</div>
+          <h2 className="mt-2 font-display text-[34px] leading-[1.05]">Now make reels from your own notes.</h2>
+          <p className="mt-2 text-[15px] text-muted">Drop a PDF, chapter or slides and get reels like these.</p>
+          <Link href="/?upload=1" className="btn-primary mt-6 w-full py-3.5 text-[15px]">
+            Upload a document
+          </Link>
+          <Link href="/login" className="btn-secondary mt-2 w-full py-3.5 text-[15px]">
+            Sign up free
           </Link>
         </div>
       ) : wanted && !signedIn ? (
