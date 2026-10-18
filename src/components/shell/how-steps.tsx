@@ -59,8 +59,7 @@ export function HowSteps({ steps }: { steps: readonly Step[] }) {
                 onClick={() => setActive(i)}
                 className={`relative w-full border-l-2 py-4 pl-6 text-left transition-colors ${on ? "border-thread" : "border-line hover:border-muted"}`}
               >
-                <div className={`font-mono text-[12px] ${on ? "text-thread" : "text-muted"}`}>0{i + 1}</div>
-                <h2 className={`mt-1 font-display text-[28px] leading-tight transition-colors ${on ? "text-ink" : "text-ink/45"}`}>{title}</h2>
+                <h2 className={`font-display text-[28px] leading-tight transition-colors ${on ? "text-ink" : "text-ink/45"}`}>{title}</h2>
                 <motion.p
                   className="overflow-hidden text-[15px] leading-relaxed text-ink/75"
                   initial={false}
