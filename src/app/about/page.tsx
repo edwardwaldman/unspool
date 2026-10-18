@@ -111,7 +111,7 @@ export default function AboutPage() {
         </div>
         <div className="border-t border-line py-10 md:border-l md:border-t-0 md:pl-10">
           <div className="label">For work</div>
-          <h2 className="mt-3 font-display text-[36px] leading-[1.05]">Read the contract in sixty seconds.</h2>
+          <h2 className="mt-3 font-display text-[36px] leading-[1.05]">Get the contract without reading all of it.</h2>
           <p className="mt-3 text-[15px] text-ink/75">Policies, onboarding docs, reports and contracts: what you have to do, the deadlines, the money and the clauses to watch.</p>
         </div>
       </section>
