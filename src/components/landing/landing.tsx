@@ -123,11 +123,11 @@ export function Landing() {
   const animFade = useTransform(easedY, [150, 900], [1, 0.25]);
   const cueFade = useTransform(easedY, [40, 420], [1, 0]);
   const cueY = useTransform(easedY, [0, 420], [0, 24]);
-  const k = lg ? Math.max(0.6, Math.min(2.8, (vh - 440) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
+  const k = lg ? Math.max(0.6, Math.min(2.8, (vh - 370) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
 
   return (
     <div>
-    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-[safe_center] gap-6 overflow-hidden px-3 pb-10 pt-20 lg:gap-6 lg:px-6 lg:pb-16 lg:pt-24">
+    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-[safe_center] gap-6 overflow-hidden px-3 pb-10 pt-20 lg:gap-5 lg:px-6 lg:pb-10 lg:pt-20">
       {/* Wordmark under the top bar: the bar slides down over it on scroll */}
       <Link href="/" aria-label="unspool" className="absolute left-5 top-5 lg:left-10 lg:top-[22px]">
         <Wordmark size={24} />
@@ -137,7 +137,12 @@ export function Landing() {
         <Headline />
       </motion.div>
       <div className="flex flex-col items-center gap-6 lg:gap-8">
-        <motion.div className="order-first" style={lg ? { width: ANIM_W * k, height: ANIM_H * k, scale: animScale, opacity: animFade } : { width: ANIM_W * k, height: ANIM_H * k }}>
+        <motion.div className="relative order-first" style={lg ? { width: ANIM_W * k, height: ANIM_H * k, scale: animScale, opacity: animFade } : { width: ANIM_W * k, height: ANIM_H * k }}>
+          {/* Floating gimmicks around the animation (desktop) */}
+          <Tag className="-left-36 top-[30%] -rotate-3" delay={0.9}>.docx</Tag>
+          <Tag className="-left-44 top-[64%] rotate-2" delay={1.3}>♪ voiceover</Tag>
+          <Tag className="-right-52 top-[16%] rotate-3 border-thread/60 text-thread" delay={1.1}>✓ quiz in every reel</Tag>
+          <Tag className="-right-40 top-[70%] -rotate-2" delay={1.5}>captions on</Tag>
           <div className="origin-top-left" style={{ width: ANIM_W, height: ANIM_H, transform: `scale(${k})` }}>
             <DocToReel />
           </div>
@@ -159,7 +164,7 @@ export function Landing() {
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.94 }}
           >
-            <span className="relative flex h-[124px] w-[124px] items-center justify-center lg:h-[140px] lg:w-[140px]">
+            <span className="relative flex h-[124px] w-[124px] items-center justify-center lg:h-[128px] lg:w-[128px]">
               <motion.svg viewBox="0 0 100 100" className="absolute inset-0" animate={{ rotate: 360 }} transition={{ duration: 14, repeat: Infinity, ease: "linear" }}>
                 <defs>
                   <path id="cue-ring" d="M50 50 m-38 0 a38 38 0 1 1 76 0 a38 38 0 1 1 -76 0" />
