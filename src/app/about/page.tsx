@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { HowSteps } from "@/components/shell/how-steps";
 import { MarketingPage } from "@/components/shell/marketing-page";
-import { formatPrice, PRICING } from "@/lib/config";
+import { formatCents, FREE_REEL_INTERVAL_MIN, FREE_REELS_PER_DAY, PLANS, TOPUP } from "@/lib/plans";
 import { SAMPLE_SPOOL } from "@/lib/sample";
 import { buildSegments } from "@/lib/segments";
 import { estimateDuration } from "@/lib/timing";
@@ -19,7 +19,14 @@ const faqs = [
   ["Is it accurate?", "Reels are written only from your document. If it isn't in the doc, it isn't in the reel. It is still a summary, so check anything high-stakes against the original."],
   ["Who can see my files?", "Only you. Files are private, never public and never used to train AI. Delete a document and its file, scripts and audio go with it."],
   ["Do I need an account?", "Yes, a free one. Pick your file, sign up with your email, and your first reel is ready in minutes."],
-  ["How long can a document be?", "About 60 pages or 40,000 words for now. Longer files are cut at that point, and we tell you."],
+  [
+    "How long can a document be?",
+    `Up to ${PLANS.free.maxPages} pages on Free, ${PLANS.plus.maxPages} on Plus, ${PLANS.pro.maxPages} on Pro and ${PLANS.ultra.maxPages} on Ultra. Longer files are cut at that point, and we tell you.`,
+  ],
+  [
+    "What's free?",
+    `Your first reel of every document is free. Then 1 more every ${FREE_REEL_INTERVAL_MIN} minutes, up to ${FREE_REELS_PER_DAY} free reels a day. Paid plans bill weekly in reel credits (1 credit = 1 reel), and a ${formatCents(TOPUP.priceCents)} top-up adds ${TOPUP.credits} credits that never expire.`,
+  ],
   ["Is this legal or financial advice?", "No. For contracts and financial documents, Unspool summarizes what the document says."],
 ];
 
@@ -113,7 +120,7 @@ export default function AboutPage() {
         <div>
           <div className="label">Pricing</div>
           <p className="mt-2 font-display text-[30px] leading-tight">
-            First reel free, then one an hour · {formatPrice(PRICING.documentCents)} a document · {formatPrice(PRICING.subscriptionCents)}/mo unlimited
+            Your first reel is free · then 1 every {FREE_REEL_INTERVAL_MIN} min · Plus from {formatCents(PLANS.plus.priceCents)}/week
           </p>
         </div>
         <Link href="/pricing" className="text-[14px] text-thread underline underline-offset-4">

@@ -223,6 +223,8 @@ export async function writeReelScript(input: {
   text: string;
   plan: Plan;
   index: number;
+  /** Pro and Ultra: longer reels. */
+  long?: boolean;
 }): Promise<ReelScript> {
   const { plan, index } = input;
   const reel = plan.reels[index - 1];
@@ -238,7 +240,7 @@ Planned hook: ${reel.hook}
 Covers: ${reel.section}
 ${next ? `The next reel is "${next.title}".` : "This is the final reel."}
 
-${SCRIPT_GUIDE}
+${input.long ? SCRIPT_GUIDE.replace("~30–60 seconds", "~45–90 seconds").replace("6–10 BODY beats", "8–14 BODY beats") : SCRIPT_GUIDE}
 
 Set "index" to ${index} and "title" to "${reel.title}".`;
 

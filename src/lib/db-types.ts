@@ -24,6 +24,13 @@ export type DocumentRow = {
   status: DocumentStatus;
   error: string | null;
   unlocked: boolean;
+  /** Reels 1..credit_reels are paid for (credits or free drip) and may generate/play. Null until planned. */
+  credit_reels: number | null;
+  /** When the last free-drip reel was unlocked (the 30-minute timer runs from here). */
+  free_unlocked_at: string | null;
+  priority: boolean;
+  long_reels: boolean;
+  watermark: boolean;
   extracted_text: string | null;
   created_at: string;
   updated_at: string;
@@ -51,4 +58,4 @@ export type ReelRow = {
 
 /** Columns safe to load for listing (excludes the large extracted_text). */
 export const DOCUMENT_COLUMNS =
-  "id,user_id,anon_token,ip_hash,file_name,file_path,file_type,file_size,page_count,word_count,truncated,title,reel_count,doc_type,sensitive,status,error,unlocked,created_at,updated_at";
+  "id,user_id,anon_token,ip_hash,file_name,file_path,file_type,file_size,page_count,word_count,truncated,title,reel_count,doc_type,sensitive,status,error,unlocked,credit_reels,free_unlocked_at,priority,long_reels,watermark,created_at,updated_at";

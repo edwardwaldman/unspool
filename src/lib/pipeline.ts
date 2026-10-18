@@ -1,5 +1,7 @@
 import { writeReelScript, planSpool } from "./claude";
-import { GENERATE_LOCKED_REELS_EAGERLY, LIMITS } from "./config";
+import { LIMITS } from "./config";
+import { fundPlannedDocument, ownerEntitlement, refundReel } from "./credits";
+import { PLANS, maxWordsFor } from "./plans";
 import type { DocumentRow, ReelRow } from "./db-types";
 import { ExtractionError, extractDocument } from "./extract";
 import { dispatch } from "./jobs";
@@ -8,7 +10,6 @@ import { buildSegments } from "./segments";
 import { adminClient } from "./supabase/admin";
 import { estimateDuration, estimateWordFractions } from "./timing";
 import { synthesize } from "./tts";
-import { ownerViewer } from "./shares";
 import { renderReelVideo, videoRenderEnabled, type ReelVideo } from "./video/reel-video";
 
 const STALE_MS = 6 * 60 * 1000;
@@ -47,14 +48,20 @@ export async function processDocument(documentId: string) {
     .update({ status: "extracting", error: null })
     .eq("id", documentId)
     .in("status", ["uploaded", "failed"])
-    .select("id,file_name,file_path,unlocked")
-    .maybeSingle<Pick<DocumentRow, "id" | "file_name" | "file_path" | "unlocked">>();
+    .select("id,user_id,ip_hash,file_name,file_path,unlocked")
+    .maybeSingle<Pick<DocumentRow, "id" | "user_id" | "ip_hash" | "file_name" | "file_path" | "unlocked">>();
   if (!doc) return; // already being processed
 
   try {
+    // The owner's tier sets the page limit, and is frozen onto the document at plan time.
+    const ent = await ownerEntitlement(doc);
+    const plan_ = PLANS[ent.tier];
     const { data: file, error: dlErr } = await db.storage.from("documents").download(doc.file_path!);
     if (dlErr || !file) throw new ExtractionError("We couldn't read the uploaded file. Try uploading it again.");
-    const extracted = await extractDocument(Buffer.from(await file.arrayBuffer()), doc.file_name);
+    const extracted = await extractDocument(Buffer.from(await file.arrayBuffer()), doc.file_name, {
+      maxPages: plan_.maxPages,
+      maxWords: maxWordsFor(ent.tier),
+    });
 
     await db
       .from("documents")
@@ -87,8 +94,27 @@ export async function processDocument(documentId: string) {
 
     await db
       .from("documents")
-      .update({ status: "scripting", title: plan.title, doc_type: plan.doc_type, sensitive: plan.sensitive, reel_count: plan.reels.length })
+      .update({
+        status: "scripting",
+        title: plan.title,
+        doc_type: plan.doc_type,
+        sensitive: plan.sensitive,
+        reel_count: plan.reels.length,
+        priority: plan_.priority,
+        long_reels: plan_.longReels,
+        // The trial gets Plus limits, so no watermark either.
+        watermark: plan_.watermark && !doc.unlocked,
+      })
       .eq("id", documentId);
+
+    // Pay for it: one credit per planned reel on paid tiers (as many as are left), reel 1 on free.
+    // Reels past what was paid for stay locked and are never generated until unlocked.
+    const funded = doc.unlocked ? plan.reels.length : await fundPlannedDocument(documentId, ent, plan.reels.length);
+    if (doc.unlocked) await db.from("documents").update({ credit_reels: funded }).eq("id", documentId);
+    if (funded === 0) {
+      await db.from("documents").update({ status: "ready" }).eq("id", documentId);
+      return;
+    }
 
     // Reel 1 first; it queues the rest once its script is written (so they reuse the warm prompt cache).
     const first = reels.find((r) => r.index === 1);
@@ -106,13 +132,14 @@ export async function processDocument(documentId: string) {
 /** Queue every reel that isn't done or in flight (used after reel 1, after unlocking, and for retries). */
 export async function queueRemainingReels(documentId: string, opts: { includeFirst?: boolean } = {}) {
   const db = adminClient();
-  const { data: reels } = await db
-    .from("reels")
-    .select("id,index,status,started_at")
-    .eq("document_id", documentId)
-    .order("index");
-  for (const r of (reels ?? []) as Pick<ReelRow, "id" | "index" | "status" | "started_at">[]) {
+  const [{ data: reels }, { data: doc }] = await Promise.all([
+    db.from("reels").select("id,index,status,started_at,attempts").eq("document_id", documentId).order("index"),
+    db.from("documents").select("credit_reels,unlocked").eq("id", documentId).maybeSingle<Pick<DocumentRow, "credit_reels" | "unlocked">>(),
+  ]);
+  const funded = doc?.unlocked ? Infinity : doc?.credit_reels ?? 0;
+  for (const r of (reels ?? []) as Pick<ReelRow, "id" | "index" | "status" | "started_at" | "attempts">[]) {
     if (r.index === 1 && !opts.includeFirst) continue;
+    if (r.index > funded || r.attempts >= LIMITS.maxReelAttempts) continue; // unpaid, or failed for good
     const stale = r.status === "generating" && r.started_at && Date.now() - new Date(r.started_at).getTime() > STALE_MS;
     if (r.status === "pending" || r.status === "failed" || stale) await dispatch({ name: "reel", reelId: r.id });
   }
@@ -127,8 +154,16 @@ export async function generateReel(reelId: string) {
   // Stop retrying a reel that keeps failing, so stuck-healing can't spend on it forever.
   if (reel.attempts >= LIMITS.maxReelAttempts) {
     if (reel.status !== "failed") await db.from("reels").update({ status: "failed", error: "Something went wrong while unspooling." }).eq("id", reelId);
+    await refundReel(reelId);
     return;
   }
+  // Only reels that have been paid for (credits or the free drip) are ever generated.
+  const { data: gate } = await db
+    .from("documents")
+    .select("credit_reels,unlocked")
+    .eq("id", reel.document_id)
+    .maybeSingle<Pick<DocumentRow, "credit_reels" | "unlocked">>();
+  if (!gate || (!gate.unlocked && reel.index > (gate.credit_reels ?? 0))) return;
 
   // Optimistic claim: only one worker wins.
   const { data: claimed } = await db
@@ -143,9 +178,9 @@ export async function generateReel(reelId: string) {
   try {
     const { data: doc } = await db
       .from("documents")
-      .select("id,user_id,file_name,extracted_text,doc_type,sensitive,unlocked,title")
+      .select("id,user_id,file_name,extracted_text,doc_type,sensitive,unlocked,title,long_reels,watermark")
       .eq("id", reel.document_id)
-      .single<Pick<DocumentRow, "id" | "user_id" | "file_name" | "extracted_text" | "doc_type" | "sensitive" | "unlocked" | "title">>();
+      .single<Pick<DocumentRow, "id" | "user_id" | "file_name" | "extracted_text" | "doc_type" | "sensitive" | "unlocked" | "title" | "long_reels" | "watermark">>();
     if (!doc?.extracted_text) throw new Error("document text missing");
 
     const { data: siblings } = await db
@@ -160,11 +195,10 @@ export async function generateReel(reelId: string) {
       reels: (siblings ?? []).map((s) => ({ index: s.index, title: s.title, hook: s.hook, section: s.section ?? "" })),
     };
 
-    const script = await writeReelScript({ fileName: doc.file_name, text: doc.extracted_text, plan, index: reel.index });
+    const script = await writeReelScript({ fileName: doc.file_name, text: doc.extracted_text, plan, index: reel.index, long: doc.long_reels });
 
-    if (reel.index === 1 && (GENERATE_LOCKED_REELS_EAGERLY || doc.unlocked)) {
-      await queueRemainingReels(reel.document_id);
-    }
+    // Then the rest of the reels that are paid for (none on free: the drip generates on demand).
+    if (reel.index === 1) await queueRemainingReels(reel.document_id);
 
     const segments = buildSegments(script);
     const clips = new Map<string, Buffer>();
@@ -187,8 +221,8 @@ export async function generateReel(reelId: string) {
     let video: ReelVideo | null = null;
     if (videoRenderEnabled()) {
       try {
-        // Free tier (document not bought, owner not subscribed): burn in a small watermark.
-        const watermark = !doc.unlocked && !(doc.user_id && (await ownerViewer(doc.user_id)).subscribed);
+        // Free tier: burn in a small watermark (frozen on the document at plan time from the owner's tier).
+        const watermark = doc.watermark && !doc.unlocked;
         video = await renderReelVideo({ reel, script, segments, audio, clips, deadline: startedAt + REEL_BUDGET_MS, watermark });
       } catch (err) {
         console.error("[pipeline] video render failed, keeping the animated player", reelId, err);
@@ -217,6 +251,8 @@ export async function generateReel(reelId: string) {
   } catch (err) {
     console.error("[pipeline] generateReel failed", reelId, err);
     await db.from("reels").update({ status: "failed", error: friendlyError(err) }).eq("id", reelId);
+    // Out of attempts: this reel failed for good, so give its credit back.
+    if (reel.attempts + 1 >= LIMITS.maxReelAttempts) await refundReel(reelId);
   }
 }
 
@@ -226,7 +262,7 @@ export async function generateReel(reelId: string) {
 
 const lastHeal = new Map<string, number>();
 
-/** `playable`: how many reels the viewer may play now (all when unlocked, else the hourly free drip). */
+/** `playable`: how many reels are paid for (credits or the free drip); only those are healed. */
 export async function healIfStuck(doc: DocumentRow, reels: Pick<ReelRow, "id" | "index" | "status" | "started_at">[], playable: number) {
   if (Date.now() - (lastHeal.get(doc.id) ?? 0) < 20_000) return;
   lastHeal.set(doc.id, Date.now());
@@ -243,8 +279,7 @@ export async function healIfStuck(doc: DocumentRow, reels: Pick<ReelRow, "id" | 
   if (doc.status !== "scripting") return;
   const firstReady = reels.find((r) => r.index === 1)?.status === "ready";
   for (const r of reels) {
-    const locked = r.index > playable;
-    if (locked && !GENERATE_LOCKED_REELS_EAGERLY) continue;
+    if (r.index > playable) continue; // not paid for: never generated
     const stale = r.status === "generating" && r.started_at && Date.now() - new Date(r.started_at).getTime() > STALE_MS;
     const orphaned = r.status === "pending" && age > 60_000 && (r.index === 1 || firstReady);
     if (stale || orphaned) await dispatch({ name: "reel", reelId: r.id });

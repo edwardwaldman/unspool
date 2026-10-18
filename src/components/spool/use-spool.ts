@@ -40,8 +40,8 @@ export function useSpool(id: string, opts: { keepPolling?: boolean } = {}) {
         setSpool(body.spool);
         setViewer(body.viewer);
         if (!settled(body.spool) || keep.current) schedule(2000);
-        // Free drip: refetch the moment the next reel opens, so it unblurs on its own.
-        else if (body.spool.nextFreeUnlockAt) schedule(Math.min(2 ** 31 - 1, Math.max(1000, Date.parse(body.spool.nextFreeUnlockAt) - Date.now() + 1500)));
+        // Free drip: refetch when the next free reel can be unlocked, so the countdown flips to "ready".
+        else if (body.spool.nextFreeUnlockAt && Date.parse(body.spool.nextFreeUnlockAt) > Date.now()) schedule(Math.min(2 ** 31 - 1, Math.max(1000, Date.parse(body.spool.nextFreeUnlockAt) - Date.now() + 1500)));
       } catch {
         schedule(4000);
       }
@@ -54,5 +54,10 @@ export function useSpool(id: string, opts: { keepPolling?: boolean } = {}) {
   }, [id, nonce]);
 
   const reload = useCallback(() => setNonce((n) => n + 1), []);
+  // Unlocks (free drip, credits) ask every open spool to refetch.
+  useEffect(() => {
+    window.addEventListener("unspool:reload", reload);
+    return () => window.removeEventListener("unspool:reload", reload);
+  }, [reload]);
   return { spool, viewer, error, reload };
 }

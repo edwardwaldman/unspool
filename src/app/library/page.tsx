@@ -5,6 +5,8 @@ import { CheckoutReturn, SignInButtons } from "@/components/shell/account-action
 import { AppShell } from "@/components/shell/app-shell";
 import { LibraryGrid, type LibraryItem } from "@/components/spool/library-grid";
 import { freeReelLimit, isUnlocked } from "@/lib/access";
+import { tierOf } from "@/lib/credits";
+import { PLANS } from "@/lib/plans";
 import { supabaseConfigured } from "@/lib/config";
 import { listDocuments } from "@/lib/spool";
 import { adminClient } from "@/lib/supabase/admin";
@@ -49,7 +51,7 @@ export default async function LibraryPage() {
   const stats = [
     ["Spools", String(items.length)],
     ["Reels", String(reelCount)],
-    ["Plan", viewer?.subscribed ? "Unlimited" : "Free"],
+    ["Plan", PLANS[tierOf(viewer?.profile ?? null)].name],
   ];
 
   return (
@@ -79,7 +81,7 @@ export default async function LibraryPage() {
           )}
           {!viewer?.userId && items.length === 0 && supabaseConfigured && (
             <div className="mt-6">
-              <p className="text-[14px] text-muted">Create a free account to unspool a document. First reel free, then one more every hour.</p>
+              <p className="text-[14px] text-muted">Create a free account to unspool a document. Your first reel is free, then 1 every 30 minutes.</p>
               <SignInButtons next="/library" />
             </div>
           )}

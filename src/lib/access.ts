@@ -1,6 +1,7 @@
 import { DOCUMENT_COLUMNS, type DocumentRow } from "./db-types";
 import { MAX_REELS } from "./config";
-import { dripUnlocked, nextDripAt } from "./drip";
+import { tierOf } from "./credits";
+import { nextDripAt } from "./drip";
 import { adminClient } from "./supabase/admin";
 import type { Viewer } from "./viewer";
 
@@ -9,24 +10,29 @@ export function canAccess(doc: Pick<DocumentRow, "user_id" | "anon_token">, view
   return Boolean(doc.anon_token && viewer.anonToken && doc.anon_token === viewer.anonToken);
 }
 
-export function isUnlocked(doc: Pick<DocumentRow, "unlocked" | "user_id">, viewer: Viewer) {
+/** Every reel of this document is playable: bought under the old per-document price, or fully paid with credits. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- callers pass the viewer; the rule is per document now
+export function isUnlocked(doc: Pick<DocumentRow, "unlocked" | "credit_reels" | "reel_count">, _viewer?: Viewer) {
   if (doc.unlocked) return true;
-  return Boolean(viewer.subscribed && doc.user_id && doc.user_id === viewer.userId);
+  return Boolean(doc.reel_count && (doc.credit_reels ?? 0) >= doc.reel_count);
 }
 
 /**
- * How many reels of this document the viewer may play right now, and when the next free one opens.
- * Unlocked documents (bought, or a subscriber's own) get all of them; everyone else gets the hourly drip.
+ * How many reels of this document may play: the ones paid for (credits, or the free drip), and for a
+ * free owner when the next free reel may be unlocked (ISO; may be in the past, meaning "ready now").
+ * `viewer` is the document's owner. Server-authoritative: generation is gated on the same credit_reels.
  */
 export function freeReelLimit(
-  doc: Pick<DocumentRow, "unlocked" | "user_id" | "created_at" | "reel_count">,
+  doc: Pick<DocumentRow, "unlocked" | "user_id" | "created_at" | "reel_count" | "credit_reels" | "free_unlocked_at">,
   viewer: Viewer,
   opts: { reelRows?: number; now?: number } = {},
 ) {
   const total = reelTotal(doc, opts.reelRows);
-  const now = opts.now ?? Date.now();
-  if (isUnlocked(doc, viewer)) return { playable: total, nextFreeAt: null };
-  return { playable: dripUnlocked(doc.created_at, total, now), nextFreeAt: nextDripAt(doc.created_at, total, now) };
+  if (doc.unlocked) return { playable: total, nextFreeAt: null as string | null };
+  const playable = Math.min(total, doc.credit_reels ?? 0);
+  const free = tierOf(viewer.profile) === "free";
+  const nextFreeAt = free ? nextDripAt(doc.free_unlocked_at, playable, total) : null;
+  return { playable, nextFreeAt };
 }
 
 /** The document's planned reel count; MAX_REELS until the plan exists. */

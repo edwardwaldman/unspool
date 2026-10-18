@@ -39,7 +39,7 @@ export async function POST(req: Request) {
       429,
       viewer.subscribed
         ? "You've hit today's upload limit. Try again tomorrow."
-        : `Free accounts can unspool ${limit} documents a day. Go unlimited to keep going.`,
+        : `Free accounts can unspool ${limit} documents a day. Upgrade to keep going.`,
       { code: "limit" },
     );
   }

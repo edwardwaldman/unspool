@@ -7,16 +7,11 @@ export const FREE_REELS = 1;
 
 export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const MAX_WORDS = 40_000;
-export const MAX_PAGES = 60;
+/** The largest page limit of any tier (per-tier limits live in src/lib/plans.ts). */
+export const MAX_PAGES = 300;
 
 export const ACCEPTED_EXTENSIONS = ["pdf", "docx", "pptx", "txt", "md", "png", "jpg", "jpeg", "webp"] as const;
 export type AcceptedExtension = (typeof ACCEPTED_EXTENSIONS)[number];
-
-export const PRICING = {
-  documentCents: Number(process.env.PRICE_DOCUMENT_CENTS ?? 249),
-  subscriptionCents: Number(process.env.PRICE_SUBSCRIPTION_CENTS ?? 799),
-  currency: "usd",
-};
 
 export const LIMITS = {
   freeUploadsPerDay: Number(process.env.FREE_UPLOADS_PER_DAY ?? 3),
@@ -28,8 +23,7 @@ export const LIMITS = {
   maxReelAttempts: Number(process.env.MAX_REEL_ATTEMPTS ?? 5),
 };
 
-/** Generate every reel after the first right away (best UX) or only once it's playable (cheapest). */
-export const GENERATE_LOCKED_REELS_EAGERLY = process.env.GENERATE_LOCKED_REELS_EAGERLY !== "false";
+// Reels are generated only once paid for (credits or the free drip); see src/lib/plans.ts.
 
 export const ANON_COOKIE = "unspool_anon";
 /** Which share link (slug) brought this browser here, for signup attribution. */

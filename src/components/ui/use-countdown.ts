@@ -43,8 +43,11 @@ export function formatCountdown(ms: number): string {
   return h ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${String(m).padStart(2, "0")}:${s}`;
 }
 
-/** When locked reel `index` turns free, given the next drip time and how many are free now. */
+/**
+ * When locked reel `index` can be unlocked for free: only the very next reel has a time, since each
+ * free reel's 30-minute timer starts when the previous one is unlocked.
+ */
 export function freeAtFor(index: number, freeReels: number, nextFreeUnlockAt: string | null): string | null {
-  if (!nextFreeUnlockAt || index <= freeReels) return null;
-  return new Date(Date.parse(nextFreeUnlockAt) + (index - freeReels - 1) * 3600_000).toISOString();
+  if (!nextFreeUnlockAt || index !== freeReels + 1) return null;
+  return nextFreeUnlockAt;
 }

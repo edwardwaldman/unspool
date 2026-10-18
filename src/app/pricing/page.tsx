@@ -2,47 +2,47 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BillingButton } from "@/components/shell/billing-button";
 import { MarketingPage } from "@/components/shell/marketing-page";
-import { formatPrice, LIMITS, PRICING } from "@/lib/config";
+import { approxMonthly, formatCents, FREE_REEL_INTERVAL_MIN, FREE_REELS_PER_DAY, PLANS, TOPUP, TRIAL, type Tier } from "@/lib/plans";
 
 export const metadata: Metadata = { title: "Pricing" };
 
-function Plan({
-  name,
-  price,
-  unit,
-  note,
-  items,
-  featured,
-  children,
-}: {
-  name: string;
-  price: string;
-  unit?: string;
-  note: string;
-  items: string[];
-  featured?: boolean;
-  children: React.ReactNode;
-}) {
+const COLS: Tier[] = ["free", "plus", "pro", "ultra"];
+const yes = "Yes";
+const no = "—";
+
+const ROWS: [string, (t: Tier) => string][] = [
+  ["Reels", (t) => (t === "free" ? `1 reel per doc, then 1 every ${FREE_REEL_INTERVAL_MIN} min (up to ${FREE_REELS_PER_DAY}/day)` : `${PLANS[t].credits.toLocaleString("en-US")} reel credits a week`)],
+  ["Pages per document", (t) => `Up to ${PLANS[t].maxPages}`],
+  ["Every reel of a doc at once", (t) => (t === "free" ? no : yes)],
+  ["Watermark on videos", (t) => (PLANS[t].watermark ? "Yes" : "None")],
+  ["Share links", () => yes],
+  ["Longer reels", (t) => (PLANS[t].longReels ? yes : no)],
+  ["Priority queue", (t) => (PLANS[t].priority ? yes : no)],
+  ["Early access to new features", (t) => (PLANS[t].earlyAccess ? yes : no)],
+];
+
+function PriceCell({ tier }: { tier: Tier }) {
+  if (tier === "free") return <div className="font-display text-[34px] leading-none">$0</div>;
+  const c = PLANS[tier].priceCents;
   return (
-    <div className={`flex flex-col border p-7 ${featured ? "border-thread" : "border-line"} -ml-px -mt-px`}>
-      <div className="label" style={featured ? { color: "var(--thread)" } : undefined}>
-        {name}
+    <div>
+      <div className="flex items-baseline gap-1">
+        <span className="font-display text-[34px] leading-none">{formatCents(c)}</span>
+        <span className="text-[14px] text-muted">/week</span>
       </div>
-      <div className="mt-4 flex items-baseline gap-1">
-        <span className="font-display text-[42px] leading-none">{price}</span>
-        {unit && <span className="text-[15px] text-muted">{unit}</span>}
-      </div>
-      <div className="mt-2 font-mono text-[12px] text-muted">{note}</div>
-      <ul className="mt-6 border-t border-line text-[14.5px]">
-        {items.map((i) => (
-          <li key={i} className="border-b border-line py-2.5 text-ink/85">
-            {i}
-          </li>
-        ))}
-      </ul>
-      <div className="mt-auto pt-7">{children}</div>
+      <div className="mt-1 font-mono text-[11.5px] text-muted">{approxMonthly(c)}</div>
     </div>
   );
+}
+
+function Cta({ tier }: { tier: Tier }) {
+  if (tier === "free")
+    return (
+      <Link href="/" className="btn-secondary w-full py-3 text-[14px]">
+        Upload a document
+      </Link>
+    );
+  return <BillingButton mode="subscribe" tier={tier} label={`Get ${PLANS[tier].name}`} />;
 }
 
 export default function PricingPage() {
@@ -51,43 +51,107 @@ export default function PricingPage() {
       <section className="pt-16">
         <div className="label">Pricing</div>
         <h1 className="mt-3 max-w-[640px] font-display text-[45px] leading-[0.98] sm:text-[58px]">
-          Reel one is free. <em className="text-thread">Every time.</em>
+          Your first reel is free. <em className="text-thread">Every document.</em>
         </h1>
-        <p className="mt-5 max-w-[520px] text-[16px] text-ink/80">
-          First reel free, then one more every hour. See every reel title for any document before you pay anything.
+        <p className="mt-5 max-w-[560px] text-[16px] text-ink/80">
+          Free gets reel 1 of every document, then 1 more every {FREE_REEL_INTERVAL_MIN} minutes, up to {FREE_REELS_PER_DAY} a day. Paid plans bill weekly
+          in reel credits: 1 credit is 1 reel, and a document uses one credit per reel it plans. Credits reset every week on your billing date.
         </p>
       </section>
-      <section className="mt-14 grid pl-px pt-px md:grid-cols-3">
-        <Plan
-          name="Free"
-          price="$0"
-          note={`${LIMITS.freeUploadsPerDay} documents a day`}
-          items={["Reel 1 now, then one more every hour", "Every title and hook", "Free account, no card"]}
-        >
-          <Link href="/" className="btn-secondary w-full py-3 text-[14px]">
-            Upload a document
-          </Link>
-        </Plan>
-        <Plan
-          name="One document"
-          price={formatPrice(PRICING.documentCents)}
-          note="One payment, every reel"
-          items={["All reels for that document", "Voiceover, visuals and quizzes", "Rewatch anytime"]}
-        >
-          <p className="text-[13px] text-muted">Unlock from inside any spool.</p>
-        </Plan>
-        <Plan
-          name="Unlimited"
-          price={formatPrice(PRICING.subscriptionCents)}
-          unit="/month"
-          note="Cancel anytime"
-          items={["Unlimited documents", "Every reel unlocked", "One review feed across all your docs"]}
-          featured
-        >
-          <BillingButton mode="subscribe" />
-        </Plan>
+
+      {/* Desktop: comparison table */}
+      <section className="mt-12 hidden overflow-x-auto md:block" data-testid="tier-table">
+        <table className="w-full border-collapse text-left text-[14px]">
+          <thead>
+            <tr>
+              <th className="w-[22%] border border-line p-4 align-bottom font-normal text-muted">Plan</th>
+              {COLS.map((t) => (
+                <th key={t} className={`border p-4 align-top font-normal ${t === "plus" ? "border-thread" : "border-line"}`}>
+                  <div className="label" style={t === "plus" ? { color: "var(--thread)" } : undefined}>
+                    {PLANS[t].name}
+                  </div>
+                  <div className="mt-3">
+                    <PriceCell tier={t} />
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {ROWS.map(([label, f]) => (
+              <tr key={label}>
+                <td className="border border-line p-4 text-muted">{label}</td>
+                {COLS.map((t) => (
+                  <td key={t} className="border border-line p-4 text-ink/90">
+                    {f(t)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            <tr>
+              <td className="border border-line p-4" />
+              {COLS.map((t) => (
+                <td key={t} className="border border-line p-4">
+                  <Cta tier={t} />
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
       </section>
-      <p className="mt-6 text-[13px] text-muted">Prices in USD. Payments by Stripe; we never see your card.</p>
+
+      {/* Phones: one block per plan */}
+      <section className="mt-10 md:hidden">
+        {COLS.map((t) => (
+          <div key={t} className={`-mt-px border p-5 ${t === "plus" ? "border-thread" : "border-line"}`}>
+            <div className="label" style={t === "plus" ? { color: "var(--thread)" } : undefined}>
+              {PLANS[t].name}
+            </div>
+            <div className="mt-3">
+              <PriceCell tier={t} />
+            </div>
+            <dl className="mt-4 border-t border-line text-[14px]">
+              {ROWS.map(([label, f]) => (
+                <div key={label} className="flex justify-between gap-4 border-b border-line py-2">
+                  <dt className="text-muted">{label}</dt>
+                  <dd className="text-right text-ink/90">{f(t)}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="mt-4">
+              <Cta tier={t} />
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <section className="mt-10 grid gap-px border border-line bg-line md:grid-cols-2">
+        <div className="bg-paper p-6">
+          <div className="label">Top-up</div>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="font-display text-[34px] leading-none">{formatCents(TOPUP.priceCents)}</span>
+            <span className="text-[14px] text-muted">once</span>
+          </div>
+          <p className="mt-2 text-[14px] text-ink/85">+{TOPUP.credits} reel credits on any plan, including Free. They never expire and are used after your weekly credits.</p>
+          <div className="mt-5">
+            <BillingButton mode="topup" label={`Buy ${TOPUP.credits} credits`} />
+          </div>
+        </div>
+        <div className="bg-paper p-6">
+          <div className="label">Try Plus free</div>
+          <p className="mt-3 text-[14px] text-ink/85">
+            {TRIAL.days}-day free trial of Plus, one per account (up to {TRIAL.maxReels} reels during the trial). Card required; it becomes Plus at{" "}
+            {formatCents(PLANS.plus.priceCents)}/week unless you cancel before it ends.
+          </p>
+          <div className="mt-5">
+            <BillingButton mode="trial" label="Start 1-day free trial" />
+          </div>
+        </div>
+      </section>
+      <p className="mt-6 text-[13px] text-muted">
+        Prices in USD, billed weekly. Monthly figures are approximate (52 weeks ÷ 12). Switch plans anytime in billing; Stripe prorates the change. A reel
+        that fails for good gives its credit back. Payments by Stripe; we never see your card.
+      </p>
     </MarketingPage>
   );
 }

@@ -1,11 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import type { Tier } from "@/lib/plans";
 import { openAuth } from "../auth/auth-store";
 
-export function BillingButton({ mode, label }: { mode: "portal" | "subscribe"; label?: string }) {
+type Mode = "portal" | "subscribe" | "trial" | "topup";
+
+export function BillingButton({ mode, label, tier = "plus" }: { mode: Mode; label?: string; tier?: Exclude<Tier, "free"> }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const body =
+    mode === "subscribe" ? { kind: "subscription", tier } : mode === "trial" ? { kind: "trial" } : mode === "topup" ? { kind: "topup" } : null;
   return (
     <div>
       <button
@@ -17,21 +22,21 @@ export function BillingButton({ mode, label }: { mode: "portal" | "subscribe"; l
           const res = await fetch(mode === "portal" ? "/api/billing/portal" : "/api/checkout", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: mode === "subscribe" ? JSON.stringify({ kind: "subscription" }) : undefined,
+            body: body ? JSON.stringify(body) : undefined,
           });
-          const body = await res.json().catch(() => ({}));
-          if (res.ok && body.url) window.location.href = body.url;
-          else if (body.code === "auth") {
+          const b = await res.json().catch(() => ({}));
+          if (res.ok && b.url) window.location.href = b.url;
+          else if (b.code === "auth") {
             setBusy(false);
-            openAuth(mode === "subscribe" ? "signup" : "login", { onDone: () => void go() });
+            openAuth(mode === "portal" ? "login" : "signup", { onDone: () => void go() });
           } else {
-            setErr(body.error ?? "Something went wrong.");
+            setErr(b.error ?? "Something went wrong.");
             setBusy(false);
           }
         }}
-        className={`w-full py-3.5 text-[15px] ${mode === "portal" ? "btn-secondary" : "btn-primary"}`}
+        className={`w-full py-3.5 text-[15px] ${mode === "portal" || mode === "topup" ? "btn-secondary" : "btn-primary"}`}
       >
-        {busy ? "Opening" : label ?? (mode === "portal" ? "Manage subscription" : "Go unlimited")}
+        {busy ? "Opening" : label ?? (mode === "portal" ? "Manage subscription" : "Upgrade")}
       </button>
       {err && <p className="mt-2 text-center text-[13px] text-coral">{err}</p>}
     </div>

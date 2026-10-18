@@ -11,6 +11,11 @@ export type Profile = {
   stripe_subscription_id: string | null;
   subscription_status: string | null;
   current_period_end: string | null;
+  /** Paid tier (free/plus/pro/ultra); only meaningful while the subscription is active (see tierOf). */
+  tier?: "free" | "plus" | "pro" | "ultra" | null;
+  current_period_start?: string | null;
+  /** The one 1-day Plus trial has been started. */
+  trial_used?: boolean | null;
 };
 
 export type Viewer = {

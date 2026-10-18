@@ -4,7 +4,10 @@ import { AppShell } from "@/components/shell/app-shell";
 import { Suspense } from "react";
 import { CheckoutReturn, DeleteAccountButton, PasswordForm, SignInButtons } from "@/components/shell/account-actions";
 import { BillingButton } from "@/components/shell/billing-button";
-import { formatPrice, PRICING, supabaseConfigured } from "@/lib/config";
+import { UsageMeter } from "@/components/billing/usage-meter";
+import { supabaseConfigured } from "@/lib/config";
+import { entitlementFor, tierOf, usageFor } from "@/lib/credits";
+import { approxMonthly, formatCents, nextTier, PLANS, TOPUP } from "@/lib/plans";
 import { getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +24,9 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 export default async function ProfilePage() {
   const viewer = supabaseConfigured ? await getViewer() : null;
+  const tier = tierOf(viewer?.profile ?? null);
+  const usage = viewer?.userId ? await usageFor(entitlementFor(viewer.profile), viewer.profile).catch(() => null) : null;
+  const up = nextTier(tier);
   return (
     <AppShell active="profile">
       <Suspense>
@@ -32,29 +38,43 @@ export default async function ProfilePage() {
         {!viewer?.userId ? (
           <div className="mt-8 border-t border-line pt-6">
             <p className="text-[16px]">You&apos;re not signed in.</p>
-            <p className="mt-1 text-[14px] text-muted">Create a free account to unspool a document. First reel free, then one more every hour.</p>
+            <p className="mt-1 text-[14px] text-muted">Create a free account to unspool a document. Your first reel is free, then 1 every 30 minutes.</p>
             <SignInButtons next="/profile" />
           </div>
         ) : (
           <div className="mt-8 border-t border-line">
             <Row label="Email">{viewer.email}</Row>
             <Row label="Plan">
-              {viewer.subscribed ? "Unlimited" : "Free"}
+              {PLANS[tier].name}
+              {usage?.trialing && " trial"}
               {viewer.subscribed && viewer.profile?.current_period_end && (
                 <span className="ml-2 font-mono text-[12px] text-muted">
-                  {viewer.profile.subscription_status === "past_due" ? "payment due" : "renews"}{" "}
-                  {new Date(viewer.profile.current_period_end).toLocaleDateString("en-US")}
+                  {viewer.profile.subscription_status === "past_due" ? "payment due" : usage?.trialing ? "trial ends" : "renews"}{" "}
+                  {new Date(viewer.profile.current_period_end).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
                 </span>
               )}
             </Row>
-            <Row label="Free reels">Reel 1 of every document</Row>
+            {usage && (
+              <div className="mt-5">
+                <UsageMeter usage={usage} />
+              </div>
+            )}
             <div className="mt-6 space-y-3">
-              {!viewer.subscribed && (
+              {usage?.trialEligible && (
                 <div>
-                  <BillingButton mode="subscribe" label={`Go unlimited · ${formatPrice(PRICING.subscriptionCents)}/mo`} />
-                  <p className="mt-2 text-center text-[12.5px] text-muted">Unlimited documents. Cancel anytime.</p>
+                  <BillingButton mode="trial" label="Start 1-day free trial of Plus" />
+                  <p className="mt-2 text-center text-[12.5px] text-muted">Card required. Then {formatCents(PLANS.plus.priceCents)}/week unless you cancel.</p>
                 </div>
               )}
+              {up && (
+                <div>
+                  <BillingButton mode="subscribe" tier={up} label={`${tier === "free" ? "Get" : "Upgrade to"} ${PLANS[up].name} · ${formatCents(PLANS[up].priceCents)}/week`} />
+                  <p className="mt-2 text-center text-[12.5px] text-muted">
+                    {PLANS[up].credits.toLocaleString("en-US")} reels a week · {approxMonthly(PLANS[up].priceCents)}
+                  </p>
+                </div>
+              )}
+              <BillingButton mode="topup" label={`Top up ${TOPUP.credits} reels · ${formatCents(TOPUP.priceCents)}`} />
               {(viewer.subscribed || viewer.profile?.stripe_customer_id) && (
                 <BillingButton mode="portal" label={viewer.subscribed ? "Manage subscription" : "Billing and receipts"} />
               )}

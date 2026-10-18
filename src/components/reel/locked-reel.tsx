@@ -9,7 +9,7 @@ import { sentenceCase } from "./text";
 /**
  * A locked reel: its title and hook on a flat frame in the reel's own tint. It never has
  * a script or audio (the server withholds both), so there is nothing to play. Tapping or swiping onto
- * it opens the unlock gate; while the free drip runs it also says when it turns free on its own.
+ * it opens the unlock gate; on the free plan it also counts down to when it can be unlocked for free.
  */
 export function LockedReel({
   reel,

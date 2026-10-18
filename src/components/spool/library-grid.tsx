@@ -13,7 +13,7 @@ export type LibraryItem = {
   fileType: string;
   status: string;
   unlocked: boolean;
-  /** Reels free to play right now (the hourly drip). */
+  /** Reels unlocked (credits or the free drip). */
   freeReels: number;
   /** Planned reel count; null while planning. */
   total: number | null;
@@ -28,7 +28,7 @@ function statusLabel(it: LibraryItem) {
   if (["uploading", "uploaded", "extracting", "planning"].includes(it.status)) return "Unspooling";
   const total = it.total ?? 0;
   if (!total) return "Planning";
-  if (!it.unlocked && it.freeReels < total) return `${it.freeReels} of ${total} free`;
+  if (!it.unlocked && it.freeReels < total) return `${it.freeReels} of ${total} unlocked`;
   return it.readyCount >= total ? `${total} reels` : `${it.readyCount}/${total} ready`;
 }
 

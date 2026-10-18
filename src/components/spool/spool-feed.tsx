@@ -7,7 +7,7 @@ import { MAX_REELS } from "@/lib/config";
 import { SAMPLE_SPOOL } from "@/lib/sample";
 import type { SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { Feed, type FeedItem } from "../reel/feed";
-import { startCheckout } from "../reel/paywall-sheet";
+import { checkoutFromIntent, startCheckout } from "../billing/checkout";
 import { toast } from "../ui/toast";
 import { useLayout } from "../ui/use-media";
 import { useUpload, type UploadState } from "../upload/upload-store";
@@ -60,9 +60,9 @@ export function SpoolFeed({ id }: { id: string }) {
   useEffect(() => {
     if (!checkoutIntent || !viewer?.signedIn || !spool || startedCheckout.current) return;
     startedCheckout.current = true;
-    if (spool.unlocked) return;
-    const kind = checkoutIntent === "sub" ? "subscription" : "document";
-    startCheckout(kind, id, initialReel + 1).then((err) => err && toast(err, 4000));
+    const req = checkoutFromIntent(checkoutIntent);
+    if (spool.unlocked || !req) return;
+    startCheckout(req, id, initialReel + 1).then((err) => err && toast(err, 4000));
   }, [checkoutIntent, viewer?.signedIn, spool, id, initialReel]);
 
   // Back from Stripe → confirm payment, refresh, and keep playing from the same reel.
@@ -78,7 +78,7 @@ export function SpoolFeed({ id }: { id: string }) {
     })
       .then((r) => r.json())
       .then((b: { fulfilled?: boolean }) => {
-        if (b.fulfilled) toast("Unlocked. All reels are yours.", 3500);
+        if (b.fulfilled) toast("Done. Your reels are unlocking.", 3500);
         reload();
         router.replace(`/s/${id}?reel=${initialReel + 1}`, { scroll: false });
       })

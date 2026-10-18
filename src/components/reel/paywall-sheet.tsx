@@ -2,29 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { formatPrice, PRICING } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import type { SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { openAuth } from "../auth/auth-store";
 import { Sheet } from "../ui/sheet";
 
-export type CheckoutKind = "document" | "subscription";
-
-export async function startCheckout(kind: CheckoutKind, documentId: string, reel: number): Promise<string | null> {
-  const res = await fetch("/api/checkout", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ kind, documentId, reel }),
-  });
-  const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
-  if (res.ok && body.url) {
-    window.location.href = body.url;
-    return null;
-  }
-  return body.error ?? "Couldn't open checkout.";
-}
-
-/** "Unlock all reels" → sign in (Google / magic link / password) → Stripe Checkout → back to the same reel. */
+/** Signed out (or the demo): sign in (Google / magic link / password) and come back to the same reel. */
 export function PaywallSheet({
   open,
   onClose,
@@ -38,38 +21,20 @@ export function PaywallSheet({
   viewer: ViewerDTO | null;
   reel: number;
 }) {
-  const [busy, setBusy] = useState<CheckoutKind | "email" | "google" | null>(null);
+  const [busy, setBusy] = useState<"email" | "google" | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
-  const [wanted, setWanted] = useState<CheckoutKind | null>(null);
-
-  const locked = spool.reels.filter((r) => r.locked);
+  const wanted = !viewer?.signedIn;
   const signedIn = Boolean(viewer?.signedIn);
 
-  const nextPath = (kind: CheckoutKind) => `/s/${spool.id}?reel=${reel}&checkout=${kind === "document" ? "doc" : "sub"}`;
-  const callback = (kind: CheckoutKind) =>
-    `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath(kind))}`;
-
-  const choose = async (kind: CheckoutKind) => {
-    setErr(null);
-    if (spool.demo) return;
-    if (!signedIn) {
-      setWanted(kind);
-      return;
-    }
-    setBusy(kind);
-    const e = await startCheckout(kind, spool.id, reel);
-    if (e) {
-      setErr(e);
-      setBusy(null);
-    }
-  };
+  const nextPath = () => `/s/${spool.id}?reel=${reel}`;
+  const callback = () => `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath())}`;
 
   const google = async () => {
     if (!wanted) return;
     setBusy("google");
-    const { error } = await createClient().auth.signInWithOAuth({ provider: "google", options: { redirectTo: callback(wanted) } });
+    const { error } = await createClient().auth.signInWithOAuth({ provider: "google", options: { redirectTo: callback() } });
     if (error) {
       setErr(error.message);
       setBusy(null);
@@ -82,7 +47,7 @@ export function PaywallSheet({
     setBusy("email");
     const { error } = await createClient().auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: callback(wanted) },
+      options: { emailRedirectTo: callback() },
     });
     setBusy(null);
     if (error) setErr(error.message);
@@ -90,7 +55,7 @@ export function PaywallSheet({
   };
 
   return (
-    <Sheet open={open} onClose={onClose} label="Unlock all reels">
+    <Sheet open={open} onClose={onClose} label="Sign in">
       {spool.demo ? (
         <div className="pb-1">
           <div className="label">Sample spool</div>
@@ -102,8 +67,8 @@ export function PaywallSheet({
         </div>
       ) : wanted && !signedIn ? (
         <div className="pb-1">
-          <div className="label">Step 1 of 2</div>
-          <h2 className="mt-2 font-display text-[34px] leading-[1.05]">Sign in to unlock.</h2>
+          <div className="label">Free account</div>
+          <h2 className="mt-2 font-display text-[34px] leading-[1.05]">Sign in to keep going.</h2>
           <p className="mt-2 text-[14px] text-muted">You&apos;ll come back to reel {reel}.</p>
           {sent ? (
             <div className="mt-6 border border-line p-4 text-[14.5px] text-ink/85">
@@ -136,58 +101,19 @@ export function PaywallSheet({
             <button
               type="button"
               onClick={() => {
-                const kind = wanted;
-                openAuth("login", {
-                  next: nextPath(kind),
-                  onDone: () => {
-                    setBusy(kind);
-                    startCheckout(kind, spool.id, reel).then((e) => {
-                      if (e) {
-                        setErr(e);
-                        setBusy(null);
-                      }
-                    });
-                  },
-                });
+                openAuth("login", { next: nextPath(), onDone: () => window.location.reload() });
               }}
               className="mt-4 w-full text-center text-[13.5px] text-thread hover:underline"
             >
               Use email and password instead
             </button>
           )}
-          <button type="button" onClick={() => setWanted(null)} className="mt-5 w-full text-center text-[13.5px] text-muted">
-            Back
+          <button type="button" onClick={onClose} className="mt-5 w-full text-center text-[13.5px] text-muted">
+            Not now
           </button>
         </div>
       ) : (
-        <div className="pb-1">
-          <div className="label">{spool.title ?? spool.fileName}</div>
-          <h2 className="mt-2 font-display text-[36px] leading-[1.02]">Unlock all reels.</h2>
-          <div className="mt-5 flex items-baseline justify-between border-b border-line pb-2">
-            <span className="label">Locked</span>
-            <span className="font-mono text-[11px] text-muted">{locked.length} of {spool.reels.length}</span>
-          </div>
-          <div className="no-scrollbar max-h-[150px] overflow-y-auto">
-            {locked.map((r) => (
-              <div key={r.id} className="flex gap-3 border-b border-line py-2 text-[13.5px]">
-                <span className="w-5 font-mono text-[10.5px] leading-[20px] text-muted">{String(r.index).padStart(2, "0")}</span>
-                <span className="text-ink/90">{r.title}</span>
-              </div>
-            ))}
-          </div>
-          <button type="button" onClick={() => choose("document")} disabled={busy !== null} className="btn-primary mt-6 w-full justify-between px-5 py-3.5 text-[15px]">
-            <span>{busy === "document" ? "Opening checkout" : "Unlock this document"}</span>
-            <span className="font-mono text-[13px]">{formatPrice(PRICING.documentCents)}</span>
-          </button>
-          <button type="button" onClick={() => choose("subscription")} disabled={busy !== null} className="btn-secondary -mt-px w-full justify-between px-5 py-3.5 text-[15px]">
-            <span>{busy === "subscription" ? "Opening checkout" : "Unlimited documents"}</span>
-            <span className="font-mono text-[13px] text-muted">{formatPrice(PRICING.subscriptionCents)}/mo</span>
-          </button>
-          <p className="mt-4 text-center text-[12.5px] text-muted">
-            One-time payment per document. Unlimited renews monthly; cancel anytime.
-          </p>
-          {spool.sensitive && <p className="label mt-2 text-center">A summary, not legal or financial advice</p>}
-        </div>
+        <div className="pb-1 text-[15px] text-muted">Loading your plan.</div>
       )}
       {err && <p className="mt-3 text-center text-[13px] text-coral">{err}</p>}
     </Sheet>

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalH3, LegalHeader, LegalSection, LegalToc, type TocItem } from "@/components/legal/legal-doc";
 import { MarketingPage } from "@/components/shell/marketing-page";
-import { ACCEPTED_EXTENSIONS, LIMITS, MAX_FILE_BYTES, MAX_PAGES, MAX_REELS, MAX_WORDS, MIN_REELS, PRICING, formatPrice } from "@/lib/config";
+import { ACCEPTED_EXTENSIONS, LIMITS, MAX_FILE_BYTES, MAX_PAGES, MAX_REELS, MAX_WORDS, MIN_REELS } from "@/lib/config";
+import { formatCents, FREE_REEL_INTERVAL_MIN, FREE_REELS_PER_DAY, PAID_TIERS as PAID, PLANS, TOPUP, TRIAL } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -13,8 +14,6 @@ const EFFECTIVE = "October 18, 2026";
 const CONTACT = "hello@unspool.cc";
 const PRIVACY_CONTACT = "privacy@unspool.cc";
 
-const DOC_PRICE = formatPrice(PRICING.documentCents);
-const SUB_PRICE = formatPrice(PRICING.subscriptionCents);
 const FILE_TYPES = ACCEPTED_EXTENSIONS.map((e) => e.toUpperCase()).join(", ");
 const MAX_MB = Math.round(MAX_FILE_BYTES / (1024 * 1024));
 const fmt = (n: number) => n.toLocaleString("en-US");
@@ -138,8 +137,8 @@ export default function TermsPage() {
               photos, we use an AI model to read the text from the image.
             </li>
             <li>
-              Long documents are cut down to fit our processing limits: we use at most the first {MAX_PAGES} pages of a PDF and the first{" "}
-              {fmt(MAX_WORDS)} words of any document. Anything beyond that is not covered by your reels.
+              Long documents are cut down to fit our processing limits: we use at most the first {PLANS.free.maxPages} pages of a PDF on the free plan (up to {MAX_PAGES} on paid plans, see section 10) and the first{" "}
+              {fmt(MAX_WORDS)} words of any document (more on Pro and Ultra). Anything beyond that is not covered by your reels.
             </li>
             <li>
               An AI model plans the reels (usually between {MIN_REELS} and {MAX_REELS}, depending on how many distinct key ideas the
@@ -269,19 +268,24 @@ export default function TermsPage() {
           <p>You can use Unspool for free with a free account and no payment card. On the free plan:</p>
           <ul>
             <li>
-              <strong>Reel 1 is free.</strong> For each document, the first reel can be watched as soon as it is ready.
+              <strong>Your first reel is free.</strong> For each document, reel 1 is made and can be watched as soon as it is ready.
             </li>
             <li>
-              <strong>One more reel every hour.</strong> Another reel of that document becomes available for each full hour that passes
-              after you uploaded it, until all of that document&apos;s reels are available. You can see the title and hook of every reel,
-              including the ones that are still locked. Paying simply makes all of a document&apos;s reels available right away (see below).
+              <strong>Then 1 reel every {FREE_REEL_INTERVAL_MIN} minutes.</strong> {FREE_REEL_INTERVAL_MIN} minutes after a free reel of a
+              document is unlocked, you can unlock the next one; we make it when you open it. You can unlock up to {FREE_REELS_PER_DAY} free
+              reels in any rolling 24-hour period across all your documents (this cap includes each document&apos;s first reel). You can see
+              the title and hook of every reel, including locked ones.
+            </li>
+            <li>
+              Free documents can be up to {PLANS.free.maxPages} pages, and free videos carry a small Unspool watermark. You can still share
+              your reels.
             </li>
             <li>
               <strong>Daily upload limit.</strong> Free accounts can upload up to {LIMITS.freeUploadsPerDay} documents in any rolling 24-hour
               period. To stop people getting around this with extra accounts, the limit is counted per account and per network connection
               (using a scrambled, hashed version of your IP address), so people sharing a network may share the same allowance. Deleting a document doesn&apos;t give the upload back.
             </li>
-            <li>The file size, page, word and file-type limits described in section 4 apply.</li>
+            <li>The file size, word and file-type limits described in section 4 apply.</li>
           </ul>
           <p>
             The free plan is offered at our discretion. We may change the number of free reels, the timing, or the free limits at any time
@@ -290,28 +294,44 @@ export default function TermsPage() {
         </Section>
 
         <Section id="paid-plans">
-          <p>We currently offer two ways to pay. Prices are shown in the app and on our <Link href="/pricing">pricing page</Link> before you buy.</p>
-          <LegalH3>Unlock a single document ({DOC_PRICE}, one-time)</LegalH3>
-          <ul>
-            <li>A one-time payment of {DOC_PRICE} unlocks every reel of one specific document, straight away. It is not a subscription and does not renew.</li>
-            <li>The unlock belongs to that document in your account. It can&apos;t be moved to another document or account. If you delete the document, or delete your account, the unlock is gone too.</li>
-            <li>It doesn&apos;t change your daily upload limit.</li>
-          </ul>
-          <LegalH3>Unspool Unlimited subscription ({SUB_PRICE} per month)</LegalH3>
+          <p>
+            Prices are shown in the app and on our <Link href="/pricing">pricing page</Link> before you buy. Paid plans bill weekly and give
+            you reel credits: 1 credit makes 1 reel, and a document uses one credit for each reel we plan for it.
+          </p>
+          <LegalH3>Plus, Pro and Ultra (billed weekly)</LegalH3>
           <ul>
             <li>
-              The subscription costs {SUB_PRICE} per month (unless a different price or a promotion code is shown to you at checkout) and
-              makes every reel of every document you upload available as soon as it is ready, while your subscription is active.
+              {PAID.map((t) => `${PLANS[t].name}: ${formatCents(PLANS[t].priceCents)} per week for ${PLANS[t].credits.toLocaleString("en-US")} reel credits a week and documents up to ${PLANS[t].maxPages} pages`).join("; ")}
+              . Pro and Ultra also get longer reels and priority processing, and Ultra gets early access to new features. A different price or
+              a promotion code shown to you at checkout takes precedence.
             </li>
             <li>
-              &quot;Unlimited&quot; means you don&apos;t pay per document. A fair-use limit still applies to protect the Service: currently up
-              to {LIMITS.subscriberUploadsPerDay} uploads in any rolling 24-hour period, on top of the per-file limits in section 4. We may
-              adjust this limit if needed to keep the Service running well for everyone.
+              <strong>Credits.</strong> Your weekly credits reset at the start of each billing period and unused weekly credits don&apos;t
+              carry over. When a document is planned we reserve one credit per reel. If you don&apos;t have enough, we make as many reels as
+              your credits cover and the rest stay locked until you have more. If a reel fails to generate for good, its credit is returned.
             </li>
             <li>
-              <strong>Automatic renewal.</strong> Your subscription renews automatically every month, and we (through Stripe) will charge
+              <strong>Top-ups.</strong> A one-time payment of {formatCents(TOPUP.priceCents)} adds {TOPUP.credits} reel credits to any account,
+              including free accounts. Top-up credits don&apos;t expire while your account exists, are used after your weekly credits, and
+              aren&apos;t refundable once used. They can&apos;t be moved to another account and are lost if you delete your account.
+            </li>
+            <li>
+              <strong>Free trial.</strong> Each account can have one {TRIAL.days}-day free trial of Plus. A payment card is required. During
+              the trial you get Plus features with up to {TRIAL.maxReels} reels in total. Unless you cancel before the trial ends, it turns
+              into a paid Plus subscription at {formatCents(PLANS.plus.priceCents)} per week and your card is charged then.
+            </li>
+            <li>
+              A fair-use limit also applies to protect the Service: currently up to {LIMITS.subscriberUploadsPerDay} uploads in any rolling
+              24-hour period, on top of the per-file limits in section 4.
+            </li>
+            <li>
+              <strong>Automatic renewal.</strong> Your subscription renews automatically every week, and we (through Stripe) will charge
               the payment method you gave us at the then-current price at the start of each billing period, until you cancel. By
               subscribing, you authorise these recurring charges.
+            </li>
+            <li>
+              <strong>Changing plans.</strong> You can switch between Plus, Pro and Ultra at any time. Stripe prorates the change: you are
+              credited for the unused part of the old plan and charged for the rest of the period on the new one.
             </li>
             <li>
               <strong>Cancelling.</strong> You can cancel at any time from your profile: choose &quot;Manage subscription&quot; to open the
@@ -320,18 +340,17 @@ export default function TermsPage() {
               future charges; it doesn&apos;t refund the current period (see Refunds).
             </li>
             <li>
-              <strong>When a subscription ends.</strong> Documents you unlocked with a one-time payment stay unlocked. Other documents go
-              back to the free plan rules in section 9, so reels that haven&apos;t yet become available through the hourly schedule will be
-              locked again.
+              <strong>When a subscription ends.</strong> Reels already made stay available. Documents bought with the old one-time
+              document unlock stay unlocked. New reels follow the free plan rules in section 9, and unused top-up credits stay on your account.
             </li>
             <li>
               <strong>Failed payments.</strong> If a renewal payment fails, Stripe may retry it, and we may keep your access active for a
               short time while it does. If payment still can&apos;t be collected, your subscription will end.
             </li>
             <li>
-              <strong>Price changes.</strong> We may change the subscription price. If we do, we will tell you in advance by email or in the
-              app, and the new price will apply from your next billing period after the notice. If you don&apos;t want to pay the new price,
-              you can cancel before it takes effect.
+              <strong>Price changes.</strong> We may change our prices. If we do, we will tell you in advance by email or in the app, and the
+              new price will apply from your next billing period after the notice. If you don&apos;t want to pay the new price, you can cancel
+              before it takes effect. Subscribers on the earlier $7.99 monthly plan keep that price and get Plus credits.
             </li>
           </ul>
           <LegalH3>Payment processing</LegalH3>
@@ -347,14 +366,13 @@ export default function TermsPage() {
           <p>We want you to be happy with what you pay for. Our refund policy is:</p>
           <ul>
             <li>
-              <strong>Document unlocks.</strong> Because the reels are delivered digitally and become available immediately, one-time
-              unlocks are generally non-refundable. However, if the reels for a document you paid to unlock fail to generate, or are so broken
-              that they can&apos;t reasonably be used, and we can&apos;t fix the problem, contact us within 14 days of purchase and we will
-              refund you.
+              <strong>Top-ups and credits.</strong> Because reels are delivered digitally and immediately, top-ups are generally
+              non-refundable once their credits are used. A reel that fails to generate gives its credit back automatically. If reels are so
+              broken that they can&apos;t reasonably be used and we can&apos;t fix the problem, contact us within 14 days and we will refund you.
             </li>
             <li>
               <strong>Subscriptions.</strong> You can cancel at any time to stop future charges. We don&apos;t give refunds or credits for
-              partial months, or for months in which you didn&apos;t use the Service, except as described here or where the law requires.
+              partial weeks, or for weeks in which you didn&apos;t use the Service, except as described here or where the law requires.
               If you were charged for a renewal you didn&apos;t intend and haven&apos;t used the Service since, contact us within 7 days of
               the charge and we will look at it sympathetically.
             </li>

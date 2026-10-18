@@ -36,7 +36,7 @@ export type SpoolDTO = {
   totalReels: number | null;
   /** Reels the viewer may play right now (all when unlocked; otherwise 1 + one per hour since upload). */
   freeReels: number;
-  /** When the next free reel opens (ISO), or null when unlocked or all are already free. */
+  /** Free tier: when the next free reel may be unlocked (ISO, may be in the past = ready now); else null. */
   nextFreeUnlockAt: string | null;
   pageCount: number | null;
   wordCount: number | null;
@@ -46,8 +46,31 @@ export type SpoolDTO = {
   demo?: boolean;
 };
 
+export type UsageDTO = {
+  tier: "free" | "plus" | "pro" | "ultra";
+  trialing: boolean;
+  trialEndsAt: string | null;
+  /** Signed in, free, and hasn't used the one 1-day Plus trial. */
+  trialEligible: boolean;
+  /** Reel credits this billing period (weekly on paid tiers; 0 on free). */
+  allowance: number;
+  used: number;
+  left: number;
+  /** Top-up credits (never expire). */
+  topup: number;
+  resetsAt: string;
+  freeUsedToday: number;
+  freePerDay: number;
+  freeIntervalMin: number;
+  /** Server-side prices (env overrides applied), so client sheets never show a stale price. */
+  prices: Record<"plus" | "pro" | "ultra", { cents: number; credits: number }>;
+  topupCents: number;
+  topupCredits: number;
+};
+
 export type ViewerDTO = {
   signedIn: boolean;
   email: string | null;
   subscribed: boolean;
+  usage?: UsageDTO | null;
 };

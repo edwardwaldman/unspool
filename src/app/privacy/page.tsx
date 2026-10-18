@@ -125,9 +125,15 @@ export default function PrivacyPage() {
               email, and handles them under its own privacy policy. We never receive or store your full card number.
             </li>
             <li>
-              From Stripe we receive and store: your Stripe customer ID, whether you have a subscription, its status and when the current
-              period ends, and a record of each purchase (what it was for, the amount, the currency and a Stripe reference). You can see
-              invoices and receipts in the Stripe billing portal from your profile.
+              From Stripe we receive and store: your Stripe customer ID, whether you have a subscription, which plan (Plus, Pro or Ultra) it
+              is, its status, when the current weekly period starts and ends, whether you have used your one free trial, and a record of each
+              purchase (what it was for, the amount, the currency and a Stripe reference). You can see invoices and receipts in the Stripe
+              billing portal from your profile. Stripe sends trial and payment receipts; we don&apos;t send extra billing emails.
+            </li>
+            <li>
+              Usage records: to enforce plan limits we keep a ledger of reel credits reserved, returned and topped up, and of free reels
+              unlocked (with the document they were for and when). Free-plan limits are counted per account, and upload limits also per
+              hashed network address.
             </li>
           </ul>
           <LegalH3>Information collected automatically</LegalH3>
@@ -386,7 +392,7 @@ export default function PrivacyPage() {
             head={["Category", "Examples", "Disclosed to"]}
             rows={[
               ["Identifiers", "Email address, account ID, hashed IP address, Stripe customer ID", "Supabase, Vercel, Stripe, Resend, Google (if used)"],
-              ["Commercial information", "Documents unlocked, subscription status, purchase records", "Supabase, Stripe"],
+              ["Commercial information", "Plan, subscription status, reel credit usage, purchase records", "Supabase, Stripe"],
               ["Internet or network activity", "Request logs, processing status", "Vercel, Supabase"],
               ["User content (may include sensitive information)", "Uploaded documents, extracted text, generated scripts, audio and video", "Supabase, Vercel, Anthropic, our text-to-speech and image providers (in the limited form described in section 5)"],
               ["Account credentials", "Email and password (stored hashed)", "Supabase"],

@@ -111,7 +111,7 @@ export function CheckoutReturn() {
     })
       .then((r) => r.json())
       .then((b: { fulfilled?: boolean; kind?: string }) => {
-        if (b.fulfilled) toast(b.kind === "subscription" ? "You're unlimited. Every reel is unlocked." : "Unlocked.", 3500);
+        if (b.fulfilled) toast(b.kind === "subscription" ? "Your plan is active." : b.kind === "topup" ? "Top-up added. Credits never expire." : "Done.", 3500);
       })
       .catch(() => undefined)
       .finally(() => {

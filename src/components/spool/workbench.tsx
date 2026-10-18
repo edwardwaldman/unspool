@@ -3,7 +3,8 @@
 import { Loader2 } from "lucide-react";
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { formatPrice, MAX_REELS, PRICING } from "@/lib/config";
+import { MAX_REELS } from "@/lib/config";
+import { UsageMeter } from "../billing/usage-meter";
 import { stripMarkup } from "@/lib/markup";
 import type { ReelDTO, SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { estimateDuration } from "@/lib/timing";
@@ -220,13 +221,13 @@ function Transcript({ reel }: { reel: ReelDTO }) {
   );
 }
 
-/** "This reel turns free in 1:47:12" for a locked reel further down the drip. */
+/** "Free to unlock in 1:47:12" for a locked reel further down the drip. */
 function ReelFreeIn({ at }: { at: string | null }) {
   const left = useCountdown(at);
   if (!left) return null;
   return (
     <p className="text-[13.5px] text-muted">
-      This reel turns free in <span className="tabular-nums text-ink">{formatCountdown(left)}</span>
+      Free to unlock in <span className="tabular-nums text-ink">{formatCountdown(left)}</span>
     </p>
   );
 }
@@ -242,22 +243,19 @@ function NextFreeTimer({ until }: { until: string }) {
   );
 }
 
-function UnlockCta({ spool, onUnlock }: { spool: SpoolDTO; onUnlock: () => void }) {
+function UnlockCta({ spool, viewer, onUnlock }: { spool: SpoolDTO; viewer: ViewerDTO | null; onUnlock: () => void }) {
   const locked = spool.reels.filter((r) => r.locked).length;
   if (!locked) return null;
+  const free = !viewer?.usage || viewer.usage.tier === "free";
   return (
     <div className="border border-line bg-surface p-4">
-      <div>
-        <div>
-          <div className="text-[14.5px] font-semibold text-ink">
-            {locked} {locked === 1 ? "reel" : "reels"} locked
-          </div>
-          <p className="mt-0.5 text-[12.5px] leading-snug text-muted">
-            {spool.nextFreeUnlockAt ? "One more turns free every hour, or skip the wait." : "Unlock the rest of this document to keep going."}
-          </p>
-        </div>
+      <div className="text-[14.5px] font-semibold text-ink">
+        {locked} {locked === 1 ? "reel" : "reels"} locked
       </div>
-      {spool.nextFreeUnlockAt && (
+      <p className="mt-0.5 text-[12.5px] leading-snug text-muted">
+        {free ? "One more free reel every 30 minutes, or skip the wait." : "Out of credits for this document. Upgrade or top up to keep going."}
+      </p>
+      {free && spool.nextFreeUnlockAt && (
         <p className="mt-3 flex items-center justify-between border-t border-line pt-3 text-[12.5px]">
           <span className="text-muted">Next free reel in</span>
           <NextFreeTimer until={spool.nextFreeUnlockAt} />
@@ -268,16 +266,14 @@ function UnlockCta({ spool, onUnlock }: { spool: SpoolDTO; onUnlock: () => void 
         onClick={onUnlock}
         className="mt-3 flex w-full items-center justify-between bg-thread px-4 py-3 text-[14px] font-semibold text-paper transition-opacity hover:opacity-90"
       >
-        <span>Unlock all reels</span>
-        <span className="text-[13px] tabular-nums">{formatPrice(PRICING.documentCents)}</span>
+        <span>{free ? (viewer?.usage?.trialEligible ? "Start 1-day free trial" : "Unlock more reels") : "Upgrade or top up"}</span>
       </button>
-      <p className="mt-2 text-center text-[11.5px] text-muted">One-time payment for this document.</p>
     </div>
   );
 }
 
 /** Right-hand panel: what the active reel covers, its transcript, its quiz, or the unlock pitch. */
-function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; reel: ReelDTO | null; onUnlock: () => void; onRetry: () => void }) {
+function Details({ spool, reel, viewer = null, onUnlock, onRetry }: { spool: SpoolDTO | null; reel: ReelDTO | null; viewer?: ViewerDTO | null; onUnlock: () => void; onRetry: () => void }) {
   if (!spool || !reel) {
     return (
       <div>
@@ -327,7 +323,7 @@ function Details({ spool, reel, onUnlock, onRetry }: { spool: SpoolDTO | null; r
         <div className="space-y-3">
           <ReelFreeIn at={freeAtFor(reel.index, spool.freeReels, spool.nextFreeUnlockAt)} />
           <p className="text-[13.5px] leading-snug text-muted">The script, voiceover and quiz for this reel open when it&apos;s unlocked.</p>
-          <UnlockCta spool={spool} onUnlock={onUnlock} />
+          <UnlockCta spool={spool} viewer={viewer} onUnlock={onUnlock} />
         </div>
       ) : state === "failed" ? (
         <div className="border border-line p-4">
@@ -655,11 +651,16 @@ export function Workbench({
             </p>
           )}
           <NewUploadButton />
+          {viewer?.usage && (
+            <div className="mt-4">
+              <UsageMeter usage={viewer.usage} onUpgrade={() => setPaywall(true)} />
+            </div>
+          )}
         </div>
 
         <div className="flex items-baseline justify-between border-t border-line px-5 pb-2 pt-4">
           <span className="text-[13px] font-medium text-ink">Reels</span>
-          {listed && <span className="text-[12px] tabular-nums text-muted">{lockedCount ? `${spool?.freeReels ?? 1} free, ${lockedCount} locked` : "All unlocked"}</span>}
+          {listed && <span className="text-[12px] tabular-nums text-muted">{lockedCount ? `${spool?.freeReels ?? 1} unlocked, ${lockedCount} locked` : "All unlocked"}</span>}
         </div>
         <ol className="space-y-0.5 px-2.5 pb-4" aria-label="Reels">
           {listed
@@ -700,7 +701,7 @@ export function Workbench({
         </ol>
         {spool && lockedCount > 0 && (
           <div className="sticky bottom-0 mt-auto bg-paper px-4 pb-4 pt-2">
-            <UnlockCta spool={spool} onUnlock={() => setPaywall(true)} />
+            <UnlockCta spool={spool} viewer={viewer} onUnlock={() => setPaywall(true)} />
           </div>
         )}
       </aside>
@@ -756,14 +757,14 @@ export function Workbench({
         {/* Below the player on narrower desktops */}
         <div className="border-t border-line px-8 py-8 xl:hidden">
           <div className="mx-auto max-w-[560px]">
-            <Details spool={spool} reel={reel} onUnlock={() => setPaywall(true)} onRetry={() => onRetry?.(spool)} />
+            <Details spool={spool} reel={reel} viewer={viewer} onUnlock={() => setPaywall(true)} onRetry={() => onRetry?.(spool)} />
           </div>
         </div>
       </div>
 
       {/* Right: details for the active reel (wide desktops) */}
       <aside className="hidden w-[360px] shrink-0 overflow-y-auto border-l border-line p-5 xl:block">
-        <Details spool={spool} reel={reel} onUnlock={() => setPaywall(true)} onRetry={() => onRetry?.(spool)} />
+        <Details spool={spool} reel={reel} viewer={viewer} onUnlock={() => setPaywall(true)} onRetry={() => onRetry?.(spool)} />
         {spool && reel && viewer?.signedIn && !spool.demo && !reel.locked && reel.status === "ready" && (
           <SharedLinks key={`${reel.id}-${shareRev}`} reelId={reel.id} onShare={() => setShareOpen(true)} />
         )}

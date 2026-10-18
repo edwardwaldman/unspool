@@ -115,6 +115,7 @@ function Headline() {
           </svg>
         </span>
       </h1>
+      <p className="mt-5 text-center text-[13.5px] text-muted">Your first reel is free.</p>
     </div>
   );
 }
