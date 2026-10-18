@@ -13,6 +13,7 @@ import { getPrefs, setPrefs, usePrefs } from "./prefs";
 import { ReelMedia } from "./reel-media";
 import { StatLine } from "./stat-line";
 import { usePlayback } from "./use-playback";
+import { BeatPop, ReactionStream, SegmentBar, useDoubleTapHeart } from "./gimmicks";
 import { QuizCard } from "./visuals";
 
 export type ReelChrome = {
@@ -88,7 +89,8 @@ export function ReelView({
   const muted = prefs.muted;
   const [headRef, headH] = useHeight<HTMLDivElement>(opening ? 110 : 40);
   const hits = useHitCount(script.headline, pb.segments[0]?.text ?? "", opening ? pb.words : [], opening ? fraction : 0);
-  const below = top + 20 + headH + 18;
+  const below = top + 30 + headH + 18;
+  const heart = useDoubleTapHeart();
   const toggleMute = () => setPrefs({ muted: !getPrefs().muted, autoMuted: false });
 
   // M mutes / unmutes the reel that's playing.
@@ -106,7 +108,15 @@ export function ReelView({
   }, [active, preview]);
 
   return (
-    <div className="relative h-full w-full select-none overflow-hidden text-white [container-type:inline-size]" style={reelVars(reel.index)} onClick={pb.toggle} data-testid="reel-view" data-seg={pb.segment.key} data-playing={pb.playing ? "1" : "0"}>
+    <div className="relative h-full w-full select-none overflow-hidden text-white [container-type:inline-size]" style={reelVars(reel.index)} onClick={(e) => {
+        heart.onTap(e);
+        pb.toggle();
+      }} data-testid="reel-view" data-seg={pb.segment.key} data-playing={pb.playing ? "1" : "0"}>
+      <motion.div
+        className="absolute inset-0"
+        animate={preview ? undefined : { scale: [1.07, 1], rotate: [pb.seg % 2 ? 1.2 : -1.2, 0] }}
+        transition={{ duration: 0.45, ease: [0.2, 0.9, 0.2, 1] }}
+      >
       <ReelMedia
         index={reel.index}
         active={active}
@@ -123,12 +133,13 @@ export function ReelView({
             : null
         }
       />
+      </motion.div>
 
       {/* Flat band so the account row reads on any frame */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] border-t border-line bg-paper/85" style={{ height: bottom + BAND }} />
 
       {/* Kinetic headline on the opening beat, then the live stats */}
-      <div ref={headRef} className="absolute inset-x-0 z-10 px-5" style={{ top: top + 20 }}>
+      <div ref={headRef} className="absolute inset-x-0 z-10 px-5" style={{ top: top + 30 }}>
         <AnimatePresence mode="wait">
           {opening ? (
             <motion.div key="hook" exit={{ opacity: 0, y: -8, transition: { duration: 0.2 } }}>
@@ -201,6 +212,14 @@ export function ReelView({
         >
           <VolumeIcon size={17} muted strokeWidth={2} /> Tap for sound
         </button>
+      )}
+      {!preview && (
+        <>
+          <SegmentBar count={pb.segments.length} current={pb.seg} fraction={fraction} top={top} />
+          {active && <BeatPop seg={pb.seg} top={top} />}
+          <ReactionStream playing={active && pb.playing} bottom={bottom + RAIL_TOP + 10} />
+          {heart.layer}
+        </>
       )}
       {overlay}
     </div>

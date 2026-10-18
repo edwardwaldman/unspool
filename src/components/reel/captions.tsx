@@ -29,7 +29,7 @@ export function Captions({ text, words, fraction }: { text: string; words: numbe
   return (
     <p
       className="text-center font-hook font-extrabold leading-[1.3] tracking-[-0.015em] text-white"
-      style={{ textShadow: "0 2px 0 rgba(0,0,0,.6)", fontSize: "min(24px, 5.8cqw)" }}
+      style={{ textShadow: "0 2px 0 rgba(0,0,0,.6)", fontSize: "min(30px, 7.2cqw)" }}
       aria-live="off"
     >
       {chunk.map((i) => {
@@ -39,10 +39,10 @@ export function Captions({ text, words, fraction }: { text: string; words: numbe
         return (
           <span
             key={i}
-            className="mx-[0.04em] inline-block px-[0.14em] transition-transform duration-100"
+            className="mx-[0.04em] inline-block px-[0.14em] transition-transform duration-150 ease-[cubic-bezier(.3,1.8,.5,1)]"
             style={
               isNow
-                ? { background: "var(--thread)", color: "#08110e", textShadow: "none", transform: "scale(1.04) rotate(-1.5deg)" }
+                ? { background: "var(--thread)", color: "#08110e", textShadow: "none", transform: `scale(1.22) rotate(${i % 2 ? 3 : -3}deg)`, boxShadow: "3px 3px 0 #08110e" }
                 : { color: w.color ? COLOR_VAR[w.color] : "#fff", opacity: spoken ? 1 : 0.72 }
             }
           >
