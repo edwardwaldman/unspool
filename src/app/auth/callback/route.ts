@@ -1,15 +1,11 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { ANON_COOKIE } from "@/lib/config";
+import { ANON_COOKIE, safeNextPath } from "@/lib/config";
 import { adminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
-
-function safeNext(next: string | null) {
-  return next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/";
-}
 
 /**
  * OAuth / email-link landing: create the session, then attach this browser's anonymous spools to the account.
@@ -20,7 +16,7 @@ export async function GET(req: Request) {
   const code = url.searchParams.get("code");
   const tokenHash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type") as EmailOtpType | null;
-  const next = safeNext(url.searchParams.get("next"));
+  const next = safeNextPath(url.searchParams.get("next"));
   const fail = (reason: string) =>
     NextResponse.redirect(new URL(`/login?error=${reason}&next=${encodeURIComponent(next)}`, url.origin));
 

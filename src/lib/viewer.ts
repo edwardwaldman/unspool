@@ -29,7 +29,10 @@ export function isSubscribed(profile: Profile | null) {
 
 /** Who is making this request: a signed-in user, an anonymous visitor, or both (pre-claim). */
 export async function getViewer(): Promise<Viewer> {
-  const anonToken = (await cookies()).get(ANON_COOKIE)?.value ?? null;
+  // The cookie is client-controlled: only accept the UUID the proxy issues, never arbitrary text that
+  // could end up inside a PostgREST filter.
+  const rawAnon = (await cookies()).get(ANON_COOKIE)?.value;
+  const anonToken = rawAnon && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawAnon) ? rawAnon : null;
   if (!supabaseConfigured) return { userId: null, email: null, profile: null, anonToken, subscribed: false };
 
   const supabase = await createClient();

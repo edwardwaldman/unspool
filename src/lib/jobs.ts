@@ -1,3 +1,4 @@
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { after } from "next/server";
 import { siteUrl } from "./config";
 
@@ -6,8 +7,28 @@ import { siteUrl } from "./config";
 
 export type Job = { name: "process"; documentId: string } | { name: "reel"; reelId: string };
 
-export function jobSecret() {
-  return process.env.JOB_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "dev-job-secret";
+/**
+ * Shared secret for the internal job endpoints: JOB_SECRET, else a key derived from the service role key
+ * (so the raw service key never travels in a header). Null when neither is set: the endpoints then
+ * refuse every call and dispatch runs jobs inline - never a guessable default.
+ */
+export function jobSecret(): string | null {
+  if (process.env.JOB_SECRET) return process.env.JOB_SECRET;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  return serviceKey ? createHmac("sha256", serviceKey).update("unspool:job-secret").digest("hex") : null;
+}
+
+/** Constant-time comparison of a presented secret with the expected one; false if either is missing. */
+export function secretMatches(given: string | null | undefined, expected: string | null | undefined) {
+  if (!given || !expected) return false;
+  const a = createHash("sha256").update(given).digest();
+  const b = createHash("sha256").update(expected).digest();
+  return timingSafeEqual(a, b);
+}
+
+/** True when the request carries the job secret. */
+export function isJobRequest(req: Request) {
+  return secretMatches(req.headers.get("x-job-secret"), jobSecret());
 }
 
 function jobBaseUrl() {
@@ -26,7 +47,12 @@ async function runInline(job: Job) {
 
 /** Kick off a job in a separate invocation. Falls back to running it after this response. */
 export async function dispatch(job: Job) {
-  const headers: Record<string, string> = { "Content-Type": "application/json", "x-job-secret": jobSecret() };
+  const secret = jobSecret();
+  if (!secret) {
+    after(() => runInline(job));
+    return;
+  }
+  const headers: Record<string, string> = { "Content-Type": "application/json", "x-job-secret": secret };
   if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
     headers["x-vercel-protection-bypass"] = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
   }

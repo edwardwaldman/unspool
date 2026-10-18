@@ -22,6 +22,10 @@ export const LIMITS = {
   freeUploadsPerDay: Number(process.env.FREE_UPLOADS_PER_DAY ?? 3),
   subscriberUploadsPerDay: Number(process.env.SUBSCRIBER_UPLOADS_PER_DAY ?? 40),
   anonymousRetentionDays: 7,
+  /** Retries (re-plan or re-generate) one document may trigger per 24 hours. */
+  retriesPerDocumentPerDay: Number(process.env.RETRIES_PER_DOCUMENT_PER_DAY ?? 10),
+  /** A reel that has failed this many generation attempts is not re-queued by a retry. */
+  maxReelAttempts: Number(process.env.MAX_REEL_ATTEMPTS ?? 5),
 };
 
 /** Generate every reel after the first right away (best UX) or only once it's playable (cheapest). */
@@ -38,6 +42,23 @@ export function siteUrl(fallbackOrigin?: string) {
   if (fallbackOrigin) return fallbackOrigin;
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return "http://localhost:3000";
+}
+
+/**
+ * A same-origin path to redirect to after sign-in, or `fallback`. Resolves the value the way a browser
+ * would, so "/\t/evil.com", "/\\evil.com" and similar tricks that normalise to "//evil.com" are refused.
+ */
+export function safeNextPath(next: string | null | undefined, fallback = "/"): string {
+  if (!next || !next.startsWith("/")) return fallback;
+  const base = "https://same-origin.invalid";
+  try {
+    const url = new URL(next, base);
+    const path = `${url.pathname}${url.search}${url.hash}`;
+    if (url.origin !== base || path.startsWith("//") || path.startsWith("/\\")) return fallback;
+    return path;
+  } catch {
+    return fallback;
+  }
 }
 
 export function extensionOf(fileName: string): string {

@@ -20,7 +20,11 @@ export async function DELETE() {
     try {
       await getStripe().subscriptions.cancel(subId);
     } catch (err) {
-      console.warn("[account] couldn't cancel subscription", err);
+      // Already gone in Stripe is fine; anything else would leave a live subscription billing a deleted account.
+      if ((err as { code?: string }).code !== "resource_missing") {
+        console.error("[account] couldn't cancel subscription", err);
+        return error(502, "Couldn't cancel your subscription, so your account wasn't deleted. Try again or contact us.");
+      }
     }
   }
 

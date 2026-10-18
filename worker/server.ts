@@ -7,6 +7,7 @@
 //
 // The app uses it when RENDER_URL is set (e.g. https://render.example.com/render).
 
+import { createHash, timingSafeEqual } from "node:crypto";
 import http from "node:http";
 import { renderVideo } from "../src/lib/video/render";
 import type { RenderJob } from "../src/lib/video/types";
@@ -48,6 +49,33 @@ function readBody(req: http.IncomingMessage): Promise<string> {
   });
 }
 
+function authorized(header: string | undefined) {
+  if (!SECRET) return true; // only reachable with ALLOW_NO_SECRET=1 (local testing)
+  const a = createHash("sha256").update(header ?? "").digest();
+  const b = createHash("sha256").update(`Bearer ${SECRET}`).digest();
+  return timingSafeEqual(a, b);
+}
+
+/** Remote jobs may only reference http(s) URLs: a local `path` would let the caller read the worker's own files. */
+function safeSource(src: unknown) {
+  const s = src as { url?: unknown; path?: unknown } | undefined;
+  return !!s && s.path === undefined && typeof s.url === "string" && /^https?:\/\//i.test(s.url);
+}
+
+const HEX = /^#?[0-9a-f]{6}$/i;
+
+function safeMedia(j: RenderJob) {
+  return (
+    j.slots.every(
+      (s) => (!s.image || safeSource(s.image)) && (!s.card || (HEX.test(String(s.card.from)) && HEX.test(String(s.card.to)))),
+    ) &&
+    j.audio.every((a) => !a.source || safeSource(a.source)) &&
+    (!j.music || safeSource(j.music.source)) &&
+    (!j.highlight || HEX.test(String(j.highlight))) &&
+    j.captions.every((l) => Array.isArray(l.words) && l.words.every((w) => !w.color || HEX.test(String(w.color))))
+  );
+}
+
 function isJob(v: unknown): v is RenderJob {
   const j = v as RenderJob;
   return (
@@ -75,7 +103,7 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", "http://worker");
   if (req.method === "GET" && url.pathname === "/healthz") return send(res, 200, "ok");
   if (req.method !== "POST" || (url.pathname !== "/render" && url.pathname !== "/")) return send(res, 404, "not found");
-  if (SECRET && req.headers.authorization !== `Bearer ${SECRET}`) return send(res, 401, "unauthorized");
+  if (!authorized(req.headers.authorization)) return send(res, 401, "unauthorized");
   if (busy >= MAX_CONCURRENT) return send(res, 429, "busy");
 
   busy++;
@@ -87,7 +115,7 @@ const server = http.createServer(async (req, res) => {
     } catch {
       return send(res, 400, "invalid JSON");
     }
-    if (!isJob(job)) return send(res, 400, "invalid job");
+    if (!isJob(job) || !safeMedia(job)) return send(res, 400, "invalid job");
     const total = job.audio.reduce((a, c) => a + (Number(c.duration) || 0), 0);
     if (!(total > 0) || total > 300) return send(res, 400, "video must be 0–300 seconds");
 

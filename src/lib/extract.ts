@@ -94,6 +94,55 @@ function capWords(text: string) {
   return { text: text.slice(0, end), words: MAX_WORDS, truncated: true };
 }
 
+const MAX_UNZIPPED_BYTES = 200 * 1024 * 1024;
+const MAX_ZIP_ENTRIES = 5000;
+
+const startsWith = (buf: Buffer, bytes: number[], offset = 0) => bytes.every((b, i) => buf[offset + i] === b);
+
+/**
+ * Check the file's bytes match its extension before any parser or paid model sees it: the extension is
+ * whatever the uploader typed. Text files must not be binary.
+ */
+function assertContentMatches(buf: Buffer, ext: string) {
+  const ok =
+    ext === "pdf"
+      ? buf.subarray(0, 1024).includes("%PDF-")
+      : ext === "docx" || ext === "pptx"
+        ? startsWith(buf, [0x50, 0x4b, 0x03, 0x04])
+        : ext === "png"
+          ? startsWith(buf, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+          : ext === "jpg" || ext === "jpeg"
+            ? startsWith(buf, [0xff, 0xd8, 0xff])
+            : ext === "webp"
+              ? startsWith(buf, [0x52, 0x49, 0x46, 0x46]) && startsWith(buf, [0x57, 0x45, 0x42, 0x50], 8)
+              : ext === "txt" || ext === "md"
+                ? !buf.subarray(0, 64 * 1024).includes(0)
+                : true; // unknown extensions are refused below
+
+  if (!ok) throw new ExtractionError(`This file doesn't look like a real .${ext} file. Try exporting it again.`);
+}
+
+/** Refuse zip bombs: Office files are zips, and the parsers inflate entries fully into memory. */
+async function assertSafeZip(buf: Buffer) {
+  const JSZip = (await import("jszip")).default;
+  let zip: Awaited<ReturnType<typeof JSZip.loadAsync>>;
+  try {
+    zip = await JSZip.loadAsync(buf);
+  } catch {
+    throw new ExtractionError("We couldn't open this file. Try exporting it again.");
+  }
+  let entries = 0;
+  let total = 0;
+  zip.forEach((_, file) => {
+    entries++;
+    // JSZip keeps the central directory's declared size on the (internal) _data field.
+    total += (file as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize ?? 0;
+  });
+  if (entries > MAX_ZIP_ENTRIES || total > MAX_UNZIPPED_BYTES) {
+    throw new ExtractionError("This file is too large to unpack. Try a smaller file.");
+  }
+}
+
 /** Pull readable text out of an uploaded file. Falls back to OCR (via Claude vision) for scans and images. */
 export async function extractDocument(buf: Buffer, fileName: string): Promise<Extracted> {
   const ext = extensionOf(fileName);
@@ -101,6 +150,9 @@ export async function extractDocument(buf: Buffer, fileName: string): Promise<Ex
   let pageCount: number | null = null;
   let truncated = false;
   let method: Extracted["method"] = "text";
+
+  assertContentMatches(buf, ext);
+  if (ext === "docx" || ext === "pptx") await assertSafeZip(buf);
 
   if (ext === "pdf") {
     const pdf = await extractPdf(buf);

@@ -1,10 +1,10 @@
-import { freeReelLimit, isUnlocked, loadDocument } from "@/lib/access";
-import { supabaseConfigured } from "@/lib/config";
+import { freeReelLimit, loadDocument } from "@/lib/access";
+import { LIMITS, supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
 import { dispatch } from "@/lib/jobs";
-import { queueRemainingReels } from "@/lib/pipeline";
 import { adminClient } from "@/lib/supabase/admin";
-import { getViewer } from "@/lib/viewer";
+import { claimUsage } from "@/lib/usage";
+import { clientIpHash, getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 
@@ -16,21 +16,41 @@ export async function POST(_req: Request, ctx: RouteContext<"/api/documents/[id]
   if (!doc) return error(404, "Not found");
   const db = adminClient();
 
+  const { data } = await db.from("reels").select("id,index,status,attempts").eq("document_id", id);
+  const reels = (data ?? []) as { id: string; index: number; status: string; attempts: number }[];
+  // Re-plan only a document that failed before it had a plan.
+  const reprocess = doc.status === "failed" && reels.length === 0;
+  // Re-queue reels the viewer can play (reel 1 plus any dripped free reels, or all when unlocked), and
+  // only while they have generation attempts left, so a reel that keeps failing can't be retried forever.
+  const { playable } = freeReelLimit(doc, viewer, { reelRows: reels.length });
+  const failed = reels.filter((r) => r.status === "failed" && r.index <= playable);
+  const toRun = [
+    ...failed.filter((r) => r.attempts < LIMITS.maxReelAttempts),
+    ...reels.filter((r) => r.status === "pending" && r.index <= playable),
+  ];
+  if (!reprocess && !toRun.length) {
+    if (failed.length) return error(429, "This reel couldn't be made. Try uploading the document again.", { code: "retry_limit" });
+    return json({ ok: true });
+  }
+
+  // Every retry that does work costs model/TTS calls: cap them per document per day.
+  const allowed = await claimUsage({
+    kind: "retry",
+    scope: "document",
+    limit: LIMITS.retriesPerDocumentPerDay,
+    userId: viewer.userId,
+    ipHash: await clientIpHash(),
+    documentId: id,
+  });
+  if (!allowed) return error(429, "Too many retries for this document today. Try again tomorrow.", { code: "limit" });
+
+  if (reprocess) {
+    await dispatch({ name: "process", documentId: id });
+    return json({ ok: true });
+  }
   if (doc.status === "failed") {
-    const { count } = await db.from("reels").select("id", { count: "exact", head: true }).eq("document_id", id);
-    if (!count) {
-      await dispatch({ name: "process", documentId: id });
-      return json({ ok: true });
-    }
-    await db.from("documents").update({ status: "scripting", error: null }).eq("id", id);
+    await db.from("documents").update({ status: "scripting", error: null }).eq("id", id).eq("status", "failed");
   }
-  // Re-queue failed reels the viewer can play (reel 1 plus any dripped free reels, or all when unlocked).
-  const { data: failed } = await db.from("reels").select("id,index").eq("document_id", id).eq("status", "failed");
-  const unlocked = isUnlocked(doc, viewer);
-  const { playable } = freeReelLimit(doc, viewer);
-  for (const r of failed ?? []) {
-    if (r.index <= playable) await dispatch({ name: "reel", reelId: r.id });
-  }
-  if (unlocked) await queueRemainingReels(id);
+  for (const r of toRun) await dispatch({ name: "reel", reelId: r.id });
   return json({ ok: true });
 }

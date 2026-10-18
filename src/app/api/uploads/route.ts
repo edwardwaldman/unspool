@@ -1,6 +1,7 @@
 import { ACCEPTED_EXTENSIONS, LIMITS, MAX_FILE_BYTES, extensionOf, isAccepted, supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
 import { adminClient } from "@/lib/supabase/admin";
+import { claimUsage } from "@/lib/usage";
 import { clientIpHash, getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
@@ -22,16 +23,18 @@ export async function POST(req: Request) {
   const ipHash = await clientIpHash();
   const db = adminClient();
 
-  // Daily upload limits to keep AI costs in check.
-  const since = new Date(Date.now() - 864e5).toISOString();
+  // Daily upload limits to keep AI costs in check. Claimed atomically in a ledger that deleting a
+  // document or account doesn't shrink; free accounts are also capped per IP so new accounts don't reset it.
   const limit = viewer.subscribed ? LIMITS.subscriberUploadsPerDay : LIMITS.freeUploadsPerDay;
-  const ors = [`ip_hash.eq.${ipHash}`];
-  if (viewer.userId) ors.push(`user_id.eq.${viewer.userId}`);
-  if (viewer.anonToken) ors.push(`anon_token.eq.${viewer.anonToken}`);
-  let q = db.from("documents").select("id", { count: "exact", head: true }).gte("created_at", since);
-  q = viewer.subscribed && viewer.userId ? q.eq("user_id", viewer.userId) : q.or(ors.join(","));
-  const { count } = await q;
-  if ((count ?? 0) >= limit) {
+  const allowed = await claimUsage({
+    kind: "upload",
+    scope: viewer.subscribed ? "user" : "user_or_ip",
+    limit,
+    userId: viewer.userId,
+    ipHash,
+  });
+  if (allowed === null) return error(503, "Uploads are briefly unavailable. Try again in a minute.");
+  if (!allowed) {
     return error(
       429,
       viewer.subscribed

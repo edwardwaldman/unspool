@@ -24,7 +24,8 @@ export async function POST(req: Request) {
     case "customer.subscription.created":
     case "customer.subscription.updated":
     case "customer.subscription.deleted":
-      await syncSubscription(event.data.object);
+      // Events can arrive out of order or be retried late: mirror Stripe's current state, not the payload's.
+      await syncSubscription(await getStripe().subscriptions.retrieve(event.data.object.id));
       break;
   }
   return Response.json({ received: true });

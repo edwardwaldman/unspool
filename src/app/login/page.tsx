@@ -4,13 +4,13 @@ import { AuthModal } from "@/components/auth/auth-modal";
 import { LoginForm } from "@/components/shell/login-form";
 import { Toaster } from "@/components/ui/toast";
 import { Wordmark } from "@/components/ui/icons";
+import { safeNextPath } from "@/lib/config";
 
 export const metadata: Metadata = { title: "Sign in" };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const sp = await searchParams;
-  const raw = typeof sp.next === "string" ? sp.next : "/";
-  const next = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+  const next = safeNextPath(typeof sp.next === "string" ? sp.next : null);
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-paper px-6 py-12">
       <div className="w-full max-w-[380px]">
