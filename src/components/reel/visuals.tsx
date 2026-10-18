@@ -2,6 +2,7 @@
 
 import { ArrowRight, Check, ChevronUp, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { COLOR_VAR } from "@/lib/markup";
 import type { HighlightColor, ReelScript, Visual } from "@/lib/schema";
 import { MarkedText } from "../ui/marked-text";
@@ -397,10 +398,23 @@ export type StageProps = {
 /** One beat's motion graphic, staged in 3D: a perspective floor grid, a slow camera orbit, and an extruded drop shadow. */
 export function VisualStage(props: StageProps) {
   const reduce = useReducedMotion();
+  const box = useRef<HTMLDivElement>(null);
+  const content = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(1);
+  useEffect(() => {
+    const b = box.current, c = content.current;
+    if (!b || !c) return;
+    // Shrink the graphic to the space it has (never grow it), so it can't spill onto the captions or headline.
+    const measure = () => setFit(Math.min(1, (b.clientHeight - 16) / Math.max(1, c.offsetHeight), (b.clientWidth - 16) / Math.max(1, c.offsetWidth)));
+    const ro = new ResizeObserver(measure);
+    ro.observe(b);
+    ro.observe(c);
+    return () => ro.disconnect();
+  }, []);
   const inner = <StageInner {...props} />;
   if (props.visual.type === "quiz" || props.visual.type === "hook") return inner;
   return (
-    <div className="relative flex h-full w-full items-center justify-center overflow-hidden" style={{ perspective: 900 }}>
+    <div ref={box} className="relative flex h-full w-full items-center justify-center overflow-hidden" style={{ perspective: 900 }}>
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 bottom-[-18%] h-[70%]"
@@ -426,7 +440,9 @@ export function VisualStage(props: StageProps) {
         animate={reduce ? undefined : { rotateX: [14, 8, 14], rotateY: [-16, 16, -16], z: 0, opacity: 1 }}
         transition={{ rotateX: { duration: 7, repeat: Infinity, ease: "easeInOut" }, rotateY: { duration: 7, repeat: Infinity, ease: "easeInOut" }, z: { duration: 0.6 }, opacity: { duration: 0.3 } }}
       >
-        {inner}
+        <div ref={content} style={{ transform: `scale(${fit})` }}>
+          {inner}
+        </div>
       </motion.div>
     </div>
   );

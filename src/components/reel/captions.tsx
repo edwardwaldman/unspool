@@ -29,7 +29,7 @@ export function Captions({ text, words, fraction }: { text: string; words: numbe
   return (
     <p
       className="text-center font-hook font-extrabold leading-[1.3] tracking-[-0.015em] text-white"
-      style={{ textShadow: "0 2px 0 rgba(0,0,0,.6)", fontSize: "min(30px, 7.2cqw)" }}
+      style={{ textShadow: "0 2px 0 rgba(0,0,0,.6)", fontSize: "min(30px, 7.2cqw, 3.9cqh)" }}
       aria-live="off"
     >
       {chunk.map((i) => {

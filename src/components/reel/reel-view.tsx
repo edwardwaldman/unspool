@@ -1,8 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { markupWords } from "@/lib/markup";
+import { useEffect, useRef, useState } from "react";
 import type { ReelDTO, SpoolDTO } from "@/lib/spool-types";
 import { PlayIcon, VolumeIcon } from "../ui/icons";
 import { reelVars } from "./accent";
@@ -14,7 +13,7 @@ import { getPrefs, setPrefs, usePrefs } from "./prefs";
 import { ReelMedia } from "./reel-media";
 import { StatLine } from "./stat-line";
 import { usePlayback } from "./use-playback";
-import { BeatPop, Callout, ContextChip, ReactionStream, useDoubleTapHeart } from "./gimmicks";
+import { BeatPop, useDoubleTapHeart } from "./gimmicks";
 import { QuizCard } from "./visuals";
 
 export type ReelChrome = {
@@ -90,14 +89,8 @@ export function ReelView({
   const muted = prefs.muted;
   const [headRef, headH] = useHeight<HTMLDivElement>(opening ? 110 : 40);
   const hits = useHitCount(script.headline, pb.segments[0]?.text ?? "", opening ? pb.words : [], opening ? fraction : 0);
-  const below = top + 58 + headH + 18;
+  const below = top + 20 + headH + 18;
   const heart = useDoubleTapHeart();
-  const callout = useMemo(() => markupWords(pb.segment.text).find((w) => w.color)?.text.replace(/[.,!?;:…]+$/, ""), [pb.segment.text]);
-  const terms = useMemo(() => {
-    const seen = new Set<string>();
-    for (const sg of pb.segments) for (const w of markupWords(sg.text)) if (w.color) seen.add(w.text.replace(/[.,!?;:]+$/, ""));
-    return [...seen].slice(0, 12);
-  }, [pb.segments]);
   const toggleMute = () => setPrefs({ muted: !getPrefs().muted, autoMuted: false });
 
   // M mutes / unmutes the reel that's playing.
@@ -115,7 +108,7 @@ export function ReelView({
   }, [active, preview]);
 
   return (
-    <div className="relative h-full w-full select-none overflow-hidden text-white [container-type:inline-size]" style={reelVars(reel.index)} onClick={(e) => {
+    <div className="relative h-full w-full select-none overflow-hidden text-white [container-type:size]" style={reelVars(reel.index)} onClick={(e) => {
         heart.onTap(e);
         pb.toggle();
       }} data-testid="reel-view" data-seg={pb.segment.key} data-playing={pb.playing ? "1" : "0"}>
@@ -146,7 +139,7 @@ export function ReelView({
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] border-t border-line bg-paper/85" style={{ height: bottom + BAND }} />
 
       {/* Kinetic headline on the opening beat, then the live stats */}
-      <div ref={headRef} className="absolute inset-x-0 z-10 px-5" style={{ top: top + 58 }}>
+      <div ref={headRef} className="absolute inset-x-0 z-10 px-5" style={{ top: top + 20 }}>
         <AnimatePresence mode="wait">
           {opening ? (
             <motion.div key="hook" exit={{ opacity: 0, y: -8, transition: { duration: 0.2 } }}>
@@ -222,10 +215,7 @@ export function ReelView({
       )}
       {!preview && (
         <>
-          <ContextChip text={`${(spool.title ?? spool.fileName).split(/[:·-]/)[0].trim().slice(0, 24)} · part ${reel.index}`} top={top - 12} />
-          {!isQuiz && !opening && <Callout term={callout} beat={pb.seg} top={below} bottom={bottom + RAIL_TOP} />}
-          {active && <BeatPop seg={pb.seg} top={below} />}
-          <ReactionStream terms={terms} playing={active && pb.playing} top={below + 40} bottom={bottom + RAIL_TOP + 10} />
+          {active && <BeatPop seg={pb.seg} />}
           {heart.layer}
         </>
       )}

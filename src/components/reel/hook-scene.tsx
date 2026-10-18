@@ -60,7 +60,7 @@ export function KineticHeadline({ headline, beatText, words, fraction }: { headl
   return (
     <h2
       className="relative font-hook font-extrabold leading-[1.12] tracking-[-0.025em] text-white"
-      style={{ fontSize: "min(29px, 6.7cqw)" }}
+      style={{ fontSize: "min(29px, 6.7cqw, 4.1cqh)" }}
       aria-label={hits.map((h) => h.text).join(" ")}
     >
       {!reduce && (
@@ -333,7 +333,7 @@ function useFit(natural: number) {
     if (!el) return;
     const ro = new ResizeObserver(() => {
       const { height, width } = el.getBoundingClientRect();
-      setScale(Math.max(0.7, Math.min(1.3, (height - 64) / natural, (width - 40) / 240)));
+      setScale(Math.max(0.35, Math.min(1.3, (height - 64) / natural, (width - 40) / 240)));
     });
     ro.observe(el);
     return () => ro.disconnect();
