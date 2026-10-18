@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 !.env.example
+
+# fontconfig cache marker (written when ffmpeg scans the font dir locally)
+/assets/fonts/.uuid
