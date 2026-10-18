@@ -123,11 +123,11 @@ export function Landing() {
   const animFade = useTransform(easedY, [150, 900], [1, 0.25]);
   const cueFade = useTransform(easedY, [40, 420], [1, 0]);
   const cueY = useTransform(easedY, [0, 420], [0, 24]);
-  const k = lg ? Math.max(0.6, Math.min(2.8, (vh - 370) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
+  const k = lg ? Math.max(0.6, Math.min(2.8, (vh - 315) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
 
   return (
     <div>
-    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-[safe_center] gap-6 overflow-hidden px-3 pb-10 pt-20 lg:gap-5 lg:px-6 lg:pb-10 lg:pt-20">
+    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-[safe_center] gap-6 overflow-hidden px-3 pb-10 pt-20 lg:gap-4 lg:px-6 lg:pb-6 lg:pt-16">
       {/* Wordmark under the top bar: the bar slides down over it on scroll */}
       <Link href="/" aria-label="unspool" className="absolute left-5 top-5 lg:left-10 lg:top-[22px]">
         <Wordmark size={24} />
@@ -164,7 +164,7 @@ export function Landing() {
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.94 }}
           >
-            <span className="relative flex h-[124px] w-[124px] items-center justify-center lg:h-[128px] lg:w-[128px]">
+            <span className="relative flex h-[124px] w-[124px] items-center justify-center lg:h-[112px] lg:w-[112px]">
               <motion.svg viewBox="0 0 100 100" className="absolute inset-0" animate={{ rotate: 360 }} transition={{ duration: 14, repeat: Infinity, ease: "linear" }}>
                 <defs>
                   <path id="cue-ring" d="M50 50 m-38 0 a38 38 0 1 1 76 0 a38 38 0 1 1 -76 0" />
