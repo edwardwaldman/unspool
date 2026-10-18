@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HowSteps } from "@/components/shell/how-steps";
 import { MarketingPage } from "@/components/shell/marketing-page";
 import { formatPrice, PRICING } from "@/lib/config";
 import { SAMPLE_SPOOL } from "@/lib/sample";
@@ -8,7 +9,7 @@ import { estimateDuration } from "@/lib/timing";
 
 export const metadata: Metadata = { title: "How it works" };
 
-const steps = [
+const steps: [string, string][] = [
   ["Drop a doc", "Class notes, a textbook chapter, a work PDF, a contract. PDF, Word, PowerPoint, text, or a photo of your notes."],
   ["We read all of it", "Unspool plans one reel per key idea, in order, covering the whole document: every definition, number, rule and deadline."],
   ["Swipe through", "Each reel has a hook, voiceover, word-by-word captions, a visual for every beat and a quick quiz."],
@@ -17,7 +18,7 @@ const steps = [
 const faqs = [
   ["Is it accurate?", "Reels are written only from your document. If it isn't in the doc, it isn't in the reel. It is still a summary, so check anything high-stakes against the original."],
   ["Who can see my files?", "Only you. Files are private, never public and never used to train AI. Delete a document and its file, scripts and audio go with it."],
-  ["Do I need an account?", "No. Anonymous uploads that are never unlocked are deleted after 7 days."],
+  ["Do I need an account?", "Yes, a free one. Pick your file, sign up with your email, and your first reel is ready in minutes."],
   ["How long can a document be?", "About 60 pages or 40,000 words for now. Longer files are cut at that point, and we tell you."],
   ["Is this legal or financial advice?", "No. For contracts and financial documents, Unspool summarizes what the document says."],
 ];
@@ -93,15 +94,7 @@ export default function AboutPage() {
         <ReelAnatomy />
       </section>
 
-      <section className="mt-24 grid border-t border-line md:grid-cols-3">
-        {steps.map(([title, body], i) => (
-          <div key={title} className={`py-8 md:pr-8 ${i > 0 ? "border-t border-line md:border-l md:border-t-0 md:pl-8" : ""}`}>
-            <div className="font-mono text-[12px] text-muted">0{i + 1}</div>
-            <h2 className="mt-3 font-display text-[30px] leading-tight">{title}</h2>
-            <p className="mt-2 text-[15px] leading-relaxed text-ink/75">{body}</p>
-          </div>
-        ))}
-      </section>
+      <HowSteps steps={steps} />
 
       <section className="mt-16 grid border-y border-line md:grid-cols-2">
         <div className="py-10 md:pr-10">
@@ -111,7 +104,7 @@ export default function AboutPage() {
         </div>
         <div className="border-t border-line py-10 md:border-l md:border-t-0 md:pl-10">
           <div className="label">For work</div>
-          <h2 className="mt-3 font-display text-[36px] leading-[1.05]">Get the contract without reading all of it.</h2>
+          <h2 className="mt-3 font-display text-[36px] leading-[1.05]">Read the contract in sixty seconds.</h2>
           <p className="mt-3 text-[15px] text-ink/75">Policies, onboarding docs, reports and contracts: what you have to do, the deadlines, the money and the clauses to watch.</p>
         </div>
       </section>

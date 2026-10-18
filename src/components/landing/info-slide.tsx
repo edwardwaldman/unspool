@@ -52,8 +52,9 @@ export function InfoSlide() {
           </motion.div>
         </div>
       </section>
-      {/* Overlaps the end of the track so it rises in as the demo slides away */}
-      <section className="relative -mt-[60dvh] flex min-h-[80dvh] items-center px-6 pb-16">
+      {/* Rises in as the demo slides away, then holds on screen for a while before scrolling on */}
+      <section className="relative -mt-[30dvh]" style={{ height: "190dvh" }}>
+        <div className="sticky top-0 flex h-[100dvh] items-center px-6">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -63,6 +64,7 @@ export function InfoSlide() {
         >
           <BigUpload />
         </motion.div>
+        </div>
       </section>
     </>
   );
