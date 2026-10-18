@@ -14,7 +14,7 @@ import { getPrefs, setPrefs, usePrefs } from "./prefs";
 import { ReelMedia } from "./reel-media";
 import { StatLine } from "./stat-line";
 import { usePlayback } from "./use-playback";
-import { BeatPop, ReactionStream, useDoubleTapHeart } from "./gimmicks";
+import { BeatPop, ReactionStream, useDoubleTapHeart, ViewfinderHud } from "./gimmicks";
 import { QuizCard } from "./visuals";
 
 export type ReelChrome = {
@@ -90,7 +90,7 @@ export function ReelView({
   const muted = prefs.muted;
   const [headRef, headH] = useHeight<HTMLDivElement>(opening ? 110 : 40);
   const hits = useHitCount(script.headline, pb.segments[0]?.text ?? "", opening ? pb.words : [], opening ? fraction : 0);
-  const below = top + 30 + headH + 18;
+  const below = top + 64 + headH + 18;
   const heart = useDoubleTapHeart();
   const terms = useMemo(() => {
     const seen = new Set<string>();
@@ -145,7 +145,7 @@ export function ReelView({
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] border-t border-line bg-paper/85" style={{ height: bottom + BAND }} />
 
       {/* Kinetic headline on the opening beat, then the live stats */}
-      <div ref={headRef} className="absolute inset-x-0 z-10 px-5" style={{ top: top + 30 }}>
+      <div ref={headRef} className="absolute inset-x-0 z-10 px-5" style={{ top: top + 64 }}>
         <AnimatePresence mode="wait">
           {opening ? (
             <motion.div key="hook" exit={{ opacity: 0, y: -8, transition: { duration: 0.2 } }}>
@@ -221,6 +221,7 @@ export function ReelView({
       )}
       {!preview && (
         <>
+          <ViewfinderHud playing={active && pb.playing} progress={(pb.seg + fraction) / Math.max(1, pb.segments.length)} top={top} bottom={bottom + BAND} />
           {active && <BeatPop seg={pb.seg} top={top} />}
           <ReactionStream terms={terms} playing={active && pb.playing} bottom={bottom + RAIL_TOP + 10} />
           {heart.layer}

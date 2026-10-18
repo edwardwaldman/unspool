@@ -4,11 +4,11 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 // Attention-grabbing extras layered over a playing reel: a white flash
-// and "+XP" pop on every new beat, a running streak counter, and a live stream of floating reactions.
+// and "+XP" pop on every new beat, and a live stream of floating reactions.
 
 const REACTIONS = ["🔥", "🤯", "💡", "🧠"];
 
-/** A quick white flash + "+10 XP" stamp + streak chip each time the reel moves to a new beat. */
+/** A quick white flash + "+10 XP" stamp each time the reel moves to a new beat. */
 export function BeatPop({ seg, top }: { seg: number; top: number }) {
   const reduce = useReducedMotion();
   if (reduce || seg === 0) return null;
@@ -37,17 +37,6 @@ export function BeatPop({ seg, top }: { seg: number; top: number }) {
           +10 XP
         </motion.div>
       </AnimatePresence>
-      <motion.div
-        key={`streak-${seg}`}
-        aria-hidden
-        className="pointer-events-none absolute right-3 z-30 flex items-center gap-1 border border-white/30 bg-black/50 px-2 py-1 font-hook text-[13px] font-extrabold text-white"
-        style={{ top: top + 18 }}
-        initial={{ scale: 1.6 }}
-        animate={{ scale: 1 }}
-        transition={{ type: "spring", stiffness: 500, damping: 14 }}
-      >
-        🔥 {seg}x streak
-      </motion.div>
     </>
   );
 }
@@ -119,4 +108,44 @@ export function useDoubleTapHeart() {
     </div>
   );
   return { onTap, layer };
+}
+
+const pad = (n: number, w = 2) => String(Math.floor(n)).padStart(w, "0");
+
+/**
+ * Camera-viewfinder HUD, like a slow-mo macro shot: corner brackets, a REC timecode, a "watching" timer,
+ * and a frames-to-payoff countdown that ticks down to 000 (in the accent) on the reel's last beat.
+ */
+export function ViewfinderHud({ playing, progress, top, bottom }: { playing: boolean; progress: number; top: number; bottom: number }) {
+  const [t, setT] = useState(0);
+  useEffect(() => {
+    if (!playing) return;
+    const start = performance.now() - t * 1000;
+    const id = setInterval(() => setT((performance.now() - start) / 1000), 1000 / 30);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing]);
+  const left = Math.max(0, Math.round((1 - progress) * 240));
+  const corner = "absolute h-5 w-5 border-white/70";
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-x-3 z-[12] font-mono text-white" style={{ top: top + 8, bottom: bottom + 8 }}>
+      <span className={`${corner} left-0 top-0 border-l border-t`} />
+      <span className={`${corner} right-0 top-0 border-r border-t`} />
+      <span className={`${corner} bottom-0 left-0 border-b border-l`} />
+      <span className={`${corner} bottom-0 right-0 border-b border-r`} />
+      <div className="absolute left-6 top-1 flex items-center gap-1.5 text-[9px] tracking-[0.12em] text-white/80">
+        <motion.span className="h-1.5 w-1.5 rounded-full bg-[#ff4d3d]" animate={{ opacity: playing ? [1, 0.2, 1] : 1 }} transition={{ duration: 1, repeat: Infinity }} />
+        REC {pad(t / 3600)}:{pad((t / 60) % 60)}:{pad(t % 60)}:{pad((t * 30) % 30)}
+      </div>
+      <div className="absolute right-6 top-1 flex items-center gap-1 border border-white/25 bg-black/40 px-1.5 py-[1px] text-[9px] text-white/85">
+        <span className="h-1.5 w-1.5 rounded-full bg-thread" /> watching {t.toFixed(1)}s
+      </div>
+      <div className="absolute right-6 top-6 text-right">
+        <div className="text-[8px] tracking-[0.18em] text-white/60">FRAMES TO PAYOFF</div>
+        <div className="text-[22px] font-bold leading-none tabular-nums" style={{ color: left < 20 ? "var(--thread)" : "#fff" }}>
+          {pad(left, 3)}
+        </div>
+      </div>
+    </div>
+  );
 }
