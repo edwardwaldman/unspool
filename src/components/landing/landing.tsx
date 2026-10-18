@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { UploadIcon, Wordmark } from "../ui/icons";
 import { useMedia } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
@@ -32,6 +32,17 @@ function UploadButton() {
   const input = useRef<HTMLInputElement>(null);
   const upload = useUploader();
   const pending = usePendingUpload();
+  // /?upload=1 (the share page's call to action) opens the picker right away. Browsers allow it while
+  // the click that navigated here still counts as a user gesture; otherwise the button stays focused.
+  const button = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("upload") !== "1") return;
+    url.searchParams.delete("upload");
+    window.history.replaceState(window.history.state, "", url);
+    button.current?.focus();
+    input.current?.click();
+  }, []);
   return (
     <>
       <input
@@ -46,6 +57,7 @@ function UploadButton() {
         }}
       />
       <button
+        ref={button}
         type="button"
         onClick={() => input.current?.click()}
         disabled={Boolean(pending)}

@@ -55,6 +55,8 @@ export type RenderJob = {
   preset?: string;
   /** Crossfade between slots, seconds. */
   fade?: number;
+  /** Small burned-in text in the top-right corner (free-tier owners). Off when unset. */
+  watermark?: string;
 };
 
 /** What the player needs to keep its quiz pause / progress in sync with the video's clock. */

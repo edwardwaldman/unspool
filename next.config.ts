@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
   // src/lib/video/render.ts, never imported, so no other route carries it) and the caption font.
   outputFileTracingIncludes: {
     "/api/jobs/reel": ["./node_modules/ffmpeg-static/ffmpeg", "./assets/fonts/**/*"],
+    "/r/**": ["./brand/fonts/Unbounded-700.ttf", "./brand/fonts/Syne-800.ttf", "./brand/fonts/InstrumentSans-500.ttf"],
   },
   async headers() {
     return [

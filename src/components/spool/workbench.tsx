@@ -11,6 +11,8 @@ import { fileLabel, reelAccent, reelTint } from "../reel/accent";
 import { ReelSlot, SpoolMoreSheet, type FeedItem } from "../reel/feed";
 import { stageIndex, stageLine } from "../reel/loading-reel";
 import { UnlockSheet } from "../reel/drip-gate";
+import { ShareSheet } from "../reel/share-sheet";
+import { SharedLinks } from "./shared-links";
 import { joinComma, sentenceCase } from "../reel/text";
 import { ChevronDown, ChevronUp, LockIcon, UploadIcon } from "../ui/icons";
 import { MarkedText } from "../ui/marked-text";
@@ -563,6 +565,8 @@ export function Workbench({
   const [index, setIndex] = useState(initialIndex);
   const [paywall, setPaywall] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareRev, setShareRev] = useState(0);
 
   const spool = items[0]?.spool ?? null;
   const reels = spool?.reels ?? [];
@@ -594,7 +598,7 @@ export function Workbench({
   // Arrow keys / j k step through the reels.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (paywall || moreOpen) return;
+      if (paywall || moreOpen || shareOpen) return;
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === "ArrowDown" || e.key === "j") {
         e.preventDefault();
@@ -606,7 +610,7 @@ export function Workbench({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [cur, select, paywall, moreOpen]);
+  }, [cur, select, paywall, moreOpen, shareOpen]);
 
   const firstLocked = reels.find((r) => r.locked)?.index ?? 2;
   const closePaywall = useCallback(() => setPaywall(false), []);
@@ -715,12 +719,13 @@ export function Workbench({
                 <ReelSlot
                   item={it}
                   upload={i === 0 ? upload ?? null : null}
-                  active={i === cur && !paywall && !moreOpen}
+                  active={i === cur && !paywall && !moreOpen && !shareOpen}
                   total={reels.length || MAX_REELS}
                   bottomInset={0}
                   onRetry={() => onRetry?.(it.spool)}
                   onUnlock={() => setPaywall(true)}
                   onMore={() => setMoreOpen(true)}
+                  onShare={() => setShareOpen(true)}
                   onEnded={() => {
                     if (i + 1 < items.length) setTimeout(() => select(i + 1, { paywall: true }), 900);
                   }}
@@ -759,10 +764,25 @@ export function Workbench({
       {/* Right: details for the active reel (wide desktops) */}
       <aside className="hidden w-[360px] shrink-0 overflow-y-auto border-l border-line p-5 xl:block">
         <Details spool={spool} reel={reel} onUnlock={() => setPaywall(true)} onRetry={() => onRetry?.(spool)} />
+        {spool && reel && viewer?.signedIn && !spool.demo && !reel.locked && reel.status === "ready" && (
+          <SharedLinks key={`${reel.id}-${shareRev}`} reelId={reel.id} onShare={() => setShareOpen(true)} />
+        )}
       </aside>
 
       {spool && (
         <UnlockSheet open={paywall} onClose={closePaywall} spool={spool} viewer={viewer} reel={reel?.locked ? reel.index : firstLocked} />
+      )}
+      {spool && reel && (
+        <ShareSheet
+          open={shareOpen}
+          onClose={() => {
+            setShareOpen(false);
+            setShareRev((n) => n + 1);
+          }}
+          spool={spool}
+          reel={reel}
+          viewer={viewer}
+        />
       )}
       {spool && <SpoolMoreSheet spool={spool} open={moreOpen} onClose={() => setMoreOpen(false)} onDeleted={onDeleted} />}
     </div>

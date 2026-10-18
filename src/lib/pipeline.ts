@@ -8,6 +8,7 @@ import { buildSegments } from "./segments";
 import { adminClient } from "./supabase/admin";
 import { estimateDuration, estimateWordFractions } from "./timing";
 import { synthesize } from "./tts";
+import { ownerViewer } from "./shares";
 import { renderReelVideo, videoRenderEnabled, type ReelVideo } from "./video/reel-video";
 
 const STALE_MS = 6 * 60 * 1000;
@@ -142,9 +143,9 @@ export async function generateReel(reelId: string) {
   try {
     const { data: doc } = await db
       .from("documents")
-      .select("id,file_name,extracted_text,doc_type,sensitive,unlocked,title")
+      .select("id,user_id,file_name,extracted_text,doc_type,sensitive,unlocked,title")
       .eq("id", reel.document_id)
-      .single<Pick<DocumentRow, "id" | "file_name" | "extracted_text" | "doc_type" | "sensitive" | "unlocked" | "title">>();
+      .single<Pick<DocumentRow, "id" | "user_id" | "file_name" | "extracted_text" | "doc_type" | "sensitive" | "unlocked" | "title">>();
     if (!doc?.extracted_text) throw new Error("document text missing");
 
     const { data: siblings } = await db
@@ -186,7 +187,9 @@ export async function generateReel(reelId: string) {
     let video: ReelVideo | null = null;
     if (videoRenderEnabled()) {
       try {
-        video = await renderReelVideo({ reel, script, segments, audio, clips, deadline: startedAt + REEL_BUDGET_MS });
+        // Free tier (document not bought, owner not subscribed): burn in a small watermark.
+        const watermark = !doc.unlocked && !(doc.user_id && (await ownerViewer(doc.user_id)).subscribed);
+        video = await renderReelVideo({ reel, script, segments, audio, clips, deadline: startedAt + REEL_BUDGET_MS, watermark });
       } catch (err) {
         console.error("[pipeline] video render failed, keeping the animated player", reelId, err);
       }

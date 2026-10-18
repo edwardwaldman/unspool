@@ -14,6 +14,7 @@ import { MoreSheet } from "./more-sheet";
 import { freeAtFor } from "../ui/use-countdown";
 import { UnlockSheet } from "./drip-gate";
 import { ReelView } from "./reel-view";
+import { ShareSheet } from "./share-sheet";
 
 export type FeedItem = { key: string; spool: SpoolDTO | null; reel: ReelDTO | null };
 
@@ -32,6 +33,7 @@ export function ReelSlot({
   onUnlock,
   onMore,
   onEnded,
+  onShare,
 }: {
   item: FeedItem;
   upload: UploadState | null;
@@ -44,6 +46,7 @@ export function ReelSlot({
   onUnlock: () => void;
   onMore: () => void;
   onEnded: () => void;
+  onShare?: () => void;
 }) {
   const r = item.reel;
   if (!r || (!r.locked && r.status !== "ready")) {
@@ -53,7 +56,7 @@ export function ReelSlot({
     const s = item.spool;
     return <LockedReel reel={r} total={total} bottomInset={bottomInset} topInset={topInset} onUnlock={onUnlock} freeAt={s ? freeAtFor(r.index, s.freeReels, s.nextFreeUnlockAt) : null} />;
   }
-  return <ReelView spool={item.spool!} reel={r} active={active} total={total} chrome={{ bottomInset, topInset }} onMore={onMore} onEnded={onEnded} />;
+  return <ReelView spool={item.spool!} reel={r} active={active} total={total} chrome={{ bottomInset, topInset }} onMore={onMore} onEnded={onEnded} onShare={onShare} />;
 }
 
 /** The "more" sheet for a spool's reel (mute, speed, delete the document). */
@@ -105,6 +108,7 @@ export function Feed({
   const [index, setIndex] = useState(initialIndex);
   const [paywallFor, setPaywallFor] = useState<number | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const dismissedPaywall = useRef<Set<string>>(new Set());
   const isDesktop = useIsDesktop();
   // No floating nav sits over the feed any more; just keep the overlays off the home indicator.
@@ -181,7 +185,7 @@ export function Feed({
             <ReelSlot
               item={it}
               upload={i === 0 ? upload ?? null : null}
-              active={isActive && paywallFor === null && !moreOpen}
+              active={isActive && paywallFor === null && !moreOpen && !shareOpen}
               total={total(it.spool)}
               bottomInset={bottomInset}
               topInset={40}
@@ -191,6 +195,7 @@ export function Feed({
                 setPaywallFor(i);
               }}
               onMore={() => setMoreOpen(true)}
+              onShare={() => setShareOpen(true)}
               onEnded={() => {
                 if (i + 1 < items.length) setTimeout(() => scrollTo(i + 1), 900);
               }}
@@ -258,6 +263,7 @@ export function Feed({
           reel={paywallItem.reel.index}
         />
       )}
+      {active?.spool && active.reel && <ShareSheet open={shareOpen} onClose={() => setShareOpen(false)} spool={active.spool} reel={active.reel} viewer={viewer} />}
       {active?.spool && <SpoolMoreSheet spool={active.spool} open={moreOpen} onClose={() => setMoreOpen(false)} onDeleted={onDeleted} />}
     </div>
   );

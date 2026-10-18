@@ -48,6 +48,7 @@ export function ActionRail({
   onToggleMute,
   onReplay,
   onMore,
+  onShare,
 }: {
   reelId: string;
   title: string;
@@ -55,6 +56,8 @@ export function ActionRail({
   onToggleMute: () => void;
   onReplay: () => void;
   onMore: () => void;
+  /** Opens the share sheet; without it the rail shares the site link. */
+  onShare?: () => void;
 }) {
   const [saved, setSaved] = useState(false);
   useEffect(() => {
@@ -95,7 +98,7 @@ export function ActionRail({
       <RailButton label="Replay" count="Replay" onClick={onReplay}>
         <ReplayIcon size={24} strokeWidth={2} />
       </RailButton>
-      <RailButton label="Share" count="Share" onClick={share}>
+      <RailButton label="Share" count="Share" onClick={onShare ?? share}>
         <ShareIcon size={23} strokeWidth={2} />
       </RailButton>
       <RailButton label={muted ? "Unmute (M)" : "Mute (M)"} pressed={muted} onClick={onToggleMute}>

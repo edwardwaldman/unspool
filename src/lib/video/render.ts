@@ -230,7 +230,17 @@ export async function renderVideo(job: RenderJob, opts: RenderOptions = {}): Pro
     const music = job.music ? await materialize(job.music.source, work, "music.audio", opts.signal).catch(() => null) : null;
 
     const ass = path.join(work, "captions.ass");
-    await writeFile(/*turbopackIgnore: true*/ ass, buildAss({ width: job.width, height: job.height, captions: job.captions, slots: job.slots, highlight: job.highlight }));
+    let assText = buildAss({ width: job.width, height: job.height, captions: job.captions, slots: job.slots, highlight: job.highlight });
+    // Optional watermark: one ASS event for the whole video, small and semi-opaque, top-right
+    // (ffmpeg-static has no drawtext, but the ass filter is already in the graph).
+    const mark = job.watermark?.replace(/[^A-Za-z0-9 .-]/g, "").slice(0, 40);
+    if (mark) {
+      const total = job.audio.reduce((a, c) => a + c.duration, 0) + 1;
+      const t = `${Math.floor(total / 3600)}:${String(Math.floor((total % 3600) / 60)).padStart(2, "0")}:${(total % 60).toFixed(2).padStart(5, "0")}`;
+      const pos = `\\an9\\pos(${Math.round(job.width * 0.955)},${Math.round(job.height * 0.022)})\\fs${Math.round(job.height * 0.024)}\\bord1\\shad0\\1a&H50&`;
+      assText = `${assText.trimEnd()}\nDialogue: 2,0:00:00.00,${t},Caption,,0,0,0,,{${pos}}${mark}\n`;
+    }
+    await writeFile(/*turbopackIgnore: true*/ ass, assText);
 
     // A private fontconfig that only knows the bundled font: serverless images have no /etc/fonts,
     // and this keeps the look identical everywhere.

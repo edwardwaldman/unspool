@@ -57,7 +57,9 @@ export function ReelView({
   chrome,
   onEnded,
   onMore,
+  onShare,
   preview = false,
+  overlay,
 }: {
   spool: SpoolDTO;
   reel: ReelDTO;
@@ -66,6 +68,9 @@ export function ReelView({
   chrome: ReelChrome;
   onEnded?: () => void;
   onMore: () => void;
+  onShare?: () => void;
+  /** Extra layer drawn inside the frame (public share page: watermark, outro card). */
+  overlay?: React.ReactNode;
   /** Silent looping background (landing page). */
   preview?: boolean;
 }) {
@@ -154,7 +159,7 @@ export function ReelView({
 
       {/* Right action rail */}
       <div className="absolute right-2 z-20 flex w-[60px] justify-center" style={{ bottom: bottom + 14 }}>
-        <ActionRail reelId={reel.id} title={script.title} muted={muted || preview} onToggleMute={toggleMute} onReplay={pb.replay} onMore={onMore} />
+        <ActionRail reelId={reel.id} title={script.title} muted={muted || preview} onToggleMute={toggleMute} onReplay={pb.replay} onMore={onMore} onShare={onShare} />
       </div>
 
       {/* Account row, title, audio */}
@@ -197,6 +202,7 @@ export function ReelView({
           <VolumeIcon size={17} muted strokeWidth={2} /> Tap for sound
         </button>
       )}
+      {overlay}
     </div>
   );
 }

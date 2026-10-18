@@ -32,6 +32,8 @@ export const LIMITS = {
 export const GENERATE_LOCKED_REELS_EAGERLY = process.env.GENERATE_LOCKED_REELS_EAGERLY !== "false";
 
 export const ANON_COOKIE = "unspool_anon";
+/** Which share link (slug) brought this browser here, for signup attribution. */
+export const REF_COOKIE = "unspool_ref";
 
 export function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;

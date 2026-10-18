@@ -186,6 +186,8 @@ export async function renderReelVideo(input: {
   clips: Map<string, Buffer>;
   /** Epoch ms by which the reel must be saved (the function's time limit, minus a margin). */
   deadline: number;
+  /** Burn a small "unspool.cc" mark into the frames (free-tier owners). Default off. */
+  watermark?: boolean;
 }): Promise<ReelVideo | null> {
   const { reel, script, segments, audio, clips } = input;
   // Without a real voiceover for every segment the animated player (device voice) is the better experience.
@@ -264,6 +266,7 @@ export async function renderReelVideo(input: {
       crf: 28,
       preset: "veryfast",
       fade: 0.35,
+      ...(input.watermark ? { watermark: "unspool.cc" } : {}),
       ...(process.env.MUSIC_URL ? { music: { source: { url: process.env.MUSIC_URL }, volume: Number(process.env.MUSIC_VOLUME ?? 0.08) } } : {}),
     };
 
