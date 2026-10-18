@@ -1,1 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#0f1d18"/><text x="12" y="48" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="44" fill="#e9f0e4">U</text><rect x="46" y="40" width="8" height="8" fill="#d3f05a"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" fill="#0f1d18"/>
+  <!-- spool: two flanges around a wound core -->
+  <rect x="8" y="10" width="26" height="5" fill="#e9f0e4"/>
+  <rect x="8" y="49" width="26" height="5" fill="#e9f0e4"/>
+  <rect x="12" y="15" width="18" height="34" fill="#d3f05a"/>
+  <rect x="12" y="23" width="18" height="2" fill="#0f1d18"/>
+  <rect x="12" y="31" width="18" height="2" fill="#0f1d18"/>
+  <rect x="12" y="39" width="18" height="2" fill="#0f1d18"/>
+  <!-- thread unwinding into a vertical reel -->
+  <path d="M30 19 H46 V24" fill="none" stroke="#d3f05a" stroke-width="3"/>
+  <rect x="38" y="24" width="18" height="30" fill="#e9f0e4"/>
+  <path d="M44 32 L52 39 L44 46 Z" fill="#0f1d18"/>
+</svg>
