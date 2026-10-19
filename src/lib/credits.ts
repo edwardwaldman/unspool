@@ -2,6 +2,7 @@ import type { DocumentRow } from "./db-types";
 import { FREE_REEL_INTERVAL_MIN, FREE_REELS_PER_DAY, PLANS, TOPUP, TRIAL, type Tier } from "./plans";
 import type { UsageDTO } from "./spool-types";
 import { adminClient } from "./supabase/admin";
+import { isOwnerEmail } from "./owner";
 import { isSubscribed, type Profile } from "./viewer";
 
 // Server-side credit accounting. All checks and writes happen in SQL (claim_credits, claim_free_reel,
@@ -25,6 +26,8 @@ const nextMonthStart = (d = new Date()) => new Date(Date.UTC(d.getUTCFullYear(),
 const weekStart = (d = new Date()) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - ((d.getUTCDay() + 6) % 7)));
 
 export function tierOf(profile: Profile | null): Tier {
+  if (profile && isOwnerEmail(profile.email)) return "ultra";
+  if (profile?.comp_tier) return profile.comp_tier;
   if (!isSubscribed(profile)) return "free";
   const t = profile!.tier;
   return t && t !== "free" ? t : "plus"; // the old single subscription is Plus
@@ -33,8 +36,12 @@ export function tierOf(profile: Profile | null): Tier {
 export function entitlementFor(profile: Profile | null, fallbackSubject?: string | null): Entitlement {
   const tier = tierOf(profile);
   const subject = profile ? `u:${profile.id}` : fallbackSubject ?? "ip:unknown";
-  const trialing = tier !== "free" && profile?.subscription_status === "trialing";
-  if (tier === "free" || !profile?.current_period_start) {
+  // The owner tests without limits: Ultra features and effectively unlimited credits every week.
+  if (profile && isOwnerEmail(profile.email)) {
+    return { tier, trialing: false, trialEndsAt: null, subject, allowance: 1_000_000, periodStart: weekStart().toISOString(), resetsAt: new Date(weekStart().getTime() + 7 * 864e5).toISOString() };
+  }
+  const trialing = tier !== "free" && !profile?.comp_tier && profile?.subscription_status === "trialing";
+  if (tier === "free" || !profile?.current_period_start || profile?.comp_tier) {
     return {
       tier,
       trialing,

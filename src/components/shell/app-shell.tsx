@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { isOwnerEmail } from "@/lib/owner";
 import { Wordmark } from "../ui/icons";
 import { AuthModal } from "../auth/auth-modal";
 import { openAuth } from "../auth/auth-store";
@@ -100,6 +101,11 @@ export function AppShell({
         <div className="ml-auto flex items-center gap-2 md:ml-6">
           {user ? (
             <>
+              {isOwnerEmail(user.email) && (
+                <Link href="/owner" className="px-3 py-2 text-[14px] text-thread hover:text-ink">
+                  Owner panel
+                </Link>
+              )}
               <Link href="/library" className="px-3 py-2 text-[14px] text-muted hover:text-ink">
                 Library
               </Link>

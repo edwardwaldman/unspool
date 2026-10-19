@@ -1,3 +1,4 @@
+import { isOwnerEmail } from "./owner";
 import { cookies, headers } from "next/headers";
 import { ANON_COOKIE, supabaseConfigured } from "./config";
 import { adminClient } from "./supabase/admin";
@@ -18,6 +19,8 @@ export type Profile = {
   current_period_start?: string | null;
   /** The one 1-day Plus trial has been started. */
   trial_used?: boolean | null;
+  /** Plan granted from the owner panel, no payment (null = none). */
+  comp_tier?: "plus" | "pro" | "ultra" | null;
 };
 
 export type Viewer = {
@@ -29,6 +32,7 @@ export type Viewer = {
 };
 
 export function isSubscribed(profile: Profile | null) {
+  if (profile && (isOwnerEmail(profile.email) || profile.comp_tier)) return true;
   if (!profile || profile.plan !== "sub") return false;
   if (profile.current_period_end && new Date(profile.current_period_end).getTime() < Date.now() - 3 * 864e5) return false;
   return true;

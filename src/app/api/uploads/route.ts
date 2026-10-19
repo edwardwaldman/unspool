@@ -1,3 +1,4 @@
+import { isOwnerEmail } from "@/lib/owner";
 import { ACCEPTED_EXTENSIONS, LIMITS, MAX_FILE_BYTES, extensionOf, isAccepted, supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
 import { adminClient } from "@/lib/supabase/admin";
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
 
   // Daily upload limits to keep AI costs in check. Claimed atomically in a ledger that deleting a
   // document or account doesn't shrink; free accounts are also capped per IP so new accounts don't reset it.
-  const limit = viewer.subscribed ? LIMITS.subscriberUploadsPerDay : LIMITS.freeUploadsPerDay;
+  const limit = isOwnerEmail(viewer.email) ? 1_000_000 : viewer.subscribed ? LIMITS.subscriberUploadsPerDay : LIMITS.freeUploadsPerDay;
   const allowed = await claimUsage({
     kind: "upload",
     scope: viewer.subscribed ? "user" : "user_or_ip",

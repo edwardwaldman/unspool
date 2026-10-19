@@ -1,3 +1,4 @@
+import { isOwnerEmail } from "@/lib/owner";
 import { freeReelLimit, loadDocument } from "@/lib/access";
 import { LIMITS, supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
@@ -37,7 +38,7 @@ export async function POST(_req: Request, ctx: RouteContext<"/api/documents/[id]
   const allowed = await claimUsage({
     kind: "retry",
     scope: "document",
-    limit: LIMITS.retriesPerDocumentPerDay,
+    limit: isOwnerEmail(viewer.email) ? 1_000_000 : LIMITS.retriesPerDocumentPerDay,
     userId: viewer.userId,
     ipHash: await clientIpHash(),
     documentId: id,
