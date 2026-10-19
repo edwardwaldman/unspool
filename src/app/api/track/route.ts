@@ -44,9 +44,8 @@ export async function POST(req: Request) {
     });
   if (!events.length) return noContent();
 
+  // Everyone is logged, the owner included (as on MyFullRides), so the panel shows your own trail and IP too.
   const viewer = await getViewer();
-  // The owner's own browsing would drown everything else; it's logged only while testing a view.
-  if (viewer.isOwner && !viewer.ownerView) return noContent();
 
   const jar = await cookies();
   let visitor = jar.get(VISITOR_COOKIE)?.value;
