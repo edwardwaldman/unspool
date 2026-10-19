@@ -4,6 +4,8 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { openAuth } from "../auth/auth-store";
+import { motion } from "motion/react";
+import { Upload } from "lucide-react";
 import { Sheet } from "../ui/sheet";
 
 /** Signed out (or the demo): sign in (Google / magic link / password) and come back to the same reel. */
@@ -53,8 +55,9 @@ export function PaywallSheet({
     else setSent(true);
   };
 
+  const startUpload = () => openAuth("signup", { next: "/?upload=1", onDone: () => (window.location.href = "/?upload=1") });
   return (
-    <Sheet open={open} onClose={onClose} label="Sign in" locked={spool.demo}>
+    <Sheet open={open} onClose={onClose} label="Sign in" locked={spool.demo} above={spool.demo ? <BigUpload onClick={startUpload} /> : undefined}>
       {spool.demo ? (
         <div className="pb-1">
           <div className="label">That&apos;s the sample</div>
@@ -63,7 +66,7 @@ export function PaywallSheet({
           {/* No close, no second option: uploading needs an account, so this opens sign-up, then the file picker. */}
           <button
             type="button"
-            onClick={() => openAuth("signup", { next: "/?upload=1", onDone: () => (window.location.href = "/?upload=1") })}
+            onClick={startUpload}
             className="btn-primary mt-6 w-full py-3.5 text-[15px]"
           >
             Upload a document
@@ -121,5 +124,59 @@ export function PaywallSheet({
       )}
       {err && <p className="mt-3 text-center text-[13px] text-coral">{err}</p>}
     </Sheet>
+  );
+}
+
+const TAGS = [
+  { t: ".pdf", x: -140, y: -105, r: -10, d: 0 },
+  { t: ".docx", x: 138, y: -80, r: 8, d: 0.4 },
+  { t: ".pptx", x: -138, y: 95, r: 7, d: 0.8 },
+  { t: "notes.jpg", x: 130, y: 112, r: -6, d: 1.2 },
+];
+
+/** The demo gate's centerpiece: a big pulsing upload button with file tags floating around it. */
+function BigUpload({ onClick }: { onClick: () => void }) {
+  return (
+    <div className="absolute inset-x-0 top-0 z-[1] flex items-center justify-center" style={{ bottom: 320 }}>
+      <div className="relative">
+        {[0, 1, 2].map((k) => (
+          <motion.span
+            key={k}
+            aria-hidden
+            className="pointer-events-none absolute inset-0 border-2 border-thread"
+            initial={{ opacity: 0.7, scale: 1 }}
+            animate={{ opacity: 0, scale: 1.9 }}
+            transition={{ duration: 2.4, repeat: Infinity, delay: k * 0.8, ease: "easeOut" }}
+          />
+        ))}
+        <motion.button
+          type="button"
+          onClick={onClick}
+          aria-label="Upload a document"
+          className="relative flex h-44 w-44 flex-col items-center justify-center gap-2 bg-thread text-[#08110e] shadow-[0_0_60px_rgba(211,240,90,.35)]"
+          animate={{ scale: [1, 1.06, 1], rotate: [0, -2, 2, 0] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.92 }}
+        >
+          <motion.span animate={{ y: [0, -10, 0] }} transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}>
+            <Upload size={58} strokeWidth={2.4} />
+          </motion.span>
+          <span className="font-hook text-[17px] font-extrabold uppercase tracking-[0.04em]">Upload</span>
+        </motion.button>
+        {TAGS.map((g) => (
+          <motion.span
+            key={g.t}
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-1/2 z-10 whitespace-nowrap border border-line bg-surface px-2.5 py-1 font-mono text-[13px] text-ink/80"
+            style={{ marginLeft: g.x, marginTop: g.y, translateX: "-50%", translateY: "-50%", rotate: g.r }}
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 3, repeat: Infinity, delay: g.d, ease: "easeInOut" }}
+          >
+            {g.t}
+          </motion.span>
+        ))}
+      </div>
+    </div>
   );
 }

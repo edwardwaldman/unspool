@@ -7,7 +7,7 @@ import { useEffect } from "react";
  * Bottom sheet that slides up over the feed. Flat surface, 1px top rule, square corners.
  * `locked`: a hard gate. No tap-outside, swipe-down or keyboard escape; the feed behind can't be scrolled.
  */
-export function Sheet({ open, onClose, children, label, locked = false }: { open: boolean; onClose: () => void; children: React.ReactNode; label: string; locked?: boolean }) {
+export function Sheet({ open, onClose, children, label, locked = false, above }: { open: boolean; onClose: () => void; children: React.ReactNode; label: string; locked?: boolean; /** Drawn in the space above the sheet. */ above?: React.ReactNode }) {
   useEffect(() => {
     if (!open || !locked) return;
     // Swallow the feed's keyboard navigation (arrows, space, Escape) so the gate can't be skipped.
@@ -32,6 +32,7 @@ export function Sheet({ open, onClose, children, label, locked = false }: { open
             onClick={locked ? undefined : onClose}
             onWheel={locked ? (e) => e.preventDefault() : undefined}
           />
+          {above}
           <motion.div
             role="dialog"
             aria-label={label}
