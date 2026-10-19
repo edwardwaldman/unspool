@@ -37,14 +37,15 @@ export function InfoSlide({ toStudio = true }: { toStudio?: boolean } = {}) {
   const raw = useTransform(scrollY, range, [0, 1], { clamp: true });
   // Smooth the scrub so fast flicks still play out gently.
   const smooth = useSpring(raw, { stiffness: 60, damping: 22, mass: 0.6 });
-  // The demo plays over the first 85% of the track; the rest holds the last frame and eases it out.
-  const progress = useTransform(smooth, [0, 0.85], [0, 1], { clamp: true });
+  // The demo plays over the first 74% of the track; the rest holds the last frame and eases it out.
+  const progress = useTransform(smooth, [0, 0.74], [0, 1], { clamp: true });
   // Then the demo slides up and away, handing off to the upload section below.
   // The exit follows the raw scroll position (not the spring) so a fast flick can't leave the demo
   // lagging on screen while the upload section arrives over it.
-  const exitOpacity = useTransform(raw, [0.9, 0.98], [1, 0]);
-  const exitScale = useTransform(raw, [0.86, 1], [1, 0.96]);
-  const exitY = useTransform(raw, [0.86, 1], ["0dvh", "-70dvh"]);
+  // It's fully gone before the upload block below reaches the screen, so the two never overlap.
+  const exitOpacity = useTransform(raw, [0.76, 0.83], [1, 0]);
+  const exitScale = useTransform(raw, [0.74, 0.84], [1, 0.96]);
+  const exitY = useTransform(raw, [0.74, 0.84], ["0dvh", "-70dvh"]);
 
   return (
     <>
@@ -57,7 +58,8 @@ export function InfoSlide({ toStudio = true }: { toStudio?: boolean } = {}) {
       </section>
       {/* Rises in as the demo slides away, then holds on screen for a while before scrolling on */}
       <section className="relative -mt-[100dvh]" style={{ height: "190dvh" }}>
-        <div className="sticky top-0 flex h-[100dvh] items-center px-6">
+        {/* Centred in the space under the top bar, so the "start here" arrow is never hidden behind it */}
+        <div className="sticky top-0 flex h-[100dvh] items-center px-6 pt-16 ipad:pt-20">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
