@@ -32,7 +32,7 @@ export function useUploader() {
       const run = async () => {
         const result = await startUpload(file, (id) => router.push(`/s/${id}`));
         if (result.code === "auth") gate();
-        else if (result.error && result.code === "limit") {
+        else if (result.error && (result.code === "limit" || result.code === "free_used")) {
           toast(result.error, 4500);
           router.push("/pricing");
         } else if (result.error && result.error !== "Upload failed." && result.error !== "start failed") {

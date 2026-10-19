@@ -31,3 +31,9 @@ export async function claimUsage(opts: {
   }
   return data;
 }
+
+/** Whether this account has ever uploaded a document (free accounts get one). */
+export async function freeDocumentUsed(userId: string) {
+  const { count } = await adminClient().from("usage_events").select("id", { count: "exact", head: true }).eq("kind", "upload").eq("user_id", userId);
+  return (count ?? 0) > 0;
+}

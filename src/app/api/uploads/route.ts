@@ -2,7 +2,7 @@ import { isOwnerEmail } from "@/lib/owner";
 import { ACCEPTED_EXTENSIONS, LIMITS, MAX_FILE_BYTES, extensionOf, isAccepted, supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
 import { adminClient } from "@/lib/supabase/admin";
-import { claimUsage } from "@/lib/usage";
+import { claimUsage, freeDocumentUsed } from "@/lib/usage";
 import { clientIpHash, getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
@@ -24,9 +24,15 @@ export async function POST(req: Request) {
   const ipHash = await clientIpHash();
   const db = adminClient();
 
+  // Free accounts get one document, ever (counted from the upload ledger, so deleting it doesn't give it back).
+  const owner = isOwnerEmail(viewer.email);
+  if (!owner && !viewer.subscribed && (await freeDocumentUsed(viewer.userId))) {
+    return error(402, "Free accounts get 1 document. Upgrade to unspool more.", { code: "free_used" });
+  }
+
   // Daily upload limits to keep AI costs in check. Claimed atomically in a ledger that deleting a
   // document or account doesn't shrink; free accounts are also capped per IP so new accounts don't reset it.
-  const limit = isOwnerEmail(viewer.email) ? 1_000_000 : viewer.subscribed ? LIMITS.subscriberUploadsPerDay : LIMITS.freeUploadsPerDay;
+  const limit = owner ? 1_000_000 : viewer.subscribed ? LIMITS.subscriberUploadsPerDay : LIMITS.freeUploadsPerDay;
   const allowed = await claimUsage({
     kind: "upload",
     scope: viewer.subscribed ? "user" : "user_or_ip",

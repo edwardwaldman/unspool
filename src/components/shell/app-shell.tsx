@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { isOwnerEmail } from "@/lib/owner";
 import { Wordmark } from "../ui/icons";
+import { FreeBanner } from "./free-banner";
 import { AuthModal } from "../auth/auth-modal";
 import { openAuth } from "../auth/auth-store";
 import { useSessionUser } from "../auth/use-session";
@@ -81,6 +82,9 @@ export function AppShell({
       }}
     >
       {picker.el}
+      <div className={`fixed inset-x-0 z-30 ${barShown || workbench ? "top-0 lg:top-16" : "top-0"}`}>
+        <FreeBanner signedIn={Boolean(user)} />
+      </div>
 
       {/* Top bar: slides in once you scroll */}
       <header

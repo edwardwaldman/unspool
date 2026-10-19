@@ -268,6 +268,10 @@ export default function TermsPage() {
           <p>You can use Unspool for free with a free account and no payment card. On the free plan:</p>
           <ul>
             <li>
+              <strong>One document.</strong> A free account can unspool one document. Deleting it doesn&apos;t free up another; to
+              unspool more documents, choose a paid plan.
+            </li>
+            <li>
               <strong>Your first reel is free.</strong> For each document, reel 1 is made and can be watched as soon as it is ready.
             </li>
             <li>

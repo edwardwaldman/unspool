@@ -13,7 +13,7 @@ const yes = "Yes";
 const no = "—";
 
 const ROWS: [string, (t: Tier) => string][] = [
-  ["Reels", (t) => (t === "free" ? `1 reel per doc, then 1 every ${FREE_REEL_INTERVAL_MIN} min (up to ${FREE_REELS_PER_DAY}/day)` : `${PLANS[t].credits.toLocaleString("en-US")} reel credits a week`)],
+  ["Reels", (t) => (t === "free" ? `1 document: reel 1, then 1 every ${FREE_REEL_INTERVAL_MIN} min (up to ${FREE_REELS_PER_DAY}/day)` : `${PLANS[t].credits.toLocaleString("en-US")} reel credits a week`)],
   ["Pages per document", (t) => `Up to ${PLANS[t].maxPages}`],
   ["Every reel of a doc at once", (t) => (t === "free" ? no : yes)],
   ["Watermark on videos", (t) => (PLANS[t].watermark ? "Yes" : "None")],

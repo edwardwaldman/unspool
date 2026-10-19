@@ -16,7 +16,7 @@ export default function PricingPage() {
           Plans for every <em className="text-thread">reading list.</em>
         </h1>
         <p className="mt-5 max-w-[560px] text-[16px] text-ink/80">
-          Free gets reel 1 of every document, then 1 more every {FREE_REEL_INTERVAL_MIN} minutes, up to {FREE_REELS_PER_DAY} a day. Paid plans bill weekly, or yearly for less,
+          Free gets 1 document: its first reel, then 1 more every {FREE_REEL_INTERVAL_MIN} minutes, up to {FREE_REELS_PER_DAY} a day. Paid plans bill weekly, or yearly for less,
           in reel credits: 1 credit is 1 reel, and a document uses one credit per reel it plans. Credits reset every week, on yearly plans too.
         </p>
       </section>
