@@ -2,9 +2,14 @@
 
 import { COLOR_VAR, markupWords } from "@/lib/markup";
 import { useMemo } from "react";
+import type { ReelStyle } from "@/lib/reel-style";
 
-/** Burned-in TikTok-style captions: a short chunk of words, the word being said lit up in the reel's accent. */
-export function Captions({ text, words, fraction }: { text: string; words: number[]; fraction: number }) {
+/**
+ * Burned-in TikTok-style captions: a short chunk of words, the word being said lit up in the reel's accent.
+ * `variant` (Pro reel style): "pop" boxes and tilts the current word, "clean" just colors it, "karaoke" fills
+ * every spoken word with the accent.
+ */
+export function Captions({ text, words, fraction, variant = "pop" }: { text: string; words: number[]; fraction: number; variant?: ReelStyle["captions"] }) {
   const list = useMemo(() => markupWords(text), [text]);
   const chunks = useMemo(() => {
     const out: number[][] = [];
@@ -28,8 +33,8 @@ export function Captions({ text, words, fraction }: { text: string; words: numbe
 
   return (
     <p
-      className="text-center font-hook font-extrabold leading-[1.3] tracking-[-0.015em] text-white"
-      style={{ textShadow: "0 2px 0 rgba(0,0,0,.6)", fontSize: "min(30px, 7.2cqw, 3.9cqh)" }}
+      className={`text-center font-hook leading-[1.3] tracking-[-0.015em] text-white ${variant === "clean" ? "font-bold" : "font-extrabold"}`}
+      style={{ textShadow: variant === "clean" ? "0 1px 3px rgba(0,0,0,.7)" : "0 2px 0 rgba(0,0,0,.6)", fontSize: "min(30px, 7.2cqw, 3.9cqh)" }}
       aria-live="off"
     >
       {chunk.map((i) => {
@@ -41,7 +46,11 @@ export function Captions({ text, words, fraction }: { text: string; words: numbe
             key={i}
             className="mx-[0.04em] inline-block px-[0.14em] transition-transform duration-150 ease-[cubic-bezier(.3,1.8,.5,1)]"
             style={
-              isNow
+              variant === "clean"
+                ? { color: isNow ? "var(--thread)" : w.color ? COLOR_VAR[w.color] : "#fff", opacity: spoken ? 1 : 0.72 }
+                : variant === "karaoke"
+                  ? { color: spoken ? "var(--thread)" : "#fff", opacity: spoken ? 1 : 0.85, transform: isNow ? "scale(1.06)" : undefined }
+                  : isNow
                 ? { background: "var(--thread)", color: "#08110e", textShadow: "none", transform: `scale(1.22) rotate(${i % 2 ? 3 : -3}deg)`, boxShadow: "3px 3px 0 #08110e" }
                 : { color: w.color ? COLOR_VAR[w.color] : "#fff", opacity: spoken ? 1 : 0.72 }
             }

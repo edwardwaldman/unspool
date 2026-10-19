@@ -5,6 +5,8 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { PlayIcon, UploadIcon, Wordmark } from "../ui/icons";
 import { useMedia } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
+import { useRouter } from "next/navigation";
+import { useSessionUser } from "../auth/use-session";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { motion, useSpring, useTransform } from "motion/react";
 import { SiteFooter } from "../shell/site-footer";
@@ -48,9 +50,11 @@ function useHeight<T extends HTMLElement>() {
 }
 
 /** The hero's call to action: opens the file picker right away; sign-up (if needed) comes after the file. */
-function UploadButton() {
+function UploadButton({ toStudio }: { toStudio: boolean }) {
   const input = useRef<HTMLInputElement>(null);
   const upload = useUploader();
+  const user = useSessionUser();
+  const router = useRouter();
   const pending = usePendingUpload();
   // /?upload=1 (the share page's call to action) opens the picker right away. Browsers allow it while
   // the click that navigated here still counts as a user gesture; otherwise the button stays focused.
@@ -79,7 +83,8 @@ function UploadButton() {
       <button
         ref={button}
         type="button"
-        onClick={() => input.current?.click()}
+        // Signed in: re-render "/" on the server, which shows their Studio, instead of uploading from the hero.
+        onClick={() => (user && toStudio ? router.refresh() : input.current?.click())}
         disabled={Boolean(pending)}
         className="flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-10 py-4 text-[18px] font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-60 min-[900px]:px-20 min-[900px]:py-7 min-[900px]:text-[28px]"
       >
@@ -145,7 +150,7 @@ function Headline() {
 }
 
 /** First-visit home: one line, the upload reel, and a big document-to-reels animation beside it. */
-export function Landing() {
+export function Landing({ studioOnSignIn = true }: { /** Off while the owner tests as a signed-out visitor (the server keeps showing them the landing). */ studioOnSignIn?: boolean } = {}) {
   // The side-by-side hero starts at 900px so landscape iPads (about 1000px wide) get it too.
   const lg = useMedia("(min-width: 900px)");
   const vh = useViewport("innerHeight", 900);
@@ -197,7 +202,7 @@ export function Landing() {
           {/* iPad: an empty first column balances the badge so the upload button sits dead centre */}
           <div aria-hidden className="hidden ipad:min-[900px]:block" />
           <div className="flex flex-col items-center gap-3">
-            <UploadButton />
+            <UploadButton toStudio={studioOnSignIn} />
           </div>
           <motion.div className="flex items-center gap-5 ipad:justify-self-start" style={{ opacity: cueFade, y: cueY }}>
           {/* Scroll cue: a spinning "see how it works" badge with a bouncing arrow */}
@@ -245,7 +250,7 @@ export function Landing() {
           </svg>
           Pull up
         </button>
-        <InfoSlide />
+        <InfoSlide toStudio={studioOnSignIn} />
         <SiteFooter />
       </div>
     </div>

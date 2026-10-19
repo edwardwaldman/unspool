@@ -23,6 +23,8 @@ export type Profile = {
   comp_tier?: "plus" | "pro" | "ultra" | null;
   /** The owner's stored test view (see /api/owner/view), for background jobs that have no cookie. */
   owner_view?: TestTier | null;
+  /** Pro/Ultra reel look (see lib/reel-style.ts); raw JSON, parse before use. */
+  reel_style?: unknown;
   /** Set (never stored) when the owner's profile is standing in for a real user of this tier. */
   view_as?: TestTier;
 };

@@ -2,6 +2,7 @@ import { freeReelLimit, isUnlocked } from "./access";
 import { DOCUMENT_COLUMNS, type DocumentRow, type ReelRow } from "./db-types";
 import { extensionOf } from "./config";
 import { healIfStuck } from "./pipeline";
+import { styleForViewer } from "./studio";
 import type { ReelDTO, SpoolDTO } from "./spool-types";
 import { adminClient } from "./supabase/admin";
 import { VIDEO_BUCKET } from "./video/types";
@@ -18,6 +19,7 @@ type ReelLite = Pick<
 export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?: boolean } = {}): Promise<SpoolDTO> {
   const db = adminClient();
   const unlocked = isUnlocked(doc, viewer);
+  const style = styleForViewer(viewer);
   const { data } = await db
     .from("reels")
     .select("id,index,title,hook,status,error,script_json,audio_paths,started_at,video_path,video_meta")
@@ -78,6 +80,7 @@ export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?
     truncated: doc.truncated,
     createdAt: doc.created_at,
     reels,
+    ...(doc.user_id && doc.user_id === viewer.userId && style ? { style } : {}),
   };
 }
 

@@ -5,6 +5,8 @@ import { motion, useSpring, useTransform } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { ProcessDemo } from "./process-demo";
 import { useMainScroll } from "./use-main-scroll";
+import { useRouter } from "next/navigation";
+import { useSessionUser } from "../auth/use-session";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { PlayIcon, UploadIcon } from "../ui/icons";
 
@@ -14,7 +16,7 @@ const ease = [0.22, 1, 0.36, 1] as const;
  * Scroll-scrubbed section: a tall track with a pinned stage. Scrolling through the track plays the
  * product flow frame by frame (and rewinds when you scroll back up).
  */
-export function InfoSlide() {
+export function InfoSlide({ toStudio = true }: { toStudio?: boolean } = {}) {
   const track = useRef<HTMLDivElement>(null);
   const scrollY = useMainScroll();
   const [range, setRange] = useState<[number, number]>([0, 1]);
@@ -63,7 +65,7 @@ export function InfoSlide() {
           transition={{ duration: 0.3, ease }}
           className="mx-auto w-full max-w-[1280px]"
         >
-          <BigUpload big />
+          <BigUpload big studioIfSignedIn={toStudio} />
         </motion.div>
         </div>
       </section>
@@ -76,9 +78,11 @@ export function InfoSlide() {
  * Used at the bottom of the landing page, on the demo's sign-up gate and on a new account's empty page.
  * `onClick` replaces the file picker (the demo gate signs people up first).
  */
-export function BigUpload({ onClick, demoLink = true, wideTags = true, big = false }: { onClick?: () => void; demoLink?: boolean; /** The two tags that sit far out to the sides (hide them in narrow columns). */ wideTags?: boolean; /** The landing page's closing block: larger button and tags on desktop. */ big?: boolean } = {}) {
+export function BigUpload({ onClick, demoLink = true, wideTags = true, big = false, studioIfSignedIn = false }: { onClick?: () => void; demoLink?: boolean; /** The two tags that sit far out to the sides (hide them in narrow columns). */ wideTags?: boolean; /** The landing page's closing block: larger button and tags on desktop. */ big?: boolean; /** On the landing: a signed-in visitor is taken to their Studio instead of the file picker. */ studioIfSignedIn?: boolean } = {}) {
   const input = useRef<HTMLInputElement>(null);
   const upload = useUploader();
+  const user = useSessionUser();
+  const router = useRouter();
   return (
     <>
       <input
@@ -138,7 +142,7 @@ export function BigUpload({ onClick, demoLink = true, wideTags = true, big = fal
         </div>
         <button
           type="button"
-          onClick={() => (onClick ? onClick() : input.current?.click())}
+          onClick={() => (onClick ? onClick() : studioIfSignedIn && user ? router.refresh() : input.current?.click())}
           className={`relative z-10 mx-auto flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-8 py-6 text-[20px] md:gap-4 md:px-24 md:py-10 md:text-[36px] ${big ? "lg:gap-5 lg:px-32 lg:py-14 lg:text-[50px]" : ""} font-medium text-paper transition-opacity hover:opacity-90`}
         >
           <UploadIcon size={big ? 40 : 28} /> Upload a document

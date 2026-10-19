@@ -1,4 +1,5 @@
 import type { DocumentStatus, ReelStatus } from "./db-types";
+import type { ReelStyle } from "./reel-style";
 import type { ReelScript } from "./schema";
 import type { VideoTimeline } from "./video/types";
 
@@ -44,6 +45,8 @@ export type SpoolDTO = {
   createdAt: string;
   reels: ReelDTO[];
   demo?: boolean;
+  /** The owner's Pro reel style, sent only to the document's own (Pro/Ultra) owner; absent = the default look. */
+  style?: ReelStyle;
 };
 
 export type UsageDTO = {

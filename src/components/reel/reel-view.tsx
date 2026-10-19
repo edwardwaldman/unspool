@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import type { ReelDTO, SpoolDTO } from "@/lib/spool-types";
 import { PlayIcon, VolumeIcon } from "../ui/icons";
+import { reelStyleVars } from "@/lib/reel-style";
 import { reelVars } from "./accent";
 import { ActionRail } from "./action-rail";
 import { CaptionBlock } from "./caption-block";
@@ -92,6 +93,9 @@ export function ReelView({
   const below = top + 20 + headH + 18;
   const heart = useDoubleTapHeart();
   const toggleMute = () => setPrefs({ muted: !getPrefs().muted, autoMuted: false });
+  // The owner's Pro reel style (only ever set on their own documents). A rendered video keeps its own look.
+  const look = spool.style;
+  const paper = look?.theme === "paper" && !pb.videoMode;
 
   // M mutes / unmutes the reel that's playing.
   useEffect(() => {
@@ -108,7 +112,7 @@ export function ReelView({
   }, [active, preview]);
 
   return (
-    <div className="relative h-full w-full select-none overflow-hidden text-white [container-type:size]" style={reelVars(reel.index)} onClick={(e) => {
+    <div className="relative h-full w-full select-none overflow-hidden text-white [container-type:size]" style={{ ...reelVars(reel.index), ...reelStyleVars(look), ...(paper ? { filter: "invert(1) hue-rotate(180deg)" } : {}) }} data-reel-theme={paper ? "paper" : undefined} onClick={(e) => {
         heart.onTap(e);
         pb.toggle();
       }} data-testid="reel-view" data-seg={pb.segment.key} data-playing={pb.playing ? "1" : "0"}>
@@ -163,8 +167,8 @@ export function ReelView({
 
       {/* Burned-in captions, lower third (already in the frames when playing a rendered video) */}
       {!isQuiz && !pb.burnedCaptions && (
-        <div className="absolute left-4 z-10" style={{ right: GUTTER, bottom: bottom + BAND + 12 }}>
-          <Captions text={pb.segment.text} words={pb.words} fraction={fraction} />
+        <div className="absolute left-4 z-10" style={look?.position === "middle" ? { right: GUTTER, top: "50%", transform: "translateY(-50%)" } : { right: GUTTER, bottom: bottom + BAND + 12 }}>
+          <Captions text={pb.segment.text} words={pb.words} fraction={fraction} variant={look?.captions} />
         </div>
       )}
 
