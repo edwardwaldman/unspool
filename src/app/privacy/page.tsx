@@ -315,7 +315,7 @@ export default function PrivacyPage() {
               ["Uploads never attached to an account", `Uploads made without an account that were never unlocked are deleted automatically by a daily clean-up once they are more than ${ANON_DAYS} days old`],
               ["Hashed IP stored with a document", "Deleted with the document"],
               ["Visit log (IP address, approximate country, device and browser, pages and actions)", "Deleted automatically by the daily clean-up after 90 days"],
-              ["Usage log (account ID, hashed IP, document reference, time of each upload or retry)", "Deleted automatically by the daily clean-up after 3 days, including after you delete your account"],
+              ["Usage log (account ID, hashed IP, document reference, time of each upload or retry)", "Deleted automatically by the daily clean-up after 3 days. The one exception: a record that your account has uploaded (account ID and time only, with the hashed IP and document reference removed after 3 days) is kept while your account exists so the one-free-document limit works, and is deleted when you delete your account"],
               ["Purchase records", "Kept for accounting and tax. When you delete your account, they are kept without the link to your account"],
               ["Stripe records", "Stripe keeps payment and customer records in line with its own legal and regulatory obligations"],
               ["Server and request logs", "Kept by our hosting providers for limited periods under their retention settings"],

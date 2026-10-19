@@ -62,6 +62,7 @@ export async function DELETE() {
   const { data: docs } = await db.from("documents").select("id,file_path").eq("user_id", viewer.userId);
   for (const doc of docs ?? []) await deleteDocument(doc);
 
+  await db.from("usage_events").delete().eq("user_id", viewer.userId);
   // Profiles and any remaining rows cascade from auth.users.
   const { error: delErr } = await db.auth.admin.deleteUser(viewer.userId);
   if (delErr) return error(500, "Couldn't delete your account. Try again or contact us.");

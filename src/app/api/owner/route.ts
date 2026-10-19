@@ -133,6 +133,7 @@ export async function POST(req: Request) {
     }
     const { data: docs } = await db.from("documents").select("id,file_path").eq("user_id", body.userId);
     for (const doc of docs ?? []) await deleteDocument(doc);
+    await db.from("usage_events").delete().eq("user_id", body.userId);
     const { error: delErr } = await db.auth.admin.deleteUser(body.userId);
     if (delErr) return error(500, "Couldn't delete the account");
     return json({ ok: true });
