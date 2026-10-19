@@ -16,6 +16,13 @@ const STALE_MS = 6 * 60 * 1000;
 /** The per-reel job route's maxDuration is 300s; finish (and save) the reel well inside it. */
 const REEL_BUDGET_MS = 285_000;
 
+/** The raw error for debugging: server-only column, never sent to the browser. Secrets are masked. */
+function errorDetail(err: unknown): string {
+  const e = err as { status?: number; message?: string; name?: string };
+  const raw = `${e?.name ?? "Error"}${e?.status ? ` ${e.status}` : ""}: ${e?.message ?? String(err)}`;
+  return raw.replace(/(sk-|sk_|re_|whsec_|eyJ)[A-Za-z0-9._-]{6,}/g, "$1***").slice(0, 1000);
+}
+
 function friendlyError(err: unknown): string {
   if (err instanceof ExtractionError) return err.message;
   const msg = err instanceof Error ? err.message : String(err);
@@ -121,7 +128,7 @@ export async function processDocument(documentId: string) {
     if (first) await dispatch({ name: "reel", reelId: first.id });
   } catch (err) {
     console.error("[pipeline] processDocument failed", documentId, err);
-    await db.from("documents").update({ status: "failed", error: friendlyError(err) }).eq("id", documentId);
+    await db.from("documents").update({ status: "failed", error: friendlyError(err), error_detail: errorDetail(err) }).eq("id", documentId);
   }
 }
 
@@ -259,7 +266,7 @@ export async function generateReel(reelId: string) {
       if (refundErr) console.error("[pipeline] refund_edit_credit failed", reelId, refundErr);
       return;
     }
-    await db.from("reels").update({ status: "failed", error: friendlyError(err) }).eq("id", reelId);
+    await db.from("reels").update({ status: "failed", error: friendlyError(err), error_detail: errorDetail(err) }).eq("id", reelId);
     // Out of attempts: this reel failed for good, so give its credit back.
     if (reel.attempts + 1 >= LIMITS.maxReelAttempts) await refundReel(reelId);
   }
