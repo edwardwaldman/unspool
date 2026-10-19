@@ -6,6 +6,7 @@ import { LIMITS } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
+  alternates: { canonical: "/privacy" },
   description:
     "What Unspool collects, why, which providers process it, how long we keep it, and how to exercise your privacy rights, including Do Not Sell or Share.",
 };

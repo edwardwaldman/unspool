@@ -4,7 +4,12 @@ import { MarketingPage } from "@/components/shell/marketing-page";
 import { PricingTable } from "@/components/billing/pricing-table";
 import { formatCents, FREE_REEL_INTERVAL_MIN, FREE_REELS_PER_DAY, PLANS, TOPUP, TRIAL } from "@/lib/plans";
 
-export const metadata: Metadata = { title: "Pricing" };
+export const metadata: Metadata = {
+  title: "Pricing",
+  description: "Unspool plans: start free with one document, or pick Plus, Pro or Ultra for more reels every week. Yearly plans save the most.",
+  alternates: { canonical: "/pricing" },
+  openGraph: { url: "/pricing", title: "Unspool pricing", description: "Start free with one document. Plus, Pro and Ultra for more reels every week.", siteName: "Unspool", type: "website", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Unspool — One document into reels" }] },
+};
 
 
 export default function PricingPage() {

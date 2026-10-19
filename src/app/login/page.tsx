@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toast";
 import { Wordmark } from "@/components/ui/icons";
 import { safeNextPath } from "@/lib/config";
 
-export const metadata: Metadata = { title: "Sign in" };
+export const metadata: Metadata = { title: "Sign in", robots: { index: false, follow: true } };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const sp = await searchParams;

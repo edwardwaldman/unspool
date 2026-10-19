@@ -7,6 +7,7 @@ import { formatCents, FREE_REEL_INTERVAL_MIN, FREE_REELS_PER_DAY, PAID_TIERS as 
 
 export const metadata: Metadata = {
   title: "Terms of Service",
+  alternates: { canonical: "/terms" },
   description: "The rules for using Unspool: accounts, your documents, AI-generated reels, the free plan, payments and subscriptions.",
 };
 

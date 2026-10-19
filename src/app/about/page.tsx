@@ -7,7 +7,12 @@ import { SAMPLE_SPOOL } from "@/lib/sample";
 import { buildSegments } from "@/lib/segments";
 import { estimateDuration } from "@/lib/timing";
 
-export const metadata: Metadata = { title: "How it works" };
+export const metadata: Metadata = {
+  title: "How it works",
+  description: "Drop in a PDF, Word doc, slides or a photo of your notes. Unspool reads all of it and makes one short reel per key idea, with voiceover, captions, visuals and a quiz.",
+  alternates: { canonical: "/about" },
+  openGraph: { url: "/about", title: "How Unspool works", description: "Drop a doc, we read all of it, you swipe through reels with a quiz in every one.", siteName: "Unspool", type: "website", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Unspool — One document into reels" }] },
+};
 
 const steps: [string, string][] = [
   ["Drop a doc", "Class notes, a textbook chapter, a work PDF, a contract. PDF, Word, PowerPoint, text, or a photo of your notes."],
