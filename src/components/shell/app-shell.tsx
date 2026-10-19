@@ -91,20 +91,20 @@ export function AppShell({
       }}
     >
       {picker.el}
-      <div className={`fixed inset-x-0 z-30 ${barShown || workbench ? "top-0 lg:top-16" : "top-0"}`}>
+      <div className={`fixed inset-x-0 z-30 ${barShown || workbench ? "top-0 lg:top-16 ipad:lg:top-20" : "top-0"}`}>
         <FreeBanner signedIn={Boolean(user)} />
       </div>
 
       {/* Top bar: slides in once you scroll */}
       <header
-        className={`fixed inset-x-0 top-0 z-40 h-16 items-center gap-8 border-b border-line bg-paper px-5 transition-transform duration-300 lg:px-10 ${
+        className={`fixed inset-x-0 top-0 z-40 h-16 ipad:h-20 items-center gap-8 border-b border-line bg-paper px-5 transition-transform duration-300 lg:px-10 ${
           feed || workbench ? "hidden lg:flex" : "flex"
         } ${barShown || workbench ? "translate-y-0" : "-translate-y-full"}`}
       >
-        <Link href="/">
+        <Link href="/" className="inline-block origin-left ipad:scale-[1.35]">
           <Wordmark size={24} />
         </Link>
-        <nav className="ml-auto hidden items-center gap-7 text-[14px] md:flex">
+        <nav className="ml-auto hidden items-center gap-7 text-[14px] ipad:text-[17px] md:flex">
           {TOP_LINKS.map(([key, href, label]) => (
             <Link key={href} href={href} className={active === key ? "text-ink" : "text-muted hover:text-ink"}>
               {label}
@@ -115,23 +115,23 @@ export function AppShell({
           {user ? (
             <>
               {isOwnerEmail(user.email) && (
-                <Link href="/owner" className="px-3 py-2 text-[14px] text-thread hover:text-ink">
+                <Link href="/owner" className="px-3 py-2 text-[14px] ipad:text-[17px] text-thread hover:text-ink">
                   Owner panel
                 </Link>
               )}
-              <Link href="/library" className="px-3 py-2 text-[14px] text-muted hover:text-ink">
+              <Link href="/library" className="px-3 py-2 text-[14px] ipad:text-[17px] text-muted hover:text-ink">
                 Library
               </Link>
-              <button type="button" onClick={openAccount} className="btn-secondary px-4 py-2 text-[14px]">
+              <button type="button" onClick={openAccount} className="btn-secondary px-4 py-2 text-[14px] ipad:text-[17px]">
                 Account
               </button>
             </>
           ) : user === false ? (
             <>
-              <button type="button" onClick={() => openAuth("login")} className="px-3 py-2 text-[14px] text-muted hover:text-ink">
+              <button type="button" onClick={() => openAuth("login")} className="px-3 py-2 text-[14px] ipad:text-[17px] text-muted hover:text-ink">
                 Log in
               </button>
-              <button type="button" onClick={() => openAuth("signup")} className="btn-primary px-4 py-2 text-[14px]">
+              <button type="button" onClick={() => openAuth("signup")} className="btn-primary px-4 py-2 text-[14px] ipad:text-[17px]">
                 Sign up
               </button>
             </>
@@ -141,7 +141,7 @@ export function AppShell({
 
       {/* Content */}
       <main
-        className={`relative flex min-h-0 min-w-0 flex-1 ${workbench ? "lg:pt-16" : feed ? "items-center justify-center lg:py-5" : "overflow-y-auto"}`}
+        className={`relative flex min-h-0 min-w-0 flex-1 ${workbench ? "lg:pt-16 ipad:lg:pt-20" : feed ? "items-center justify-center lg:py-5" : "overflow-y-auto"}`}
         onScroll={(e) => setBarShown(e.currentTarget.scrollTop > 12)}
         onWheel={(e) => {
           if (e.deltaY > 4) setBarShown(true);

@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "./theme.css";
 
+/* iPads (flagged on <html data-ipad> by the viewport script in layout.tsx). */
+@custom-variant ipad (&:where([data-ipad], [data-ipad] *));
+
 /* Expose the theme to Tailwind: bg-paper, text-ink, border-line, text-thread, font-display, … */
 @theme inline {
   --color-paper: var(--paper);

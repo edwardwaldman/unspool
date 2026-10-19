@@ -174,7 +174,7 @@ export function Landing() {
     <div>
     <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-[safe_center] gap-6 overflow-hidden px-3 pb-10 pt-20 min-[900px]:justify-evenly min-[900px]:gap-0 min-[900px]:px-6 min-[900px]:pb-9 min-[900px]:pt-16">
       {/* Wordmark under the top bar: the bar slides down over it on scroll */}
-      <Link href="/" aria-label="unspool" className="absolute left-5 top-5 min-[900px]:left-10 min-[900px]:top-[22px]">
+      <Link href="/" aria-label="unspool" className="absolute left-5 top-5 origin-top-left min-[900px]:left-10 min-[900px]:top-[22px] ipad:scale-[1.5]">
         <Wordmark size={24} />
       </Link>
       {/* Parallax: each layer leaves at its own speed as you scroll */}
@@ -194,11 +194,13 @@ export function Landing() {
         </motion.div>
         {/* Phones: size the animation for the real screen before hydration, so it doesn't paint huge and jump. */}
         <script dangerouslySetInnerHTML={{ __html: HERO_FIT }} />
-        <div ref={rowRef} className="flex flex-col items-center gap-2 min-[900px]:flex-row min-[900px]:gap-10">
+        <div ref={rowRef} className="flex flex-col items-center gap-2 min-[900px]:flex-row min-[900px]:gap-10 ipad:min-[900px]:grid ipad:min-[900px]:w-full ipad:min-[900px]:grid-cols-[1fr_auto_1fr]">
+          {/* iPad: an empty first column balances the badge so the upload button sits dead centre */}
+          <div aria-hidden className="hidden ipad:min-[900px]:block" />
           <div className="flex flex-col items-center gap-3">
             <UploadButton />
           </div>
-          <motion.div className="flex items-center gap-5" style={{ opacity: cueFade, y: cueY }}>
+          <motion.div className="flex items-center gap-5 ipad:justify-self-start" style={{ opacity: cueFade, y: cueY }}>
           {/* Scroll cue: a spinning "see how it works" badge with a bouncing arrow */}
           <motion.button
             type="button"

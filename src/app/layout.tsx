@@ -78,7 +78,7 @@ const SITE_LD = JSON.stringify({
   ],
 }).replace(/</g, "\\u003c");
 
-const IPAD_ZOOM = `(function(){var ua=navigator.userAgent;if(!(/iPad/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)))return;
+const IPAD_ZOOM = `(function(){var ua=navigator.userAgent;if(!(/iPad/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)))return;document.documentElement.setAttribute("data-ipad","");
 function want(){var a=screen.width,b=screen.height,land=matchMedia("(orientation: landscape)").matches,w=land?Math.max(a,b):Math.min(a,b);return "width="+Math.round(w/0.75)+", viewport-fit=cover";}
 function apply(){var c=want(),ms=document.querySelectorAll('meta[name="viewport"]');if(!ms.length){var m=document.createElement("meta");m.name="viewport";document.head.appendChild(m);ms=[m];}for(var i=0;i<ms.length;i++)if(ms[i].content!==c)ms[i].content=c;}
 apply();document.addEventListener("DOMContentLoaded",apply);addEventListener("orientationchange",function(){setTimeout(apply,50)});addEventListener("resize",apply);
@@ -86,7 +86,7 @@ new MutationObserver(apply).observe(document.head,{subtree:true,childList:true,a
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${display.variable} ${hook.variable} ${ui.variable} ${numeric.variable} ${wordmark.variable} ${headline.variable} h-full antialiased`}>
+    <html lang="en" suppressHydrationWarning className={`${display.variable} ${hook.variable} ${ui.variable} ${numeric.variable} ${wordmark.variable} ${headline.variable} h-full antialiased`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: IPAD_ZOOM }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SITE_LD }} />
