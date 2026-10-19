@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { supabaseConfigured } from "@/lib/config";
-import { createClient } from "@/lib/supabase/client";
+import { supabaseBrowser } from "./supabase-browser";
 
 // One shared view of "who is signed in" for every client component.
 // null = still checking; false = signed out; object = signed in.
@@ -29,16 +29,18 @@ function start() {
     set(false);
     return;
   }
-  const supabase = createClient();
-  supabase.auth
-    .getUser()
+  // The auth library loads on demand, after the page has painted and hydrated.
+  supabaseBrowser()
+    .then((supabase) => {
+      supabase.auth.onAuthStateChange((_event: string, session: { user: { id: string; email?: string } } | null) => {
+        set(session?.user ? { id: session.user.id, email: session.user.email ?? null } : false);
+      });
+      return supabase.auth.getUser();
+    })
     .then(({ data }: { data: { user: { id: string; email?: string } | null } }) =>
       set(data.user ? { id: data.user.id, email: data.user.email ?? null } : false),
     )
     .catch(() => set(false));
-  supabase.auth.onAuthStateChange((_event: string, session: { user: { id: string; email?: string } } | null) => {
-    set(session?.user ? { id: session.user.id, email: session.user.email ?? null } : false);
-  });
 }
 
 /** Mark the session as signed in right away (e.g. after a password sign-in), before the listener fires. */

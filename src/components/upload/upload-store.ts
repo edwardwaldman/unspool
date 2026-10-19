@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { ACCEPTED_EXTENSIONS, MAX_FILE_BYTES, extensionOf } from "@/lib/config";
-import { createClient } from "@/lib/supabase/client";
+import { supabaseBrowser } from "../auth/supabase-browser";
 
 // Uploads live in a module-level store so they keep going while we navigate straight into the feed.
 
@@ -102,7 +102,7 @@ export async function startUpload(file: File, onCreated: (documentId: string) =>
   emit();
   onCreated(id);
 
-  const supabase = createClient();
+  const supabase = await supabaseBrowser();
   const { error } = await supabase.storage
     .from("documents")
     .uploadToSignedUrl(body.path, body.token, file, { contentType: MIME[extensionOf(file.name)] ?? file.type });

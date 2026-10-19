@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { supabaseBrowser } from "../auth/supabase-browser";
 import { openAuth } from "../auth/auth-store";
 
 export function LoginForm({ next, error }: { next: string; error?: string }) {
@@ -24,7 +24,7 @@ export function LoginForm({ next, error }: { next: string; error?: string }) {
             disabled={busy}
             onClick={async () => {
               setBusy(true);
-              const { error } = await createClient().auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo() } });
+              const { error } = await (await supabaseBrowser()).auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectTo() } });
               if (error) {
                 setErr(error.message);
                 setBusy(false);
@@ -42,7 +42,7 @@ export function LoginForm({ next, error }: { next: string; error?: string }) {
               e.preventDefault();
               setBusy(true);
               setErr(null);
-              const { error } = await createClient().auth.signInWithOtp({ email: email.trim(), options: { emailRedirectTo: redirectTo() } });
+              const { error } = await (await supabaseBrowser()).auth.signInWithOtp({ email: email.trim(), options: { emailRedirectTo: redirectTo() } });
               setBusy(false);
               if (error) setErr(error.message);
               else setSent(true);

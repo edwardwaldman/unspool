@@ -62,7 +62,14 @@ export function AppShell({
   const user = useSessionUser();
   const [dragging, setDragging] = useState(false);
   // The top bar stays out of the way until the visitor scrolls (or tries to).
-  const [barShown, setBarShown] = useState(false);
+  const [barShown, setBarShownState] = useState(false);
+  // Scroll and wheel events fire many times a frame: only touch React state when the answer changes.
+  const barShownRef = useRef(false);
+  const setBarShown = (v: boolean) => {
+    if (barShownRef.current === v) return;
+    barShownRef.current = v;
+    setBarShownState(v);
+  };
 
   return (
     <div

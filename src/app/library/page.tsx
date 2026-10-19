@@ -29,8 +29,14 @@ export default async function LibraryPage() {
         "document_id",
         docs.map((d) => d.id),
       );
+    const byDoc = new Map<string, NonNullable<typeof reels>>();
+    for (const r of reels ?? []) {
+      const list = byDoc.get(r.document_id);
+      if (list) list.push(r);
+      else byDoc.set(r.document_id, [r]);
+    }
     for (const d of docs) {
-      const mine = (reels ?? []).filter((r) => r.document_id === d.id);
+      const mine = byDoc.get(d.id) ?? [];
       const first = mine.find((r) => r.index === 1);
       items.push({
         id: d.id,

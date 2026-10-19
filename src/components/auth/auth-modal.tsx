@@ -6,7 +6,7 @@ import { animate } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { supabaseConfigured } from "@/lib/config";
 import type { AuthError, AuthOtpResponse, AuthResponse, AuthTokenResponsePassword, OAuthResponse } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
+import { supabaseBrowser } from "./supabase-browser";
 import { track } from "../analytics/track";
 import { fileLabel } from "../reel/accent";
 import { toast } from "../ui/toast";
@@ -296,7 +296,7 @@ export function AuthModal() {
       to = `/?${RESUME_PARAM}=${RESUME_VALUE}`;
     }
     try {
-      const { error } = await withTimeout<OAuthResponse>(createClient().auth.signInWithOAuth({ provider: "google", options: { redirectTo: callback(to) } }));
+      const { error } = await withTimeout<OAuthResponse>((await supabaseBrowser()).auth.signInWithOAuth({ provider: "google", options: { redirectTo: callback(to) } }));
       if (error) {
         fail(error);
         setBusy(false);
@@ -326,7 +326,7 @@ export function AuthModal() {
 
   const doSignup = async (addr: string) => {
     const { data, error } = await withTimeout<AuthResponse>(
-      createClient().auth.signUp({
+      (await supabaseBrowser()).auth.signUp({
         email: addr,
         password,
         options: { emailRedirectTo: callback(), data: { marketing_opt_in: updates, accepted_terms_at: new Date().toISOString() } },
@@ -341,7 +341,7 @@ export function AuthModal() {
   };
 
   const doLogin = async (addr: string) => {
-    const supabase = createClient();
+    const supabase = await supabaseBrowser();
     const { data, error } = await withTimeout<AuthTokenResponsePassword>(supabase.auth.signInWithPassword({ email: addr, password }));
     if (error && (error.code === "email_not_confirmed" || /email not confirmed/i.test(error.message))) {
       // Signed up earlier but never entered the code: send a fresh one and go straight to the code step.
@@ -364,7 +364,7 @@ export function AuthModal() {
     setBusy(true);
     let res;
     try {
-      res = await withTimeout<AuthResponse>(createClient().auth.verifyOtp({ email: codeEmail, token, type: "signup" }));
+      res = await withTimeout<AuthResponse>((await supabaseBrowser()).auth.verifyOtp({ email: codeEmail, token, type: "signup" }));
     } catch {
       setBusy(false);
       return setErr(UNREACHABLE);
@@ -389,7 +389,7 @@ export function AuthModal() {
     clearErr();
     let error;
     try {
-      ({ error } = await withTimeout<AuthOtpResponse>(createClient().auth.resend({ type: "signup", email: codeEmail, options: { emailRedirectTo: callback() } })));
+      ({ error } = await withTimeout<AuthOtpResponse>((await supabaseBrowser()).auth.resend({ type: "signup", email: codeEmail, options: { emailRedirectTo: callback() } })));
     } catch {
       return setErr(UNREACHABLE);
     }
@@ -405,7 +405,7 @@ export function AuthModal() {
     if (!email.trim()) return setErr("Enter your email first.");
     let error;
     try {
-      ({ error } = await withTimeout<{ error: AuthError | null }>(createClient().auth.resetPasswordForEmail(email.trim(), { redirectTo: callback("/profile?reset=1") })));
+      ({ error } = await withTimeout<{ error: AuthError | null }>((await supabaseBrowser()).auth.resetPasswordForEmail(email.trim(), { redirectTo: callback("/profile?reset=1") })));
     } catch {
       return setErr(UNREACHABLE);
     }

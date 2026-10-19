@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { UserResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import { supabaseConfigured } from "@/lib/config";
-import { createClient } from "@/lib/supabase/client";
+import { supabaseBrowser } from "../auth/supabase-browser";
 import { openAuth } from "../auth/auth-store";
 import { toast } from "../ui/toast";
 import { PasswordInput } from "./password-input";
@@ -23,7 +23,8 @@ export function ResetPasswordForm() {
 
   useEffect(() => {
     if (!supabaseConfigured) return;
-    (createClient().auth.getUser() as Promise<UserResponse>)
+    supabaseBrowser()
+      .then((sb) => sb.auth.getUser() as Promise<UserResponse>)
       .then(({ data }) => setEmail(data.user?.email ?? null))
       .catch(() => setEmail(null));
   }, []);
@@ -62,7 +63,7 @@ export function ResetPasswordForm() {
     if (p || c) return;
     setBusy(true);
     try {
-      const { error } = await withTimeout<UserResponse>(createClient().auth.updateUser({ password }));
+      const { error } = await withTimeout<UserResponse>((await supabaseBrowser()).auth.updateUser({ password }));
       setBusy(false);
       if (error) {
         if (error.code === "same_password") return setPwErr("Pick a password you haven't used here.");

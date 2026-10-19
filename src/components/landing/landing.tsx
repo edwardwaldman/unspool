@@ -16,6 +16,12 @@ import { useMainScroll } from "./use-main-scroll";
 const ANIM_W = 478;
 const ANIM_H = 336;
 
+// Same formula as the phone branch of `k` in Landing, run inline as soon as the hero is parsed: the server
+// can't know the screen, and the guess it renders with (1440x900) would otherwise show a giant animation
+// on phones until JavaScript hydrates. Desktop/iPad (>= 900px) are measured after hydration as before.
+const HERO_FIT = `(function(){var w=innerWidth,h=innerHeight;if(w>=900)return;var a=document.getElementById("hero-anim"),b=document.getElementById("hero-anim-inner");if(!a||!b)return;
+var k=Math.max(0.55,Math.min((w-48)/${ANIM_W},(h-420)/${ANIM_H}));a.style.width=${ANIM_W}*k+"px";a.style.height=${ANIM_H}*k+"px";b.style.transform="scale("+k+")";})();`;
+
 function useViewport(dim: "innerHeight" | "innerWidth", fallback: number) {
   return useSyncExternalStore(
     (cb) => {
@@ -176,16 +182,18 @@ export function Landing() {
         <Headline />
       </motion.div>
       <div className="flex flex-col items-center gap-6 min-[900px]:contents">
-        <motion.div className="relative" style={lg ? { width: ANIM_W * k, height: ANIM_H * k, scale: animScale, opacity: animFade } : { width: ANIM_W * k, height: ANIM_H * k }}>
+        <motion.div id="hero-anim" suppressHydrationWarning className="relative" style={lg ? { width: ANIM_W * k, height: ANIM_H * k, scale: animScale, opacity: animFade } : { width: ANIM_W * k, height: ANIM_H * k }}>
           {/* Floating gimmicks around the animation (desktop) */}
           <Tag className="-left-36 top-[30%] -rotate-3" delay={0.9}>.docx</Tag>
           <Tag className="-left-44 top-[64%] rotate-2" delay={1.3}>♪ voiceover</Tag>
           <Tag className="-right-52 top-[16%] rotate-3 border-thread/60 text-thread" delay={1.1}>✓ quiz in every reel</Tag>
           <Tag className="-right-40 top-[70%] -rotate-2" delay={1.5}>captions on</Tag>
-          <div className="origin-top-left" style={{ width: ANIM_W, height: ANIM_H, transform: `scale(${k})` }}>
+          <div id="hero-anim-inner" suppressHydrationWarning className="origin-top-left" style={{ width: ANIM_W, height: ANIM_H, transform: `scale(${k})` }}>
             <DocToReel />
           </div>
         </motion.div>
+        {/* Phones: size the animation for the real screen before hydration, so it doesn't paint huge and jump. */}
+        <script dangerouslySetInnerHTML={{ __html: HERO_FIT }} />
         <div ref={rowRef} className="flex flex-col items-center gap-2 min-[900px]:flex-row min-[900px]:gap-10">
           <div className="flex flex-col items-center gap-3">
             <UploadButton />

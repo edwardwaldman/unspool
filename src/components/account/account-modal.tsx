@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { AuthError, AuthTokenResponsePassword, UserResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { supabaseBrowser } from "../auth/supabase-browser";
 import { openAuth } from "../auth/auth-store";
 import { toast } from "../ui/toast";
 import { closeAccount, useAccountModal } from "./account-store";
@@ -127,7 +127,7 @@ function EmailSection({ email }: { email: string }) {
     if (next.toLowerCase() === email.toLowerCase()) return setErr("That's already your email.");
     setBusy(true);
     try {
-      const { error } = await withTimeout<UserResponse>(createClient().auth.updateUser({ email: next }, { emailRedirectTo: callback("/") }));
+      const { error } = await withTimeout<UserResponse>((await supabaseBrowser()).auth.updateUser({ email: next }, { emailRedirectTo: callback("/") }));
       if (error) setErr(error.message);
       else setSentTo(next);
     } catch {
@@ -190,7 +190,7 @@ function PasswordSection({ email }: { email: string }) {
     if (cErr || nErr) return;
     setBusy(true);
     try {
-      const supabase = createClient();
+      const supabase = await supabaseBrowser();
       // Prove the current password first: a fresh sign-in also satisfies Supabase's secure password change.
       const { error: signInErr } = await withTimeout<AuthTokenResponsePassword>(supabase.auth.signInWithPassword({ email, password: current }));
       if (signInErr) {
@@ -218,7 +218,7 @@ function PasswordSection({ email }: { email: string }) {
     setResetErr(null);
     setResetBusy(true);
     try {
-      const { error } = await withTimeout<{ error: AuthError | null }>(createClient().auth.resetPasswordForEmail(email, { redirectTo: callback("/reset") }));
+      const { error } = await withTimeout<{ error: AuthError | null }>((await supabaseBrowser()).auth.resetPasswordForEmail(email, { redirectTo: callback("/reset") }));
       if (error) setResetErr(error.message);
       else setResetSent(true);
     } catch {
@@ -330,7 +330,7 @@ function DangerZone() {
     setErr(null);
     const res = await fetch("/api/account", { method: "DELETE" }).catch(() => null);
     if (res?.ok) {
-      await createClient().auth.signOut().catch(() => undefined);
+      await (await supabaseBrowser()).auth.signOut().catch(() => undefined);
       // A full load, not a client push: every cached bit of the deleted account goes with it.
       window.location.replace("/");
       return;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { supabaseBrowser } from "../auth/supabase-browser";
 import type { SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { track } from "../analytics/track";
 import { openAuth } from "../auth/auth-store";
@@ -35,7 +35,7 @@ export function PaywallSheet({
   const google = async () => {
     if (!wanted) return;
     setBusy("google");
-    const { error } = await createClient().auth.signInWithOAuth({ provider: "google", options: { redirectTo: callback() } });
+    const { error } = await (await supabaseBrowser()).auth.signInWithOAuth({ provider: "google", options: { redirectTo: callback() } });
     if (error) {
       setErr(error.message);
       setBusy(null);
@@ -46,7 +46,7 @@ export function PaywallSheet({
     e.preventDefault();
     if (!wanted || !email.trim()) return;
     setBusy("email");
-    const { error } = await createClient().auth.signInWithOtp({
+    const { error } = await (await supabaseBrowser()).auth.signInWithOtp({
       email: email.trim(),
       options: { emailRedirectTo: callback() },
     });
