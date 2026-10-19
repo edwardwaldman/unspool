@@ -2,7 +2,7 @@ import { loadDocument } from "@/lib/access";
 import { tierOf } from "@/lib/credits";
 import { MAX_REELS, siteUrl, supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
-import { CURRENCY, isTier, PLANS, TOPUP, TRIAL } from "@/lib/plans";
+import { CURRENCY, isBilling, isTier, PLANS, TOPUP, TRIAL } from "@/lib/plans";
 import { ensureCustomer, getStripe, priceIdFor, stripeConfigured } from "@/lib/stripe";
 import { getViewer } from "@/lib/viewer";
 
@@ -16,9 +16,10 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   if (!supabaseConfigured) return notConfigured();
   if (!stripeConfigured()) return error(503, "Payments aren't set up yet (STRIPE_SECRET_KEY).");
-  const body = (await req.json().catch(() => ({}))) as { kind?: string; tier?: string; documentId?: string; reel?: number };
+  const body = (await req.json().catch(() => ({}))) as { kind?: string; tier?: string; documentId?: string; reel?: number; billing?: string };
   const kind = body.kind === "topup" ? "topup" : body.kind === "trial" ? "trial" : "subscription";
   const tier = kind === "trial" ? TRIAL.tier : isTier(body.tier) && body.tier !== "free" ? body.tier : "plus";
+  const billing = kind === "subscription" && isBilling(body.billing) ? body.billing : "week";
   const viewer = await getViewer();
   if (!viewer.userId || !viewer.profile) return error(401, "Sign in to continue.", { code: "auth" });
 
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
 
   // Already subscribed: switching tiers happens on the existing subscription, prorated by Stripe.
   if (kind !== "topup" && current !== "free") {
-    if (kind === "trial" || current === tier || !viewer.profile.stripe_subscription_id || !viewer.profile.stripe_customer_id) {
+    if (kind === "trial" || (current === tier && (viewer.profile.billing_interval ?? "week") === billing) || !viewer.profile.stripe_subscription_id || !viewer.profile.stripe_customer_id) {
       return json({ url: `${origin}/profile` });
     }
     const sub = await stripe.subscriptions.retrieve(viewer.profile.stripe_subscription_id);
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
       return_url: `${origin}${returnPath}`,
       flow_data: {
         type: "subscription_update_confirm",
-        subscription_update_confirm: { subscription: sub.id, items: [{ id: item.id, price: await priceIdFor(tier), quantity: 1 }] },
+        subscription_update_confirm: { subscription: sub.id, items: [{ id: item.id, price: await priceIdFor(tier, billing), quantity: 1 }] },
         after_completion: { type: "redirect", redirect: { return_url: `${origin}${returnPath}` } },
       },
     });
@@ -94,11 +95,11 @@ export async function POST(req: Request) {
     client_reference_id: viewer.userId,
     metadata,
     subscription_data: {
-      metadata: { user_id: viewer.userId, tier },
+      metadata: { user_id: viewer.userId, tier, billing },
       ...(kind === "trial" ? { trial_period_days: TRIAL.days } : {}),
     },
     ...(kind === "trial" ? { payment_method_collection: "always" as const } : {}),
-    line_items: [{ price: await priceIdFor(tier), quantity: 1 }],
+    line_items: [{ price: await priceIdFor(tier, billing), quantity: 1 }],
     allow_promotion_codes: kind !== "trial",
     custom_text:
       kind === "trial"

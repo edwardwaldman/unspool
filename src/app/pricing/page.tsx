@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BillingButton } from "@/components/shell/billing-button";
 import { MarketingPage } from "@/components/shell/marketing-page";
-import { approxMonthly, formatCents, FREE_REEL_INTERVAL_MIN, FREE_REELS_PER_DAY, PLANS, TOPUP, TRIAL, type Tier } from "@/lib/plans";
+import { approxMonthly, formatCents, FREE_REEL_INTERVAL_MIN, FREE_REELS_PER_DAY, PLANS, TOPUP, TRIAL, yearlySavingsPct, type Tier } from "@/lib/plans";
 
 export const metadata: Metadata = { title: "Pricing" };
 
@@ -31,6 +31,11 @@ function PriceCell({ tier }: { tier: Tier }) {
         <span className="text-[14px] text-muted">/week</span>
       </div>
       <div className="mt-1 font-mono text-[11.5px] text-muted">{approxMonthly(c)}</div>
+      <div className="mt-3 border-t border-line pt-2 text-[13px]">
+        or <span className="font-semibold text-ink">{formatCents(PLANS[tier].yearlyCents)}/year</span>{" "}
+        <span className="whitespace-nowrap bg-thread px-1.5 py-[1px] font-mono text-[11px] font-semibold text-paper">save {yearlySavingsPct(tier)}%</span>
+        <div className="mt-0.5 font-mono text-[11px] text-muted">≈ {formatCents(Math.round(PLANS[tier].yearlyCents / 52))}/week</div>
+      </div>
     </div>
   );
 }
@@ -42,7 +47,12 @@ function Cta({ tier }: { tier: Tier }) {
         Upload a document
       </Link>
     );
-  return <BillingButton mode="subscribe" tier={tier} label={`Get ${PLANS[tier].name}`} />;
+  return (
+    <div className="flex flex-col gap-2">
+      <BillingButton mode="subscribe" tier={tier} label={`Get ${PLANS[tier].name} weekly`} />
+      <BillingButton mode="subscribe" tier={tier} billing="year" secondary label={`Get ${PLANS[tier].name} yearly · save ${yearlySavingsPct(tier)}%`} />
+    </div>
+  );
 }
 
 export default function PricingPage() {
@@ -54,8 +64,8 @@ export default function PricingPage() {
           Your first reel is free. <em className="text-thread">Every document.</em>
         </h1>
         <p className="mt-5 max-w-[560px] text-[16px] text-ink/80">
-          Free gets reel 1 of every document, then 1 more every {FREE_REEL_INTERVAL_MIN} minutes, up to {FREE_REELS_PER_DAY} a day. Paid plans bill weekly
-          in reel credits: 1 credit is 1 reel, and a document uses one credit per reel it plans. Credits reset every week on your billing date.
+          Free gets reel 1 of every document, then 1 more every {FREE_REEL_INTERVAL_MIN} minutes, up to {FREE_REELS_PER_DAY} a day. Paid plans bill weekly, or yearly for less,
+          in reel credits: 1 credit is 1 reel, and a document uses one credit per reel it plans. Credits reset every week, on yearly plans too.
         </p>
       </section>
 

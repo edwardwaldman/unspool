@@ -47,6 +47,21 @@ export function entitlementFor(profile: Profile | null, fallbackSubject?: string
         (tier === "free" ? nextMonthStart() : new Date(weekStart().getTime() + 7 * 864e5)).toISOString(),
     };
   }
+  // Yearly plans: the paid period is a year, but credits reset every 7 days from its start.
+  if (profile.billing_interval === "year") {
+    const start = new Date(profile.current_period_start).getTime();
+    const week = 7 * 864e5;
+    const sliceStart = start + Math.max(0, Math.floor((Date.now() - start) / week)) * week;
+    return {
+      tier,
+      trialing,
+      trialEndsAt: null,
+      subject,
+      allowance: PLANS[tier].credits,
+      periodStart: new Date(sliceStart).toISOString(),
+      resetsAt: new Date(sliceStart + week).toISOString(),
+    };
+  }
   return {
     tier,
     trialing,

@@ -1,5 +1,7 @@
 // Every pricing tier in one place. Prices can be overridden with env vars (cents); Stripe price ids
-// with STRIPE_PRICE_PLUS / STRIPE_PRICE_PRO / STRIPE_PRICE_ULTRA (else prices are created on demand).
+// with STRIPE_PRICE_PLUS / STRIPE_PRICE_PRO / STRIPE_PRICE_ULTRA, and the yearly ones with
+// STRIPE_PRICE_<TIER>_YEARLY / PRICE_<TIER>_YEARLY_CENTS (else prices are created on demand).
+// Yearly plans are paid once a year but still get weekly credits, reset every 7 days from the start date.
 //
 // Paid tiers bill weekly and are measured in weekly reel credits (reset on the Stripe subscription period): 1 credit = 1 generated reel, and a document reserves
 // as many credits as reels planned. Free accounts don't get credits: reel 1 of each document is free,
@@ -30,14 +32,17 @@ export type PlanDef = {
   earlyAccess?: boolean;
   /** Env var holding a fixed Stripe price id for this tier, if any. */
   priceEnv?: string;
+  /** Yearly price in cents (paid once a year; same weekly credits). */
+  yearlyCents: number;
 };
 
 export const PLANS: Record<Tier, PlanDef> = {
-  free: { tier: "free", name: "Free", priceCents: 0, credits: 0, maxPages: 20, watermark: true, priority: false, longReels: false },
+  free: { tier: "free", name: "Free", priceCents: 0, yearlyCents: 0, credits: 0, maxPages: 20, watermark: true, priority: false, longReels: false },
   plus: {
     tier: "plus",
     name: "Plus",
     priceCents: cents("PRICE_PLUS_CENTS", 399),
+    yearlyCents: cents("PRICE_PLUS_YEARLY_CENTS", 15999),
     credits: 40,
     maxPages: 60,
     watermark: false,
@@ -49,6 +54,7 @@ export const PLANS: Record<Tier, PlanDef> = {
     tier: "pro",
     name: "Pro",
     priceCents: cents("PRICE_PRO_CENTS", 599),
+    yearlyCents: cents("PRICE_PRO_YEARLY_CENTS", 24999),
     credits: 125,
     maxPages: 150,
     watermark: false,
@@ -60,6 +66,7 @@ export const PLANS: Record<Tier, PlanDef> = {
     tier: "ultra",
     name: "Ultra",
     priceCents: cents("PRICE_ULTRA_CENTS", 2299),
+    yearlyCents: cents("PRICE_ULTRA_YEARLY_CENTS", 94999),
     credits: 750,
     maxPages: 300,
     watermark: false,
@@ -85,6 +92,20 @@ export const CURRENCY = "usd";
 
 /** Every paid tier bills on this Stripe recurring interval; credits reset on the subscription period. */
 export const BILLING_INTERVAL = "week" as const;
+
+/** How a paid tier is billed: weekly, or once a year (cheaper; credits still reset weekly). */
+export type Billing = "week" | "year";
+export const isBilling = (v: unknown): v is Billing => v === "week" || v === "year";
+
+export function priceFor(tier: Tier, billing: Billing) {
+  return billing === "year" ? PLANS[tier].yearlyCents : PLANS[tier].priceCents;
+}
+
+/** How much a year costs on the yearly plan vs 52 weekly payments, in whole percent. */
+export function yearlySavingsPct(tier: Tier) {
+  const weekly = PLANS[tier].priceCents * 52;
+  return weekly ? Math.round((1 - PLANS[tier].yearlyCents / weekly) * 100) : 0;
+}
 
 /** "≈ $17/month" for a weekly price (52 weeks / 12 months). */
 export function approxMonthly(c: number) {

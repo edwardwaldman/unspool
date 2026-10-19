@@ -11,6 +11,8 @@ export type Profile = {
   stripe_subscription_id: string | null;
   subscription_status: string | null;
   current_period_end: string | null;
+  /** "year" for yearly plans (credits still reset weekly); "week" otherwise. */
+  billing_interval?: "week" | "year" | null;
   /** Paid tier (free/plus/pro/ultra); only meaningful while the subscription is active (see tierOf). */
   tier?: "free" | "plus" | "pro" | "ultra" | null;
   current_period_start?: string | null;

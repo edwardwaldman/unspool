@@ -1,9 +1,9 @@
 "use client";
 
-import type { Tier } from "@/lib/plans";
+import type { Billing, Tier } from "@/lib/plans";
 
 export type CheckoutRequest =
-  | { kind: "subscription"; tier: Exclude<Tier, "free"> }
+  | { kind: "subscription"; tier: Exclude<Tier, "free">; billing?: Billing }
   | { kind: "trial" }
   | { kind: "topup" };
 
@@ -40,6 +40,8 @@ export function checkoutFromIntent(intent: string | null): CheckoutRequest | nul
   if (intent === "trial") return { kind: "trial" };
   if (intent === "topup") return { kind: "topup" };
   if (intent === "plus" || intent === "pro" || intent === "ultra") return { kind: "subscription", tier: intent };
+  const yearly = /^(plus|pro|ultra)_year$/.exec(intent ?? "")?.[1];
+  if (yearly === "plus" || yearly === "pro" || yearly === "ultra") return { kind: "subscription", tier: yearly, billing: "year" };
   if (intent === "sub") return { kind: "subscription", tier: "plus" };
   return null;
 }

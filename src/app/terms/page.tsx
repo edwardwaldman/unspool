@@ -295,10 +295,10 @@ export default function TermsPage() {
 
         <Section id="paid-plans">
           <p>
-            Prices are shown in the app and on our <Link href="/pricing">pricing page</Link> before you buy. Paid plans bill weekly and give
+            Prices are shown in the app and on our <Link href="/pricing">pricing page</Link> before you buy. Paid plans bill weekly or yearly and give
             you reel credits: 1 credit makes 1 reel, and a document uses one credit for each reel we plan for it.
           </p>
-          <LegalH3>Plus, Pro and Ultra (billed weekly)</LegalH3>
+          <LegalH3>Plus, Pro and Ultra (billed weekly or yearly)</LegalH3>
           <ul>
             <li>
               {PAID.map((t) => `${PLANS[t].name}: ${formatCents(PLANS[t].priceCents)} per week for ${PLANS[t].credits.toLocaleString("en-US")} reel credits a week and documents up to ${PLANS[t].maxPages} pages`).join("; ")}
@@ -306,7 +306,12 @@ export default function TermsPage() {
               a promotion code shown to you at checkout takes precedence.
             </li>
             <li>
-              <strong>Credits.</strong> Your weekly credits reset at the start of each billing period and unused weekly credits don&apos;t
+              <strong>Yearly plans.</strong> Each plan can instead be paid once a year:{" "}
+              {PAID.map((t) => `${PLANS[t].name} ${formatCents(PLANS[t].yearlyCents)} per year`).join("; ")}. Yearly plans get the same weekly
+              credits, which reset every 7 days from the start of your billing year, and renew automatically every year until you cancel.
+            </li>
+            <li>
+              <strong>Credits.</strong> Your weekly credits reset every week (at the start of each weekly billing period, or every 7 days on a yearly plan) and unused weekly credits don&apos;t
               carry over. When a document is planned we reserve one credit per reel. If you don&apos;t have enough, we make as many reels as
               your credits cover and the rest stay locked until you have more. If a reel fails to generate for good, its credit is returned.
             </li>
@@ -325,7 +330,7 @@ export default function TermsPage() {
               24-hour period, on top of the per-file limits in section 4.
             </li>
             <li>
-              <strong>Automatic renewal.</strong> Your subscription renews automatically every week, and we (through Stripe) will charge
+              <strong>Automatic renewal.</strong> Your subscription renews automatically every week (or every year on a yearly plan), and we (through Stripe) will charge
               the payment method you gave us at the then-current price at the start of each billing period, until you cancel. By
               subscribing, you authorise these recurring charges.
             </li>

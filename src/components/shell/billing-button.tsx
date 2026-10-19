@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import type { Tier } from "@/lib/plans";
+import type { Billing, Tier } from "@/lib/plans";
 import { openAuth } from "../auth/auth-store";
 
 type Mode = "portal" | "subscribe" | "trial" | "topup";
 
-export function BillingButton({ mode, label, tier = "plus" }: { mode: Mode; label?: string; tier?: Exclude<Tier, "free"> }) {
+export function BillingButton({ mode, label, tier = "plus", billing = "week", secondary = false }: { mode: Mode; label?: string; tier?: Exclude<Tier, "free">; billing?: Billing; secondary?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const body =
-    mode === "subscribe" ? { kind: "subscription", tier } : mode === "trial" ? { kind: "trial" } : mode === "topup" ? { kind: "topup" } : null;
+    mode === "subscribe" ? { kind: "subscription", tier, billing } : mode === "trial" ? { kind: "trial" } : mode === "topup" ? { kind: "topup" } : null;
   return (
     <div>
       <button
@@ -34,7 +34,7 @@ export function BillingButton({ mode, label, tier = "plus" }: { mode: Mode; labe
             setBusy(false);
           }
         }}
-        className={`w-full py-3.5 text-[15px] ${mode === "portal" || mode === "topup" ? "btn-secondary" : "btn-primary"}`}
+        className={`w-full py-3.5 text-[15px] ${secondary || mode === "portal" || mode === "topup" ? "btn-secondary" : "btn-primary"}`}
       >
         {busy ? "Opening" : label ?? (mode === "portal" ? "Manage subscription" : "Upgrade")}
       </button>

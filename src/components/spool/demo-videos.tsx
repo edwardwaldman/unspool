@@ -7,7 +7,7 @@ import { PaywallSheet } from "../reel/paywall-sheet";
 import { openAuth } from "../auth/auth-store";
 import { Sheet } from "../ui/sheet";
 import { toast } from "../ui/toast";
-import { Bookmark, Download, Heart, Link2, MessageCircle, MoreHorizontal, Music2, Send } from "lucide-react";
+import { Bookmark, BookOpen, Download, Gauge, Heart, Link2, MessageCircle, MoreHorizontal, Music2, Send, SkipForward, Sparkles } from "lucide-react";
 import { ChevronDown, ChevronUp, PlayIcon, VolumeIcon } from "../ui/icons";
 
 // The public demo: three pre-rendered sample reels (real MP4s with voiceover), then a gate that can't be
@@ -17,10 +17,13 @@ import { ChevronDown, ChevronUp, PlayIcon, VolumeIcon } from "../ui/icons";
 
 const REELS = [
   { src: "/demo/reel-1.mp4", poster: "/demo/reel-1.jpg", title: "Population vs sample", caption: "A chef never eats the whole pot 🍲 #apstats #studytok",
+    quiz: { q: "A school surveys 50 of its 2,000 students. What are the 50?", options: ["The population", "The sample", "A parameter"], answer: 1 },
     summary: ["The population is everyone you want to know about: the whole pot.", "A sample is the part you actually measure: one spoonful.", "If the pot is stirred (a random sample), one spoonful tells you about the whole pot."] },
   { src: "/demo/reel-2.mp4", poster: "/demo/reel-2.jpg", title: "Parameter vs statistic", caption: "P with P. S with S. Never lose these points again #apstats",
+    quiz: { q: "Your survey of 200 teens finds they average 6.9 hours of sleep. Is 6.9 a parameter or a statistic?", options: ["Parameter", "Statistic"], answer: 1 },
     summary: ["A parameter describes a whole population, like the true average sleep of every teen. You almost never know it.", "A statistic is calculated from your sample, like the 6.9 hours your survey found.", "Memory trick: Parameter goes with Population, Statistic goes with Sample."] },
   { src: "/demo/reel-3.mp4", poster: "/demo/reel-3.jpg", title: "4 sampling methods", caption: "The one the test always asks 🎯 #apstats #finals",
+    quiz: { q: "A school picks 3 whole homerooms and surveys everyone in them. Which method is that?", options: ["Stratified", "Cluster", "Systematic", "Simple random"], answer: 1 },
     summary: ["Simple random: everyone has the same chance, like names in a hat.", "Stratified: split into groups, then sample some from every group.", "Cluster: split into groups, then take a few whole groups.", "Systematic: random start, then every k-th person.", "The trap: stratified takes some from every group; cluster takes all of a few groups."] },
 ];
 const GATE = REELS.length;
@@ -35,7 +38,8 @@ export function DemoVideos() {
   const [saved, setSaved] = useState<Set<number>>(new Set());
   const [following, setFollowing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [sheet, setSheet] = useState<null | "comments" | "share">(null);
+  const [sheet, setSheet] = useState<null | "comments" | "share" | "more" | "quiz">(null);
+  const [speed, setSpeed] = useState(1);
   const [burst, setBurst] = useState<{ i: number; key: number; x: number; y: number } | null>(null);
   const lastTap = useRef<{ t: number; timer: number | null }>({ t: 0, timer: null });
   const save = (i: number) => {
@@ -83,6 +87,7 @@ export function DemoVideos() {
   useEffect(() => {
     videos.current.forEach((v, i) => {
       if (!v) return;
+      v.playbackRate = speed;
       if (i === index && !paused) {
         v.muted = muted;
         void v.play().catch(() => {
@@ -93,7 +98,7 @@ export function DemoVideos() {
         });
       } else v.pause();
     });
-  }, [index, muted, paused]);
+  }, [index, muted, paused, speed]);
 
   const go = (i: number) => {
     const el = scroller.current;
@@ -159,7 +164,7 @@ export function DemoVideos() {
                 )}
               </AnimatePresence>
               {/* Instagram Reels chrome */}
-              <div className="absolute bottom-24 right-2 flex flex-col items-center gap-5 text-white [text-shadow:0_1px_2px_rgba(0,0,0,.6)]">
+              <div className="absolute bottom-24 right-2 z-10 flex flex-col items-center gap-5 text-white [text-shadow:0_1px_2px_rgba(0,0,0,.6)]">
                 <RailButton label={liked.has(i) ? "Saved for later" : "Save for later"} onClick={() => { if (!liked.has(i)) toast("Saved for later"); setLiked((l) => toggle(l, i)); }}>
                   <Heart size={28} strokeWidth={1.8} fill={liked.has(i) ? "#ff3040" : "none"} color={liked.has(i) ? "#ff3040" : "currentColor"} />
                 </RailButton>
@@ -172,19 +177,19 @@ export function DemoVideos() {
                 <RailButton label={saved.has(i) ? "Unsave" : "Save"} onClick={() => { if (!saved.has(i)) toast("Saved"); setSaved((x) => toggle(x, i)); }}>
                   <Bookmark size={26} strokeWidth={1.8} fill={saved.has(i) ? "currentColor" : "none"} />
                 </RailButton>
-                <RailButton label="More">
+                <RailButton label="More" onClick={() => setSheet("more")}>
                   <MoreHorizontal size={24} strokeWidth={1.8} />
                 </RailButton>
                 <span className="h-7 w-7 rounded-[7px] border-2 border-white bg-thread" aria-hidden />
               </div>
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-3.5 pb-4 pt-20 pr-16 text-white [text-shadow:0_1px_2px_rgba(0,0,0,.5)]">
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-3.5 pb-4 pt-20 pr-16 text-white [text-shadow:0_1px_2px_rgba(0,0,0,.5)]">
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-thread font-wordmark text-[14px] font-bold text-[#08110e] ring-2 ring-white/90">u</span>
                   <span className="text-[14px] font-semibold">unspool</span>
                   <button
                     type="button"
                     onClick={() => setFollowing((f) => !f)}
-                    className="rounded-[8px] border border-white/80 px-3 py-[3px] text-[13px] font-semibold"
+                    className="pointer-events-auto rounded-[8px] border border-white/80 px-3 py-[3px] text-[13px] font-semibold"
                   >
                     {following ? "Following" : "Follow"}
                   </button>
@@ -193,7 +198,7 @@ export function DemoVideos() {
                 <div className="mt-2 flex items-center gap-1.5 text-[12.5px] text-white/90">
                   <Music2 size={13} strokeWidth={2} /> <span className="truncate">unspool · Original audio</span>
                 </div>
-                <button type="button" onClick={() => setMuted((m) => !m)} aria-label={muted ? "Unmute" : "Mute"} className="absolute bottom-4 right-3 rounded-full bg-black/40 p-2">
+                <button type="button" onClick={() => setMuted((m) => !m)} aria-label={muted ? "Unmute" : "Mute"} className="pointer-events-auto absolute bottom-4 right-3 rounded-full bg-black/40 p-2">
                   <VolumeIcon size={18} muted={muted} />
                 </button>
               </div>
@@ -219,6 +224,21 @@ export function DemoVideos() {
         <>
           <Sheet open={sheet === "comments"} onClose={() => setSheet(null)} label="Summary">
             <SummarySheet reel={REELS[index]} />
+          </Sheet>
+          <Sheet open={sheet === "more"} onClose={() => setSheet(null)} label="More">
+            <MoreDemo
+              speed={speed}
+              onSpeed={setSpeed}
+              onQuiz={() => setSheet("quiz")}
+              onRead={() => setSheet("comments")}
+              onNext={() => {
+                setSheet(null);
+                go(index + 1);
+              }}
+            />
+          </Sheet>
+          <Sheet open={sheet === "quiz"} onClose={() => setSheet(null)} label="Quiz">
+            <QuizDemo key={index} reel={REELS[index]} />
           </Sheet>
           <Sheet open={sheet === "share"} onClose={() => setSheet(null)} label="Share">
             <ShareDemo reel={REELS[index]} index={index} onDone={() => setSheet(null)} />
@@ -315,6 +335,67 @@ function ShareDemo({ reel, index, onDone }: { reel: DemoReel; index: number; onD
         </a>
       </div>
       <p className="mt-4 text-center font-mono text-[11.5px] text-muted">made with unspool · unspool.cc</p>
+    </div>
+  );
+}
+
+/** The ⋯ button: quiz yourself on this reel, playback speed, read it as text, or skip ahead. */
+function MoreDemo({ speed, onSpeed, onQuiz, onRead, onNext }: { speed: number; onSpeed: (s: number) => void; onQuiz: () => void; onRead: () => void; onNext: () => void }) {
+  const row = "flex w-full items-center gap-3 border-b border-line py-3.5 text-left text-[15px] hover:text-thread";
+  return (
+    <div>
+      <button type="button" className={row} onClick={onQuiz}>
+        <Sparkles size={19} strokeWidth={1.6} /> <span className="flex-1">Quiz me on this reel</span>
+        <span className="font-mono text-[12px] text-thread">1 question</span>
+      </button>
+      <div className={row}>
+        <Gauge size={19} strokeWidth={1.6} />
+        <span className="flex-1">Speed</span>
+        {[1, 1.25, 1.5, 2].map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => onSpeed(s)}
+            className={`-ml-px border px-2.5 py-1 font-mono text-[12px] ${speed === s ? "border-ink bg-ink text-paper" : "border-line text-muted"}`}
+          >
+            {s}x
+          </button>
+        ))}
+      </div>
+      <button type="button" className={row} onClick={onRead}>
+        <BookOpen size={19} strokeWidth={1.6} /> Read it as text
+      </button>
+      <button type="button" className={row} onClick={onNext}>
+        <SkipForward size={19} strokeWidth={1.6} /> Next reel
+      </button>
+    </div>
+  );
+}
+
+/** One exam-style question on the reel just watched. */
+function QuizDemo({ reel }: { reel: DemoReel }) {
+  const [pick, setPick] = useState<number | null>(null);
+  const right = pick === reel.quiz.answer;
+  return (
+    <div>
+      <div className="label">Quick check</div>
+      <h2 className="mt-1 text-[18px] font-semibold leading-snug">{reel.quiz.q}</h2>
+      <div className="mt-4 flex flex-col gap-2">
+        {reel.quiz.options.map((o, k) => {
+          const state = pick === null ? "" : k === reel.quiz.answer ? "border-sage bg-sage/15" : k === pick ? "border-coral bg-coral/10" : "opacity-50";
+          return (
+            <button key={o} type="button" disabled={pick !== null} onClick={() => setPick(k)} className={`border border-line px-4 py-3 text-left text-[15px] ${state}`}>
+              {o}
+            </button>
+          );
+        })}
+      </div>
+      {pick !== null && (
+        <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className={`mt-4 text-[15px] font-semibold ${right ? "text-sage" : "text-coral"}`}>
+          {right ? "Correct. That's one you won't lose on the test." : `Not quite: it's ${reel.quiz.options[reel.quiz.answer].toLowerCase()}.`}
+        </motion.p>
+      )}
+      <p className="mt-4 text-[12.5px] text-muted">Every reel Unspool makes from your notes comes with a question like this.</p>
     </div>
   );
 }

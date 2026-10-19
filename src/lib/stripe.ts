@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { entitlementFor, unlockWithCredits } from "./credits";
 import { DOCUMENT_COLUMNS, type DocumentRow } from "./db-types";
-import { BILLING_INTERVAL, CURRENCY, isTier, PAID_TIERS, PLANS, TOPUP, type Tier } from "./plans";
+import { BILLING_INTERVAL, CURRENCY, isTier, PAID_TIERS, PLANS, priceFor, TOPUP, type Billing, type Tier } from "./plans";
 import { adminClient } from "./supabase/admin";
 import type { Profile } from "./viewer";
 
@@ -35,26 +35,27 @@ function periodStart(sub: Stripe.Subscription): string | null {
   return starts.length ? new Date(Math.max(...starts) * 1000).toISOString() : null;
 }
 
-const lookupKey = (tier: Exclude<Tier, "free">) => `unspool_${tier}_${PLANS[tier].priceCents}_${BILLING_INTERVAL}`;
+const lookupKey = (tier: Exclude<Tier, "free">, billing: Billing) => `unspool_${tier}_${priceFor(tier, billing)}_${billing}`;
+const envFor = (tier: Exclude<Tier, "free">, billing: Billing) => (billing === "year" ? `${PLANS[tier].priceEnv}_YEARLY` : PLANS[tier].priceEnv);
 
 /**
  * The Stripe price id for a paid tier: STRIPE_PRICE_<TIER> when set, else a price found by lookup key,
  * else one created on the spot (same amount as PLANS, so plan switching in the portal can use it).
  */
-export async function priceIdFor(tier: Exclude<Tier, "free">): Promise<string> {
-  const env = PLANS[tier].priceEnv;
+export async function priceIdFor(tier: Exclude<Tier, "free">, billing: Billing = "week"): Promise<string> {
+  const env = envFor(tier, billing);
   if (env && process.env[env]) return process.env[env]!;
   const stripe = getStripe();
-  const key = lookupKey(tier);
+  const key = lookupKey(tier, billing);
   const found = await stripe.prices.list({ lookup_keys: [key], active: true, limit: 1 });
   if (found.data[0]) return found.data[0].id;
   const price = await stripe.prices.create({
     currency: CURRENCY,
-    unit_amount: PLANS[tier].priceCents,
-    recurring: { interval: BILLING_INTERVAL },
+    unit_amount: priceFor(tier, billing),
+    recurring: { interval: billing },
     lookup_key: key,
-    metadata: { tier },
-    product_data: { name: `Unspool ${PLANS[tier].name}`, metadata: { tier } },
+    metadata: { tier, billing },
+    product_data: { name: `Unspool ${PLANS[tier].name}${billing === "year" ? " (yearly)" : ""}`, metadata: { tier } },
   });
   return price.id;
 }
@@ -63,8 +64,10 @@ export async function priceIdFor(tier: Exclude<Tier, "free">): Promise<string> {
 export function tierForPrice(price: Stripe.Price | null | undefined): Exclude<Tier, "free"> {
   if (!price) return "plus";
   for (const tier of PAID_TIERS) {
-    const env = PLANS[tier].priceEnv;
-    if (env && process.env[env] === price.id) return tier;
+    for (const b of ["week", "year"] as const) {
+      const env = envFor(tier, b);
+      if (env && process.env[env] === price.id) return tier;
+    }
   }
   const meta = price.metadata?.tier;
   if (isTier(meta) && meta !== "free") return meta;
@@ -73,6 +76,10 @@ export function tierForPrice(price: Stripe.Price | null | undefined): Exclude<Ti
   // Matching amounts only count on the current interval: the legacy $7.99/month "Unspool Unlimited" is Plus.
   if (price.recurring?.interval === BILLING_INTERVAL) {
     const byAmount = PAID_TIERS.find((t) => PLANS[t].priceCents === price.unit_amount);
+    if (byAmount) return byAmount;
+  }
+  if (price.recurring?.interval === "year") {
+    const byAmount = PAID_TIERS.find((t) => PLANS[t].yearlyCents === price.unit_amount);
     if (byAmount) return byAmount;
   }
   return "plus";
@@ -90,6 +97,7 @@ export async function syncSubscription(sub: Stripe.Subscription) {
     subscription_status: sub.status,
     current_period_start: periodStart(sub),
     current_period_end: periodEnd(sub),
+    billing_interval: sub.items.data[0]?.price?.recurring?.interval === "year" ? "year" : "week",
   };
   if (sub.trial_start) update.trial_used = true;
   const db = adminClient();
