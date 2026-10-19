@@ -1,5 +1,7 @@
 import { supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
+import { tierOf } from "@/lib/credits";
+import { PLANS } from "@/lib/plans";
 import { deleteDocument } from "@/lib/spool";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
 import { adminClient } from "@/lib/supabase/admin";
@@ -7,6 +9,35 @@ import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
+
+/** What the Manage account popup shows: email, plan name, signup rank and how the account signs in. */
+export async function GET() {
+  if (!supabaseConfigured) return notConfigured();
+  const viewer = await getViewer();
+  if (!viewer.userId) return error(401, "Not signed in", { code: "auth" });
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  const user = auth.user;
+
+  // Account #n: how many accounts were created at or before this one (one profile per auth user).
+  let accountNumber: number | null = null;
+  // The profile row is written by the signup trigger, so its own timestamp keeps this account inside the count.
+  const createdAt = (viewer.profile as { created_at?: string } | null)?.created_at ?? user?.created_at;
+  if (createdAt) {
+    const { count } = await adminClient().from("profiles").select("id", { count: "exact", head: true }).lte("created_at", createdAt);
+    accountNumber = count ?? null;
+  }
+  const providers = (user?.app_metadata?.providers as string[] | undefined) ?? [];
+  return json({
+    email: user?.email ?? viewer.email,
+    plan: PLANS[tierOf(viewer.profile)].name,
+    tier: tierOf(viewer.profile),
+    accountNumber,
+    provider: (user?.app_metadata?.provider as string | undefined) ?? "email",
+    hasPassword: providers.length === 0 || providers.includes("email"),
+    hasBilling: Boolean(viewer.profile?.stripe_customer_id),
+  });
+}
 
 /** Permanently delete the signed-in account: cancel any subscription, remove files, then the auth user. */
 export async function DELETE() {

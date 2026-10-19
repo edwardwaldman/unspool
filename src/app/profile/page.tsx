@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { ManageAccountButton } from "@/components/account/manage-account-button";
 import { AppShell } from "@/components/shell/app-shell";
 import { Suspense } from "react";
-import { CheckoutReturn, DeleteAccountButton, PasswordForm, SignInButtons } from "@/components/shell/account-actions";
+import { CheckoutReturn, SignInButtons } from "@/components/shell/account-actions";
 import { BillingButton } from "@/components/shell/billing-button";
 import { UsageMeter } from "@/components/billing/usage-meter";
 import { supabaseConfigured } from "@/lib/config";
@@ -22,7 +24,9 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ searchParams }: PageProps<"/profile">) {
+  // Older password-reset links land here; the new-password form lives on /reset.
+  if ((await searchParams).reset === "1") redirect("/reset");
   const viewer = supabaseConfigured ? await getViewer() : null;
   const tier = tierOf(viewer?.profile ?? null);
   const usage = viewer?.userId ? await usageFor(entitlementFor(viewer.profile), viewer.profile).catch(() => null) : null;
@@ -81,15 +85,12 @@ export default async function ProfilePage() {
               <Link href="/library" className="btn-secondary w-full py-3.5 text-[15px]">
                 Your library
               </Link>
-              <Suspense>
-                <PasswordForm />
-              </Suspense>
+              <ManageAccountButton />
               <form action="/auth/signout" method="post">
                 <button type="submit" className="btn-secondary w-full py-3.5 text-[15px]">
                   Sign out
                 </button>
               </form>
-              <DeleteAccountButton />
             </div>
           </div>
         )}

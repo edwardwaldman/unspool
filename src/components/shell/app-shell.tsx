@@ -5,6 +5,8 @@ import { useRef, useState } from "react";
 import { isOwnerEmail } from "@/lib/owner";
 import { Wordmark } from "../ui/icons";
 import { FreeBanner } from "./free-banner";
+import { AccountModal } from "../account/account-modal";
+import { openAccount } from "../account/account-store";
 import { AuthModal } from "../auth/auth-modal";
 import { openAuth } from "../auth/auth-store";
 import { useSessionUser } from "../auth/use-session";
@@ -113,9 +115,9 @@ export function AppShell({
               <Link href="/library" className="px-3 py-2 text-[14px] text-muted hover:text-ink">
                 Library
               </Link>
-              <Link href="/profile" className="btn-secondary px-4 py-2 text-[14px]">
+              <button type="button" onClick={openAccount} className="btn-secondary px-4 py-2 text-[14px]">
                 Account
-              </Link>
+              </button>
             </>
           ) : user === false ? (
             <>
@@ -160,6 +162,7 @@ export function AppShell({
         </div>
       )}
       <AuthModal />
+      <AccountModal />
       <ResumeStashedUpload />
       <Toaster />
     </div>
