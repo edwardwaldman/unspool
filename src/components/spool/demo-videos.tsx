@@ -125,7 +125,7 @@ export function DemoVideos() {
     <div className="flex h-full w-full bg-paper">
       <DemoLeft index={index} onPick={go} />
       <div className="flex min-w-0 flex-1 items-center justify-center lg:gap-4">
-      <div className="relative h-full w-full overflow-hidden bg-black lg:aspect-[9/16] lg:h-[calc(100dvh-112px)] lg:max-h-[920px] lg:w-auto lg:border lg:border-line">
+      <div className="relative h-full w-full overflow-hidden bg-black lg:aspect-[9/16] lg:h-[calc(100dvh-112px)] lg:max-h-[920px] lg:w-auto lg:border lg:border-line ipad:lg:aspect-auto ipad:lg:h-full ipad:lg:max-h-none ipad:lg:w-full ipad:lg:border-0">
         <div ref={scroller} className={`h-full w-full snap-y snap-mandatory overflow-y-scroll [scrollbar-width:none] ${gated ? "overflow-hidden" : ""}`}>
           {REELS.map((r, i) => (
             <section key={r.src} className="relative h-full w-full snap-start snap-always">
@@ -217,7 +217,7 @@ export function DemoVideos() {
           <section className="relative h-full w-full snap-start bg-paper" aria-hidden />
         </div>
       </div>
-      <div className="hidden flex-col items-center gap-2 lg:flex">
+      <div className="hidden flex-col items-center gap-2 lg:flex ipad:lg:hidden">
         <button type="button" aria-label="Previous reel" onClick={() => go(index - 1)} disabled={index === 0} className="flex h-12 w-12 items-center justify-center border border-line text-ink disabled:opacity-30">
           <ChevronUp size={20} />
         </button>
@@ -413,7 +413,7 @@ const LOCKED = SAMPLE_SPOOL.reels.slice(REELS.length);
 function DemoLeft({ index, onPick }: { index: number; onPick: (i: number) => void }) {
   const sp = SAMPLE_SPOOL;
   return (
-    <aside className="hidden w-[320px] shrink-0 flex-col overflow-y-auto border-r border-line lg:flex">
+    <aside className="hidden w-[320px] shrink-0 flex-col overflow-y-auto border-r border-line lg:flex ipad:lg:hidden">
       <div className="px-5 pb-4 pt-5">
         <div className="text-[12.5px] text-muted">PDF, {sp.pageCount} pages, {sp.wordCount?.toLocaleString("en-US")} words</div>
         <h1 className="mt-2 font-display text-[22px] leading-[1.1] text-ink">{sp.title}</h1>
@@ -474,7 +474,7 @@ function DemoLeft({ index, onPick }: { index: number; onPick: (i: number) => voi
 function DemoRight({ reel, index }: { reel: DemoReel; index: number }) {
   const fmt = (t: number) => `0:${String(Math.floor(t)).padStart(2, "0")}`;
   return (
-    <aside className="hidden w-[360px] shrink-0 overflow-y-auto border-l border-line p-5 xl:block">
+    <aside className="hidden w-[360px] shrink-0 overflow-y-auto border-l border-line p-5 xl:block ipad:xl:hidden">
       <div className="flex items-center justify-between">
         <span className="text-[13px] font-medium text-muted">About this reel</span>
         <span className="text-[12px] text-sage">Ready</span>

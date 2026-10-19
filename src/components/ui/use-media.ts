@@ -24,7 +24,8 @@ export function useLayout(): "desktop" | "mobile" | null {
       m.addEventListener("change", cb);
       return () => m.removeEventListener("change", cb);
     },
-    () => (window.matchMedia("(min-width: 1024px)").matches ? "desktop" : "mobile"),
+    // iPads (flagged by the viewport script in layout.tsx) get the full-screen reel feed, like a phone.
+    () => (window.matchMedia("(min-width: 1024px)").matches && !document.documentElement.hasAttribute("data-ipad") ? "desktop" : "mobile"),
     () => null,
   );
 }

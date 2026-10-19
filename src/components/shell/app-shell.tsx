@@ -91,14 +91,14 @@ export function AppShell({
       }}
     >
       {picker.el}
-      <div className={`fixed inset-x-0 z-30 ${barShown || workbench ? "top-0 lg:top-16 ipad:lg:top-20" : "top-0"}`}>
+      <div className={`fixed inset-x-0 z-30 ${barShown || workbench ? "top-0 lg:top-16 ipad:lg:top-0" : "top-0"}`}>
         <FreeBanner signedIn={Boolean(user)} />
       </div>
 
       {/* Top bar: slides in once you scroll */}
       <header
         className={`fixed inset-x-0 top-0 z-40 h-16 ipad:h-20 items-center gap-8 border-b border-line bg-paper px-5 transition-transform duration-300 lg:px-10 ${
-          feed || workbench ? "hidden lg:flex" : "flex"
+          feed || workbench ? `hidden lg:flex ${workbench ? "ipad:lg:hidden" : ""}` : "flex"
         } ${barShown || workbench ? "translate-y-0" : "-translate-y-full"}`}
       >
         <Link href="/" className="inline-block origin-left ipad:scale-[1.35]">
@@ -141,7 +141,7 @@ export function AppShell({
 
       {/* Content */}
       <main
-        className={`relative flex min-h-0 min-w-0 flex-1 ${workbench ? "lg:pt-16 ipad:lg:pt-20" : feed ? "items-center justify-center lg:py-5" : "overflow-y-auto"}`}
+        className={`relative flex min-h-0 min-w-0 flex-1 ${workbench ? "lg:pt-16 ipad:lg:pt-0" : feed ? "items-center justify-center lg:py-5" : "overflow-y-auto"}`}
         onScroll={(e) => setBarShown(e.currentTarget.scrollTop > 12)}
         onWheel={(e) => {
           if (e.deltaY > 4) setBarShown(true);
