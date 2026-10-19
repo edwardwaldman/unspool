@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { openAuth } from "../auth/auth-store";
@@ -55,8 +55,10 @@ export function PaywallSheet({
   };
 
   const startUpload = () => openAuth("signup", { next: "/library", onDone: () => (window.location.href = "/library") });
+  // The demo: no sheet, just the upload block centered on a full-screen gate that can't be dismissed.
+  if (spool.demo) return <DemoGate open={open} onUpload={startUpload} />;
   return (
-    <Sheet open={open} onClose={onClose} label="Sign in" locked={spool.demo} above={spool.demo ? <GateUpload onClick={startUpload} /> : undefined}>
+    <Sheet open={open} onClose={onClose} label="Sign in">
       {spool.demo ? (
         <div className="pb-1">
           <div className="label">That&apos;s the sample</div>
@@ -127,11 +129,23 @@ export function PaywallSheet({
 }
 
 
-/** The demo gate's centerpiece: the landing page's upload button, arrow and tags, above the sheet. */
-function GateUpload({ onClick }: { onClick: () => void }) {
+/** Full-screen gate after the demo reels: the landing page's upload block, centered. No close, no escape keys. */
+function DemoGate({ open, onUpload }: { open: boolean; onUpload: () => void }) {
+  useEffect(() => {
+    if (!open) return;
+    const block = (e: KeyboardEvent) => {
+      if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", " ", "Escape", "j", "k"].includes(e.key) && !(e.target instanceof HTMLInputElement)) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("keydown", block, true);
+    return () => window.removeEventListener("keydown", block, true);
+  }, [open]);
+  if (!open) return null;
   return (
-    <div className="absolute inset-x-0 top-0 z-[1] flex items-center justify-center overflow-hidden px-4" style={{ bottom: 300 }}>
-      <BigUpload onClick={onClick} demoLink={false} />
+    <div role="dialog" aria-modal aria-label="Sign up" className="fixed inset-0 z-[60] flex items-center justify-center overflow-hidden bg-paper/90 px-4 backdrop-blur-[3px]" onWheel={(e) => e.preventDefault()}>
+      <BigUpload onClick={onUpload} demoLink={false} />
     </div>
   );
 }
