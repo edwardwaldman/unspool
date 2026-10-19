@@ -22,7 +22,11 @@ const SCRIPT_EFFORT = (process.env.ANTHROPIC_SCRIPT_EFFORT ?? "low") as Effort;
 
 let client: Anthropic | null = null;
 function anthropic() {
-  if (!client) client = new Anthropic({ maxRetries: 3 });
+  if (!client) {
+    // Org-level keys (not created inside a workspace) must name the workspace on every request.
+    const workspace = process.env.ANTHROPIC_WORKSPACE_ID?.trim();
+    client = new Anthropic({ maxRetries: 3, ...(workspace ? { defaultHeaders: { "anthropic-workspace-id": workspace } } : {}) });
+  }
   return client;
 }
 
