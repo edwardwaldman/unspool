@@ -89,8 +89,10 @@ function Tag({ children, className, delay = 0 }: { children: React.ReactNode; cl
 /** The one line of copy, with a self-drawing underline and a few floating tags. */
 function Headline() {
   return (
-    <div className="relative px-4 md:px-24">
-      <Tag className="-left-2 -top-6 -rotate-6" delay={0.4}>.pdf</Tag>
+    <div className="px-4 md:px-24">
+      {/* The tag hangs off the headline text itself, so it never drifts over the logo on mid-size screens. */}
+      <div className="relative mx-auto w-fit">
+      <Tag className="-right-6 -top-7 rotate-6" delay={0.4}>.pdf</Tag>
       <h1 className="text-center font-headline text-[30px] font-bold leading-[1.1] tracking-[-0.02em] md:text-[50px]">
         One document{" "}
         <span className="relative inline-block text-thread">
@@ -118,6 +120,7 @@ function Headline() {
           </svg>
         </span>
       </h1>
+      </div>
     </div>
   );
 }
