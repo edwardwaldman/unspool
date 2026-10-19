@@ -27,7 +27,8 @@ export async function POST(req: Request) {
   // Free accounts get one document, ever (counted from the upload ledger, so deleting it doesn't give it back),
   // unless the owner has switched on open access.
   const owner = viewer.ownerUnlimited;
-  if (!owner && !viewer.subscribed && !(await appSettings()).openAccess && (await freeDocumentUsed(viewer.userId))) {
+  const oneFree = !owner && !viewer.subscribed && !(await appSettings()).openAccess;
+  if (oneFree && (await freeDocumentUsed(viewer.userId))) {
     return error(402, "Free accounts get 1 document. Upgrade to unspool more.", { code: "free_used" });
   }
 
@@ -36,7 +37,8 @@ export async function POST(req: Request) {
   const limit = owner ? 1_000_000 : viewer.subscribed ? LIMITS.subscriberUploadsPerDay : LIMITS.freeUploadsPerDay;
   const allowed = await claimUsage({
     kind: "upload",
-    scope: viewer.subscribed ? "user" : "user_or_ip",
+    // first_user_or_ip re-checks "never uploaded" under the same lock, so parallel requests can't each get a free document.
+    scope: viewer.subscribed ? "user" : oneFree ? "first_user_or_ip" : "user_or_ip",
     limit,
     userId: viewer.userId,
     ipHash,

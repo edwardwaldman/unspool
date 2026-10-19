@@ -107,6 +107,19 @@ export async function getViewer(): Promise<Viewer> {
       .single<Profile>();
     profile = created;
   }
+  // The owner bypass hangs off the email, so never trust it from the token or the profile alone: confirm with
+  // Supabase Auth that this account's current, confirmed email really is the owner's (an unconfirmed sign-up,
+  // a pending email change or a stale profile row must not unlock the owner panel or unlimited use).
+  if (isOwnerEmail(email) || isOwnerEmail(profile?.email)) {
+    const { data: auth } = await admin.auth.admin.getUserById(userId);
+    const verified = Boolean(auth.user?.email_confirmed_at) && isOwnerEmail(auth.user?.email) && isOwnerEmail(email);
+    if (!verified) {
+      // Not the owner: strip the owner email so ownerUnlimited()/tierOf() can't match it anywhere downstream.
+      if (profile && isOwnerEmail(profile.email)) profile = { ...profile, email: isOwnerEmail(email) ? null : email };
+      const notOwner = { isOwner: false, realUserId: userId, realEmail: email, ownerUnlimited: false, ownerView: null };
+      return { userId, email: isOwnerEmail(email) ? null : email, profile, anonToken, subscribed: isSubscribed(profile), ...notOwner };
+    }
+  }
   const real = { isOwner: false, realUserId: userId, realEmail: email, ownerUnlimited: ownerUnlimited(profile), ownerView: null };
   if (!isOwnerEmail(email)) return { userId, email, profile, anonToken, subscribed: isSubscribed(profile), ...real };
 

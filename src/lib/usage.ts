@@ -1,8 +1,8 @@
 import { adminClient } from "./supabase/admin";
 
 export type UsageKind = "upload" | "retry";
-/** What the 24h limit counts by: this user, this user or this IP, or this document. */
-export type UsageScope = "user" | "user_or_ip" | "document";
+/** What the 24h limit counts by: this user, this user or this IP (first_user_or_ip: and only if the user has never uploaded), or this document. */
+export type UsageScope = "user" | "user_or_ip" | "first_user_or_ip" | "document";
 
 /**
  * Atomically record one use if under the rolling 24h limit (public.claim_usage, see migrations).

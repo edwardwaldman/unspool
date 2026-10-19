@@ -46,8 +46,10 @@ export async function DELETE() {
   if (!viewer.userId) return error(401, "Not signed in", { code: "auth" });
   const db = adminClient();
 
-  const subId = viewer.profile?.stripe_subscription_id;
-  if (subId && stripeConfigured() && viewer.profile?.subscription_status !== "canceled") {
+  // The stored profile, not viewer.profile: an owner test view masks the real subscription, which must still be cancelled.
+  const { data: stored } = await db.from("profiles").select("stripe_subscription_id,subscription_status").eq("id", viewer.userId).maybeSingle();
+  const subId = stored?.stripe_subscription_id as string | null | undefined;
+  if (subId && stripeConfigured() && stored?.subscription_status !== "canceled") {
     try {
       await getStripe().subscriptions.cancel(subId);
     } catch (err) {
@@ -62,7 +64,9 @@ export async function DELETE() {
   const { data: docs } = await db.from("documents").select("id,file_path").eq("user_id", viewer.userId);
   for (const doc of docs ?? []) await deleteDocument(doc);
 
-  await db.from("usage_events").delete().eq("user_id", viewer.userId);
+  // Unlink rather than delete: the hashed-IP rows must keep counting toward the 24h per-IP upload cap, or
+  // delete-and-re-sign-up would hand out unlimited free documents. The nightly cleanup drops them after 3 days.
+  await db.from("usage_events").update({ user_id: null, document_id: null }).eq("user_id", viewer.userId);
   // Profiles and any remaining rows cascade from auth.users.
   const { error: delErr } = await db.auth.admin.deleteUser(viewer.userId);
   if (delErr) return error(500, "Couldn't delete your account. Try again or contact us.");

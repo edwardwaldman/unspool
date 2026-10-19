@@ -20,7 +20,10 @@ const REEL_BUDGET_MS = 285_000;
 function errorDetail(err: unknown): string {
   const e = err as { status?: number; message?: string; name?: string };
   const raw = `${e?.name ?? "Error"}${e?.status ? ` ${e.status}` : ""}: ${e?.message ?? String(err)}`;
-  return raw.replace(/(sk-|sk_|re_|whsec_|eyJ)[A-Za-z0-9._-]{6,}/g, "$1***").slice(0, 1000);
+  return raw
+    .replace(/(sk-|sk_|rk_|re_|whsec_|sb_secret_|eyJ)[A-Za-z0-9._-]{6,}/g, "$1***")
+    .replace(/((?:Bearer|Key|Token)\s+)[^\s"',]{6,}/gi, "$1***")
+    .slice(0, 1000);
 }
 
 function friendlyError(err: unknown): string {

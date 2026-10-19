@@ -13,7 +13,8 @@ export async function POST(req: Request) {
   try {
     event = await getStripe().webhooks.constructEventAsync(await req.text(), signature, secret);
   } catch (err) {
-    return error(400, `Webhook signature verification failed: ${(err as Error).message}`);
+    console.warn("[stripe] webhook signature verification failed", (err as Error).message);
+    return error(400, "Webhook signature verification failed");
   }
 
   switch (event.type) {

@@ -1,3 +1,4 @@
+import "server-only";
 import Stripe from "stripe";
 import { entitlementFor, unlockWithCredits } from "./credits";
 import { DOCUMENT_COLUMNS, type DocumentRow } from "./db-types";

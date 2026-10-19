@@ -31,10 +31,20 @@ function clean(text: string) {
 }
 
 async function extractPdf(buf: Buffer, maxPages: number) {
-  const { extractText, getDocumentProxy } = await import("unpdf");
+  const { getDocumentProxy } = await import("unpdf");
   const pdf = await getDocumentProxy(new Uint8Array(buf));
-  const { totalPages, text } = await extractText(pdf, { mergePages: false });
-  const pages = (text as string[]).slice(0, maxPages);
+  const totalPages = pdf.numPages;
+  // Only parse the pages this tier reads, one at a time: unpdf's extractText() parses every page at once,
+  // so a small file declaring tens of thousands of pages could exhaust the function's memory and time.
+  const pages: string[] = [];
+  try {
+    for (let n = 1; n <= Math.min(totalPages, maxPages); n++) {
+      const content = await (await pdf.getPage(n)).getTextContent();
+      pages.push(content.items.map((item) => ("str" in item ? item.str + (item.hasEOL ? "\n" : "") : "")).join(""));
+    }
+  } finally {
+    await pdf.loadingTask.destroy().catch(() => undefined);
+  }
   return {
     text: pages.map((p, i) => `[Page ${i + 1}]\n${p}`).join("\n\n"),
     pageCount: totalPages,

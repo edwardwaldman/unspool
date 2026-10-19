@@ -232,7 +232,9 @@ export async function POST(req: Request) {
     }
     const { data: docs } = await db.from("documents").select("id,file_path").eq("user_id", body.userId);
     for (const doc of docs ?? []) await deleteDocument(doc);
-    await db.from("usage_events").delete().eq("user_id", body.userId);
+    // Unlink rather than delete: the hashed-IP rows must keep counting toward the 24h per-IP upload cap, or
+    // delete-and-re-sign-up would hand out unlimited free documents. The nightly cleanup drops them after 3 days.
+    await db.from("usage_events").update({ user_id: null, document_id: null }).eq("user_id", body.userId);
     const { error: delErr } = await db.auth.admin.deleteUser(body.userId);
     if (delErr) return error(500, "Couldn't delete the account");
     return json({ ok: true });

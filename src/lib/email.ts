@@ -1,3 +1,4 @@
+import "server-only";
 // Owner-sent email through Resend's REST API (test sends and broadcasts). Account emails (sign-up codes,
 // password resets) are sent by Supabase Auth, not from here.
 
