@@ -126,7 +126,7 @@ export function DemoVideos() {
       <DemoLeft index={index} onPick={go} />
       <div className="flex min-w-0 flex-1 items-center justify-center lg:gap-4">
       <div className="relative h-full w-full overflow-hidden bg-black lg:aspect-[9/16] lg:h-[calc(100dvh-112px)] lg:max-h-[920px] lg:w-auto lg:border lg:border-line ipad:lg:aspect-auto ipad:lg:h-full ipad:lg:max-h-none ipad:lg:w-full ipad:lg:border-0">
-        <div ref={scroller} className={`h-full w-full snap-y snap-mandatory overflow-y-scroll [scrollbar-width:none] ${gated ? "overflow-hidden" : ""}`}>
+        <div ref={scroller} className={`h-full w-full snap-y snap-mandatory overflow-y-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${gated ? "overflow-hidden" : ""}`}>
           {REELS.map((r, i) => (
             <section key={r.src} className="relative h-full w-full snap-start snap-always">
               <video
