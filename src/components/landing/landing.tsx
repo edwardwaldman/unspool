@@ -61,9 +61,9 @@ function UploadButton() {
         type="button"
         onClick={() => input.current?.click()}
         disabled={Boolean(pending)}
-        className="flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-10 py-4 text-[18px] font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-60 lg:px-14 lg:py-5 lg:text-[22px]"
+        className="flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-10 py-4 text-[18px] font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-60 lg:px-20 lg:py-7 lg:text-[28px]"
       >
-        {pending ? "Opening your feed" : (<><UploadIcon size={22} /> Upload a document</>)}
+        {pending ? "Opening your feed" : (<><UploadIcon size={26} /> Upload a document</>)}
       </button>
       <Link href="/s/demo" className="-mt-1 flex items-center justify-center gap-2 text-[15px] text-muted underline decoration-line underline-offset-4 transition-colors hover:text-ink lg:text-[17px]">
         <PlayIcon size={14} /> Watch a demo
@@ -137,7 +137,7 @@ export function Landing() {
   const animFade = useTransform(easedY, [150, 900], [1, 0.25]);
   const cueFade = useTransform(easedY, [40, 420], [1, 0]);
   const cueY = useTransform(easedY, [0, 420], [0, 24]);
-  const k = lg ? Math.max(0.6, Math.min(2.8, (vh - 315) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
+  const k = lg ? Math.max(0.6, Math.min(2.8, (vh - 355) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
 
   return (
     <div>
@@ -171,14 +171,14 @@ export function Landing() {
             type="button"
             aria-label="See how it works"
             onClick={(e) => e.currentTarget.closest("main")?.scrollBy({ top: window.innerHeight * 0.9, behavior: "smooth" })}
-            className="shrink-0 lg:-my-5"
+            className="shrink-0 lg:-my-6"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.3, type: "spring", stiffness: 320, damping: 16 }}
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.94 }}
           >
-            <span className="relative flex h-[124px] w-[124px] items-center justify-center lg:h-[112px] lg:w-[112px]">
+            <span className="relative flex h-[124px] w-[124px] items-center justify-center lg:h-[144px] lg:w-[144px]">
               <motion.svg viewBox="0 0 100 100" className="absolute inset-0" animate={{ rotate: 360 }} transition={{ duration: 14, repeat: Infinity, ease: "linear" }}>
                 <defs>
                   <path id="cue-ring" d="M50 50 m-38 0 a38 38 0 1 1 76 0 a38 38 0 1 1 -76 0" />
@@ -187,8 +187,8 @@ export function Landing() {
                   <textPath href="#cue-ring" textLength="236" lengthAdjust="spacing">see how it works · see how it works ·</textPath>
                 </text>
               </motion.svg>
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-thread text-paper lg:h-16 lg:w-16">
-                <motion.svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" animate={{ y: [-3, 4, -3] }} transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}>
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-thread text-paper lg:h-20 lg:w-20">
+                <motion.svg width="26" height="26" viewBox="0 0 24 24" className="lg:h-8 lg:w-8" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" animate={{ y: [-3, 4, -3] }} transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}>
                   <path d="M12 4v15M5 12l7 7 7-7" />
                 </motion.svg>
               </span>
