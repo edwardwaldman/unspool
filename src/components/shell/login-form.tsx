@@ -51,7 +51,7 @@ export function LoginForm({ next, error }: { next: string; error?: string }) {
             <input
               type="email"
               required
-              placeholder="Email"
+              placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="field w-full px-4 py-3.5 text-[16px]"

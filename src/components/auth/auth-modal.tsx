@@ -512,7 +512,7 @@ export function AuthModal() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email"
+                  placeholder="Enter your email"
                   autoComplete="email"
                   className="field mt-1.5 w-full px-3.5 py-2.5 text-[14px]"
                 />
@@ -523,7 +523,7 @@ export function AuthModal() {
                 onChange={editPassword(setPassword)}
                 invalid={Boolean(pwErr)}
                 shake={shake}
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 autoComplete={signup ? "new-password" : "current-password"}
               />
               {signup ? (
@@ -534,7 +534,7 @@ export function AuthModal() {
                     onChange={editPassword(setConfirm)}
                     invalid={Boolean(pwErr)}
                     shake={shake}
-                    placeholder="••••••••"
+                    placeholder="Re-enter your password"
                     autoComplete="new-password"
                   />
                   {pwErr && (

@@ -95,7 +95,7 @@ export function PaywallSheet({
                 <input
                   type="email"
                   required
-                  placeholder="Email"
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="field min-w-0 flex-1 px-4 py-3 text-[16px]"
