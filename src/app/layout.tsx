@@ -57,7 +57,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-// iPads get the site as if Safari were zoomed out to 75%: the layout viewport is widened by 1/0.75 and Safari
+// iPads get the site as if Safari were zoomed out to 85%: the layout viewport is widened by 1/0.85 and Safari
 // scales it to fit. Phones and computers keep device-width. Re-applied on rotation and if the meta tag is re-rendered.
 // Sitewide structured data: who we are and what the site is.
 const SITE_LD = JSON.stringify({
@@ -79,7 +79,7 @@ const SITE_LD = JSON.stringify({
 }).replace(/</g, "\\u003c");
 
 const IPAD_ZOOM = `(function(){var ua=navigator.userAgent;if(!(/iPad/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)))return;document.documentElement.setAttribute("data-ipad","");
-function want(){var a=screen.width,b=screen.height,land=matchMedia("(orientation: landscape)").matches,w=land?Math.max(a,b):Math.min(a,b);return "width="+Math.round(w/0.75)+", viewport-fit=cover";}
+function want(){var a=screen.width,b=screen.height,land=matchMedia("(orientation: landscape)").matches,w=land?Math.max(a,b):Math.min(a,b);return "width="+Math.round(w/0.85)+", viewport-fit=cover";}
 function apply(){var c=want(),ms=document.querySelectorAll('meta[name="viewport"]');if(!ms.length){var m=document.createElement("meta");m.name="viewport";document.head.appendChild(m);ms=[m];}for(var i=0;i<ms.length;i++)if(ms[i].content!==c)ms[i].content=c;}
 apply();document.addEventListener("DOMContentLoaded",apply);addEventListener("orientationchange",function(){setTimeout(apply,50)});addEventListener("resize",apply);
 new MutationObserver(apply).observe(document.head,{subtree:true,childList:true,attributes:true,attributeFilter:["content"]});})();`;
