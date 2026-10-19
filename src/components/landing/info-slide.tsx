@@ -95,7 +95,7 @@ function BigUpload() {
         <Float className="-left-24 top-1/2 -translate-y-1/2 -rotate-3" delay={1}>♪ voiceover</Float>
         <Float className="-right-40 top-[46%] rotate-2 border-thread/60 text-thread" delay={1.4}>✓ quiz in every reel</Float>
         {/* hand-drawn "start here" arrow */}
-        <div aria-hidden className="pointer-events-none absolute -top-12 left-1/2 hidden translate-x-[70px] items-start gap-1 md:flex">
+        <div aria-hidden className="pointer-events-none absolute -top-[22px] left-1/2 flex origin-bottom-left -translate-x-[66px] scale-[0.8] items-start gap-1 md:-top-12 md:translate-x-[70px] md:scale-100">
           <span className="-rotate-6 font-hook text-[20px] text-thread">start here</span>
           <svg width="88" height="99" viewBox="0 0 80 90" className="-ml-1 mt-2 overflow-visible">
             <motion.path
