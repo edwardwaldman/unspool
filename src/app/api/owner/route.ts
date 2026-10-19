@@ -1,11 +1,13 @@
 import { supabaseConfigured } from "@/lib/config";
+import { compose, emailConfigured, sendBatch, sendEmail, validEmail } from "@/lib/email";
 import { error, json, notConfigured } from "@/lib/http";
 import { isOwnerEmail } from "@/lib/owner";
 import { deleteDocument } from "@/lib/spool";
+import { appSettings, setOpenAccess } from "@/lib/settings";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
 import { adminClient } from "@/lib/supabase/admin";
 import { getViewer } from "@/lib/viewer";
-import { visitAnalytics } from "@/lib/visits";
+import { lookupVisits, visitAnalytics } from "@/lib/visits";
 
 export const dynamic = "force-dynamic";
 
@@ -31,13 +33,35 @@ function deployment() {
     { name: "Background jobs", on: has("JOB_SECRET"), hint: "Set JOB_SECRET" },
     { name: "Nightly cleanup", on: has("CRON_SECRET"), hint: "Set CRON_SECRET" },
     { name: "Abuse limits salt", on: has("IP_HASH_SALT"), hint: "Set IP_HASH_SALT" },
+    { name: "Email (Resend)", on: emailConfigured(), hint: "Set RESEND_API_KEY (and EMAIL_FROM on a verified domain) for test emails and broadcasts" },
   ];
 }
 
-export async function GET() {
+/** Every account with an email (auth.users, all pages). */
+async function accountEmails() {
+  const db = adminClient();
+  const out: { email: string; updates: boolean }[] = [];
+  for (let page = 1; page <= 50; page++) {
+    const { data } = await db.auth.admin.listUsers({ page, perPage: 1000 });
+    const users = data?.users ?? [];
+    for (const u of users) if (u.email && validEmail(u.email)) out.push({ email: u.email, updates: u.user_metadata?.marketing_opt_in === true });
+    if (users.length < 1000) break;
+  }
+  return out;
+}
+
+const ACCOUNT_FOOTER = "You're getting this because you have an Unspool account. To stop these emails, reply with \"unsubscribe\" or write to hello@unspool.cc.";
+
+/** The panel's data, or with ?lookup=<ip or email, or part of one> the IP ↔ email lookup. */
+export async function GET(req: Request) {
   if (!supabaseConfigured) return notConfigured();
   if (!(await owner())) return error(404, "Not found");
   const db = adminClient();
+  const lookup = new URL(req.url).searchParams.get("lookup");
+  if (lookup !== null) {
+    if (lookup.trim().length < 2) return error(400, "Type at least 2 characters of an IP or email");
+    return json(await lookupVisits(lookup));
+  }
 
   const { data: list } = await db.auth.admin.listUsers({ page: 1, perPage: 500 });
   const users = list?.users ?? [];
@@ -76,6 +100,8 @@ export async function GET() {
     .sort((a, b) => Number(b.owner) - Number(a.owner) || b.joined.localeCompare(a.joined));
 
   return json({
+    build: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local",
+    openAccess: (await appSettings()).openAccess,
     stats: {
       accounts: accounts.length,
       paying: accounts.filter((a) => a.subscription).length,
@@ -104,14 +130,87 @@ export async function GET() {
   });
 }
 
-/** { action: "plan", userId, tier: "free"|"plus"|"pro"|"ultra" } or { action: "delete", userId }. */
+type Body = { action?: string; userId?: string; tier?: string; on?: boolean; to?: string; subject?: string; message?: string; audience?: string; confirm?: string };
+
+/**
+ * { action: "plan", userId, tier } · { action: "delete", userId } · { action: "open_access", on } ·
+ * { action: "test_email", to } · { action: "outcomes" } · { action: "audience" } ·
+ * { action: "broadcast", subject, message, audience: "updates"|"everyone", confirm: "SEND" }.
+ */
 export async function POST(req: Request) {
   if (!supabaseConfigured) return notConfigured();
   const me = await owner();
   if (!me) return error(404, "Not found");
-  const body = (await req.json().catch(() => ({}))) as { action?: string; userId?: string; tier?: string };
-  if (!body.userId || !/^[0-9a-f-]{36}$/i.test(body.userId)) return error(400, "Pick an account");
+  const body = (await req.json().catch(() => ({}))) as Body;
   const db = adminClient();
+
+  if (body.action === "open_access") {
+    if (typeof body.on !== "boolean") return error(400, "Say on or off");
+    if (!(await setOpenAccess(body.on))) return error(500, "Couldn't save the setting");
+    return json({ ok: true, openAccess: body.on });
+  }
+
+  if (body.action === "test_email") {
+    const to = body.to?.trim() ?? "";
+    if (!validEmail(to)) return error(400, "That doesn't look like an email address");
+    if (!emailConfigured()) return error(503, "RESEND_API_KEY isn't set, so no email can be sent");
+    const err = await sendEmail({ to, ...compose("Unspool test email", "This is a test email from the Unspool owner panel. If you can read it, sending works.", "Sent from the Unspool owner panel.") });
+    if (err) return error(502, `Resend refused it: ${err}`);
+    return json({ ok: true });
+  }
+
+  if (body.action === "outcomes") {
+    const { data: profiles } = await db.from("profiles").select("id,email,plan,tier,billing_interval,subscription_status,trial_used,comp_tier,updated_at");
+    const rows = (profiles ?? []).filter((p) => !isOwnerEmail(p.email));
+    const KEYS = ["trialing", "active", "past_due", "canceled", "none"] as const;
+    const bucket = (s: string | null) => ((KEYS as readonly string[]).includes(s ?? "") ? (s as (typeof KEYS)[number]) : "none");
+    const since = new Date(Date.now() - 90 * 864e5).toISOString();
+    const { data: pressedRows } = await db.from("visits").select("user_id").eq("checkout", true).not("user_id", "is", null).gte("started_at", since).limit(5000);
+    const pressed = new Set((pressedRows ?? []).map((r) => r.user_id as string));
+    const statusOf = new Map(rows.map((p) => [p.id, bucket(p.subscription_status)]));
+    const pressedList = [...pressed].filter((id) => statusOf.has(id));
+    return json({
+      groups: KEYS.map((k) => {
+        const list = rows.filter((p) => bucket(p.subscription_status) === k);
+        return {
+          key: k,
+          count: list.length,
+          accounts: (k === "none" ? list.filter((p) => p.trial_used) : list)
+            .sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""))
+            .slice(0, 12)
+            .map((p) => ({ email: p.email ?? "(no email)", tier: p.tier, interval: p.billing_interval, trialUsed: Boolean(p.trial_used), comp: p.comp_tier })),
+        };
+      }),
+      checkout: {
+        pressed: pressedList.length,
+        trialing: pressedList.filter((id) => statusOf.get(id) === "trialing").length,
+        paying: pressedList.filter((id) => ["active", "past_due"].includes(statusOf.get(id) ?? "")).length,
+      },
+    });
+  }
+
+  if (body.action === "audience") {
+    const list = await accountEmails();
+    return json({ everyone: list.length, updates: list.filter((a) => a.updates).length, configured: emailConfigured() });
+  }
+
+  if (body.action === "broadcast") {
+    if (body.confirm !== "SEND") return error(400, "Type SEND to confirm");
+    if (!emailConfigured()) return error(503, "RESEND_API_KEY isn't set, so no email can be sent");
+    const subject = body.subject?.trim().slice(0, 200) ?? "";
+    const message = body.message?.trim().slice(0, 20_000) ?? "";
+    if (!subject || !message) return error(400, "Write a subject and a message");
+    if (body.audience !== "updates" && body.audience !== "everyone") return error(400, "Pick an audience");
+    const list = (await accountEmails()).filter((a) => body.audience === "everyone" || a.updates);
+    const to = [...new Set(list.map((a) => a.email.toLowerCase()))];
+    if (!to.length) return error(400, "Nobody to send to");
+    const mail = compose(subject, message, ACCOUNT_FOOTER);
+    const { sent, errors } = await sendBatch(to.map((t) => ({ to: t, ...mail })));
+    if (!sent) return error(502, `Nothing was sent: ${errors[0] ?? "unknown error"}`);
+    return json({ ok: true, sent, failed: to.length - sent, errors: errors.slice(0, 3) });
+  }
+
+  if (!body.userId || !/^[0-9a-f-]{36}$/i.test(body.userId)) return error(400, "Pick an account");
 
   if (body.action === "plan") {
     const tier = body.tier ?? "";

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     "What Unspool collects, why, which providers process it, how long we keep it, and how to exercise your privacy rights, including Do Not Sell or Share.",
 };
 
-const EFFECTIVE = "October 18, 2026";
+const EFFECTIVE = "October 19, 2026";
 const PRIVACY = "privacy@unspool.cc";
 const CONTACT = "hello@unspool.cc";
 const ANON_DAYS = LIMITS.anonymousRetentionDays;
@@ -176,7 +176,7 @@ export default function PrivacyPage() {
             <li>process payments, unlock documents, manage subscriptions, and keep records we need for accounting and tax;</li>
             <li>enforce upload limits and our Terms, and detect and prevent fraud, abuse and security incidents;</li>
             <li>diagnose and fix errors and keep the Service reliable;</li>
-            <li>send you service emails (such as sign-up codes and password resets) and respond to your messages;</li>
+            <li>send you service emails (such as sign-up codes, password resets and important notices about the Service or your account) and respond to your messages;</li>
             <li>if you opted in, send you occasional product updates, which you can stop at any time; and</li>
             <li>comply with the law and respond to lawful requests.</li>
           </ul>
@@ -263,7 +263,7 @@ export default function PrivacyPage() {
               ["OpenAI, or ElevenLabs if configured", "Text-to-speech voiceovers", "The spoken lines of each script"],
               ["fal.ai or Replicate", "Generates illustrations for reel videos", "AI-written scene descriptions based on your document (not the document itself)"],
               ["Stripe", "Payments, subscriptions, billing portal, receipts", "Email, account reference, the item purchased, payment and billing details you enter"],
-              ["Resend", "Delivers our account emails (sign-up codes, password resets) on behalf of our authentication provider", "Your email address and the email content"],
+              ["Resend", "Delivers our emails: account emails (sign-up codes, password resets) on behalf of our authentication provider, service notices, and product updates if you opted in", "Your email address and the email content"],
               ["Google (only if you choose it)", "Sign in with Google", "The sign-in request; Google shares your email and basic profile with us"],
             ]}
           />
@@ -355,7 +355,7 @@ export default function PrivacyPage() {
           <ul>
             <li>delete any document from your library, and delete your entire account from your profile;</li>
             <li>change your password from your profile;</li>
-            <li>stop product update emails at any time by using the unsubscribe link or emailing us; and</li>
+            <li>stop product update emails at any time by replying &quot;unsubscribe&quot;, using your email app&apos;s unsubscribe option, or emailing us; and</li>
             <li>clear the preferences stored on your device through your browser settings.</li>
           </ul>
           <LegalH3>EEA, UK and Swiss residents</LegalH3>

@@ -6,17 +6,30 @@ import { toast } from "../ui/toast";
 type Ip = { ip: string; country: string | null };
 type Account = { id: string; email: string; provider: string; joined: string; lastIn: string | null; owner: boolean; comp: string | null; subscription: string | null; documents: number; ips: Ip[] };
 type TrailEvent = { t: number; name: string; detail?: string };
-type Visit = { id: string; email: string | null; ip: string | null; country: string | null; returning: boolean; checkout: boolean; signedUp: boolean; duration: number; at: string; referrer: string | null; device: string | null; events: TrailEvent[] };
+type Visit = { id: string; email: string | null; owner: boolean; ip: string | null; country: string | null; returning: boolean; checkout: boolean; signedUp: boolean; duration: number; at: string; referrer: string | null; device: string | null; events: TrailEvent[] };
 type Address = { ip: string; country: string | null; emails: string[]; lastSeen: string; visits: number; shared: boolean };
 type BeforeSignup = {
   visits: number;
   medianStay: number;
   leftAtOnce: number;
   longest: number;
+  list: { id: string; ip: string | null; country: string | null; at: string; duration: number; events: TrailEvent[] }[];
   stops: { key: string; label: string; count: number; leads: { trail: string; n: number }[] }[];
 };
 type Doc = { id: string; file: string; email: string; status: string; error: string | null; ready: number; total: number | null; at: string };
+type Lookup = {
+  q: string;
+  ipToEmails: { ip: string; country: string | null; emails: string[] }[];
+  emailToIps: { email: string; ips: Ip[] }[];
+  visits: { id: string; email: string | null; owner: boolean; ip: string | null; country: string | null; at: string; duration: number; events: TrailEvent[] }[];
+};
+type Outcomes = {
+  groups: { key: string; count: number; accounts: { email: string; tier: string | null; interval: string | null; trialUsed: boolean; comp: string | null }[] }[];
+  checkout: { pressed: number; trialing: number; paying: number };
+};
 type Data = {
+  build: string;
+  openAccess: boolean;
   stats: { accounts: number; paying: number; comped: number; documents: number; readyReels: number };
   deployment: { name: string; on: boolean; hint: string }[];
   accounts: Account[];
@@ -100,6 +113,17 @@ function Trail({ events }: { events: TrailEvent[] }) {
   );
 }
 
+/** POST an owner action; toasts the error and returns null when it fails. */
+async function post<T = Record<string, unknown>>(body: Record<string, unknown>): Promise<T | null> {
+  const res = await fetch("/api/owner", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  const b = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    toast(b.error ?? "That didn't work");
+    return null;
+  }
+  return b as T;
+}
+
 const Badge = ({ children, tone }: { children: React.ReactNode; tone: string }) => (
   <span className={`border px-1.5 font-mono text-[10.5px] ${tone}`}>{children}</span>
 );
@@ -128,10 +152,9 @@ export function OwnerPanel() {
 
   const act = async (body: Record<string, string>, done: string) => {
     setBusy(body.userId);
-    const res = await fetch("/api/owner", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-    const b = await res.json().catch(() => ({}));
+    const b = await post(body);
     setBusy(null);
-    if (!res.ok) return toast(b.error ?? "That didn't work");
+    if (!b) return;
     toast(done);
     void load();
   };
@@ -182,9 +205,12 @@ export function OwnerPanel() {
             </li>
           ))}
         </ul>
+        <TestEmail />
       </section>
 
-      <WhatPeopleDid data={data.visits} />
+      <OpenAccess on={data.openAccess} onChange={() => void load()} />
+      <IpEmailLookup />
+      <WhatPeopleDid data={data.visits} build={data.build} />
       <BeforeTheySignedUp data={data.beforeSignup} />
       <AccountsByAddress rows={data.addresses} />
       <section className={card}>
@@ -273,23 +299,25 @@ export function OwnerPanel() {
         </ul>
       </section>
 
+      <TrialOutcomes />
+      <Broadcast />
       <HowIpsAndEmailsAreUsed />
     </div>
   );
 }
 
-function WhatPeopleDid({ data }: { data: Data["visits"] }) {
+function WhatPeopleDid({ data, build }: { data: Data["visits"]; build: string }) {
   return (
     <section className={card}>
       <h2 className="text-[16px] font-semibold">What people did</h2>
-      <p className="mt-1 text-[12.5px] text-muted">Last 90 days. Your own browsing is left out unless you are in a test view.</p>
+      <p className="mt-1 text-[12.5px] text-muted">Last 90 days, your own visits included (marked OWNER).</p>
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {(
           [
             ["Visits", data.stats.visits],
-            ["Saw upgrade / pricing", data.stats.sawPricing],
+            ["Saw the offer", data.stats.sawPricing],
             ["Pressed checkout", data.stats.pressedCheckout],
-            ["% pressed", `${data.stats.pressedPct}%`],
+            ["% of them pressed", `${data.stats.pressedPct}%`],
           ] as const
         ).map(([label, n]) => (
           <div key={label} className="border border-line p-3">
@@ -298,6 +326,7 @@ function WhatPeopleDid({ data }: { data: Data["visits"] }) {
           </div>
         ))}
       </div>
+      <p className="mt-2 font-mono text-[11.5px] text-muted">Build {build}</p>
       <ul className={`${scroll} max-h-[560px] divide-y divide-line`}>
         {data.recent.map((v) => (
           <li key={v.id} className="px-3 py-3">
@@ -306,6 +335,7 @@ function WhatPeopleDid({ data }: { data: Data["visits"] }) {
               <span className={v.email ? "text-muted" : ""}>
                 <IpTag ip={v.ip} country={v.country} />
               </span>
+              {v.owner && <Badge tone="border-thread text-thread">OWNER</Badge>}
               {v.returning && <Badge tone="border-line text-muted">RETURNING</Badge>}
               {v.signedUp && <Badge tone="border-sage text-sage">SIGNED UP</Badge>}
               {v.checkout && <Badge tone="border-thread text-thread">CHECKOUT</Badge>}
@@ -329,7 +359,7 @@ function AccountsByAddress({ rows }: { rows: Address[] }) {
     <section className={card}>
       <h2 className="text-[16px] font-semibold">Accounts by address</h2>
       <p className="mt-1 text-[12.5px] text-muted">
-        Which accounts signed in from each IP.{" "}
+        Every IP seen, with the accounts that signed in from it.{" "}
         {shared ? <span className="text-coral">{shared} address{shared === 1 ? "" : "es"} with more than one account: possible free-plan farming.</span> : "No address has more than one account."}
       </p>
       <ul className={`${scroll} max-h-[420px] divide-y divide-line`}>
@@ -342,10 +372,12 @@ function AccountsByAddress({ rows }: { rows: Address[] }) {
                 {r.visits} visit{r.visits === 1 ? "" : "s"} · {ago(r.lastSeen)}
               </span>
             </div>
-            <div className="mt-1 font-mono text-[12px] text-ink/85">{r.emails.join(", ")}</div>
+            <div className={`mt-1 font-mono text-[12px] ${!r.emails.length ? "text-muted" : r.emails.length > 1 ? "text-thread" : "text-ink/85"}`}>
+              {r.emails.length ? r.emails.join(", ") : "No account"}
+            </div>
           </li>
         ))}
-        {!rows.length && <li className="px-3 py-3 text-[14px] text-muted">No signed-in visits logged yet.</li>}
+        {!rows.length && <li className="px-3 py-3 text-[14px] text-muted">No visits logged yet.</li>}
       </ul>
     </section>
   );
@@ -376,7 +408,7 @@ function BeforeTheySignedUp({ data }: { data: BeforeSignup }) {
           <li key={s.key} className="px-3 py-2.5">
             <div className="flex items-baseline justify-between gap-3 text-[13.5px]">
               <span>{s.label}</span>
-              <span className="font-mono text-[13px]">{s.count}</span>
+              <span className={`font-mono text-[13px] ${!s.count ? "text-muted" : STOP_TONE[s.key] ?? "text-ink"}`}>{s.count}</span>
             </div>
             {s.leads.map((l) => (
               <div key={l.trail} className="mt-0.5 font-mono text-[11.5px] text-muted">
@@ -386,6 +418,335 @@ function BeforeTheySignedUp({ data }: { data: BeforeSignup }) {
           </li>
         ))}
       </ul>
+      <h3 className="mt-4 text-[13px] font-semibold">Each visit ({data.list.length})</h3>
+      <ul className={`${scroll} max-h-[460px] divide-y divide-line`}>
+        {data.list.map((v) => (
+          <li key={v.id} className="px-3 py-2.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <IpTag ip={v.ip} country={v.country} />
+              <span className="ml-auto font-mono text-[11.5px] text-muted">
+                {stay(v.duration)} · {new Date(v.at).toLocaleString()}
+              </span>
+            </div>
+            <FoldedTrail events={v.events} />
+          </li>
+        ))}
+        {!data.list.length && <li className="px-3 py-3 text-[14px] text-muted">No signed-out visits yet.</li>}
+      </ul>
+    </section>
+  );
+}
+
+const STOP_TONE: Record<string, string> = {
+  closed_signup: "text-thread",
+  ignored_signup: "text-thread",
+  uploaded_left: "text-coral",
+  sat_still: "text-coral",
+  looked_left: "text-muted",
+};
+
+/** "▸ Page /pricing…", opening to the full trail. */
+function FoldedTrail({ events }: { events: TrailEvent[] }) {
+  const [open, setOpen] = useState(false);
+  const first = events.find((e) => e.name !== "open") ?? events[0];
+  if (!first) return null;
+  return (
+    <div>
+      <button type="button" onClick={() => setOpen(!open)} className="mt-1 text-left text-[12.5px] text-muted hover:text-ink">
+        {open ? "▾" : "▸"} {EVENT_LABELS[first.name] ?? first.name}
+        {first.detail && <span className="font-mono text-[11.5px]"> {first.detail}</span>}
+        {!open && events.length > 1 && "…"}
+      </button>
+      {open && <Trail events={events} />}
+    </div>
+  );
+}
+
+/** Deployment status: send one test email to check Resend works. */
+function TestEmail() {
+  const [to, setTo] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <form
+      className="mt-4 flex gap-2"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setBusy(true);
+        const b = await post({ action: "test_email", to: to.trim() });
+        setBusy(false);
+        if (b) toast(`Test email sent to ${to.trim()}`);
+      }}
+    >
+      <input value={to} onChange={(e) => setTo(e.target.value)} type="email" placeholder="Address to test, e.g. you@gmail.com" className="field min-w-0 flex-1 px-3 py-2 text-[14px]" />
+      <button type="submit" disabled={busy || !to.trim()} className="btn-secondary shrink-0 px-4 py-2 text-[14px]">
+        {busy ? "Sending…" : "Send test"}
+      </button>
+    </form>
+  );
+}
+
+/** Take the walls down: lift the one-free-document limit for everyone. */
+function OpenAccess({ on, onChange }: { on: boolean; onChange: () => void }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <section className={card}>
+      <div className="flex items-center gap-2">
+        <h2 className="text-[16px] font-semibold">Open access</h2>
+        <Badge tone={on ? "border-thread text-thread" : "border-sage text-sage"}>{on ? "OPEN" : "NORMAL"}</Badge>
+      </div>
+      <p className="mt-2 text-[13.5px] leading-[1.55] text-ink/85">
+        Normally every free account gets <b>1 document</b>, ever, and more needs a paid plan (Plus, Pro or Ultra). Open access takes that wall down: anyone signed in
+        can unspool more documents and the &quot;used your free document&quot; banner is hidden. Accounts are still required, the daily upload caps and reel credits
+        still apply, and nothing about what data is collected changes.
+      </p>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={async () => {
+          if (!on && !window.confirm("Lift the 1-free-document limit for everyone? AI costs will rise with use.")) return;
+          setBusy(true);
+          const b = await post({ action: "open_access", on: !on });
+          setBusy(false);
+          if (b) {
+            toast(on ? "Back to normal limits" : "Open access is on");
+            onChange();
+          }
+        }}
+        className={`mt-3 border px-4 py-2 text-[14px] ${on ? "border-sage text-sage" : "border-thread text-thread"}`}
+      >
+        {on ? "Put the walls back up" : "Take the walls down"}
+      </button>
+    </section>
+  );
+}
+
+/** Type an IP or an email (or part of one): who used that address, and where that person came from. */
+function IpEmailLookup() {
+  const [q, setQ] = useState("");
+  const [res, setRes] = useState<Lookup | null>(null);
+  const [busy, setBusy] = useState(false);
+  const run = async (term: string) => {
+    setQ(term);
+    setBusy(true);
+    const r = await fetch(`/api/owner?lookup=${encodeURIComponent(term.trim())}`, { cache: "no-store" });
+    const b = await r.json().catch(() => ({}));
+    setBusy(false);
+    if (!r.ok) return toast(b.error ?? "Lookup failed");
+    setRes(b);
+  };
+  const Pick = ({ v, className = "" }: { v: string; className?: string }) => (
+    <button type="button" onClick={() => void run(v)} className={`font-mono text-[12.5px] underline-offset-2 hover:text-thread hover:underline ${className}`}>
+      {v}
+    </button>
+  );
+  return (
+    <section className={card}>
+      <h2 className="text-[16px] font-semibold">IP ↔ email lookup</h2>
+      <form
+        className="mt-3 flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (q.trim()) void run(q);
+        }}
+      >
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="An IP or an email, or part of one" className="field min-w-0 flex-1 px-3 py-2 text-[14px]" />
+        <button type="submit" disabled={busy || q.trim().length < 2} className="btn-secondary shrink-0 px-4 py-2 text-[14px]">
+          {busy ? "Looking…" : "Look up"}
+        </button>
+      </form>
+      {res && (
+        <div className="mt-3 space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="border border-line p-3">
+              <h3 className="label">IP → emails</h3>
+              <ul className="mt-2 space-y-1.5">
+                {res.ipToEmails.map((r) => (
+                  <li key={r.ip}>
+                    <Pick v={r.ip} />
+                    {r.country && <span className="ml-1.5 border border-line px-1 font-mono text-[10.5px] text-muted">{r.country}</span>}
+                    <div className="flex flex-wrap gap-x-3 pl-3">
+                      {r.emails.length ? r.emails.map((e) => <Pick key={e} v={e} className={r.emails.length > 1 ? "text-thread" : "text-ink/85"} />) : <span className="text-[12.5px] text-muted">No account</span>}
+                    </div>
+                  </li>
+                ))}
+                {!res.ipToEmails.length && <li className="text-[12.5px] text-muted">No IP matches.</li>}
+              </ul>
+            </div>
+            <div className="border border-line p-3">
+              <h3 className="label">Email → IPs</h3>
+              <ul className="mt-2 space-y-1.5">
+                {res.emailToIps.map((r) => (
+                  <li key={r.email}>
+                    <Pick v={r.email} />
+                    <div className="flex flex-wrap gap-x-3 pl-3">
+                      {r.ips.map((ip) => (
+                        <span key={ip.ip}>
+                          <Pick v={ip.ip} className="text-ink/85" />
+                          {ip.country && <span className="ml-1 text-[10.5px] text-muted">{ip.country}</span>}
+                        </span>
+                      ))}
+                      {!r.ips.length && <span className="text-[12.5px] text-muted">No IP logged</span>}
+                    </div>
+                  </li>
+                ))}
+                {!res.emailToIps.length && <li className="text-[12.5px] text-muted">No email matches.</li>}
+              </ul>
+            </div>
+          </div>
+          <ul className={`${scroll} max-h-[420px] divide-y divide-line`}>
+            {res.visits.map((v) => (
+              <li key={v.id} className="px-3 py-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  {v.email && <span className="font-mono text-[12.5px]">{v.email}</span>}
+                  {v.owner && <Badge tone="border-thread text-thread">OWNER</Badge>}
+                  <span className="text-muted">
+                    <IpTag ip={v.ip} country={v.country} />
+                  </span>
+                  <span className="ml-auto font-mono text-[11.5px] text-muted">
+                    {stay(v.duration)} · {new Date(v.at).toLocaleString()}
+                  </span>
+                </div>
+                <Trail events={v.events} />
+              </li>
+            ))}
+            {!res.visits.length && <li className="px-3 py-3 text-[14px] text-muted">No visits match &quot;{res.q}&quot;.</li>}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
+
+const OUTCOME_LABELS: Record<string, [string, string]> = {
+  trialing: ["On a trial", "text-thread"],
+  active: ["Paying", "text-sage"],
+  past_due: ["Payment failing", "text-coral"],
+  canceled: ["Cancelled", "text-coral"],
+  none: ["No subscription", "text-muted"],
+};
+
+/** Where trials and checkouts ended up, from the profiles Stripe keeps up to date. */
+function TrialOutcomes() {
+  const [data, setData] = useState<Outcomes | null>(null);
+  const [busy, setBusy] = useState(false);
+  return (
+    <section className={card}>
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-[16px] font-semibold">Trial outcomes</h2>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            setData(await post<Outcomes>({ action: "outcomes" }));
+            setBusy(false);
+          }}
+          className="btn-secondary px-4 py-1.5 text-[14px]"
+        >
+          {busy ? "Checking…" : "Check"}
+        </button>
+      </div>
+      {data && (
+        <>
+          <p className="mt-2 text-[13.5px] text-ink/85">
+            {data.checkout.pressed} account{data.checkout.pressed === 1 ? "" : "s"} pressed checkout in the last 90 days: <span className="text-sage">{data.checkout.paying} paying</span>,{" "}
+            <span className="text-thread">{data.checkout.trialing} on a trial</span>, {data.checkout.pressed - data.checkout.paying - data.checkout.trialing} neither.
+          </p>
+          <ul className="mt-3 divide-y divide-line border border-line">
+            {data.groups.map((g) => {
+              const [label, tone] = OUTCOME_LABELS[g.key] ?? [g.key, "text-ink"];
+              return (
+                <li key={g.key} className="px-3 py-2.5">
+                  <div className="flex items-baseline justify-between text-[13.5px]">
+                    <span>
+                      {label} <span className="font-mono text-[11px] text-muted">{g.key}</span>
+                    </span>
+                    <span className={`font-mono ${g.count ? tone : "text-muted"}`}>{g.count}</span>
+                  </div>
+                  {g.key === "none" && g.accounts.length > 0 && <div className="mt-0.5 text-[11.5px] text-muted">Used their trial, no subscription now:</div>}
+                  {g.accounts.map((a) => (
+                    <div key={a.email} className="mt-0.5 font-mono text-[11.5px] text-ink/80">
+                      {a.email} <span className="text-muted">· {a.tier ?? "plus"} · {a.interval === "year" ? "yearly" : "weekly"}{a.comp ? ` · comped ${a.comp}` : ""}</span>
+                    </div>
+                  ))}
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
+
+/** Email account holders: each message individually addressed, sent through Resend in batches of 100. */
+function Broadcast() {
+  const [aud, setAud] = useState<{ everyone: number; updates: number; configured: boolean } | null>(null);
+  const [who, setWho] = useState<"updates" | "everyone">("updates");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const n = aud ? aud[who] : 0;
+  return (
+    <section className={card}>
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-[16px] font-semibold">Broadcast</h2>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            setAud(await post({ action: "audience" }));
+            setBusy(false);
+          }}
+          className="btn-secondary px-4 py-1.5 text-[14px]"
+        >
+          Audience
+        </button>
+      </div>
+      {aud && (
+        <div className="mt-3 space-y-3">
+          {!aud.configured && <p className="text-[13px] text-coral">RESEND_API_KEY isn&apos;t set: nothing can be sent yet.</p>}
+          <div className="flex flex-wrap gap-2 text-[13px]">
+            {(
+              [
+                ["updates", `Product update · opted in (${aud.updates})`],
+                ["everyone", `Important notice · every account (${aud.everyone})`],
+              ] as const
+            ).map(([k, label]) => (
+              <button key={k} type="button" onClick={() => setWho(k)} className={`border px-3 py-1 ${who === k ? "border-sage text-sage" : "border-line hover:border-ink"}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="text-[12px] text-muted">
+            Product news goes only to people who ticked the updates box at sign-up. Use &quot;every account&quot; only for service notices (terms, outages, changes to
+            their account), as the privacy policy says.
+          </p>
+          <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject" maxLength={200} className="field w-full px-3 py-2 text-[14px]" />
+          <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Message (plain text; blank lines make paragraphs)" rows={7} className="field w-full px-3 py-2 text-[14px]" />
+          <p className="text-[12px] text-muted">Footer added: &quot;You&apos;re getting this because you have an Unspool account.&quot;</p>
+          <div className="flex gap-2">
+            <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Type SEND" className="field w-32 px-3 py-2 font-mono text-[14px]" />
+            <button
+              type="button"
+              disabled={busy || confirm !== "SEND" || !subject.trim() || !message.trim() || !n}
+              onClick={async () => {
+                setBusy(true);
+                const b = await post<{ sent: number; failed: number }>({ action: "broadcast", audience: who, subject, message, confirm });
+                setBusy(false);
+                if (!b) return;
+                toast(b.failed ? `Sent to ${b.sent}, ${b.failed} failed` : `Sent to ${b.sent} people`);
+                setConfirm("");
+              }}
+              className="flex-1 border border-coral px-4 py-2 text-[14px] text-coral disabled:opacity-40"
+            >
+              {busy ? "Sending…" : `Send to ${n} ${n === 1 ? "person" : "people"}`}
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -409,7 +770,7 @@ function HowIpsAndEmailsAreUsed() {
             </li>
             <li>
               <b>This visit log.</b> The raw IP and approximate country (from Vercel) are kept with each visit for 90 days, then deleted by the nightly cleanup. It
-              is what &quot;Accounts by address&quot; is built from, to spot one person running many free accounts.
+              is what &quot;Accounts by address&quot; and the IP ↔ email lookup are built from, to spot one person running many free accounts.
             </li>
             <li>The hashed ledger is cleared after 3 days; anonymous documents are deleted after 7 days if never unlocked.</li>
           </ul>
@@ -433,10 +794,15 @@ function HowIpsAndEmailsAreUsed() {
               <b>Linking uploads.</b> On sign-in, documents uploaded in this browser before having an account (matched by the anonymous cookie, not the email)
               are moved into the account.
             </li>
-            <li>It is shown here next to visits made while signed in.</li>
+            <li>It is shown here next to visits made while signed in, and can be looked up against the IPs it used.</li>
+            <li>
+              <b>Broadcasts.</b> From this panel, product updates go only to accounts that opted in at sign-up; service notices can go to every account. Each
+              email is sent through Resend to one address at a time, never with other recipients visible.
+            </li>
           </ul>
         </div>
       </div>
+      <p className="mt-4 text-[12.5px] text-muted">Open access only lifts the 1-free-document limit; it doesn&apos;t change what is collected or how it is used.</p>
     </section>
   );
 }

@@ -1,3 +1,4 @@
+import { isOwnerEmail } from "./owner";
 import { adminClient } from "./supabase/admin";
 
 // The owner panel's reading of the visit log (see /api/track): what people did, which accounts share
@@ -25,11 +26,13 @@ type VisitRow = {
 /** A visit shorter than this, on one page with nothing done, "left at once". */
 const BOUNCE_MS = 10_000;
 const RECENT = 80;
+const COLS = "id,visitor_id,user_id,email,ip,country,user_agent,referrer,landing,started_at,last_seen_at,duration_ms,events,signed_up,checkout";
 /** Events that are not something the visitor did. */
 const PASSIVE = new Set(["open", "page", "idle", "close"]);
 
+/** Saw the offer: the pricing page, a paywall, or an upgrade button. */
 const sawPricing = (v: VisitRow) =>
-  v.events.some((e) => (e.name === "page" && e.detail?.startsWith("/pricing")) || e.name === "checkout_clicked" || e.name === "demo_gate");
+  v.events.some((e) => (e.name === "page" && /^\/(pricing|upgrade)/.test(e.detail ?? "")) || e.name === "checkout_clicked" || e.name === "demo_gate");
 const has = (v: VisitRow, name: string) => v.events.some((e) => e.name === name);
 const median = (xs: number[]) => {
   if (!xs.length) return 0;
@@ -68,7 +71,7 @@ export async function visitAnalytics() {
   const since = new Date(Date.now() - 90 * 864e5).toISOString();
   const { data } = await adminClient()
     .from("visits")
-    .select("id,visitor_id,user_id,email,ip,country,user_agent,referrer,landing,started_at,last_seen_at,duration_ms,events,signed_up,checkout")
+    .select(COLS)
     .gte("started_at", since)
     .order("started_at", { ascending: false })
     .limit(2000);
@@ -101,11 +104,11 @@ export async function visitAnalytics() {
       ipsByUser.set(v.user_id, ips);
     }
   }
+  // Every address, including ones that never signed in ("No account").
   const addresses = [...byIp.values()]
-    .filter((r) => r.emails.size)
     .map((r) => ({ ip: r.ip, country: r.country, emails: [...r.emails], lastSeen: r.lastSeen, visits: r.visits, shared: r.emails.size > 1 }))
     .sort((a, b) => Number(b.shared) - Number(a.shared) || b.emails.length - a.emails.length || b.lastSeen.localeCompare(a.lastSeen))
-    .slice(0, 200);
+    .slice(0, 300);
 
   // Before they signed up: visits that ended with nobody signed in.
   const anon = visits.filter((v) => !v.user_id && !v.signed_up);
@@ -129,6 +132,7 @@ export async function visitAnalytics() {
       recent: visits.slice(0, RECENT).map((v) => ({
         id: v.id,
         email: v.email,
+        owner: isOwnerEmail(v.email),
         ip: v.ip,
         country: v.country,
         returning: (first.get(v.visitor_id) ?? v.started_at) < v.started_at,
@@ -146,6 +150,7 @@ export async function visitAnalytics() {
       visits: anon.length,
       medianStay: median(stayed),
       leftAtOnce: bounced.size,
+      list: anon.slice(0, 200).map((v) => ({ id: v.id, ip: v.ip, country: v.country, at: v.started_at, duration: v.duration_ms, events: v.events })),
       longest: Math.max(0, ...anon.map((v) => v.duration_ms)),
       stops: (Object.keys(STOP_LABELS) as Stop[]).map((s) => ({
         key: s,
@@ -158,4 +163,46 @@ export async function visitAnalytics() {
       })),
     },
   };
+}
+
+/** Escape LIKE wildcards so the search is a plain substring match. */
+const like = (q: string) => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+
+/**
+ * IP ↔ email lookup over the visit log: the emails seen on every IP matching `q`, the IPs seen for every
+ * email matching `q`, and the matching visits themselves.
+ */
+export async function lookupVisits(raw: string) {
+  const q = raw.trim().slice(0, 120);
+  const db = adminClient();
+  const since = new Date(Date.now() - 90 * 864e5).toISOString();
+  const [{ data: byIpHit }, { data: byEmailHit }] = await Promise.all([
+    db.from("visits").select("ip").gte("started_at", since).ilike("ip", like(q)).limit(500),
+    db.from("visits").select("email").gte("started_at", since).ilike("email", like(q)).limit(500),
+  ]);
+  const ips = [...new Set((byIpHit ?? []).map((r) => r.ip as string))].slice(0, 50);
+  const emails = [...new Set((byEmailHit ?? []).map((r) => r.email as string))].slice(0, 50);
+  const [{ data: onIps }, { data: ofEmails }] = await Promise.all([
+    ips.length ? db.from("visits").select(COLS).in("ip", ips).order("started_at", { ascending: false }).limit(500) : { data: [] },
+    emails.length ? db.from("visits").select(COLS).in("email", emails).order("started_at", { ascending: false }).limit(500) : { data: [] },
+  ]);
+  const a = (onIps ?? []) as VisitRow[];
+  const b = (ofEmails ?? []) as VisitRow[];
+
+  const ipToEmails = ips.map((ip) => {
+    const vs = a.filter((v) => v.ip === ip);
+    return { ip, country: vs.find((v) => v.country)?.country ?? null, emails: [...new Set(vs.flatMap((v) => (v.email ? [v.email] : [])))] };
+  });
+  const emailToIps = emails.map((email) => {
+    const seen = new Map<string, string | null>();
+    for (const v of b) if (v.email === email && v.ip && !seen.has(v.ip)) seen.set(v.ip, v.country);
+    return { email, ips: [...seen].map(([ip, country]) => ({ ip, country })) };
+  });
+  const all = new Map<string, VisitRow>();
+  for (const v of [...a, ...b]) all.set(v.id, v);
+  const visits = [...all.values()]
+    .sort((x, y) => y.started_at.localeCompare(x.started_at))
+    .slice(0, 100)
+    .map((v) => ({ id: v.id, email: v.email, owner: isOwnerEmail(v.email), ip: v.ip, country: v.country, at: v.started_at, duration: v.duration_ms, events: v.events }));
+  return { q, ipToEmails, emailToIps, visits };
 }

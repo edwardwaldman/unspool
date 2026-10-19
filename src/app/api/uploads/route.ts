@@ -1,5 +1,6 @@
 import { ACCEPTED_EXTENSIONS, LIMITS, MAX_FILE_BYTES, extensionOf, isAccepted, supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
+import { appSettings } from "@/lib/settings";
 import { adminClient } from "@/lib/supabase/admin";
 import { claimUsage, freeDocumentUsed } from "@/lib/usage";
 import { clientIpHash, getViewer } from "@/lib/viewer";
@@ -23,9 +24,10 @@ export async function POST(req: Request) {
   const ipHash = await clientIpHash();
   const db = adminClient();
 
-  // Free accounts get one document, ever (counted from the upload ledger, so deleting it doesn't give it back).
+  // Free accounts get one document, ever (counted from the upload ledger, so deleting it doesn't give it back),
+  // unless the owner has switched on open access.
   const owner = viewer.ownerUnlimited;
-  if (!owner && !viewer.subscribed && (await freeDocumentUsed(viewer.userId))) {
+  if (!owner && !viewer.subscribed && !(await appSettings()).openAccess && (await freeDocumentUsed(viewer.userId))) {
     return error(402, "Free accounts get 1 document. Upgrade to unspool more.", { code: "free_used" });
   }
 
