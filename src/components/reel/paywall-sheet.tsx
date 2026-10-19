@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { SpoolDTO, ViewerDTO } from "@/lib/spool-types";
+import { track } from "../analytics/track";
 import { openAuth } from "../auth/auth-store";
 import { BigUpload } from "../landing/info-slide";
 import { Sheet } from "../ui/sheet";
@@ -133,6 +134,7 @@ export function PaywallSheet({
 function DemoGate({ open, onUpload }: { open: boolean; onUpload: () => void }) {
   useEffect(() => {
     if (!open) return;
+    track("demo_gate");
     const block = (e: KeyboardEvent) => {
       if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", " ", "Escape", "j", "k"].includes(e.key) && !(e.target instanceof HTMLInputElement)) {
         e.stopImmediatePropagation();

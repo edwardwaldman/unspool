@@ -1,4 +1,3 @@
-import { isOwnerEmail } from "@/lib/owner";
 import { ACCEPTED_EXTENSIONS, LIMITS, MAX_FILE_BYTES, extensionOf, isAccepted, supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
 import { adminClient } from "@/lib/supabase/admin";
@@ -25,7 +24,7 @@ export async function POST(req: Request) {
   const db = adminClient();
 
   // Free accounts get one document, ever (counted from the upload ledger, so deleting it doesn't give it back).
-  const owner = isOwnerEmail(viewer.email);
+  const owner = viewer.ownerUnlimited;
   if (!owner && !viewer.subscribed && (await freeDocumentUsed(viewer.userId))) {
     return error(402, "Free accounts get 1 document. Upgrade to unspool more.", { code: "free_used" });
   }

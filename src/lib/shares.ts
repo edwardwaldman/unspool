@@ -4,7 +4,7 @@ import { SAMPLE_SPOOL } from "./sample";
 import type { ReelDTO, SpoolDTO } from "./spool-types";
 import { adminClient } from "./supabase/admin";
 import { VIDEO_BUCKET } from "./video/types";
-import { isSubscribed, type Profile, type Viewer } from "./viewer";
+import { isSubscribed, ownerUnlimited, withStoredView, type Profile, type Viewer } from "./viewer";
 
 // Public share links for one reel (/r/[slug]). Everything here runs with the service role, so each
 // function re-checks what it serves: an active (not revoked) share, a ready reel the OWNER can play
@@ -40,7 +40,8 @@ export function newSlug(len = 10) {
 /** The owner as a Viewer, so the drip/unlock rules are evaluated for them, not for whoever is watching. */
 export async function ownerViewer(userId: string): Promise<Viewer> {
   const { data: profile } = await adminClient().from("profiles").select("*").eq("id", userId).maybeSingle<Profile>();
-  return { userId, email: null, profile: profile ?? null, anonToken: null, subscribed: isSubscribed(profile ?? null) };
+  const p = withStoredView(profile ?? null);
+  return { userId, email: null, profile: p, anonToken: null, subscribed: isSubscribed(p), isOwner: false, realUserId: userId, realEmail: null, ownerUnlimited: ownerUnlimited(p), ownerView: null };
 }
 
 type ReelPublic = Pick<ReelRow, "id" | "index" | "title" | "hook" | "status" | "script_json" | "audio_paths" | "video_path" | "video_meta" | "document_id">;

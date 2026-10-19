@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Bricolage_Grotesque, Instrument_Sans, Martian_Mono, Syne, Unbounded } from "next/font/google";
+import { VisitTracker } from "@/components/analytics/visit-tracker";
+import { OwnerViewBox } from "@/components/owner/owner-view-box";
 import "./globals.css";
 
 // Font families are referenced by theme.css (--font-display, --font-hook, --font-ui, --font-numeric).
@@ -41,7 +43,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${display.variable} ${hook.variable} ${ui.variable} ${numeric.variable} ${wordmark.variable} ${headline.variable} h-full antialiased`}>
-      <body className="min-h-full bg-paper text-ink">{children}</body>
+      <body className="min-h-full bg-paper text-ink">
+        {children}
+        <VisitTracker />
+        <OwnerViewBox />
+      </body>
     </html>
   );
 }

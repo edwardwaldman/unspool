@@ -7,7 +7,7 @@ import { adminClient } from "@/lib/supabase/admin";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-/** Daily (vercel.json cron): delete anonymous uploads that were never unlocked after 7 days. */
+/** Daily (vercel.json cron): delete anonymous uploads that were never unlocked after 7 days, and old visits. */
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret || !secretMatches(req.headers.get("authorization"), `Bearer ${secret}`)) {
@@ -24,5 +24,7 @@ export async function GET(req: Request) {
   for (const doc of data ?? []) await deleteDocument(doc);
   // Rate-limit ledger: only the last 24h is ever counted.
   await adminClient().from("usage_events").delete().lt("created_at", new Date(Date.now() - 3 * 864e5).toISOString());
+  // Visit log (raw IPs): kept 90 days, as the privacy policy says.
+  await adminClient().from("visits").delete().lt("started_at", new Date(Date.now() - 90 * 864e5).toISOString());
   return json({ deleted: data?.length ?? 0 });
 }

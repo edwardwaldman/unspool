@@ -1,6 +1,7 @@
 "use client";
 
 import type { Billing, Tier } from "@/lib/plans";
+import { track } from "../analytics/track";
 
 export type CheckoutRequest =
   | { kind: "subscription"; tier: Exclude<Tier, "free">; billing?: Billing }
@@ -9,6 +10,7 @@ export type CheckoutRequest =
 
 /** Open Stripe Checkout (or the billing portal for a plan switch). Returns an error message, or null after redirecting. */
 export async function startCheckout(req: CheckoutRequest, documentId?: string, reel?: number): Promise<string | null> {
+  track("checkout_clicked", req.kind === "subscription" ? `${req.tier} ${req.billing ?? "week"}` : req.kind);
   const res = await fetch("/api/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

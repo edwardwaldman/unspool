@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReelDTO, SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { MAX_REELS } from "@/lib/config";
+import { track } from "../analytics/track";
 import { ChevronDown, ChevronUp, FilterIcon } from "../ui/icons";
 import { toast } from "../ui/toast";
 import { useIsDesktop } from "../ui/use-media";
@@ -157,6 +158,10 @@ export function Feed({
 
   // Swiping onto a locked reel slides up the paywall (once per reel, unless tapped again).
   const active = items[index];
+  const viewedId = active?.reel && !active.reel.locked ? active.reel.id : null;
+  useEffect(() => {
+    if (viewedId) track("reel_viewed", active?.reel?.index);
+  }, [viewedId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const r = active?.reel;
     if (r?.locked && !dismissedPaywall.current.has(r.id)) {

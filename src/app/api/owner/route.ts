@@ -5,14 +5,16 @@ import { deleteDocument } from "@/lib/spool";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
 import { adminClient } from "@/lib/supabase/admin";
 import { getViewer } from "@/lib/viewer";
+import { visitAnalytics } from "@/lib/visits";
 
 export const dynamic = "force-dynamic";
 
-// Owner panel data and actions. Every call re-checks that the signed-in user is the owner.
+// Owner panel data and actions. Every call re-checks that the signed-in user is the owner
+// (the real identity: the owner may be viewing the site as another tier).
 
 async function owner() {
   const viewer = await getViewer();
-  return viewer.userId && isOwnerEmail(viewer.email) ? viewer : null;
+  return viewer.isOwner && viewer.realUserId ? viewer : null;
 }
 
 const has = (name: string) => Boolean(process.env[name]?.trim());
@@ -52,6 +54,7 @@ export async function GET() {
   const { data: reelRows } = await db.from("reels").select("document_id,status").in("document_id", (docs ?? []).map((d) => d.id));
   const { count: readyReels } = await db.from("reels").select("id", { count: "exact", head: true }).eq("status", "ready");
 
+  const analytics = await visitAnalytics();
   const emailOf = new Map(users.map((u) => [u.id, u.email ?? null]));
   const accounts = users
     .map((u) => {
@@ -67,6 +70,7 @@ export async function GET() {
         comp: (p?.comp_tier as string | null) ?? null,
         subscription: paying ? `${p?.tier ?? "plus"} · ${p?.billing_interval === "year" ? "yearly" : "weekly"} · ${p?.subscription_status}` : null,
         documents: perUser.get(u.id) ?? 0,
+        ips: analytics.ipsByUser[u.id] ?? [],
       };
     })
     .sort((a, b) => Number(b.owner) - Number(a.owner) || b.joined.localeCompare(a.joined));
@@ -81,6 +85,9 @@ export async function GET() {
     },
     deployment: deployment(),
     accounts,
+    visits: analytics.visits,
+    addresses: analytics.addresses,
+    beforeSignup: analytics.beforeSignup,
     documents: (docs ?? []).map((d) => {
       const mine = (reelRows ?? []).filter((r) => r.document_id === d.id);
       return {
@@ -115,7 +122,7 @@ export async function POST(req: Request) {
   }
 
   if (body.action === "delete") {
-    if (body.userId === me.userId) return error(400, "The owner account can't be deleted from here");
+    if (body.userId === me.realUserId) return error(400, "The owner account can't be deleted from here");
     const { data: profile } = await db.from("profiles").select("stripe_subscription_id,subscription_status").eq("id", body.userId).maybeSingle();
     if (profile?.stripe_subscription_id && stripeConfigured() && profile.subscription_status !== "canceled") {
       try {

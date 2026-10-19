@@ -2,8 +2,7 @@ import type { DocumentRow } from "./db-types";
 import { FREE_REEL_INTERVAL_MIN, FREE_REELS_PER_DAY, PLANS, TOPUP, TRIAL, type Tier } from "./plans";
 import type { UsageDTO } from "./spool-types";
 import { adminClient } from "./supabase/admin";
-import { isOwnerEmail } from "./owner";
-import { isSubscribed, type Profile } from "./viewer";
+import { isSubscribed, ownerUnlimited, withStoredView, type Profile } from "./viewer";
 
 // Server-side credit accounting. All checks and writes happen in SQL (claim_credits, claim_free_reel,
 // refund_reel_credit) under a per-subject advisory lock; this file only resolves who pays and how much.
@@ -26,7 +25,7 @@ const nextMonthStart = (d = new Date()) => new Date(Date.UTC(d.getUTCFullYear(),
 const weekStart = (d = new Date()) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - ((d.getUTCDay() + 6) % 7)));
 
 export function tierOf(profile: Profile | null): Tier {
-  if (profile && isOwnerEmail(profile.email)) return "ultra";
+  if (ownerUnlimited(profile)) return "ultra";
   if (profile?.comp_tier) return profile.comp_tier;
   if (!isSubscribed(profile)) return "free";
   const t = profile!.tier;
@@ -37,7 +36,7 @@ export function entitlementFor(profile: Profile | null, fallbackSubject?: string
   const tier = tierOf(profile);
   const subject = profile ? `u:${profile.id}` : fallbackSubject ?? "ip:unknown";
   // The owner tests without limits: Ultra features and effectively unlimited credits every week.
-  if (profile && isOwnerEmail(profile.email)) {
+  if (profile && ownerUnlimited(profile)) {
     return { tier, trialing: false, trialEndsAt: null, subject, allowance: 1_000_000, periodStart: weekStart().toISOString(), resetsAt: new Date(weekStart().getTime() + 7 * 864e5).toISOString() };
   }
   const trialing = tier !== "free" && !profile?.comp_tier && profile?.subscription_status === "trialing";
@@ -88,7 +87,7 @@ export const subjectForDoc = (doc: Pick<DocumentRow, "user_id" | "ip_hash">) =>
 export async function ownerEntitlement(doc: Pick<DocumentRow, "user_id" | "ip_hash">): Promise<Entitlement> {
   if (!doc.user_id) return entitlementFor(null, subjectForDoc(doc));
   const { data } = await adminClient().from("profiles").select("*").eq("id", doc.user_id).maybeSingle<Profile>();
-  return entitlementFor(data ?? null, subjectForDoc(doc));
+  return entitlementFor(withStoredView(data ?? null), subjectForDoc(doc));
 }
 
 /** What the usage meter shows. */

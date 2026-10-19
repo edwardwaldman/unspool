@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabaseConfigured } from "@/lib/config";
 import type { AuthError, AuthOtpResponse, AuthResponse, AuthTokenResponsePassword, OAuthResponse } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { track } from "../analytics/track";
 import { fileLabel } from "../reel/accent";
 import { toast } from "../ui/toast";
 import { RESUME_PARAM, RESUME_VALUE, stashFile } from "../upload/file-stash";
@@ -258,6 +259,7 @@ export function AuthModal() {
     setStep("code");
   };
   const dismiss = () => {
+    if (signup) track("signup_closed");
     closeAuth();
     holdFile(null);
     setStep("form");
@@ -268,6 +270,7 @@ export function AuthModal() {
   /** A session exists: attach this browser's anonymous spools, close, and continue what the visitor was doing. */
   const finish = (user: { id: string; email?: string | null }, created: boolean) => {
     markSignedIn({ id: user.id, email: user.email ?? null });
+    track(created ? "signup_done" : "login");
     setPassword("");
     setConfirm("");
     setCode(emptyCode());

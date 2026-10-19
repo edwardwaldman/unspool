@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef } from "react";
+import { track } from "../analytics/track";
 import { openAuth } from "../auth/auth-store";
 import { getSessionUser, useSessionUser } from "../auth/use-session";
 import { toast } from "../ui/toast";
@@ -30,7 +31,11 @@ export function useUploader() {
         });
       };
       const run = async () => {
-        const result = await startUpload(file, (id) => router.push(`/s/${id}`));
+        track("upload_started", file.name.split(".").pop());
+        const result = await startUpload(file, (id) => {
+          track("upload_done");
+          router.push(`/s/${id}`);
+        });
         if (result.code === "auth") gate();
         else if (result.error && (result.code === "limit" || result.code === "free_used")) {
           toast(result.error, 4500);

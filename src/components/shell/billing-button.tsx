@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Billing, Tier } from "@/lib/plans";
+import { track } from "../analytics/track";
 import { openAuth } from "../auth/auth-store";
 
 type Mode = "portal" | "subscribe" | "trial" | "topup";
@@ -19,6 +20,7 @@ export function BillingButton({ mode, label, tier = "plus", billing = "week", se
         onClick={async function go() {
           setBusy(true);
           setErr(null);
+          if (mode !== "portal") track("checkout_clicked", mode === "subscribe" ? `${tier} ${billing}` : mode);
           const res = await fetch(mode === "portal" ? "/api/billing/portal" : "/api/checkout", {
             method: "POST",
             headers: { "Content-Type": "application/json" },

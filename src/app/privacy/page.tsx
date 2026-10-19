@@ -145,6 +145,13 @@ export default function PrivacyPage() {
               enforce the daily upload and retry limits and prevent abuse. Our app does not store your raw IP address with your documents.
             </li>
             <li>
+              <strong>Visit log.</strong> We log visits to Unspool: your IP address, your approximate country (worked out from the IP
+              address), your device and browser type, the site that sent you here, and the pages you open and actions you take (for
+              example starting an upload, opening the sign-up form or pressing an upgrade button), with timestamps and, if you are signed in,
+              your account. We keep this log for 90 days and then delete it automatically. We use it for security, to prevent abuse (such
+              as one person creating many free accounts) and to improve the product. It is not sold and not used for advertising.
+            </li>
+            <li>
               <strong>Server and request logs.</strong> Like any website, our hosting and infrastructure providers (Vercel and Supabase)
               automatically log technical information about requests, such as IP address, browser type, the page or API requested, the time
               and any errors. Our authentication provider also keeps a log of sign-in events, which can include the IP address used. We use these logs to keep the Service running, debug problems and protect it from abuse.
@@ -228,7 +235,7 @@ export default function PrivacyPage() {
               ["Providing your account, processing your documents into reels, storing your library", "Performing our contract with you (the Terms)"],
               ["Taking payments, unlocking documents, managing subscriptions", "Performing our contract with you"],
               ["Keeping purchase, accounting and tax records", "Complying with legal obligations"],
-              ["Hashed IP for upload limits, logs, fraud and abuse prevention, security, debugging", "Our legitimate interests in running a secure, reliable and affordable service, balanced against your rights"],
+              ["Hashed IP for upload limits, the visit log, logs, fraud and abuse prevention, security, debugging, improving the product", "Our legitimate interests in running a secure, reliable and affordable service, balanced against your rights"],
               ["Service emails (sign-up codes, password resets, important notices)", "Performing our contract with you"],
               ["Optional product update emails", "Your consent, which you can withdraw at any time"],
               ["Storing preferences and sign-in state on your device", "Strictly necessary for the service you asked for; your preferences are stored at your request"],
@@ -282,6 +289,8 @@ export default function PrivacyPage() {
             head={["Name", "Type", "Purpose", "How long"]}
             rows={[
               ["sb-…-auth-token", "Cookie (Supabase)", "Keeps you signed in and refreshes your session securely", "Until you sign out, or the session expires"],
+              ["unspool_vid", "Cookie, HTTP-only", "A random identifier for your browser, so the visit log can tell a returning visit from a new one", "1 year"],
+              ["unspool_visit", "Session storage", "Groups the pages you open in one tab into one visit", "Until you close the tab"],
               ["unspool_anon", "Cookie, HTTP-only", "A random identifier for your browser, so a document started before you signed in can be attached to your account when you sign in", "1 year"],
               ["unspool:prefs", "Local storage", "Your player settings: mute, playback speed, and whether to use your device's voice", "Until you clear your browser storage"],
               ["unspool:saved", "Local storage", "Reels you have hearted (saved) on this device", "Until you clear your browser storage"],
@@ -305,6 +314,7 @@ export default function PrivacyPage() {
               ["Documents, extracted text, scripts, audio and videos", "Until you delete the document or your account. Deleting a document removes the original file, extracted text, scripts, voiceover audio and videos"],
               ["Uploads never attached to an account", `Uploads made without an account that were never unlocked are deleted automatically by a daily clean-up once they are more than ${ANON_DAYS} days old`],
               ["Hashed IP stored with a document", "Deleted with the document"],
+              ["Visit log (IP address, approximate country, device and browser, pages and actions)", "Deleted automatically by the daily clean-up after 90 days"],
               ["Usage log (account ID, hashed IP, document reference, time of each upload or retry)", "Deleted automatically by the daily clean-up after 3 days, including after you delete your account"],
               ["Purchase records", "Kept for accounting and tax. When you delete your account, they are kept without the link to your account"],
               ["Stripe records", "Stripe keeps payment and customer records in line with its own legal and regulatory obligations"],
@@ -330,7 +340,7 @@ export default function PrivacyPage() {
             <li>database rules and server-side checks so that each account can only access its own documents and reels;</li>
             <li>passwords handled by our authentication provider and stored only in hashed form;</li>
             <li>card payments handled entirely by Stripe, with payment notifications verified by cryptographic signature;</li>
-            <li>IP addresses stored only as salted one-way hashes; and</li>
+            <li>IP addresses used for limits stored only as salted one-way hashes, and raw IP addresses in the visit log kept server-side only, for 90 days; and</li>
             <li>secrets and provider keys kept on the server, never in your browser.</li>
           </ul>
           <p>
