@@ -60,10 +60,10 @@ export function InfoSlide() {
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.6, ease }}
-          className="mx-auto w-full max-w-[1100px]"
+          transition={{ duration: 0.3, ease }}
+          className="mx-auto w-full max-w-[1280px]"
         >
-          <BigUpload />
+          <BigUpload big />
         </motion.div>
         </div>
       </section>
@@ -76,7 +76,7 @@ export function InfoSlide() {
  * Used at the bottom of the landing page, on the demo's sign-up gate and on a new account's empty page.
  * `onClick` replaces the file picker (the demo gate signs people up first).
  */
-export function BigUpload({ onClick, demoLink = true, wideTags = true }: { onClick?: () => void; demoLink?: boolean; /** The two tags that sit far out to the sides (hide them in narrow columns). */ wideTags?: boolean } = {}) {
+export function BigUpload({ onClick, demoLink = true, wideTags = true, big = false }: { onClick?: () => void; demoLink?: boolean; /** The two tags that sit far out to the sides (hide them in narrow columns). */ wideTags?: boolean; /** The landing page's closing block: larger button and tags on desktop. */ big?: boolean } = {}) {
   const input = useRef<HTMLInputElement>(null);
   const upload = useUploader();
   return (
@@ -92,15 +92,15 @@ export function BigUpload({ onClick, demoLink = true, wideTags = true }: { onCli
           if (f) void upload(f);
         }}
       />
-      <div className="relative mx-auto w-fit py-24 md:px-40 md:py-16">
-        <Float mobile className="left-0 top-4 -rotate-6 md:top-2" delay={0}>.pdf</Float>
-        <Float mobile className="right-2 top-10 rotate-3 md:right-4 md:top-0" delay={0.4}>.docx</Float>
-        <Float mobile className="bottom-4 right-2 -rotate-3 md:bottom-0 md:right-6" delay={1.2}>captions on</Float>
-        <Float mobile className="bottom-9 left-3 rotate-2 md:bottom-2 md:left-8" delay={0.8}>.pptx</Float>
+      <div className={`relative mx-auto w-fit py-24 md:px-40 md:py-16 ${big ? "lg:px-56 lg:py-24" : ""}`}>
+        <Float mobile className="left-0 top-4 -rotate-6 md:top-2" big={big} delay={0}>.pdf</Float>
+        <Float mobile className="right-2 top-10 rotate-3 md:right-4 md:top-0" big={big} delay={0.08}>.docx</Float>
+        <Float mobile className="bottom-4 right-2 -rotate-3 md:bottom-0 md:right-6" big={big} delay={0.24}>captions on</Float>
+        <Float mobile className="bottom-9 left-3 rotate-2 md:bottom-2 md:left-8" big={big} delay={0.16}>.pptx</Float>
         {wideTags && (
           <>
-            <Float className="-left-24 top-1/2 -translate-y-1/2 -rotate-3" delay={1}>♪ voiceover</Float>
-            <Float className="-right-40 top-[46%] rotate-2 border-thread/60 text-thread" delay={1.4}>✓ quiz in every reel</Float>
+            <Float big={big} className={`top-1/2 -translate-y-1/2 -rotate-3 ${big ? "-left-24 lg:-left-16" : "-left-24"}`} delay={0.12}>♪ voiceover</Float>
+            <Float big={big} className={`top-[46%] rotate-2 border-thread/60 text-thread ${big ? "-right-40 lg:-right-36" : "-right-40"}`} delay={0.2}>✓ quiz in every reel</Float>
           </>
         )}
         {/* hand-drawn "start here" arrow */}
@@ -139,9 +139,9 @@ export function BigUpload({ onClick, demoLink = true, wideTags = true }: { onCli
         <button
           type="button"
           onClick={() => (onClick ? onClick() : input.current?.click())}
-          className="relative z-10 mx-auto flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-8 py-6 text-[20px] md:gap-4 md:px-24 md:py-10 md:text-[36px] font-medium text-paper transition-opacity hover:opacity-90"
+          className={`relative z-10 mx-auto flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-8 py-6 text-[20px] md:gap-4 md:px-24 md:py-10 md:text-[36px] ${big ? "lg:gap-5 lg:px-32 lg:py-14 lg:text-[50px]" : ""} font-medium text-paper transition-opacity hover:opacity-90`}
         >
-          <UploadIcon size={28} /> Upload a document
+          <UploadIcon size={big ? 40 : 28} /> Upload a document
         </button>
           {demoLink && <Link href="/s/demo" className="relative z-10 mt-5 flex items-center justify-center gap-2 text-[15px] text-muted underline decoration-line underline-offset-4 transition-colors hover:text-ink lg:text-[17px]">
             <PlayIcon size={14} /> Watch a demo
@@ -151,15 +151,15 @@ export function BigUpload({ onClick, demoLink = true, wideTags = true }: { onCli
   );
 }
 
-function Float({ children, className, delay, mobile = false }: { children: React.ReactNode; className: string; delay: number; mobile?: boolean }) {
+function Float({ children, className, delay, mobile = false, big = false }: { children: React.ReactNode; className: string; delay: number; mobile?: boolean; big?: boolean }) {
   return (
     <motion.span
       aria-hidden
-      className={`absolute border border-line bg-paper px-2.5 py-1 font-mono text-[12px] text-muted md:block md:px-4 md:py-2 md:text-[17px] ${mobile ? "block" : "hidden"} ${className}`}
-      initial={{ opacity: 0, y: 8 }}
-      whileInView={{ opacity: 1, y: [0, -6, 0] }}
-      viewport={{ once: true }}
-      transition={{ opacity: { delay, duration: 0.5 }, y: { delay, duration: 4, repeat: Infinity, ease: "easeInOut" } }}
+      className={`absolute border border-line bg-paper px-2.5 py-1 font-mono text-[12px] text-muted md:block md:px-4 md:py-2 md:text-[17px] ${big ? "lg:px-5 lg:py-2.5 lg:text-[22px]" : ""} ${mobile ? "block" : "hidden"} ${className}`}
+      initial={{ opacity: 0, y: 8, scale: 0.85 }}
+      whileInView={{ opacity: 1, scale: 1, y: [0, -6, 0] }}
+      viewport={{ once: true, amount: 0 }}
+      transition={{ opacity: { delay, duration: 0.2 }, scale: { delay, type: "spring", stiffness: 500, damping: 22 }, y: { delay, duration: 4, repeat: Infinity, ease: "easeInOut" } }}
     >
       {children}
     </motion.span>
