@@ -3,11 +3,12 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { SAMPLE_SPOOL } from "@/lib/sample";
+import { sentenceCase } from "../reel/text";
 import { PaywallSheet } from "../reel/paywall-sheet";
 import { openAuth } from "../auth/auth-store";
 import { Sheet } from "../ui/sheet";
 import { toast } from "../ui/toast";
-import { Bookmark, BookOpen, Download, Gauge, Heart, Link2, MessageCircle, MoreHorizontal, Music2, Send, SkipForward, Sparkles } from "lucide-react";
+import { Bookmark, BookOpen, Lock, Download, Gauge, Heart, Link2, MessageCircle, MoreHorizontal, Music2, Send, SkipForward, Sparkles } from "lucide-react";
 import { ChevronDown, ChevronUp, PlayIcon, VolumeIcon } from "../ui/icons";
 
 // The public demo: three pre-rendered sample reels (real MP4s with voiceover), then a gate that can't be
@@ -17,12 +18,15 @@ import { ChevronDown, ChevronUp, PlayIcon, VolumeIcon } from "../ui/icons";
 
 const REELS = [
   { src: "/demo/reel-1.mp4", poster: "/demo/reel-1.jpg", title: "Population vs sample", caption: "A chef never eats the whole pot 🍲 #apstats #studytok",
+    transcript: [[0.3, "A chef never eats the whole pot."], [2.4, "So how does she know the soup is salty?"], [4.3, "One spoonful."], [5.5, "That spoonful is your sample. The pot is the population."], [8.9, "In stats, the population is everyone you care about."], [12.0, "The sample is the few you actually measure."], [14.4, "Stir the pot first, and one spoon tells you everything."]] as [number, string][],
     quiz: { q: "A school surveys 50 of its 2,000 students. What are the 50?", options: ["The population", "The sample", "A parameter"], answer: 1 },
     summary: ["The population is everyone you want to know about: the whole pot.", "A sample is the part you actually measure: one spoonful.", "If the pot is stirred (a random sample), one spoonful tells you about the whole pot."] },
   { src: "/demo/reel-2.mp4", poster: "/demo/reel-2.jpg", title: "Parameter vs statistic", caption: "P with P. S with S. Never lose these points again #apstats",
+    transcript: [[0.3, "Mix these two words up, and you lose points."], [3.0, "A parameter describes the whole population."], [5.7, "Like the true average sleep of every teen in the country."], [8.7, "You almost never get to know it."], [10.5, "A statistic comes from your sample."], [12.6, "So here's the trick. Parameter, population. Statistic, sample."], [16.7, "P with P. S with S."]] as [number, string][],
     quiz: { q: "Your survey of 200 teens finds they average 6.9 hours of sleep. Is 6.9 a parameter or a statistic?", options: ["Parameter", "Statistic"], answer: 1 },
     summary: ["A parameter describes a whole population, like the true average sleep of every teen. You almost never know it.", "A statistic is calculated from your sample, like the 6.9 hours your survey found.", "Memory trick: Parameter goes with Population, Statistic goes with Sample."] },
   { src: "/demo/reel-3.mp4", poster: "/demo/reel-3.jpg", title: "4 sampling methods", caption: "The one the test always asks 🎯 #apstats #finals",
+    transcript: [[0.3, "Four ways to pick a sample, and the test will make you name one."], [3.9, "Simple random. Everyone has the same chance, like names in a hat."], [8.2, "Stratified. Split into groups, then sample from every group."], [11.8, "Cluster. Split into groups, then take a few whole groups."], [15.2, "Systematic. Pick a random start, then every tenth person."], [18.8, "Mix up stratified and cluster, and that's the trap."]] as [number, string][],
     quiz: { q: "A school picks 3 whole homerooms and surveys everyone in them. Which method is that?", options: ["Stratified", "Cluster", "Systematic", "Simple random"], answer: 1 },
     summary: ["Simple random: everyone has the same chance, like names in a hat.", "Stratified: split into groups, then sample some from every group.", "Cluster: split into groups, then take a few whole groups.", "Systematic: random start, then every k-th person.", "The trap: stratified takes some from every group; cluster takes all of a few groups."] },
 ];
@@ -118,7 +122,9 @@ export function DemoVideos() {
   });
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-paper lg:gap-4">
+    <div className="flex h-full w-full bg-paper">
+      <DemoLeft index={index} onPick={go} />
+      <div className="flex min-w-0 flex-1 items-center justify-center lg:gap-4">
       <div className="relative h-full w-full overflow-hidden bg-black lg:aspect-[9/16] lg:h-[calc(100dvh-112px)] lg:max-h-[920px] lg:w-auto lg:border lg:border-line">
         <div ref={scroller} className={`h-full w-full snap-y snap-mandatory overflow-y-scroll [scrollbar-width:none] ${gated ? "overflow-hidden" : ""}`}>
           {REELS.map((r, i) => (
@@ -245,6 +251,8 @@ export function DemoVideos() {
           </Sheet>
         </>
       )}
+      </div>
+      <DemoRight reel={REELS[Math.min(index, GATE - 1)]} index={Math.min(index, GATE - 1)} />
       <PaywallSheet open={gated} onClose={() => {}} spool={SAMPLE_SPOOL} viewer={null} reel={GATE + 1} />
     </div>
   );
@@ -280,7 +288,7 @@ function SummarySheet({ reel }: { reel: DemoReel }) {
         className="mt-2 flex"
         onSubmit={(e) => {
           e.preventDefault();
-          openAuth("signup", { next: "/?upload=1" });
+          openAuth("signup", { next: "/library", onDone: () => (window.location.href = "/library") });
         }}
       >
         <input
@@ -397,5 +405,109 @@ function QuizDemo({ reel }: { reel: DemoReel }) {
       )}
       <p className="mt-4 text-[12.5px] text-muted">Every reel Unspool makes from your notes comes with a question like this.</p>
     </div>
+  );
+}
+
+const LOCKED = SAMPLE_SPOOL.reels.slice(REELS.length);
+
+/** Desktop: the document and its reels, as the workbench shows them for a real upload. */
+function DemoLeft({ index, onPick }: { index: number; onPick: (i: number) => void }) {
+  const sp = SAMPLE_SPOOL;
+  return (
+    <aside className="hidden w-[320px] shrink-0 flex-col overflow-y-auto border-r border-line lg:flex">
+      <div className="px-5 pb-4 pt-5">
+        <div className="text-[12.5px] text-muted">PDF, {sp.pageCount} pages, {sp.wordCount?.toLocaleString("en-US")} words</div>
+        <h1 className="mt-2 font-display text-[22px] leading-[1.1] text-ink">{sp.title}</h1>
+        <div className="mt-1.5 truncate text-[12.5px] text-muted">{sp.fileName}</div>
+        <div className="mt-4 h-px bg-line" />
+        <div className="mt-3 flex items-baseline justify-between text-[13px]">
+          <span className="font-medium text-thread">Sample</span>
+          <span className="tabular-nums text-muted">{REELS.length} of {sp.totalReels} open</span>
+        </div>
+        <div className="mt-2 h-[2px] bg-line">
+          <div className="h-full bg-thread" style={{ width: `${(REELS.length / (sp.totalReels ?? 10)) * 100}%` }} />
+        </div>
+      </div>
+      <div className="flex items-baseline justify-between border-t border-line px-5 pb-2 pt-4">
+        <span className="text-[13px] font-medium text-ink">Reels</span>
+        <span className="text-[12px] tabular-nums text-muted">{REELS.length} open, {LOCKED.length} locked</span>
+      </div>
+      <ol className="space-y-0.5 px-2.5 pb-4" aria-label="Reels">
+        {REELS.map((r, i) => (
+          <li key={r.src}>
+            <button type="button" onClick={() => onPick(i)} aria-current={i === index ? "true" : undefined} className={`flex w-full items-center gap-3 p-2 text-left ${i === index ? "bg-surface" : "hover:bg-white/[0.03]"}`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={r.poster} alt="" className={`h-[78px] w-[44px] shrink-0 object-cover ${i === index ? "ring-1 ring-thread" : ""}`} />
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-muted">Part {i + 1}</span>
+                  <span className="text-[11.5px] text-sage">{i === index ? "Playing" : "Ready"}</span>
+                </span>
+                <span className="mt-0.5 block truncate text-[13.5px] font-semibold text-ink">{r.title}</span>
+                <span className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-muted">{r.caption.replace(/ #.*$/, "")}</span>
+              </span>
+            </button>
+          </li>
+        ))}
+        {LOCKED.map((r, k) => (
+          <li key={r.id}>
+            <button type="button" onClick={() => onPick(REELS.length)} className="flex w-full items-center gap-3 p-2 text-left hover:bg-white/[0.03]">
+              <span className="flex h-[78px] w-[44px] shrink-0 items-center justify-center border border-line bg-white/[0.03] text-muted">
+                <Lock size={14} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-muted">Part {REELS.length + k + 1}</span>
+                  <span className="text-[11.5px] text-muted">Locked</span>
+                </span>
+                <span className="mt-0.5 block truncate text-[13.5px] font-semibold text-ink/70">{sentenceCase(r.title)}</span>
+                <span className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-muted">{r.hook.replace(/[*~#]/g, "")}</span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ol>
+    </aside>
+  );
+}
+
+/** Desktop: details for the reel on screen (summary, transcript, quick check), like the real workbench. */
+function DemoRight({ reel, index }: { reel: DemoReel; index: number }) {
+  const fmt = (t: number) => `0:${String(Math.floor(t)).padStart(2, "0")}`;
+  return (
+    <aside className="hidden w-[360px] shrink-0 overflow-y-auto border-l border-line p-5 xl:block">
+      <div className="flex items-center justify-between">
+        <span className="text-[13px] font-medium text-muted">About this reel</span>
+        <span className="text-[12px] text-sage">Ready</span>
+      </div>
+      <h2 className="mt-3 font-display text-[24px] leading-[1.1]">{reel.title}</h2>
+      <div className="mt-1.5 text-[12.5px] text-muted">
+        Part {index + 1} of {SAMPLE_SPOOL.totalReels}, {reel.transcript.length} lines and a quick check
+      </div>
+      <div className="mt-4 border-l-2 border-thread py-1 pl-4">
+        <div className="text-[13px] font-semibold text-thread">Key point</div>
+        <p className="mt-1.5 text-[14.5px] leading-snug text-ink">{reel.summary[reel.summary.length - 1]}</p>
+      </div>
+      <div className="mt-5 border border-line p-4">
+        <div className="flex items-baseline justify-between">
+          <span className="text-[14px] font-semibold">Transcript</span>
+          <span className="text-[12px] text-muted">{reel.transcript.length} lines</span>
+        </div>
+        <ol className="mt-3 space-y-2.5">
+          {reel.transcript.map(([t, line]) => (
+            <li key={line} className="flex gap-3 text-[14px] leading-snug">
+              <span className="w-9 shrink-0 font-mono text-[12px] text-muted">{fmt(t)}</span>
+              <span className="text-ink/90">{line}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div className="mt-4 border border-line p-4">
+        <div className="text-[14px] font-semibold">Quick check</div>
+        <div className="mt-3">
+          <QuizDemo key={index} reel={reel} />
+        </div>
+      </div>
+    </aside>
   );
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { CheckoutReturn, SignInButtons } from "@/components/shell/account-actions";
 import { AppShell } from "@/components/shell/app-shell";
+import { EmptyWorkbench } from "@/components/spool/empty-workbench";
 import { LibraryGrid, type LibraryItem } from "@/components/spool/library-grid";
 import { freeReelLimit, isUnlocked } from "@/lib/access";
 import { tierOf } from "@/lib/credits";
@@ -53,6 +54,20 @@ export default async function LibraryPage() {
     ["Reels", String(reelCount)],
     ["Plan", PLANS[tierOf(viewer?.profile ?? null)].name],
   ];
+
+  // Signed in with nothing uploaded yet: the empty workbench, upload in the middle.
+  if (viewer?.userId && items.length === 0) {
+    return (
+      <AppShell active="library">
+        <Suspense>
+          <CheckoutReturn />
+        </Suspense>
+        <div className="h-[calc(100dvh-64px)]">
+          <EmptyWorkbench />
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell active="library">

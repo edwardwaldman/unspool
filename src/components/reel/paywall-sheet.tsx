@@ -55,7 +55,7 @@ export function PaywallSheet({
     else setSent(true);
   };
 
-  const startUpload = () => openAuth("signup", { next: "/?upload=1", onDone: () => (window.location.href = "/?upload=1") });
+  const startUpload = () => openAuth("signup", { next: "/library", onDone: () => (window.location.href = "/library") });
   return (
     <Sheet open={open} onClose={onClose} label="Sign in" locked={spool.demo} above={spool.demo ? <BigUpload onClick={startUpload} /> : undefined}>
       {spool.demo ? (
