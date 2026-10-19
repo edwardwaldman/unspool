@@ -9,12 +9,6 @@ import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 // A signed-in account with no documents yet: the workbench, empty. A big upload button in the middle;
 // the reel list and the reel details stay blank until the first document is unspooled.
 
-const TAGS = [
-  { t: ".pdf", x: -150, y: -110, r: -10, d: 0 },
-  { t: ".docx", x: 150, y: -86, r: 8, d: 0.4 },
-  { t: ".pptx", x: -146, y: 100, r: 7, d: 0.8 },
-  { t: "notes.jpg", x: 140, y: 118, r: -6, d: 1.2 },
-];
 
 export function EmptyWorkbench() {
   const input = useRef<HTMLInputElement>(null);
@@ -57,25 +51,13 @@ export function EmptyWorkbench() {
           }}
         />
         <div className="relative">
-          {[0, 1, 2].map((k) => (
-            <motion.span
-              key={k}
-              aria-hidden
-              className="pointer-events-none absolute inset-0 border-2 border-thread"
-              initial={{ opacity: 0.7, scale: 1 }}
-              animate={{ opacity: 0, scale: 1.9 }}
-              transition={{ duration: 2.4, repeat: Infinity, delay: k * 0.8, ease: "easeOut" }}
-            />
-          ))}
           <motion.button
             type="button"
             onClick={() => input.current?.click()}
             disabled={Boolean(pending)}
             aria-label="Upload a document"
             className="relative flex h-48 w-48 flex-col items-center justify-center gap-2 bg-thread text-[#08110e] shadow-[0_0_60px_rgba(211,240,90,.35)] disabled:opacity-60"
-            animate={{ scale: [1, 1.05, 1], rotate: [0, -2, 2, 0] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-            whileHover={{ scale: 1.1 }}
+            whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.92 }}
           >
             <motion.span animate={{ y: [0, -10, 0] }} transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}>
@@ -83,20 +65,8 @@ export function EmptyWorkbench() {
             </motion.span>
             <span className="font-hook text-[17px] font-extrabold uppercase tracking-[0.04em]">{pending ? "Opening" : "Upload"}</span>
           </motion.button>
-          {TAGS.map((g) => (
-            <motion.span
-              key={g.t}
-              aria-hidden
-              className="pointer-events-none absolute left-1/2 top-1/2 z-10 whitespace-nowrap border border-line bg-surface px-2.5 py-1 font-mono text-[13px] text-ink/80"
-              style={{ marginLeft: g.x, marginTop: g.y, translateX: "-50%", translateY: "-50%", rotate: g.r }}
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 3, repeat: Infinity, delay: g.d, ease: "easeInOut" }}
-            >
-              {g.t}
-            </motion.span>
-          ))}
         </div>
-        <h1 className="mt-28 text-center font-display text-[30px] leading-tight">Drop in your first document.</h1>
+        <h1 className="mt-10 text-center font-display text-[30px] leading-tight">Drop in your first document.</h1>
         <p className="mt-2 max-w-[380px] text-center text-[14.5px] text-muted">A PDF, chapter, slides or a photo of your notes. It turns into reels you can scroll.</p>
       </div>
 

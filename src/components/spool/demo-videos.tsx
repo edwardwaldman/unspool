@@ -221,7 +221,6 @@ export function DemoVideos() {
         <button type="button" aria-label="Previous reel" onClick={() => go(index - 1)} disabled={index === 0} className="flex h-12 w-12 items-center justify-center border border-line text-ink disabled:opacity-30">
           <ChevronUp size={20} />
         </button>
-        <span className="font-mono text-[12px] text-muted">{Math.min(index + 1, REELS.length)} of {REELS.length}</span>
         <button type="button" aria-label="Next reel" onClick={() => go(index + 1)} className="flex h-12 w-12 items-center justify-center border border-line text-ink">
           <ChevronDown size={20} />
         </button>
