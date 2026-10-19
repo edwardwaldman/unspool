@@ -61,7 +61,7 @@ export default function PricingPage() {
       <section className="pt-16">
         <div className="label">Pricing</div>
         <h1 className="mt-3 max-w-[640px] font-display text-[45px] leading-[0.98] sm:text-[58px]">
-          Your first reel is free. <em className="text-thread">Every document.</em>
+          Plans for every <em className="text-thread">reading list.</em>
         </h1>
         <p className="mt-5 max-w-[560px] text-[16px] text-ink/80">
           Free gets reel 1 of every document, then 1 more every {FREE_REEL_INTERVAL_MIN} minutes, up to {FREE_REELS_PER_DAY} a day. Paid plans bill weekly, or yearly for less,
