@@ -4,8 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { openAuth } from "../auth/auth-store";
-import { motion } from "motion/react";
-import { Upload } from "lucide-react";
+import { BigUpload } from "../landing/info-slide";
 import { Sheet } from "../ui/sheet";
 
 /** Signed out (or the demo): sign in (Google / magic link / password) and come back to the same reel. */
@@ -57,7 +56,7 @@ export function PaywallSheet({
 
   const startUpload = () => openAuth("signup", { next: "/library", onDone: () => (window.location.href = "/library") });
   return (
-    <Sheet open={open} onClose={onClose} label="Sign in" locked={spool.demo} above={spool.demo ? <BigUpload onClick={startUpload} /> : undefined}>
+    <Sheet open={open} onClose={onClose} label="Sign in" locked={spool.demo} above={spool.demo ? <GateUpload onClick={startUpload} /> : undefined}>
       {spool.demo ? (
         <div className="pb-1">
           <div className="label">That&apos;s the sample</div>
@@ -128,25 +127,11 @@ export function PaywallSheet({
 }
 
 
-/** The demo gate's centerpiece: a big upload button with a bouncing arrow. */
-function BigUpload({ onClick }: { onClick: () => void }) {
+/** The demo gate's centerpiece: the landing page's upload button, arrow and tags, above the sheet. */
+function GateUpload({ onClick }: { onClick: () => void }) {
   return (
-    <div className="absolute inset-x-0 top-0 z-[1] flex items-center justify-center" style={{ bottom: 320 }}>
-      <div className="relative">
-        <motion.button
-          type="button"
-          onClick={onClick}
-          aria-label="Upload a document"
-          className="relative flex h-44 w-44 flex-col items-center justify-center gap-2 bg-thread text-[#08110e] shadow-[0_0_60px_rgba(211,240,90,.35)]"
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.92 }}
-        >
-          <motion.span animate={{ y: [0, -10, 0] }} transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}>
-            <Upload size={58} strokeWidth={2.4} />
-          </motion.span>
-          <span className="font-hook text-[17px] font-extrabold uppercase tracking-[0.04em]">Upload</span>
-        </motion.button>
-      </div>
+    <div className="absolute inset-x-0 top-0 z-[1] flex items-center justify-center overflow-hidden px-4" style={{ bottom: 300 }}>
+      <BigUpload onClick={onClick} demoLink={false} />
     </div>
   );
 }

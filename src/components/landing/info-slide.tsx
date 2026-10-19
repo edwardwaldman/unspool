@@ -71,7 +71,12 @@ export function InfoSlide() {
   );
 }
 
-function BigUpload() {
+/**
+ * The big "Upload a document" button with the hand-drawn "start here" arrow and floating tags.
+ * Used at the bottom of the landing page, on the demo's sign-up gate and on a new account's empty page.
+ * `onClick` replaces the file picker (the demo gate signs people up first).
+ */
+export function BigUpload({ onClick, demoLink = true, wideTags = true }: { onClick?: () => void; demoLink?: boolean; /** The two tags that sit far out to the sides (hide them in narrow columns). */ wideTags?: boolean } = {}) {
   const input = useRef<HTMLInputElement>(null);
   const upload = useUploader();
   return (
@@ -92,8 +97,12 @@ function BigUpload() {
         <Float mobile className="right-2 top-10 rotate-3 md:right-4 md:top-0" delay={0.4}>.docx</Float>
         <Float mobile className="bottom-4 right-2 -rotate-3 md:bottom-0 md:right-6" delay={1.2}>captions on</Float>
         <Float mobile className="bottom-9 left-3 rotate-2 md:bottom-2 md:left-8" delay={0.8}>.pptx</Float>
-        <Float className="-left-24 top-1/2 -translate-y-1/2 -rotate-3" delay={1}>♪ voiceover</Float>
-        <Float className="-right-40 top-[46%] rotate-2 border-thread/60 text-thread" delay={1.4}>✓ quiz in every reel</Float>
+        {wideTags && (
+          <>
+            <Float className="-left-24 top-1/2 -translate-y-1/2 -rotate-3" delay={1}>♪ voiceover</Float>
+            <Float className="-right-40 top-[46%] rotate-2 border-thread/60 text-thread" delay={1.4}>✓ quiz in every reel</Float>
+          </>
+        )}
         {/* hand-drawn "start here" arrow */}
         <div aria-hidden className="pointer-events-none absolute -top-[22px] left-1/2 flex origin-bottom-left -translate-x-[66px] scale-[0.8] items-start gap-1 md:-top-12 md:translate-x-[70px] md:scale-100">
           <span className="-rotate-6 font-hook text-[20px] text-thread">start here</span>
@@ -129,14 +138,14 @@ function BigUpload() {
         </div>
         <button
           type="button"
-          onClick={() => input.current?.click()}
+          onClick={() => (onClick ? onClick() : input.current?.click())}
           className="relative z-10 mx-auto flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-8 py-6 text-[20px] md:gap-4 md:px-24 md:py-10 md:text-[36px] font-medium text-paper transition-opacity hover:opacity-90"
         >
           <UploadIcon size={28} /> Upload a document
         </button>
-          <Link href="/s/demo" className="relative z-10 mt-5 flex items-center justify-center gap-2 text-[15px] text-muted underline decoration-line underline-offset-4 transition-colors hover:text-ink lg:text-[17px]">
+          {demoLink && <Link href="/s/demo" className="relative z-10 mt-5 flex items-center justify-center gap-2 text-[15px] text-muted underline decoration-line underline-offset-4 transition-colors hover:text-ink lg:text-[17px]">
             <PlayIcon size={14} /> Watch a demo
-          </Link>
+          </Link>}
       </div>
     </>
   );
