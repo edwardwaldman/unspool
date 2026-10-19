@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { PlayIcon, UploadIcon, Wordmark } from "../ui/icons";
 import { useMedia } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
@@ -25,6 +25,20 @@ function useViewport(dim: "innerHeight" | "innerWidth", fallback: number) {
     () => window[dim],
     () => fallback,
   );
+}
+
+/** Live height of an element (0 until measured), so the hero can size its animation to whatever space is left. */
+function useHeight<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [h, setH] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setH(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, h] as const;
 }
 
 /** The hero's call to action: opens the file picker right away; sign-up (if needed) comes after the file. */
@@ -61,11 +75,11 @@ function UploadButton() {
         type="button"
         onClick={() => input.current?.click()}
         disabled={Boolean(pending)}
-        className="flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-10 py-4 text-[18px] font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-60 lg:px-20 lg:py-7 lg:text-[28px]"
+        className="flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-10 py-4 text-[18px] font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-60 min-[900px]:px-20 min-[900px]:py-7 min-[900px]:text-[28px]"
       >
         {pending ? "Opening your feed" : (<><UploadIcon size={26} /> Upload a document</>)}
       </button>
-      <Link href="/s/demo" className="-mt-1 flex items-center justify-center gap-2 text-[15px] text-muted underline decoration-line underline-offset-4 transition-colors hover:text-ink lg:text-[17px]">
+      <Link href="/s/demo" className="-mt-1 flex items-center justify-center gap-2 text-[15px] text-muted underline decoration-line underline-offset-4 transition-colors hover:text-ink min-[900px]:text-[17px]">
         <PlayIcon size={14} /> Watch a demo
       </Link>
     </>
@@ -127,7 +141,8 @@ function Headline() {
 
 /** First-visit home: one line, the upload reel, and a big document-to-reels animation beside it. */
 export function Landing() {
-  const lg = useMedia("(min-width: 1024px)");
+  // The side-by-side hero starts at 900px so landscape iPads (about 1000px wide) get it too.
+  const lg = useMedia("(min-width: 900px)");
   const vh = useViewport("innerHeight", 900);
   const vw = useViewport("innerWidth", 1440);
   // Fit the animation to the screen: as big as width allows, never taller than what's left under the headline.
@@ -140,21 +155,28 @@ export function Landing() {
   const animFade = useTransform(easedY, [150, 900], [1, 0.25]);
   const cueFade = useTransform(easedY, [40, 420], [1, 0]);
   const cueY = useTransform(easedY, [0, 420], [0, 24]);
-  const k = lg ? Math.max(0.6, Math.min(2.8, (vh - 355) / ANIM_H, (vw - 120) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
+  const [headRef, headH] = useHeight<HTMLDivElement>();
+  const [rowRef, rowH] = useHeight<HTMLDivElement>();
+  // Desktop and iPad: the animation takes exactly the height the headline and buttons leave, with four equal gaps
+  // (top bar, headline, animation, buttons, pull-up tab) of at least HERO_GAP, and stays clear of the side tags.
+  // That way the hero fills the screen at any size without ever needing to scroll or zoom.
+  const HERO_GAP = 28;
+  const free = vh - 64 - 36 - (headH || 70) - (rowH || 150) - HERO_GAP * 4;
+  const k = lg ? Math.max(0.6, Math.min(2.8, free / ANIM_H, (vw - 480) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
 
   return (
     <div>
-    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-[safe_center] gap-6 overflow-hidden px-3 pb-10 pt-20 lg:gap-8 lg:px-6 lg:pb-6 lg:pt-16">
+    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-[safe_center] gap-6 overflow-hidden px-3 pb-10 pt-20 min-[900px]:justify-evenly min-[900px]:gap-0 min-[900px]:px-6 min-[900px]:pb-9 min-[900px]:pt-16">
       {/* Wordmark under the top bar: the bar slides down over it on scroll */}
-      <Link href="/" aria-label="unspool" className="absolute left-5 top-5 lg:left-10 lg:top-[22px]">
+      <Link href="/" aria-label="unspool" className="absolute left-5 top-5 min-[900px]:left-10 min-[900px]:top-[22px]">
         <Wordmark size={24} />
       </Link>
       {/* Parallax: each layer leaves at its own speed as you scroll */}
-      <motion.div className="relative" style={lg ? { y: headY, opacity: headFade } : undefined}>
+      <motion.div ref={headRef} className="relative" style={lg ? { y: headY, opacity: headFade } : undefined}>
         <Headline />
       </motion.div>
-      <div className="flex flex-col items-center gap-6 lg:gap-8">
-        <motion.div className="relative order-first" style={lg ? { width: ANIM_W * k, height: ANIM_H * k, scale: animScale, opacity: animFade } : { width: ANIM_W * k, height: ANIM_H * k }}>
+      <div className="flex flex-col items-center gap-6 min-[900px]:contents">
+        <motion.div className="relative" style={lg ? { width: ANIM_W * k, height: ANIM_H * k, scale: animScale, opacity: animFade } : { width: ANIM_W * k, height: ANIM_H * k }}>
           {/* Floating gimmicks around the animation (desktop) */}
           <Tag className="-left-36 top-[30%] -rotate-3" delay={0.9}>.docx</Tag>
           <Tag className="-left-44 top-[64%] rotate-2" delay={1.3}>♪ voiceover</Tag>
@@ -164,7 +186,7 @@ export function Landing() {
             <DocToReel />
           </div>
         </motion.div>
-        <div className="flex flex-col items-center gap-2 lg:flex-row lg:gap-10">
+        <div ref={rowRef} className="flex flex-col items-center gap-2 min-[900px]:flex-row min-[900px]:gap-10">
           <div className="flex flex-col items-center gap-3">
             <UploadButton />
           </div>
@@ -174,14 +196,14 @@ export function Landing() {
             type="button"
             aria-label="See how it works"
             onClick={(e) => e.currentTarget.closest("main")?.scrollBy({ top: window.innerHeight * 0.9, behavior: "smooth" })}
-            className="shrink-0 lg:-my-6"
+            className="shrink-0 min-[900px]:-my-6"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.3, type: "spring", stiffness: 320, damping: 16 }}
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.94 }}
           >
-            <span className="relative flex h-[124px] w-[124px] items-center justify-center lg:h-[144px] lg:w-[144px]">
+            <span className="relative flex h-[124px] w-[124px] items-center justify-center min-[900px]:h-[144px] min-[900px]:w-[144px]">
               <motion.svg viewBox="0 0 100 100" className="absolute inset-0" animate={{ rotate: 360 }} transition={{ duration: 14, repeat: Infinity, ease: "linear" }}>
                 <defs>
                   <path id="cue-ring" d="M50 50 m-38 0 a38 38 0 1 1 76 0 a38 38 0 1 1 -76 0" />
@@ -190,8 +212,8 @@ export function Landing() {
                   <textPath href="#cue-ring" textLength="236" lengthAdjust="spacing">see how it works · see how it works ·</textPath>
                 </text>
               </motion.svg>
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-thread text-paper lg:h-20 lg:w-20">
-                <motion.svg width="26" height="26" viewBox="0 0 24 24" className="lg:h-8 lg:w-8" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" animate={{ y: [-3, 4, -3] }} transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}>
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-thread text-paper min-[900px]:h-20 min-[900px]:w-20">
+                <motion.svg width="26" height="26" viewBox="0 0 24 24" className="min-[900px]:h-8 min-[900px]:w-8" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" animate={{ y: [-3, 4, -3] }} transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}>
                   <path d="M12 4v15M5 12l7 7 7-7" />
                 </motion.svg>
               </span>
@@ -207,7 +229,7 @@ export function Landing() {
         <button
           type="button"
           onClick={(e) => e.currentTarget.closest("main")?.scrollBy({ top: window.innerHeight * 0.9, behavior: "smooth" })}
-          className="absolute -top-9 left-5 z-20 flex h-9 items-center gap-1.5 rounded-t-[10px] bg-ink px-4 text-[13px] font-medium text-paper lg:left-10"
+          className="absolute -top-9 left-5 z-20 flex h-9 items-center gap-1.5 rounded-t-[10px] bg-ink px-4 text-[13px] font-medium text-paper min-[900px]:left-10"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M12 19V5M5 12l7-7 7 7" />
