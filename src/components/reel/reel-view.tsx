@@ -169,12 +169,12 @@ export function ReelView({
       )}
 
       {/* Right action rail */}
-      <div className="absolute right-2 z-20 flex w-[60px] justify-center" style={{ bottom: bottom + 14 }}>
+      <div className="absolute right-2 z-20 flex w-[60px] origin-bottom-right justify-center ipad:right-5 ipad:scale-[1.6]" style={{ bottom: bottom + 14 }}>
         <ActionRail reelId={reel.id} title={script.title} muted={muted || preview} onToggleMute={toggleMute} onReplay={pb.replay} onMore={onMore} onShare={onShare} />
       </div>
 
       {/* Account row, title, audio */}
-      <div className="absolute left-3.5 z-20" style={{ right: GUTTER, bottom: bottom + 14 }}>
+      <div className="absolute left-3.5 z-20 origin-bottom-left ipad:left-6 ipad:right-[40%]! ipad:scale-[1.6]" style={{ right: GUTTER, bottom: bottom + 14 }}>
         <CaptionBlock
           fileName={spool.title ?? spool.fileName}
           title={script.title}

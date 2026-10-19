@@ -145,7 +145,7 @@ export function DemoVideos() {
                 <button
                   type="button"
                   onClick={() => setMuted(false)}
-                  className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 bg-thread px-4 py-2.5 text-[14px] font-semibold text-[#08110e]"
+                  className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 bg-thread px-4 py-2.5 text-[14px] ipad:gap-3 ipad:px-6 ipad:py-4 ipad:text-[22px] font-semibold text-[#08110e]"
                 >
                   <VolumeIcon size={17} muted strokeWidth={2} /> Tap for sound
                 </button>
@@ -170,7 +170,7 @@ export function DemoVideos() {
                 )}
               </AnimatePresence>
               {/* Instagram Reels chrome */}
-              <div className="absolute bottom-24 right-2 z-10 flex flex-col items-center gap-5 text-white [text-shadow:0_1px_2px_rgba(0,0,0,.6)]">
+              <div className="absolute bottom-24 right-2 z-10 flex origin-bottom-right flex-col items-center gap-5 text-white ipad:bottom-36 ipad:right-5 ipad:scale-[1.6] [text-shadow:0_1px_2px_rgba(0,0,0,.6)]">
                 <RailButton label={liked.has(i) ? "Saved for later" : "Save for later"} onClick={() => { if (!liked.has(i)) toast("Saved for later"); setLiked((l) => toggle(l, i)); }}>
                   <Heart size={28} strokeWidth={1.8} fill={liked.has(i) ? "#ff3040" : "none"} color={liked.has(i) ? "#ff3040" : "currentColor"} />
                 </RailButton>
@@ -188,7 +188,7 @@ export function DemoVideos() {
                 </RailButton>
                 <span className="h-7 w-7 rounded-[7px] border-2 border-white bg-thread" aria-hidden />
               </div>
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-3.5 pb-4 pt-20 pr-16 text-white [text-shadow:0_1px_2px_rgba(0,0,0,.5)]">
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-3.5 pb-4 pt-20 pr-16 text-white ipad:[zoom:1.6] [text-shadow:0_1px_2px_rgba(0,0,0,.5)]">
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-thread font-wordmark text-[14px] font-bold text-[#08110e] ring-2 ring-white/90">u</span>
                   <span className="text-[14px] font-semibold">unspool</span>
