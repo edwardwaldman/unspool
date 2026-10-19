@@ -147,8 +147,11 @@ export function BigUpload({ onClick, demoLink = true, wideTags = true, big = fal
         >
           <UploadIcon size={big ? 40 : 28} /> Upload a document
         </button>
-          {demoLink && <Link href="/s/demo" className="relative z-10 mt-5 flex items-center justify-center gap-2 text-[15px] text-muted underline decoration-line underline-offset-4 transition-colors hover:text-ink lg:text-[17px]">
-            <PlayIcon size={14} /> Watch a demo
+          {demoLink && <Link href="/s/demo" className="group relative z-10 mx-auto mt-6 flex w-fit items-center justify-center gap-3 border border-line bg-paper px-6 py-3 text-[17px] font-medium text-ink transition-colors hover:border-thread md:px-8 md:py-4 md:text-[22px]">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-thread text-paper transition-transform group-hover:scale-110 md:h-10 md:w-10">
+              <PlayIcon size={15} />
+            </span>
+            Watch a demo
           </Link>}
       </div>
     </>

@@ -90,8 +90,11 @@ function UploadButton({ toStudio }: { toStudio: boolean }) {
       >
         {pending ? "Opening your feed" : (<><UploadIcon size={26} /> Upload a document</>)}
       </button>
-      <Link href="/s/demo" className="-mt-1 flex items-center justify-center gap-2 text-[15px] text-muted underline decoration-line underline-offset-4 transition-colors hover:text-ink min-[900px]:text-[17px]">
-        <PlayIcon size={14} /> Watch a demo
+      <Link href="/s/demo" className="group mt-1 flex items-center justify-center gap-3 border border-line px-6 py-3 text-[17px] font-medium text-ink transition-colors hover:border-thread min-[900px]:px-8 min-[900px]:py-3.5 min-[900px]:text-[20px]">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-thread text-paper transition-transform group-hover:scale-110 min-[900px]:h-9 min-[900px]:w-9">
+          <PlayIcon size={14} />
+        </span>
+        Watch a demo
       </Link>
     </>
   );
