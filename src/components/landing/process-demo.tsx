@@ -90,7 +90,7 @@ function Stage({ p, narrow, h }: { p: number; narrow: boolean; h: number }) {
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <div className="flex items-center gap-3 text-muted">
             <FileText size={18} strokeWidth={1.5} />
-            <span className="font-mono text-[13px]">Q3-report.pdf</span>
+            <span className="font-display text-[14px] font-semibold tracking-[-0.01em] text-ink/80">Q3-report.pdf</span>
           </div>
           <div className={`mt-5 text-center font-display leading-none ${narrow ? "text-[32px]" : "text-[40px]"}`}>Unspooling your doc</div>
           <div className={`mt-8 flex ${narrow ? "flex-col gap-3" : "gap-8"}`}>

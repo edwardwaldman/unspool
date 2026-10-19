@@ -35,7 +35,7 @@ export function DocToReel() {
         </motion.div>
         <div className="flex items-center gap-2 text-muted">
           <FileText size={14} strokeWidth={1.5} />
-          <span className="truncate font-mono text-[10px]">Q3-report.pdf</span>
+          <span className="truncate font-display text-[11px] font-semibold tracking-[-0.01em] text-ink/80">Q3-report.pdf</span>
         </div>
         <div className="mt-4 space-y-[8px]">
           {REELS.map((r, n) => (

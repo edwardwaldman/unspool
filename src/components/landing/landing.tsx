@@ -96,7 +96,7 @@ function Tag({ children, className, delay = 0 }: { children: React.ReactNode; cl
   return (
     <motion.span
       aria-hidden
-      className={`absolute hidden border border-line bg-paper px-2 py-1 font-mono text-[11px] text-muted md:block ${className}`}
+      className={`absolute hidden whitespace-nowrap border border-line bg-paper px-2 py-1 font-mono text-[11px] text-muted md:block ipad:px-3.5 ipad:py-1.5 ipad:text-[17px] ${className}`}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: [0, -5, 0] }}
       transition={{ opacity: { delay, duration: 0.5 }, y: { delay, duration: 4, repeat: Infinity, ease: "easeInOut" } }}
@@ -112,7 +112,6 @@ function Headline() {
     <div className="px-4 md:px-24">
       {/* The tag hangs off the headline text itself, so it never drifts over the logo on mid-size screens. */}
       <div className="relative mx-auto w-fit">
-      <Tag className="-right-6 -top-7 rotate-6" delay={0.4}>.pdf</Tag>
       <h1 className="text-center font-headline text-[30px] font-bold leading-[1.1] tracking-[-0.02em] md:text-[50px]">
         One document{" "}
         <span className="relative inline-block text-thread">
@@ -184,10 +183,10 @@ export function Landing() {
       <div className="flex flex-col items-center gap-6 min-[900px]:contents">
         <motion.div id="hero-anim" suppressHydrationWarning className="relative" style={lg ? { width: ANIM_W * k, height: ANIM_H * k, scale: animScale, opacity: animFade } : { width: ANIM_W * k, height: ANIM_H * k }}>
           {/* Floating gimmicks around the animation (desktop) */}
-          <Tag className="-left-36 top-[30%] -rotate-3" delay={0.9}>.docx</Tag>
-          <Tag className="-left-44 top-[64%] rotate-2" delay={1.3}>♪ voiceover</Tag>
-          <Tag className="-right-52 top-[16%] rotate-3 border-thread/60 text-thread" delay={1.1}>✓ quiz in every reel</Tag>
-          <Tag className="-right-40 top-[70%] -rotate-2" delay={1.5}>captions on</Tag>
+          <Tag className="-left-36 top-[30%] -rotate-3 ipad:left-auto ipad:right-[calc(100%+56px)]" delay={0.9}>.docx</Tag>
+          <Tag className="-left-44 top-[64%] rotate-2 ipad:left-auto ipad:right-[calc(100%+24px)]" delay={1.3}>♪ voiceover</Tag>
+          <Tag className="-right-52 top-[16%] rotate-3 border-thread/60 text-thread ipad:right-auto ipad:left-[calc(100%+24px)]" delay={1.1}>✓ quiz in every reel</Tag>
+          <Tag className="-right-40 top-[70%] -rotate-2 ipad:right-auto ipad:left-[calc(100%+48px)]" delay={1.5}>captions on</Tag>
           <div id="hero-anim-inner" suppressHydrationWarning className="origin-top-left" style={{ width: ANIM_W, height: ANIM_H, transform: `scale(${k})` }}>
             <DocToReel />
           </div>
