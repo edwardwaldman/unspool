@@ -8,7 +8,7 @@ lines = [
  ("k", "K", "I am studying."),
  ("f2", "F", "You're literally scrolling."),
  ("swipe", "K", "Exactly. Every chapter's a reel. Voiceover, captions, a quiz in every one."),
- ("swipe", "K", "I put the whole textbook into reels."),
+ ("swipe", "K", "I put the whole textbook into Unspool."),
  ("f2", "F", "Wait... that's actually the textbook?"),
  ("k", "K", "Yep. I'm on reel thirty."),
  ("f", "F", "Send me the link."),
