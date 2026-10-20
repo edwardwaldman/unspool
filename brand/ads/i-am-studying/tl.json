@@ -1,5 +1,5 @@
 {
- "dur": 20.282,
+ "dur": 20.113,
  "lines": [
   {
    "shot": "f",
@@ -26,42 +26,42 @@
    "shot": "swipe",
    "who": "K",
    "s": 5.374,
-   "e": 7.998,
-   "text": "Exactly. I put the whole textbook into Unspool."
+   "e": 9.475,
+   "text": "Exactly. Every chapter's a reel. Voiceover, captions, a quiz in every one."
   },
   {
    "shot": "swipe",
    "who": "K",
-   "s": 8.078,
-   "e": 11.509,
-   "text": "Every chapter's a reel. Voiceover, captions, a quiz in every one."
+   "s": 9.555,
+   "e": 11.34,
+   "text": "I put the whole textbook into reels."
   },
   {
    "shot": "f2",
    "who": "F",
-   "s": 11.589,
-   "e": 13.17,
+   "s": 11.42,
+   "e": 13.001,
    "text": "Wait... that's actually the textbook?"
   },
   {
    "shot": "k",
    "who": "K",
-   "s": 13.23,
-   "e": 14.551,
+   "s": 13.061,
+   "e": 14.382,
    "text": "Yep. I'm on reel thirty."
   },
   {
    "shot": "f",
    "who": "F",
-   "s": 14.611,
-   "e": 15.56,
+   "s": 14.442,
+   "e": 15.391,
    "text": "Send me the link."
   },
   {
    "shot": "end",
    "who": "U",
-   "s": 15.62,
-   "e": 18.282,
+   "s": 15.451,
+   "e": 18.113,
    "text": "unspool.cc Your textbook, as reels."
   }
  ]
