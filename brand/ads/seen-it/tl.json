@@ -1,0 +1,89 @@
+{
+ "dur": 24.88,
+ "lines": [
+  {
+   "shot": "kp",
+   "who": "K",
+   "s": 0.15,
+   "e": 3.172,
+   "text": "My bio test is in thirty minutes! I haven't read anything!"
+  },
+  {
+   "shot": "u",
+   "who": "U",
+   "s": 3.212,
+   "e": 4.162,
+   "text": "How many pages?"
+  },
+  {
+   "shot": "kp",
+   "who": "K",
+   "s": 4.202,
+   "e": 5.85,
+   "text": "Four hundred twelve! I'm so done!"
+  },
+  {
+   "shot": "u",
+   "who": "U",
+   "s": 5.89,
+   "e": 8.709,
+   "text": "Relax. Upload the PDF. I'll turn it into reels."
+  },
+  {
+   "shot": "screen",
+   "who": "K",
+   "s": 8.749,
+   "e": 10.119,
+   "text": "Wait... the whole PDF?!"
+  },
+  {
+   "shot": "screen",
+   "who": "U",
+   "s": 10.159,
+   "e": 11.779,
+   "text": "Yep. Every chapter's a reel now."
+  },
+  {
+   "shot": "swipe",
+   "who": "K",
+   "s": 11.819,
+   "e": 13.998,
+   "text": "Voiceover, captions, a quiz in every one!"
+  },
+  {
+   "shot": "swipe2",
+   "who": "K",
+   "s": 14.038,
+   "e": 16.286,
+   "text": "I can study the whole textbook just by scrolling!"
+  },
+  {
+   "shot": "k3",
+   "who": "K",
+   "s": 16.486,
+   "e": 18.48,
+   "text": "Wait... I actually get photosynthesis?!"
+  },
+  {
+   "shot": "u2",
+   "who": "U",
+   "s": 18.52,
+   "e": 19.452,
+   "text": "You learned all of it."
+  },
+  {
+   "shot": "test",
+   "who": "K",
+   "s": 19.492,
+   "e": 20.044,
+   "text": "Seen it."
+  },
+  {
+   "shot": "end",
+   "who": "U",
+   "s": 20.294,
+   "e": 22.88,
+   "text": "unspool.cc Your textbook, as reels."
+  }
+ ]
+}

@@ -1,0 +1,68 @@
+{
+ "dur": 20.282,
+ "lines": [
+  {
+   "shot": "f",
+   "who": "F",
+   "s": 0.15,
+   "e": 3.216,
+   "text": "Bro. The bio test is tomorrow. You have to study or you're gonna fail."
+  },
+  {
+   "shot": "k",
+   "who": "K",
+   "s": 3.276,
+   "e": 4.083,
+   "text": "I am studying."
+  },
+  {
+   "shot": "f2",
+   "who": "F",
+   "s": 4.143,
+   "e": 5.314,
+   "text": "You're literally scrolling."
+  },
+  {
+   "shot": "swipe",
+   "who": "K",
+   "s": 5.374,
+   "e": 7.998,
+   "text": "Exactly. I put the whole textbook into Unspool."
+  },
+  {
+   "shot": "swipe",
+   "who": "K",
+   "s": 8.078,
+   "e": 11.509,
+   "text": "Every chapter's a reel. Voiceover, captions, a quiz in every one."
+  },
+  {
+   "shot": "f2",
+   "who": "F",
+   "s": 11.589,
+   "e": 13.17,
+   "text": "Wait... that's actually the textbook?"
+  },
+  {
+   "shot": "k",
+   "who": "K",
+   "s": 13.23,
+   "e": 14.551,
+   "text": "Yep. I'm on reel thirty."
+  },
+  {
+   "shot": "f",
+   "who": "F",
+   "s": 14.611,
+   "e": 15.56,
+   "text": "Send me the link."
+  },
+  {
+   "shot": "end",
+   "who": "U",
+   "s": 15.62,
+   "e": 18.282,
+   "text": "unspool.cc Your textbook, as reels."
+  }
+ ]
+}
