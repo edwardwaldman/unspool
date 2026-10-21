@@ -1,0 +1,261 @@
+<!doctype html>
+<html><head><meta charset="utf-8" />
+<style>
+html, body { margin: 0; width: 720px; height: 1280px; overflow: hidden; background: #000; }
+#wrap { position: relative; width: 720px; height: 1280px; overflow: hidden; }
+canvas { position: absolute; inset: 0; }
+#ov { position: absolute; inset: 0; pointer-events: none; font-family: "DejaVu Sans", sans-serif; color: #fff; }
+.mid { position: absolute; left: 40px; right: 40px; text-align: center; }
+.fade { position: absolute; inset: 0; background: #000; }
+</style></head>
+<body><div id="wrap"><canvas id="c" width="720" height="1280"></canvas><div id="ov"></div></div>
+<script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
+<script type="module">
+import * as THREE from "three";
+const W = 720, H = 1280;
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const back = (x) => { x = clamp(x); const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const mix = (a, b, x) => a + (b - a) * x;
+const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("c"), antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H, false); renderer.setPixelRatio(1);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(); scene.background = new THREE.Color("#dfe6ea");
+const camera = new THREE.PerspectiveCamera(40, W / H, 0.05, 100);
+scene.add(new THREE.HemisphereLight("#ffffff", "#b9a98f", 1.25));
+const sun = new THREE.DirectionalLight("#fff6e8", 2.2); sun.position.set(3, 6, 4); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6 }); sun.shadow.bias = -0.0004; sun.shadow.radius = 4; scene.add(sun);
+const fill = new THREE.DirectionalLight("#cfe3ff", 0.6); fill.position.set(-4, 3, 2); scene.add(fill);
+
+const M = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, ...o });
+const mesh = (g, m, p, parent) => { const x = new THREE.Mesh(g, m); x.castShadow = x.receiveShadow = true; if (p) x.position.copy(p); (parent || scene).add(x); return x; };
+const sph = (r, s = 48) => new THREE.SphereGeometry(r, s, s / 2);
+function rbox(w, h, d, r = 0.04) {
+  const shape = new THREE.Shape(); const x = -w / 2, y = -h / 2;
+  shape.moveTo(x + r, y); shape.lineTo(x + w - r, y); shape.quadraticCurveTo(x + w, y, x + w, y + r); shape.lineTo(x + w, y + h - r); shape.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  shape.lineTo(x + r, y + h); shape.quadraticCurveTo(x, y + h, x, y + h - r); shape.lineTo(x, y + r); shape.quadraticCurveTo(x, y, x + r, y);
+  const g = new THREE.ExtrudeGeometry(shape, { depth: d - 2 * r * 0.5, bevelEnabled: true, bevelThickness: r * 0.5, bevelSize: r * 0.5, bevelSegments: 4, curveSegments: 6 });
+  g.translate(0, 0, -(d - r) / 2); return g;
+}
+function tex(w, h, draw) { const cv = document.createElement("canvas"); cv.width = w; cv.height = h; const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.draw = () => { draw(cv.getContext("2d"), w, h); t.needsUpdate = true; }; t.cv = cv; t.draw(); return t; }
+
+// ---- penguin: one soft bean body, white face and belly, orange beak and feet, flippers
+function penguin(o = {}) {
+  const g = new THREE.Group(); scene.add(g); g.scale.setScalar(o.s || 1.3);
+  const body = new THREE.Group(); g.add(body);
+  const navy = M(o.color || "#1f2b55", { roughness: 0.6 }), white = M("#f5f3ec", { roughness: 0.7 }), orange = M("#f2a33a", { roughness: 0.45 });
+  const b = mesh(sph(0.5), navy, v3(0, 0.62, 0), body); b.scale.set(1, 1.3, 0.92);
+  const belly = mesh(sph(0.46), white, v3(0, 0.56, 0.1), body); belly.scale.set(0.86, 1.18, 0.86);
+  const face = mesh(sph(0.33), white, v3(0, 1.02, 0.17), body); face.scale.set(1.1, 0.92, 0.8);
+  const beak = mesh(sph(0.11), orange, v3(0, 0.94, 0.47), body); beak.scale.set(1.25, 0.62, 1.1);
+  const eyes = [-0.13, 0.13].map((x) => { const e = new THREE.Group(); e.position.set(x, 1.06, 0.44); body.add(e); mesh(sph(0.045, 24), M("#141414", { roughness: 0.2 }), v3(0, 0, 0), e); mesh(sph(0.012, 12), M("#ffffff", { emissive: "#ffffff" }), v3(0.014, 0.016, 0.04), e); return e; });
+  const flip = [-1, 1].map((s) => { const a = new THREE.Group(); a.position.set(0.44 * s, 0.78, 0); body.add(a); const f = mesh(sph(0.2), navy, v3(0.05 * s, -0.18, 0), a); f.scale.set(0.35, 1.15, 0.6); return a; });
+  const feet = [-0.17, 0.17].map((x) => { const f = mesh(sph(0.11), orange, v3(x, 0.03, 0.14), g); f.scale.set(1, 0.35, 1.5); return f; });
+  if (o.scarf) { const sc = mesh(new THREE.TorusGeometry(0.37, 0.07, 16, 48), M(o.scarf), v3(0, 0.82, 0.02), body); sc.rotation.x = Math.PI / 2; sc.scale.set(1, 0.92, 1); }
+  if (o.phones) { const hb = mesh(new THREE.TorusGeometry(0.42, 0.035, 12, 40, Math.PI), M(o.phones), v3(0, 1.08, 0), body); hb.rotation.z = 0; [-1, 1].forEach((s) => mesh(sph(0.1), M(o.phones), v3(0.43 * s, 1.06, 0), body).scale.set(0.6, 1, 1)); }
+  let shades = null;
+  if (o.shades) { shades = new THREE.Group(); body.add(shades); [-0.13, 0.13].forEach((x) => { const l = mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.02, 32), M("#0c0c0c", { roughness: 0.15, metalness: 0.4 }), v3(x, 1.07, 0.46), shades); l.rotation.x = Math.PI / 2; }); mesh(new THREE.BoxGeometry(0.1, 0.015, 0.015), M("#0c0c0c"), v3(0, 1.08, 0.47), shades); }
+  const sweat = [0, 1, 2].map((i) => { const d = mesh(sph(0.035, 16), M("#bfe6ff", { roughness: 0.05, transparent: true, opacity: 0.9 }), v3(0, 0, 0), body); d.scale.set(0.8, 1.3, 0.8); d.visible = false; return d; });
+  return { g, body, eyes, flip, beak, sweat, shades };
+}
+
+// ---- classroom
+const floor = mesh(new THREE.PlaneGeometry(30, 30), M("#c9a77c", { roughness: 0.8 }), v3(0, 0, 0)); floor.rotation.x = -Math.PI / 2;
+const wallM = M("#e9eef0", { roughness: 0.9 });
+mesh(new THREE.PlaneGeometry(30, 8), wallM, v3(0, 4, -4));
+const lw = mesh(new THREE.PlaneGeometry(30, 8), wallM, v3(-5, 4, 0)); lw.rotation.y = Math.PI / 2;
+const board = mesh(rbox(4.2, 1.7, 0.08, 0.06), M("#2f5a46", { roughness: 0.9 }), v3(0.3, 2.3, -3.94));
+const boardTex = tex(512, 200, (c, w, h) => { c.fillStyle = "#2f5a46"; c.fillRect(0, 0, w, h); c.fillStyle = "#eef3e8"; c.font = "bold 46px sans-serif"; c.fillText("BIO TEST TODAY", 40, 80); c.font = "30px sans-serif"; c.fillText("Ch. 1 – 14  ·  no notes", 40, 140); });
+mesh(new THREE.PlaneGeometry(4.0, 1.56), new THREE.MeshBasicMaterial({ map: boardTex, toneMapped: false }), v3(0.3, 2.3, -3.89));
+// wall clock
+const clockG = new THREE.Group(); clockG.position.set(-2.6, 2.8, -3.92); scene.add(clockG);
+mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.08, 48), M("#ffffff"), v3(0, 0, 0), clockG).rotation.x = Math.PI / 2;
+mesh(new THREE.TorusGeometry(0.42, 0.04, 12, 48), M("#d0573a"), v3(0, 0, 0.03), clockG);
+const minH = new THREE.Group(); minH.position.z = 0.06; clockG.add(minH); mesh(new THREE.BoxGeometry(0.03, 0.32, 0.02), M("#222"), v3(0, 0.15, 0), minH);
+const hrH = new THREE.Group(); hrH.position.z = 0.055; clockG.add(hrH); mesh(new THREE.BoxGeometry(0.045, 0.22, 0.02), M("#222"), v3(0, 0.1, 0), hrH);
+// window
+mesh(rbox(1.6, 1.4, 0.06, 0.05), M("#ffffff"), v3(-4.95, 2.4, -1.2)).rotation.y = Math.PI / 2;
+const win = mesh(new THREE.PlaneGeometry(1.45, 1.25), new THREE.MeshBasicMaterial({ color: "#bfe3f7" }), v3(-4.9, 2.4, -1.2)); win.rotation.y = Math.PI / 2;
+// desks
+const DESKS = [];
+function desk(x, z) {
+  const d = new THREE.Group(); DESKS.push(d); d.position.set(x, 0, z); scene.add(d);
+  mesh(rbox(1.3, 0.75, 0.07, 0.03), M("#e7c891", { roughness: 0.6 }), v3(0, 0.78, 0), d).rotation.x = -Math.PI / 2;
+  [[-0.58, -0.3], [0.58, -0.3], [-0.58, 0.3], [0.58, 0.3]].forEach(([a, b]) => mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.78, 12), M("#8e959c", { metalness: 0.5, roughness: 0.35 }), v3(a, 0.39, b), d));
+  return d;
+}
+const HERO = v3(0, 0, 0.6);
+desk(0, 0.15); desk(-1.7, 0.15); desk(1.7, 0.15); desk(-1.7, 2.1); desk(1.7, 2.1); desk(0, 2.1);
+
+// textbook (huge)
+const bookG = new THREE.Group(); bookG.position.set(-0.05, 0.82, 0.1); bookG.rotation.y = Math.PI; scene.add(bookG);
+const coverTex = tex(256, 340, (c, w, h) => { c.fillStyle = "#3a7d5c"; c.fillRect(0, 0, w, h); c.fillStyle = "#f4f1e6"; c.font = "bold 40px sans-serif"; c.fillText("BIOLOGY", 22, 70); c.font = "22px sans-serif"; c.fillText("412 pages", 24, 110); c.beginPath(); c.arc(130, 220, 60, 0, Math.PI * 2); c.strokeStyle = "#f4f1e6"; c.lineWidth = 6; c.stroke(); });
+const pagesMesh = mesh(rbox(0.62, 0.8, 0.22, 0.02), M("#f6f2e4"), v3(0, 0.11, 0), bookG); pagesMesh.rotation.x = -Math.PI / 2;
+const cover = mesh(new THREE.BoxGeometry(0.66, 0.025, 0.84), M("#3a7d5c"), v3(0, 0.235, 0), bookG);
+mesh(new THREE.PlaneGeometry(0.6, 0.78), new THREE.MeshStandardMaterial({ map: coverTex }), v3(0, 0.249, 0), bookG).rotation.x = -Math.PI / 2;
+const flyPages = Array.from({ length: 10 }, () => { const p = mesh(new THREE.PlaneGeometry(0.3, 0.4), M("#fbf8ee", { side: THREE.DoubleSide }), v3(0, 0, 0)); p.visible = false; return p; });
+
+// phone with a live screen
+const phoneG = new THREE.Group(); scene.add(phoneG);
+mesh(rbox(0.36, 0.72, 0.035, 0.05), M("#121417", { roughness: 0.3 }), v3(0, 0, 0), phoneG);
+const imgs = []; let loaded = 0;
+for (let i = 1; i <= 9; i++) { const im = new Image(); im.onload = () => loaded++; im.src = `sw/s${i}.jpg`; imgs.push(im); }
+let phoneState = { mode: "upload", k: 0, swipe: 0 };
+const screenTex = tex(360, 720, (c, w, h) => {
+  const s = phoneState; c.fillStyle = "#0f1612"; c.fillRect(0, 0, w, h);
+  if (s.mode === "reels") {
+    const i = Math.floor(s.swipe), f = ease(clamp((s.swipe - i) / 0.35));
+    const a = imgs[i % 9], b = imgs[(i + 1) % 9];
+    if (a.complete) c.drawImage(a, 0, -f * h, w, h); if (b.complete) c.drawImage(b, 0, (1 - f) * h, w, h);
+    c.fillStyle = "#fff"; c.font = "bold 18px sans-serif"; c.fillText(`unspool · Reel ${(i % 38) + 1} of 38`, 16, h - 20); return;
+  }
+  c.fillStyle = "#c9e64a"; c.beginPath(); c.arc(30, 44, 9, 0, 7); c.fill(); c.fillStyle = "#e9f0e4"; c.font = "bold 24px sans-serif"; c.fillText("unspool", 46, 52);
+  if (s.mode === "upload") {
+    c.fillStyle = "#c9e64a"; c.beginPath(); c.arc(w / 2, 330, 70 + Math.sin(s.k * 8) * 4, 0, 7); c.fill();
+    c.fillStyle = "#0f1612"; c.fillRect(w / 2 - 6, 300, 12, 60); c.fillRect(w / 2 - 30, 324, 60, 12);
+    c.fillStyle = "#e9f0e4"; c.font = "bold 26px sans-serif"; c.textAlign = "center"; c.fillText("Upload a document", w / 2, 450); c.textAlign = "left";
+  } else if (s.mode === "busy") {
+    c.textAlign = "center"; c.fillStyle = "#c9e64a"; c.font = "bold 26px sans-serif"; c.fillText("biology.pdf", w / 2, 260); c.fillStyle = "#9db5a6"; c.font = "20px sans-serif"; c.fillText(`${Math.round(412 * (1 - s.k))} pages → ${Math.round(38 * s.k)} reels`, w / 2, 300);
+    c.fillStyle = "#22302a"; c.fillRect(40, 340, w - 80, 14); c.fillStyle = "#c9e64a"; c.fillRect(40, 340, (w - 80) * s.k, 14); c.textAlign = "left";
+  } else if (s.mode === "ready") {
+    c.fillStyle = "#3aa65a"; c.fillRect(24, 140, w - 48, 360); c.fillStyle = "#fff"; c.textAlign = "center"; c.font = "bold 64px sans-serif"; c.fillText("READY", w / 2, 290);
+    c.font = "bold 28px sans-serif"; c.fillText("38 reels", w / 2, 350); c.font = "22px sans-serif"; c.fillText("tap to start scrolling ▶", w / 2, 420); c.textAlign = "left";
+  }
+});
+const screen = mesh(new THREE.PlaneGeometry(0.32, 0.66), new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false }), v3(0, 0, 0.02), phoneG);
+
+// cast
+const hero = penguin({});
+hero.g.position.copy(HERO); hero.g.rotation.y = Math.PI;
+const friendA = penguin({ color: "#3a8f86", phones: "#e7e2d6" }); friendA.g.position.set(-1.7, 0, 0.6); friendA.g.rotation.y = Math.PI - 0.35;
+const friendB = penguin({ color: "#b63b48", scarf: "#e9d2a6" }); friendB.g.position.set(1.7, 0, 0.6); friendB.g.rotation.y = Math.PI + 0.35;
+const friendC = penguin({ color: "#6b5aa6" }); friendC.g.position.set(-1.7, 0, 2.55); friendC.g.rotation.y = Math.PI;
+const friendD = penguin({ color: "#d18a2c", phones: "#2a2a2a" }); friendD.g.position.set(1.7, 0, 2.55); friendD.g.rotation.y = Math.PI;
+const teacher = penguin({ color: "#3b3f46", shades: true }); teacher.g.position.set(1.6, 0, -2.8); teacher.g.rotation.y = 0.25; teacher.g.scale.setScalar(1.5);
+// small phones for friends
+const miniPhones = [friendA, friendB, friendC, friendD].map((p) => { const ph = mesh(rbox(0.16, 0.3, 0.02, 0.03), M("#121417"), v3(0, 0, 0)); const sc = mesh(new THREE.PlaneGeometry(0.14, 0.27), new THREE.MeshBasicMaterial({ color: "#c9e64a" }), v3(0, 0, 0.012), ph); return { ph, sc, p }; });
+// test paper
+const paperTex = tex(256, 330, (c, w, h) => { c.fillStyle = "#fbfbf6"; c.fillRect(0, 0, w, h); c.fillStyle = "#333"; c.font = "bold 22px sans-serif"; c.fillText("BIO TEST", 20, 40); for (let i = 0; i < 9; i++) { c.fillStyle = "#cfd3d8"; c.fillRect(20, 80 + i * 24, 150 + (i * 31) % 50, 8); } });
+const paper = mesh(new THREE.PlaneGeometry(0.42, 0.54), new THREE.MeshStandardMaterial({ map: paperTex, side: THREE.DoubleSide }), v3(0, 0.83, 0.15)); paper.rotation.x = -Math.PI / 2; paper.visible = false;
+
+// ---- timeline (seconds)
+const SHOTS = [
+  ["intro", 1.8], ["read1", 2.1], ["wake", 0.8], ["friends", 1.7], ["teacher", 1.4], ["read2", 1.9], ["sweat", 1.0],
+  ["teacher2", 0.9], ["nudge", 1.6], ["upload", 2.3], ["scroll", 2.4], ["test", 1.8], ["victory", 2.0], ["end", 2.6],
+];
+let acc = 0; const TL = SHOTS.map(([n, d]) => { const s = { n, s: acc, e: acc + d }; acc += d; return s; });
+const DUR = acc;
+window.SFX = TL.map((s) => [s.n, +s.s.toFixed(3), +s.e.toFixed(3)]);
+const shotAt = (t) => TL.find((s) => t < s.e) || TL[TL.length - 1];
+
+const ov = document.getElementById("ov");
+let ZOOM = 1.9;
+const look = (pos, at) => { camera.position.copy(at).addScaledVector(pos.clone().sub(at), ZOOM); camera.lookAt(at); };
+function headOf(p) { const v = new THREE.Vector3(); p.body.localToWorld(v.set(0, 1.0, 0.2)); return v; }
+function pose(p, t, o = {}) {
+  p.body.rotation.set(0, 0, 0); p.body.position.set(0, 0, 0);
+  p.flip.forEach((f, i) => f.rotation.set(0, 0, (i ? -1 : 1) * 0.12 + Math.sin(t * 2 + i) * 0.03));
+  p.eyes.forEach((e) => e.scale.set(1, (((t + p.g.position.x) % 3.3) < 0.1 ? 0.15 : 1), 1));
+  p.sweat.forEach((d) => (d.visible = false));
+  p.body.position.y = Math.abs(Math.sin(t * 1.6 + p.g.position.x)) * 0.01;
+}
+function sweat(p, t, n) { p.sweat.forEach((d, i) => { if (i >= n) return; const q = ((t * 0.8 + i * 0.37) % 1); d.visible = true; d.position.set((i % 2 ? 0.26 : -0.24) + i * 0.02, 1.25 - q * 0.35, 0.3 + q * 0.05); }); }
+
+window.renderAt = (t) => {
+  const sh = shotAt(t), lt = t - sh.s, u = lt / (sh.e - sh.s);
+  camera.fov = sh.n === "victory" ? 62 : 40; camera.updateProjectionMatrix();
+  ZOOM = { upload: 1.5, scroll: 1.6, test: 1.0, end: 1.0, victory: 1.0, teacher: 1.5, teacher2: 1.5, read2: 1.4, intro: 1.25 }[sh.n] ?? 1.9;
+  [hero, friendA, friendB, friendC, friendD, teacher].forEach((p) => pose(p, t));
+  // clock runs toward test time
+  minH.rotation.z = -t * 0.9; hrH.rotation.z = -t * 0.08 - 0.5;
+  bookG.visible = !["upload", "scroll", "test", "victory", "end"].includes(sh.n);
+  flyPages.forEach((p) => (p.visible = false)); paper.visible = false;
+  // phones: friends scroll and grin
+  miniPhones.forEach(({ ph, sc, p }, i) => { const hd = headOf(p); ph.position.set(hd.x + (i % 2 ? -0.06 : 0.06), 0.95, p.g.position.z - 0.32); ph.lookAt(hd); sc.material.color.set(Math.floor(t * 2.2 + i) % 2 ? "#c9e64a" : "#9db8ff"); ph.visible = sh.n !== "end"; p.flip[1].rotation.z = -0.9; p.flip[1].rotation.x = -0.6; p.body.rotation.x = 0.12; });
+  phoneG.visible = ["nudge", "upload", "scroll"].includes(sh.n);
+  let html = ""; const bigText = (txt, top, col = "#fff", size = 64) => `<div class="mid" style="top:${top}px;font-weight:900;font-size:${size}px;color:${col};-webkit-text-stroke:2px rgba(0,0,0,.5);text-shadow:0 4px 0 rgba(0,0,0,.35)">${txt}</div>`;
+
+  if (sh.n === "intro") {
+    look(v3(mix(1.1, 0.7, ease(u)), mix(2.0, 1.85, u), mix(-1.9, -1.5, ease(u))), v3(0, 1.2, 0.4));
+    hero.flip.forEach((f) => (f.rotation.x = -0.9)); hero.body.rotation.x = 0.1;
+    html += bigText("412 pages.", 980, "#fff", 58);
+  } else if (sh.n === "read1") {
+    look(v3(0.3, 1.5, -0.75), headOf(hero).add(v3(0, -0.08, 0)));
+    const sleepy = ease(u * 1.3); hero.eyes.forEach((e) => e.scale.set(1, mix(1, 0.08, sleepy), 1));
+    hero.body.rotation.x = mix(0.1, 0.55, ease((u - 0.55) / 0.45)); hero.flip.forEach((f) => (f.rotation.x = -0.9));
+    if (u > 0.4) html += `<div style="position:absolute;left:430px;top:${330 - (u - 0.4) * 160}px;font:900 ${50 + u * 30}px 'DejaVu Sans';color:#5b6fd0;opacity:${clamp((u - 0.4) * 4)}">Z z z</div>`;
+  } else if (sh.n === "wake") {
+    look(v3(0.25, 1.5, -0.7), headOf(hero));
+    hero.eyes.forEach((e) => e.scale.set(1.5, 1.6, 1)); hero.body.position.y = Math.max(0, Math.sin(clamp(lt * 9, 0, Math.PI))) * 0.12; sweat(hero, t, 1);
+    hero.flip.forEach((f, i) => (f.rotation.z = (i ? 1 : -1) * 1.3));
+    html += `<div style="position:absolute;left:470px;top:250px;font:900 90px 'DejaVu Sans';color:#ffcf3a;transform:rotate(12deg) scale(${back(lt / 0.25)})">!</div>`;
+  } else if (sh.n === "friends") {
+    look(v3(mix(-1.05, -0.9, u), 1.95, -0.6), v3(-1.7, 1.35, 0.6));
+    [friendA, friendB].forEach((p) => { p.eyes.forEach((e) => e.scale.set(1, 0.4, 1)); p.body.position.y = Math.abs(Math.sin(t * 6)) * 0.02; });
+    html += `<div style="position:absolute;left:120px;top:${420 - u * 40}px;font:800 44px 'DejaVu Sans';color:#3aa65a;opacity:${clamp(u * 3)}">✓ 10/10</div><div style="position:absolute;right:110px;top:${360 - u * 40}px;font:800 40px 'DejaVu Sans';color:#3aa65a;opacity:${clamp(u * 3 - 0.6)}">✓ ✓ ✓</div>`;
+  } else if (sh.n === "teacher" || sh.n === "teacher2") {
+    look(v3(mix(0.7, 0.85, u), 1.9, mix(-0.7, -0.95, u)), v3(1.55, 1.6, -2.8));
+    teacher.body.rotation.y = -0.15; teacher.flip[0].rotation.z = 0.4;
+    const left = sh.n === "teacher" ? "30:00" : "05:00";
+    html += `<div style="position:absolute;left:70px;top:150px;background:#1c1c1c;border-radius:16px;padding:10px 26px;font:900 74px 'DejaVu Sans Mono';color:${sh.n === "teacher" ? "#ffcf3a" : "#ff5a5a"};transform:scale(${back(lt / 0.2)})">${left}</div>`;
+  } else if (sh.n === "read2") {
+    look(v3(0.9, 1.75, -1.2), v3(0, 1.1, 0.35));
+    hero.flip.forEach((f, i) => { f.rotation.x = -1.1 + Math.sin(t * 22 + i) * 0.3; f.rotation.z = (i ? -1 : 1) * 0.3; }); sweat(hero, t, 2);
+    hero.body.rotation.y = Math.sin(t * 16) * 0.08; hero.eyes.forEach((e) => e.scale.set(1.3, 1.4, 1));
+    flyPages.forEach((p, i) => { const q = ((lt * 1.6 + i / 10) % 1); p.visible = true; p.position.set(-0.05 + Math.sin(i * 2.3) * q * 0.9, 1.1 + q * 0.9, 0.1 + Math.cos(i * 1.7) * q * 0.5); p.rotation.set(q * 6 + i, q * 4, i); });
+    html += `<div style="position:absolute;left:60px;top:170px;background:#d93838;color:#fff;border-radius:14px;padding:14px 22px;font:800 34px 'DejaVu Sans';transform:rotate(-3deg) scale(${back(lt / 0.2)})">✕ Page 3 of 412</div>`;
+  } else if (sh.n === "sweat") {
+    look(v3(0.15, 1.45, -0.6), headOf(hero));
+    sweat(hero, t, 3); hero.eyes.forEach((e) => e.scale.set(1.2, 1.25, 1)); hero.body.position.x = Math.sin(t * 40) * 0.006;
+  } else if (sh.n === "nudge") {
+    look(v3(-0.75, 1.8, -1.2), v3(-0.3, 1.0, 0.4));
+    const q = ease(u * 1.4); phoneG.position.set(mix(-1.2, -0.25, q), 0.86, 0.15); phoneG.rotation.set(-Math.PI / 2, 0, mix(0.4, 0, q));
+    friendA.flip[0].rotation.z = 1.1 - q * 0.5; phoneState = { mode: "upload", k: t }; screenTex.draw();
+    hero.body.rotation.y = 0.35; hero.eyes.forEach((e) => e.scale.set(1.2, 1.2, 1));
+  } else if (sh.n === "upload") {
+    phoneG.position.set(0, 1.32, -0.42); phoneG.rotation.set(-0.25, Math.PI, 0);
+    look(v3(0.02, 1.5, -1.0), v3(0, 1.32, -0.42));
+    const k = clamp((lt - 0.55) / 1.1);
+    phoneState = lt < 0.55 ? { mode: "upload", k: t } : k < 1 ? { mode: "busy", k: ease(k) } : { mode: "ready" }; screenTex.draw();
+    if (lt < 0.6) { const q = ease(lt / 0.55); html += `<div style="position:absolute;left:${mix(560, 290, q)}px;top:${mix(980, 600, q)}px;width:140px;height:180px;background:#3a7d5c;border-radius:10px;color:#fff;font:800 22px 'DejaVu Sans';display:flex;align-items:center;justify-content:center;transform:scale(${1 - q * 0.6}) rotate(${(1 - q) * 20}deg);opacity:${1 - clamp((lt - 0.5) / 0.1)}">PDF</div>`; }
+    if (k >= 1) html += bigText("38 reels ✓", 1010, "#3aa65a", 60);
+  } else if (sh.n === "scroll") {
+    phoneG.position.set(0.12, 1.3, -0.38); phoneG.rotation.set(-0.25, Math.PI - 0.25, 0);
+    look(v3(mix(0.75, 0.55, u), 1.65, mix(-1.3, -1.15, u)), v3(0.05, 1.3, 0.0));
+    phoneState = { mode: "reels", swipe: lt * 2.6 }; screenTex.draw();
+    hero.eyes.forEach((e) => e.scale.set(1.35, 1.35, 1)); hero.flip[1].rotation.z = -1.0; hero.flip[1].rotation.x = -0.4;
+    html += `<div style="position:absolute;left:70px;top:${300 - u * 60}px;font:800 42px 'DejaVu Sans';color:#3aa65a;opacity:${clamp(u * 3)}">✓ quiz</div><div style="position:absolute;right:80px;top:${250 - u * 60}px;font:800 42px 'DejaVu Sans';color:#3aa65a;opacity:${clamp(u * 3 - 1)}">✓ ✓</div>`;
+  } else if (sh.n === "test") {
+    paper.visible = true; paper.rotation.z = Math.PI; look(v3(0.0, 2.15, -0.12), v3(0, 0.84, 0.12));
+    const q = back(clamp((lt - 0.45) / 0.25));
+    html += `<div style="position:absolute;left:300px;top:430px;width:220px;height:220px;border:16px solid #e0262c;border-radius:50%;color:#e0262c;font:900 110px/190px serif;text-align:center;transform:rotate(-14deg) scale(${(2.2 - 1.2 * q) * (lt > 0.45 ? 1 : 0)});opacity:${clamp((lt - 0.45) / 0.08)}">A+</div>`;
+  } else if (sh.n === "victory") {
+    look(v3(0.0, 1.3, mix(-3.85, -3.6, u)), v3(0, 1.0, -0.65));
+    const q = back(clamp(lt / 0.35)); hero.g.position.set(0, 0, -0.65); bookG.visible = false;
+    hero.body.position.y = Math.max(0, Math.sin(clamp(lt * 6, 0, Math.PI))) * 0.2;
+    hero.flip.forEach((f, i) => (f.rotation.z = (i ? 1 : -1) * mix(0.1, 2.4, q)));
+    hero.body.scale.set(1 + 0.12 * q, 1 - 0.06 * q, 1); hero.eyes.forEach((e) => e.scale.set(1, 0.3, 1));
+    [friendA, friendB].forEach((p, i) => { p.flip.forEach((f, j) => (f.rotation.z = (j ? 1 : -1) * (1.8 + Math.sin(t * 12 + i) * 0.4))); p.body.position.y = Math.abs(Math.sin(t * 9 + i)) * 0.08; });
+    if (lt > 0.3) for (let i = 0; i < 26; i++) { const x = (i * 137) % 720, y = ((lt - 0.3) * 520 + i * 61) % 1280; html += `<div style="position:absolute;left:${x}px;top:${y - 200}px;width:14px;height:22px;background:${["#c9e64a", "#ff5a7a", "#5ab0ff", "#ffcf3a"][i % 4]};transform:rotate(${i * 40 + lt * 300}deg)"></div>`; }
+  } else {
+    look(v3(0, 1.1, -3.6), v3(0, 0.55, 0)); hero.g.position.set(0, 0, 0);
+    hero.flip.forEach((f, i) => (f.rotation.z = (i ? 1 : -1) * (0.9 + Math.sin(t * 6) * 0.4)));
+    scene.background = new THREE.Color("#0f1d18");
+    html += `<div class="mid" style="top:960px;font-weight:800;font-size:96px;letter-spacing:-2px;opacity:${clamp(lt / 0.3)}">unspool<span style="color:#c9e64a">.cc</span></div><div class="mid" style="top:1085px;font-size:34px;opacity:${clamp((lt - 0.4) / 0.3)}">Your textbook, as reels.</div>`;
+  }
+  if (sh.n !== "end") scene.background = new THREE.Color("#dfe6ea");
+  [friendA, friendB, friendC, friendD].forEach((p) => (p.g.visible = sh.n !== "end")); teacher.g.visible = !['end', 'victory'].includes(sh.n);
+  DESKS.forEach((d) => (d.visible = sh.n !== "end"));
+  if (!['victory', 'end'].includes(sh.n)) hero.g.position.copy(HERO);
+  hero.g.visible = sh.n !== "test";
+  ["floor"].forEach(() => {}); floor.visible = sh.n !== "end";
+  renderer.render(scene, camera);
+  const fo = clamp((t - (DUR - 0.5)) / 0.5); if (fo > 0) html += `<div class="fade" style="opacity:${fo}"></div>`;
+  ov.innerHTML = html;
+};
+window.DUR = DUR;
+const wait = () => (loaded >= 9 ? (window.ready = true) : setTimeout(wait, 50)); wait();
+</script></body></html>
