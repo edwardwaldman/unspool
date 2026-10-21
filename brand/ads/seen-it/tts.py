@@ -7,7 +7,7 @@ lines = [
  ("kp", "K", "My bio test is in thirty minutes! I haven't read anything!"),
  ("u", "U", "How many pages?"),
  ("kp", "K", "Four hundred twelve! I'm so done!"),
- ("u", "U", "Relax. Upload the PDF. I'll turn it into reels."),
+ ("u", "U", "Relax. Upload the PDF. Unspool will turn it into reels."),
  ("screen", "K", "Wait... the whole PDF?!"),
  ("screen", "U", "Yep. Every chapter's a reel now."),
  ("swipe", "K", "Voiceover, captions, a quiz in every one!"),

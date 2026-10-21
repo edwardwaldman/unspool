@@ -1,5 +1,5 @@
 {
- "dur": 24.88,
+ "dur": 25.399,
  "lines": [
   {
    "shot": "kp",
@@ -26,63 +26,63 @@
    "shot": "u",
    "who": "U",
    "s": 5.89,
-   "e": 8.709,
-   "text": "Relax. Upload the PDF. I'll turn it into reels."
+   "e": 9.227,
+   "text": "Relax. Upload the PDF. Unspool will turn it into reels."
   },
   {
    "shot": "screen",
    "who": "K",
-   "s": 8.749,
-   "e": 10.119,
+   "s": 9.267,
+   "e": 10.637,
    "text": "Wait... the whole PDF?!"
   },
   {
    "shot": "screen",
    "who": "U",
-   "s": 10.159,
-   "e": 11.779,
+   "s": 10.677,
+   "e": 12.297,
    "text": "Yep. Every chapter's a reel now."
   },
   {
    "shot": "swipe",
    "who": "K",
-   "s": 11.819,
-   "e": 13.998,
+   "s": 12.337,
+   "e": 14.517,
    "text": "Voiceover, captions, a quiz in every one!"
   },
   {
    "shot": "swipe2",
    "who": "K",
-   "s": 14.038,
-   "e": 16.286,
+   "s": 14.557,
+   "e": 16.805,
    "text": "I can study the whole textbook just by scrolling!"
   },
   {
    "shot": "k3",
    "who": "K",
-   "s": 16.486,
-   "e": 18.48,
+   "s": 17.005,
+   "e": 18.999,
    "text": "Wait... I actually get photosynthesis?!"
   },
   {
    "shot": "u2",
    "who": "U",
-   "s": 18.52,
-   "e": 19.452,
+   "s": 19.039,
+   "e": 19.97,
    "text": "You learned all of it."
   },
   {
    "shot": "test",
    "who": "K",
-   "s": 19.492,
-   "e": 20.044,
+   "s": 20.01,
+   "e": 20.562,
    "text": "Seen it."
   },
   {
    "shot": "end",
    "who": "U",
-   "s": 20.294,
-   "e": 22.88,
+   "s": 20.812,
+   "e": 23.399,
    "text": "unspool.cc Your textbook, as reels."
   }
  ]
