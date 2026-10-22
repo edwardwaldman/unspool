@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: PageProps<"/r/[slug]">): Prom
   const { slug } = await params;
   const share = await getShare(slug);
   if (!share) return { title: "Reel not found", robots: { index: false } };
-  const title = `${plainHook(share.hook)} — made with Unspool`;
+  const title = `${plainHook(share.hook)} · made with Unspool`;
   const description = "Watch this reel, then turn any document into reels. Your first reel is free.";
   return {
     title: { absolute: title },

@@ -9,12 +9,12 @@ import { ReplayIcon, Wordmark } from "../ui/icons";
 import { Toaster } from "../ui/toast";
 
 const ctaHref = (slug: string) => `/?upload=1&ref=share&s=${encodeURIComponent(slug)}`;
-const CTA = "Unspool your own doc — first reel free";
+const CTA = "Unspool your own doc. First reel free";
 
 function Promo({ slug, compact = false }: { slug: string; compact?: boolean }) {
   return (
     <div className={compact ? "" : "border border-line bg-surface p-6"} data-testid="share-promo">
-      <p className="font-display text-[26px] leading-[1.08] text-ink lg:text-[30px]">Made with Unspool — turn any document into reels</p>
+      <p className="font-display text-[26px] leading-[1.08] text-ink lg:text-[30px]">Made with Unspool. Turn any document into reels</p>
       <p className="mt-3 text-[15px] leading-snug text-muted">Class notes, a textbook chapter, a work PDF. Drop it in and get short reels with voiceover, visuals and a quick quiz.</p>
       <Link href={ctaHref(slug)} className="mt-5 flex w-full items-center justify-center bg-thread px-5 py-3.5 text-[15.5px] font-semibold text-paper transition-opacity hover:opacity-90">
         {CTA}
@@ -30,7 +30,7 @@ function OutroCard({ slug, onReplay }: { slug: string; onReplay: () => void }) {
     <div className="absolute inset-0 z-40 flex flex-col justify-center bg-paper/95 px-6" onClick={(e) => e.stopPropagation()} data-testid="share-outro">
       <Wordmark size={30} />
       <p className="mt-5 font-display text-[28px] leading-[1.08] text-white">Your document could look like this.</p>
-      <p className="mt-2 text-[14.5px] text-white/75">Made with Unspool — turn any document into reels.</p>
+      <p className="mt-2 text-[14.5px] text-white/75">Made with Unspool. Turn any document into reels.</p>
       <Link href={ctaHref(slug)} className="mt-6 flex items-center justify-center bg-thread px-4 py-3.5 text-[15px] font-semibold text-paper hover:opacity-90">
         {CTA}
       </Link>

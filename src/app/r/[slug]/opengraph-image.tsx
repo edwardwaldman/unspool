@@ -36,7 +36,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
             {hook.length > 160 ? `${hook.slice(0, 157)}…` : hook}
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 28 }}>
-            <div style={{ display: "flex", color: "#8ea595" }}>Made with Unspool — turn any document into reels</div>
+            <div style={{ display: "flex", color: "#8ea595" }}>Made with Unspool. Turn any document into reels</div>
             <div style={{ display: "flex", background: accent, color: "#0f1d18", padding: "10px 20px", fontSize: 26 }}>Watch the reel</div>
           </div>
         </div>
