@@ -85,7 +85,9 @@ async function structured<T extends z.ZodType>(opts: {
   let model = opts.model ?? SCRIPT_MODEL;
   let effort = opts.effort ?? (model === SCRIPT_MODEL ? SCRIPT_EFFORT : EFFORT);
   let escalated = false;
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    // Last try: a stronger model, which follows the format far more reliably.
+    if (attempt === 2 && model !== MODEL) { model = MODEL; effort = EFFORT; }
     const prompt = lastProblem
       ? `${opts.prompt}\n\nYour previous answer was invalid (${lastProblem}). Return corrected output.`
       : opts.prompt;
@@ -115,6 +117,12 @@ async function structured<T extends z.ZodType>(opts: {
         continue;
       }
       value = res.parsed_output as z.infer<T> | null;
+      if (!value) {
+        // No parsed text block (e.g. only thinking came back): ask again as plain prompted JSON, and record
+        // what the API actually returned so a persistent failure is diagnosable from error_detail.
+        lastProblem = `no structured output (stop: ${res.stop_reason}, blocks: ${res.content.map((b) => b.type).join(",") || "none"})`;
+        value = await promptedJson(model, effort, opts.schema, opts.system, prompt, opts.maxTokens);
+      }
     } catch (err) {
       if (err instanceof Anthropic.BadRequestError && /schema|output_config|format/i.test(err.message)) {
         value = await promptedJson(model, effort, opts.schema, opts.system, prompt, opts.maxTokens);
@@ -123,7 +131,7 @@ async function structured<T extends z.ZodType>(opts: {
       }
     }
     if (!value) {
-      lastProblem = "could not parse JSON";
+      lastProblem ||= "could not parse JSON";
       continue;
     }
     const problems = opts.validate?.(value) ?? [];

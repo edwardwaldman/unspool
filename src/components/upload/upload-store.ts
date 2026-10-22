@@ -102,10 +102,17 @@ export async function startUpload(file: File, onCreated: (documentId: string) =>
   emit();
   onCreated(id);
 
-  const supabase = await supabaseBrowser();
-  const { error } = await supabase.storage
-    .from("documents")
-    .uploadToSignedUrl(body.path, body.token, file, { contentType: MIME[extensionOf(file.name)] ?? file.type });
+  // Any throw here (the client chunk failing to load, a dropped connection) must surface as an error the
+  // person can retry, never leave the feed sitting on "Uploading your file" forever.
+  let error: unknown = null;
+  try {
+    const supabase = await supabaseBrowser();
+    ({ error } = await supabase.storage
+      .from("documents")
+      .uploadToSignedUrl(body.path, body.token, file, { contentType: MIME[extensionOf(file.name)] ?? file.type }));
+  } catch (err) {
+    error = err ?? new Error("upload failed");
+  }
   if (error) {
     uploads.set(id, { phase: "error", fileName: file.name, error: "Upload failed. Check your connection and try again." });
     emit();

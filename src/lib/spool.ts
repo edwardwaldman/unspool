@@ -16,7 +16,18 @@ type ReelLite = Pick<
 >;
 
 /** Build the client view of a document: titles/hooks for all reels, full script + audio only where unlocked. */
+const STALE_UPLOAD_MS = 15 * 60e3;
+/** An upload whose file never arrived (tab closed, connection dropped) is failed instead of "Uploading" forever. */
+async function expireStaleUploads(docs: DocumentRow[]) {
+  const stale = docs.filter((d) => d.status === "uploading" && Date.now() - Date.parse(d.created_at) > STALE_UPLOAD_MS);
+  if (!stale.length) return;
+  const error = "The upload didn't finish. Please upload the file again.";
+  await adminClient().from("documents").update({ status: "failed", error }).in("id", stale.map((d) => d.id)).eq("status", "uploading");
+  for (const d of stale) Object.assign(d, { status: "failed", error });
+}
+
 export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?: boolean } = {}): Promise<SpoolDTO> {
+  await expireStaleUploads([doc]);
   const db = adminClient();
   const unlocked = isUnlocked(doc, viewer);
   const style = styleForViewer(viewer);
@@ -94,7 +105,9 @@ export async function listDocuments(viewer: Viewer, limit = 50): Promise<Documen
       .eq("user_id", viewer.userId)
       .order("created_at", { ascending: false })
       .limit(limit);
-    return (data ?? []) as DocumentRow[];
+    const docs = (data ?? []) as DocumentRow[];
+    await expireStaleUploads(docs);
+    return docs;
   }
   if (!viewer.anonToken) return [];
   const { data } = await db
