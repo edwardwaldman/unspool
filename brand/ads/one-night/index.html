@@ -28,8 +28,22 @@ function book(x,y,s=1,open=0){ // pixel textbook
  R(x-14*s,y-10*s,28*s,20*s,"#3a7d5c");R(x-12*s,y-8*s,24*s,16*s,"#2f6a4a");R(x+11*s,y-10*s,3*s,20*s,"#f6f2e4");
  if(s>=1.5)txt("BIO",x-1*s,y+2*s,Math.round(6*s),"#f6f2e4");
 }
-function brain(x,y,t,loss){C(x,y,22,"#f1a6b8");C(x-10,y-6,12,"#f6b6c6");C(x+10,y-6,12,"#f6b6c6");g.strokeStyle="#c8708a";g.lineWidth=1;for(let i=0;i<5;i++){g.beginPath();g.arc(x-12+i*6,y,6,0,3);g.stroke()}
- for(let i=0;i<6;i++){const q=((t*.8+i/6)%1);if(i/6<loss)R(x-6+(i*7)%14,y+18+q*80,8,10,`rgba(246,242,228,${1-q})`)}}
+function brain(x,y,t,loss){ // pixel side-view brain: cerebrum, cerebellum, stem; pages drift off the top as chapter 1 fades
+ const inB=(px,py)=>{const a=(px-x)/34,b=(py-y+2)/24;return a*a+b*b<1&&!(py>y+10&&px<x-8)};
+ const inC=(px,py)=>{const a=(px-x-16)/14,b=(py-y-16)/8;return a*a+b*b<1};
+ for(let py=y-28;py<y+30;py++)for(let px=x-36;px<x+36;px++){
+  const B=inB(px,py),Cb=inC(px,py)&&!B; if(!B&&!Cb)continue;
+  const edge=!(inB(px-1,py)||inC(px-1,py))||!(inB(px+1,py)||inC(px+1,py))||!(inB(px,py-1)||inC(px,py-1))||!(inB(px,py+1)||inC(px,py+1));
+  let col=Cb?"#d98aa0":"#f2a7bb";
+  if(!Cb){const fold=Math.sin(px*0.42+Math.sin(py*0.3)*2.2)+Math.sin(py*0.5+px*0.15);if(fold>1.25)col="#c9708b";else if(py<y-8&&fold<-1.2)col="#ffc8d6"}
+  else if((px+py)%4===0)col="#b8607a";
+ const fr=Math.hypot(px-(x-18),(py-(y-6))*1.3)<13; if(fr&&!edge&&!Cb){const f2=clamp(loss);col=f2>0.66?(col==="#c9708b"?"#8f8a99":"#bdb7c4"):f2>0.33?(col==="#c9708b"?"#b07f93":"#dcb9c6"):col}
+  if(edge)col="#8a3a55"; R(px,py,1,1,col)}
+ R(x+2,y+20,6,10,"#c9708b");R(x+2,y+20,1,10,"#8a3a55");R(x+7,y+20,1,10,"#8a3a55");
+ // a faded patch where chapter 1 used to be
+ const f=clamp(loss);
+ for(let i=0;i<6;i++){const q=((t*0.6+i/6)%1); if(i/6<f){const px=x-24+i*6+Math.sin(t*2+i)*4, py=y-30-q*90; R(px,py,7,9,`rgba(246,242,228,${1-q})`); R(px+1,py+2,5,1,`rgba(160,160,170,${1-q})`); R(px+1,py+4,4,1,`rgba(160,160,170,${1-q})`)}}
+ txt("CH. 1",x-18,y-34,6,`rgba(255,255,255,${0.95*(1-f*0.8)})`)}
 function phone(x,y,s){R(x-20*s,y-36*s,40*s,72*s,"#0a0a0a");R(x-18*s,y-33*s,36*s,64*s,"#0f1612")}
 const COLS=["#c9e64a","#7ab8ff","#ff8fb3","#ffc58a","#e59cff"];
 window.renderAt=t=>{ if(!TL)return; const L=TL.lines; let i=0;for(let j=0;j<L.length;j++)if(t>=L[j].s-.3)i=j; const sh=L[i],lt=t-(i?sh.s-.3:0),nxt=L[i+1]?L[i+1].s-.3:TL.dur,u=lt/(nxt-(i?sh.s-.3:0));
