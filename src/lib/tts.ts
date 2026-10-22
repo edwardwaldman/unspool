@@ -82,8 +82,23 @@ async function elevenlabsSpeech(text: string): Promise<TtsResult> {
 }
 
 /** Synthesize one segment's voiceover. Returns null when no TTS provider is configured. */
+/**
+ * The voiceover for one segment. A provider that fails (out of credits, bad key, outage) falls through to
+ * the other configured provider, then to null: the reel is still made, with captions timed from estimates,
+ * instead of failing outright.
+ */
 export async function synthesize(text: string): Promise<TtsResult | null> {
   const provider = ttsProvider();
   if (provider === "none") return null;
-  return provider === "elevenlabs" ? elevenlabsSpeech(text) : openaiSpeech(text);
+  const order = provider === "elevenlabs" ? ["elevenlabs", "openai"] : ["openai", "elevenlabs"];
+  for (const p of order) {
+    if (p === "openai" && !process.env.OPENAI_API_KEY) continue;
+    if (p === "elevenlabs" && !process.env.ELEVENLABS_API_KEY) continue;
+    try {
+      return p === "elevenlabs" ? await elevenlabsSpeech(text) : await openaiSpeech(text);
+    } catch (err) {
+      console.error(`[tts] ${p} failed, trying the next voice`, (err as Error).message?.slice(0, 300));
+    }
+  }
+  return null;
 }
