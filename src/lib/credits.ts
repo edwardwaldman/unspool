@@ -90,6 +90,13 @@ export async function ownerEntitlement(doc: Pick<DocumentRow, "user_id" | "ip_ha
   return entitlementFor(withStoredView(data ?? null), subjectForDoc(doc));
 }
 
+/** Top-up credits left for a ledger subject (bought packs never expire, on any tier). */
+export async function topupBalance(subject: string): Promise<number> {
+  const { data } = await adminClient().rpc("credit_balance", { p_subject: subject, p_period_start: weekStart().toISOString() });
+  const row = (Array.isArray(data) ? data[0] : data) as { topup?: number } | null;
+  return Math.max(0, row?.topup ?? 0);
+}
+
 /** What the usage meter shows. */
 export async function usageFor(ent: Entitlement, profile: Profile | null): Promise<UsageDTO> {
   const db = adminClient();
@@ -124,11 +131,23 @@ export async function usageFor(ent: Entitlement, profile: Profile | null): Promi
 
 /**
  * Pay for a freshly planned document: paid tiers reserve one credit per planned reel (as many as they
- * have); free accounts get reel 1 from the daily free allowance. Returns how many reels are funded.
+ * have); free accounts spend top-ups they bought, else get reel 1 from the daily free allowance. Returns how many reels are funded.
  */
 export async function fundPlannedDocument(documentId: string, ent: Entitlement, planned: number): Promise<number> {
   const db = adminClient();
   if (ent.tier === "free") {
+    // A free account that bought a top-up spends it here (every reel it covers), before the free drip.
+    if ((await topupBalance(ent.subject)) > 0) {
+      const { data: paid, error: paidErr } = await db.rpc("claim_credits", {
+        p_subject: ent.subject,
+        p_document_id: documentId,
+        p_requested: planned,
+        p_allowance: 0,
+        p_period_start: ent.periodStart,
+      });
+      if (paidErr) console.error("[credits] claim_credits (top-up) failed", paidErr);
+      if (typeof paid === "number" && paid > 0) return paid;
+    }
     const { data, error } = await db.rpc("claim_free_reel", {
       p_subject: ent.subject,
       p_document_id: documentId,

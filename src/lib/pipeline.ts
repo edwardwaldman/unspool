@@ -139,19 +139,31 @@ export async function processDocument(documentId: string) {
 // Stage 2: script + voiceover, one reel per invocation
 // ---------------------------------------------------------------------------
 
-/** Queue every reel that isn't done or in flight (used after reel 1, after unlocking, and for retries). */
-export async function queueRemainingReels(documentId: string, opts: { includeFirst?: boolean } = {}) {
+/** Pro and Ultra documents (priority) generate every reel at once; others this many at a time. */
+const STANDARD_IN_FLIGHT = 3;
+
+const isStale = (r: Pick<ReelRow, "status" | "started_at">) =>
+  r.status === "generating" && Boolean(r.started_at) && Date.now() - new Date(r.started_at!).getTime() > STALE_MS;
+
+/** Queue every reel that isn't done or in flight (used after reel 1, after each reel, after unlocking, and for retries). */
+export async function queueRemainingReels(documentId: string, opts: { includeFirst?: boolean; pendingOnly?: boolean } = {}) {
   const db = adminClient();
   const [{ data: reels }, { data: doc }] = await Promise.all([
     db.from("reels").select("id,index,status,started_at,attempts").eq("document_id", documentId).order("index"),
-    db.from("documents").select("credit_reels,unlocked").eq("id", documentId).maybeSingle<Pick<DocumentRow, "credit_reels" | "unlocked">>(),
+    db.from("documents").select("credit_reels,unlocked,priority").eq("id", documentId).maybeSingle<Pick<DocumentRow, "credit_reels" | "unlocked" | "priority">>(),
   ]);
   const funded = doc?.unlocked ? Infinity : doc?.credit_reels ?? 0;
-  for (const r of (reels ?? []) as Pick<ReelRow, "id" | "index" | "status" | "started_at" | "attempts">[]) {
+  const rows = (reels ?? []) as Pick<ReelRow, "id" | "index" | "status" | "started_at" | "attempts">[];
+  // The priority queue: standard documents keep a few reels in flight and the rest wait their turn.
+  let slots = doc?.priority ? Infinity : STANDARD_IN_FLIGHT - rows.filter((r) => r.status === "generating" && !isStale(r)).length;
+  for (const r of rows) {
+    if (slots <= 0) break;
     if (r.index === 1 && !opts.includeFirst) continue;
     if (r.index > funded || r.attempts >= LIMITS.maxReelAttempts) continue; // unpaid, or failed for good
-    const stale = r.status === "generating" && r.started_at && Date.now() - new Date(r.started_at).getTime() > STALE_MS;
-    if (r.status === "pending" || r.status === "failed" || stale) await dispatch({ name: "reel", reelId: r.id });
+    if (r.status === "pending" || (!opts.pendingOnly && (r.status === "failed" || isStale(r)))) {
+      await dispatch({ name: "reel", reelId: r.id });
+      slots--;
+    }
   }
 }
 
@@ -259,6 +271,7 @@ export async function generateReel(reelId: string) {
       .eq("document_id", reel.document_id)
       .neq("status", "ready");
     if (count === 0) await db.from("documents").update({ status: "ready" }).eq("id", reel.document_id);
+    else if (!edit) await queueRemainingReels(reel.document_id, { pendingOnly: true });
   } catch (err) {
     console.error("[pipeline] generateReel failed", reelId, err);
     // A failed edit leaves the reel as it was: its old script, audio and video are untouched until success.
@@ -297,10 +310,15 @@ export async function healIfStuck(doc: DocumentRow, reels: Pick<ReelRow, "id" | 
   }
   if (doc.status !== "scripting") return;
   const firstReady = reels.find((r) => r.index === 1)?.status === "ready";
+  // Reels waiting their turn in the standard queue aren't orphans: only refill the in-flight slots.
+  let slots = doc.priority ? Infinity : STANDARD_IN_FLIGHT - reels.filter((r) => r.status === "generating" && !isStale(r)).length;
   for (const r of reels) {
     if (r.index > playable) continue; // not paid for: never generated
-    const stale = r.status === "generating" && r.started_at && Date.now() - new Date(r.started_at).getTime() > STALE_MS;
     const orphaned = r.status === "pending" && age > 60_000 && (r.index === 1 || firstReady);
-    if (stale || orphaned) await dispatch({ name: "reel", reelId: r.id });
+    if (isStale(r)) await dispatch({ name: "reel", reelId: r.id });
+    else if (orphaned && slots > 0) {
+      slots--;
+      await dispatch({ name: "reel", reelId: r.id });
+    }
   }
 }

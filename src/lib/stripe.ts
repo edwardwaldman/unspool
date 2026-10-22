@@ -141,6 +141,10 @@ export async function fulfillCheckout(session: Stripe.Checkout.Session) {
       .from("credit_events")
       .insert({ subject: `u:${userId}`, kind: "topup", topup_delta: credits, stripe_session_id: session.id });
     if (error && error.code !== "23505") throw error;
+    await db.from("purchases").upsert(
+      { user_id: userId, document_id: documentId, kind, stripe_session_id: session.id, amount: session.amount_total, currency: session.currency },
+      { onConflict: "stripe_session_id", ignoreDuplicates: true },
+    );
   }
 
   // Back on a document: spend what's now available on its locked reels.

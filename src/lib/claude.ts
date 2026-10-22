@@ -1,6 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
-import type { z } from "zod";
+import { toJSONSchema as zToJsonSchema, type z } from "zod";
 import { MAX_REELS, MIN_REELS } from "./config";
 import {
   PlanSchema,
@@ -71,7 +70,53 @@ function systemBlocks(fileName: string, text: string): Anthropic.Beta.BetaTextBl
 
 class InvalidOutput extends Error {}
 
-/** One structured call; if the schema is rejected by the API, fall back to prompted JSON + zod validation. */
+type JsonSchema = Record<string, unknown>;
+
+/**
+ * Zod -> a JSON schema the structured-outputs API accepts. Keeps `enum` and `const` (the SDK's own
+ * betaZodOutputFormat moves those into descriptions, so the model wasn't held to real icon names or visual
+ * types and the reply then failed validation), turns oneOf into anyOf and drops numeric bounds.
+ */
+function outputSchema(schema: z.ZodType): JsonSchema {
+  const clean = (node: unknown): unknown => {
+    if (Array.isArray(node)) return node.map(clean);
+    if (!node || typeof node !== "object") return node;
+    const out: JsonSchema = {};
+    for (const [k, v] of Object.entries(node as JsonSchema)) {
+      if (["$schema", "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "minLength", "maxLength", "pattern", "maxItems"].includes(k)) continue;
+      out[k === "oneOf" ? "anyOf" : k] = k === "properties" || k === "$defs"
+        ? Object.fromEntries(Object.entries(v as JsonSchema).map(([pk, pv]) => [pk, clean(pv)]))
+        : clean(v);
+    }
+    if (out.type === "object") out.additionalProperties = false;
+    return out;
+  };
+  return clean(zToJsonSchema(schema, { reused: "ref" })) as JsonSchema;
+}
+
+/** The first JSON object in a reply, validated; the zod issues (for the retry prompt) when it doesn't fit. */
+function parseReply<T extends z.ZodType>(schema: T, text: string): { value: z.infer<T> } | { problem: string } {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start < 0 || end <= start) return { problem: text.trim() ? "the reply wasn't a JSON object" : "the reply was empty" };
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text.slice(start, end + 1));
+  } catch {
+    return { problem: "the reply wasn't valid JSON" };
+  }
+  const parsed = schema.safeParse(raw);
+  if (parsed.success) return { value: parsed.data };
+  const issues = parsed.error.issues.slice(0, 6).map((i) => `${i.path.join(".") || "root"}: ${i.message}`);
+  return { problem: `schema mismatch (${issues.join("; ")})` };
+}
+
+const replyText = (res: Anthropic.Beta.BetaMessage) => res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
+
+/**
+ * One structured call, validated with zod and retried with the problem spelled out (the last try on MODEL).
+ * If the API rejects the schema, the same call is made as prompted JSON with the schema in the prompt.
+ */
 async function structured<T extends z.ZodType>(opts: {
   model?: string;
   effort?: Effort;
@@ -81,90 +126,69 @@ async function structured<T extends z.ZodType>(opts: {
   maxTokens: number;
   validate?: (value: z.infer<T>) => string[];
 }): Promise<z.infer<T>> {
+  const jsonSchema = outputSchema(opts.schema);
   let lastProblem = "";
   let model = opts.model ?? SCRIPT_MODEL;
   let effort = opts.effort ?? (model === SCRIPT_MODEL ? SCRIPT_EFFORT : EFFORT);
   let escalated = false;
+  let prompted = false;
   for (let attempt = 0; attempt < 3; attempt++) {
     // Last try: a stronger model, which follows the format far more reliably.
     if (attempt === 2 && model !== MODEL) { model = MODEL; effort = EFFORT; }
     const prompt = lastProblem
       ? `${opts.prompt}\n\nYour previous answer was invalid (${lastProblem}). Return corrected output.`
       : opts.prompt;
-    let value: z.infer<T> | null = null;
+    let res: Anthropic.Beta.BetaMessage;
     try {
-      const res = await anthropic().beta.messages.parse({
+      res = await anthropic().beta.messages.create({
         model,
         max_tokens: opts.maxTokens,
         ...fallbackFor(model),
-        output_config: { effort, format: betaZodOutputFormat(opts.schema) },
+        output_config: prompted ? { effort } : { effort, format: { type: "json_schema", schema: jsonSchema } },
         system: opts.system,
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          {
+            role: "user",
+            content: prompted
+              ? `${prompt}\n\nRespond with only a single JSON object matching this JSON schema, no prose and no code fences:\n${JSON.stringify(jsonSchema)}`
+              : prompt,
+          },
+        ],
       });
-      if (res.stop_reason === "refusal") {
-        if (!escalated && model !== MODEL) {
-          // Client-side fallback for models without the server-side one.
-          escalated = true;
-          model = MODEL;
-          effort = EFFORT;
-          attempt--;
-          continue;
-        }
-        throw new InvalidOutput("the model declined to process this document");
-      }
-      if (res.stop_reason === "max_tokens") {
-        lastProblem = "output was cut off; be more concise";
+    } catch (err) {
+      if (!prompted && err instanceof Anthropic.BadRequestError && /schema|output_config|format/i.test(err.message)) {
+        console.warn("[claude] structured output rejected, using prompted JSON:", err.message);
+        prompted = true;
+        attempt--;
         continue;
       }
-      value = res.parsed_output as z.infer<T> | null;
-      if (!value) {
-        // No parsed text block (e.g. only thinking came back): ask again as plain prompted JSON, and record
-        // what the API actually returned so a persistent failure is diagnosable from error_detail.
-        lastProblem = `no structured output (stop: ${res.stop_reason}, blocks: ${res.content.map((b) => b.type).join(",") || "none"})`;
-        value = await promptedJson(model, effort, opts.schema, opts.system, prompt, opts.maxTokens);
-      }
-    } catch (err) {
-      if (err instanceof Anthropic.BadRequestError && /schema|output_config|format/i.test(err.message)) {
-        value = await promptedJson(model, effort, opts.schema, opts.system, prompt, opts.maxTokens);
-      } else {
-        throw err;
-      }
+      throw err;
     }
-    if (!value) {
-      lastProblem ||= "could not parse JSON";
+    if (res.stop_reason === "refusal") {
+      if (!escalated && model !== MODEL) {
+        // Client-side fallback for models without the server-side one.
+        escalated = true;
+        model = MODEL;
+        effort = EFFORT;
+        attempt--;
+        continue;
+      }
+      throw new InvalidOutput("the model declined to process this document");
+    }
+    if (res.stop_reason === "max_tokens") {
+      lastProblem = "output was cut off; be more concise";
       continue;
     }
-    const problems = opts.validate?.(value) ?? [];
-    if (problems.length === 0) return value;
+    const reply = parseReply(opts.schema, replyText(res));
+    if ("problem" in reply) {
+      lastProblem = reply.problem;
+      continue;
+    }
+    const problems = opts.validate?.(reply.value) ?? [];
+    if (problems.length === 0) return reply.value;
     lastProblem = problems.join("; ");
   }
   throw new InvalidOutput(`invalid output after retry: ${lastProblem}`);
-}
-
-async function promptedJson<T extends z.ZodType>(
-  model: string,
-  effort: Effort,
-  schema: T,
-  system: Anthropic.Beta.BetaTextBlockParam[],
-  prompt: string,
-  maxTokens: number,
-): Promise<z.infer<T> | null> {
-  const res = await anthropic().beta.messages.create({
-    model,
-    max_tokens: maxTokens,
-    ...fallbackFor(model),
-    output_config: { effort },
-    system,
-    messages: [{ role: "user", content: `${prompt}\n\nRespond with only a single JSON object, no prose and no code fences.` }],
-  });
-  const text = res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
-  const json = text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
-  try {
-    const parsed = schema.safeParse(JSON.parse(json));
-    return parsed.success ? parsed.data : null;
-  } catch {
-    return null;
-  }
 }
 
 // ---------------------------------------------------------------------------

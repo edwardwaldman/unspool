@@ -2,6 +2,7 @@ import { ACCEPTED_EXTENSIONS, LIMITS, MAX_FILE_BYTES, extensionOf, isAccepted, s
 import { error, json, notConfigured } from "@/lib/http";
 import { appSettings } from "@/lib/settings";
 import { adminClient } from "@/lib/supabase/admin";
+import { topupBalance } from "@/lib/credits";
 import { claimUsage, freeDocumentUsed } from "@/lib/usage";
 import { clientIpHash, getViewer } from "@/lib/viewer";
 
@@ -27,9 +28,15 @@ export async function POST(req: Request) {
   // Free accounts get one document, ever (counted from the upload ledger, so deleting it doesn't give it back),
   // unless the owner has switched on open access.
   const owner = viewer.ownerUnlimited;
-  const oneFree = !owner && !viewer.subscribed && !(await appSettings()).openAccess;
+  let oneFree = !owner && !viewer.subscribed && !(await appSettings()).openAccess;
+  // Bought credits are what they bought: a free account with top-up credits left can keep unspooling.
+  let paidByTopup = false;
   if (oneFree && (await freeDocumentUsed(viewer.userId))) {
-    return error(402, "Free accounts get 1 document. Upgrade to unspool more.", { code: "free_used" });
+    if ((await topupBalance(`u:${viewer.userId}`)) === 0) {
+      return error(402, "Free accounts get 1 document. Upgrade or buy a top-up to unspool more.", { code: "free_used" });
+    }
+    oneFree = false;
+    paidByTopup = true;
   }
 
   // Daily upload limits to keep AI costs in check. Claimed atomically in a ledger that deleting a
@@ -38,7 +45,7 @@ export async function POST(req: Request) {
   const allowed = await claimUsage({
     kind: "upload",
     // first_user_or_ip re-checks "never uploaded" under the same lock, so parallel requests can't each get a free document.
-    scope: viewer.subscribed ? "user" : oneFree ? "first_user_or_ip" : "user_or_ip",
+    scope: viewer.subscribed || paidByTopup ? "user" : oneFree ? "first_user_or_ip" : "user_or_ip",
     limit,
     userId: viewer.userId,
     ipHash,
