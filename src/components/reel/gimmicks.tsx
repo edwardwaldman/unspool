@@ -16,7 +16,7 @@ export function BeatPop({ seg }: { seg: number }) {
           key={`flash-${seg}`}
           aria-hidden
           className="pointer-events-none absolute inset-0 z-[25] bg-white"
-          initial={{ opacity: 0.55 }}
+          initial={{ opacity: 0.22 }}
           animate={{ opacity: 0 }}
           transition={{ duration: 0.35 }}
         />

@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 
 export const REEL_STYLE_OPTIONS = {
   captions: [
+    ["spotlight", "Spotlight"],
     ["pop", "Bold pop"],
     ["clean", "Clean"],
     ["karaoke", "Karaoke"],
@@ -37,7 +38,7 @@ type Opt<K extends keyof typeof REEL_STYLE_OPTIONS> = (typeof REEL_STYLE_OPTIONS
 export type ReelStyle = { [K in keyof typeof REEL_STYLE_OPTIONS]: Opt<K> };
 export type ReelStyleKey = keyof ReelStyle;
 
-export const DEFAULT_REEL_STYLE: ReelStyle = { captions: "pop", font: "classic", accent: "lime", position: "bottom", theme: "dark" };
+export const DEFAULT_REEL_STYLE: ReelStyle = { captions: "spotlight", font: "classic", accent: "lime", position: "bottom", theme: "dark" };
 
 /** Lime is the default: each reel keeps its own rotating tint. Any other accent is used for every reel. */
 export const ACCENT_HEX: Record<ReelStyle["accent"], string> = { lime: "#d3f05a", coral: "#ff8b6c", ocean: "#72c7ff", violet: "#b69cff", mono: "#e9f0e4" };

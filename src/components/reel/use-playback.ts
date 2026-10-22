@@ -6,7 +6,7 @@ import type { ReelScript } from "@/lib/schema";
 import type { SegmentAudioDTO } from "@/lib/spool-types";
 import type { VideoTimeline } from "@/lib/video/types";
 import { estimateDuration, estimateWordFractions } from "@/lib/timing";
-import { getPrefs, setPrefs, usePrefs } from "./prefs";
+import { getPrefs, rateOf, setPrefs, usePrefs } from "./prefs";
 
 export const QUIZ_WAIT_MS = 7000;
 
@@ -218,7 +218,7 @@ export function usePlayback(opts: {
         if (!v) return;
         v.currentTime = vt.start[i];
         v.muted = silent || p.muted;
-        v.playbackRate = p.speed;
+        v.playbackRate = rateOf(p);
         v.play().catch((err: DOMException) => {
           if (err?.name === "NotAllowedError" && !v.muted) {
             setPrefs({ muted: true, autoMuted: true });
@@ -231,7 +231,7 @@ export function usePlayback(opts: {
       if (el) {
         el.currentTime = 0;
         el.muted = p.muted;
-        el.playbackRate = p.speed;
+        el.playbackRate = rateOf(p);
         el.play().catch((err: DOMException) => {
           if (err?.name === "NotAllowedError") {
             // Autoplay with sound blocked: keep playing muted, show the unmute hint.
@@ -244,7 +244,7 @@ export function usePlayback(opts: {
       }
       if (!silent && p.deviceVoice && !p.muted && canSpeak()) {
         const u = new SpeechSynthesisUtterance(segments[i].speech);
-        u.rate = 1.08 * p.speed;
+        u.rate = 1.08 * rateOf(p);
         u.onend = () => {
           if (engine.current.seg === i) engine.current.speechDone = true;
         };
@@ -365,7 +365,7 @@ export function usePlayback(opts: {
         e.t = el.currentTime;
         done = el.ended || (el.duration > 0 && e.t >= el.duration - 0.02);
       } else {
-        e.t = Math.min(e.t + dt * getPrefs().speed, e.speaking ? dur * 0.985 : dur);
+        e.t = Math.min(e.t + dt * rateOf(getPrefs()), e.speaking ? dur * 0.985 : dur);
         const overtime = e.t >= dur * 0.985 && e.speaking && !e.speechDone;
         done = e.t >= dur * 0.985 && (!e.speaking || e.speechDone);
         if (overtime) {
@@ -405,15 +405,15 @@ export function usePlayback(opts: {
     const v = videoRef.current;
     if (vt && v) {
       v.muted = silent || prefs.muted;
-      v.playbackRate = prefs.speed;
+      v.playbackRate = rateOf(prefs);
     } else if (el) {
       el.muted = prefs.muted;
-      el.playbackRate = prefs.speed;
+      el.playbackRate = rateOf(prefs);
     } else if (prefs.muted && e.speaking && canSpeak()) {
       window.speechSynthesis.cancel();
       e.speechDone = true;
     }
-  }, [prefs.muted, prefs.speed, silent, vt]);
+  }, [prefs.muted, prefs.speed, prefs.boost, silent, vt]);
 
   const toggle = useCallback(() => {
     const e = engine.current;

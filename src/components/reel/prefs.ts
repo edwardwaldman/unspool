@@ -8,13 +8,15 @@ export type Prefs = {
   muted: boolean;
   /** True when the browser blocked autoplay with sound and we muted to keep playing. */
   autoMuted: boolean;
-  speed: 1 | 1.25 | 1.5;
+  speed: 1 | 1.25 | 1.5 | 2;
+  /** Held down on the right side of a reel: plays at 2x until let go (never persisted). */
+  boost: boolean;
   /** Read reels that have no generated voiceover with the device's built-in voice. */
   deviceVoice: boolean;
 };
 
 const KEY = "unspool:prefs";
-const DEFAULTS: Prefs = { muted: false, autoMuted: false, speed: 1, deviceVoice: true };
+const DEFAULTS: Prefs = { muted: false, autoMuted: false, speed: 1, boost: false, deviceVoice: true };
 
 let state: Prefs = DEFAULTS;
 let loaded = false;
@@ -25,11 +27,14 @@ function load() {
   loaded = true;
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (raw) state = { ...DEFAULTS, ...JSON.parse(raw), autoMuted: false };
+    if (raw) state = { ...DEFAULTS, ...JSON.parse(raw), autoMuted: false, boost: false };
   } catch {
     // storage unavailable: keep defaults
   }
 }
+
+/** The playback rate right now: 2x while held, else the chosen speed. */
+export const rateOf = (p: Prefs) => (p.boost ? 2 : p.speed);
 
 export function getPrefs(): Prefs {
   load();

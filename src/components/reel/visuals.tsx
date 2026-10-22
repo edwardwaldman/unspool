@@ -17,7 +17,7 @@ import { QUIZ_WAIT_MS, type QuizState } from "./use-playback";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const TEXT_SHADOW = { textShadow: "0 2px 0 rgba(0,0,0,.45)" };
-const glass = "border border-white/[0.14] bg-paper/80";
+const glass = "border border-white/[0.16] bg-black/40 backdrop-blur-[2px]";
 
 function colorOf(c: HighlightColor | undefined) {
   return COLOR_VAR[c ?? "primary"];
@@ -394,8 +394,7 @@ export type StageProps = {
   pulse?: number;
 };
 
-/** One beat's motion graphic. The quiz is not part of the stage: it's an interactive overlay (QuizCard). */
-/** One beat's motion graphic, staged in 3D: a perspective floor grid, a slow camera orbit, and an extruded drop shadow. */
+/** One beat's motion graphic, centred and as large as the space allows, popping in and floating gently (as in the ads). The quiz is an interactive overlay (QuizCard), not part of the stage. */
 export function VisualStage(props: StageProps) {
   const reduce = useReducedMotion();
   const box = useRef<HTMLDivElement>(null);
@@ -404,8 +403,8 @@ export function VisualStage(props: StageProps) {
   useEffect(() => {
     const b = box.current, c = content.current;
     if (!b || !c) return;
-    // Shrink the graphic to the space it has (never grow it), so it can't spill onto the captions or headline.
-    const measure = () => setFit(Math.min(1, (b.clientHeight - 16) / Math.max(1, c.offsetHeight), (b.clientWidth - 16) / Math.max(1, c.offsetWidth)));
+    // Fit the graphic to the space it has (up to 125%), so it fills the frame but never spills onto the captions or title.
+    const measure = () => setFit(Math.min(1.25, (b.clientHeight - 16) / Math.max(1, c.offsetHeight), (b.clientWidth - 16) / Math.max(1, c.offsetWidth)));
     const ro = new ResizeObserver(measure);
     ro.observe(b);
     ro.observe(c);
@@ -414,31 +413,13 @@ export function VisualStage(props: StageProps) {
   const inner = <StageInner {...props} />;
   if (props.visual.type === "quiz" || props.visual.type === "hook") return inner;
   return (
-    <div ref={box} className="relative flex h-full w-full items-center justify-center overflow-hidden" style={{ perspective: 900 }}>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-[-18%] h-[70%]"
-        style={{
-          transform: "rotateX(74deg)",
-          transformOrigin: "50% 100%",
-          backgroundImage:
-            "linear-gradient(color-mix(in srgb, var(--thread) 45%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--thread) 45%, transparent) 1px, transparent 1px)",
-          backgroundSize: "34px 34px",
-          maskImage: "linear-gradient(to top, #000 10%, transparent 85%)",
-          WebkitMaskImage: "linear-gradient(to top, #000 10%, transparent 85%)",
-        }}
-      />
-      <div aria-hidden className="pointer-events-none absolute bottom-[6%] left-1/2 h-[26px] w-[58%] -translate-x-1/2 rounded-[50%] bg-black/45 blur-[10px]" />
+    <div ref={box} className="relative flex h-full w-full items-center justify-center overflow-hidden">
       <motion.div
         className="relative"
-        style={{
-          transformStyle: "preserve-3d",
-          filter:
-            "drop-shadow(1px 1px 0 rgba(0,0,0,.55)) drop-shadow(1px 1px 0 rgba(0,0,0,.55)) drop-shadow(1px 1px 0 rgba(0,0,0,.5)) drop-shadow(1px 1px 0 rgba(0,0,0,.45)) drop-shadow(2px 2px 0 rgba(0,0,0,.4)) drop-shadow(0 14px 18px rgba(0,0,0,.45))",
-        }}
-        initial={reduce ? false : { rotateX: 30, rotateY: -30, z: -120, opacity: 0 }}
-        animate={reduce ? undefined : { rotateX: [14, 8, 14], rotateY: [-16, 16, -16], z: 0, opacity: 1 }}
-        transition={{ rotateX: { duration: 7, repeat: Infinity, ease: "easeInOut" }, rotateY: { duration: 7, repeat: Infinity, ease: "easeInOut" }, z: { duration: 0.6 }, opacity: { duration: 0.3 } }}
+        style={{ filter: "drop-shadow(0 18px 30px rgba(0,0,0,.45))" }}
+        initial={reduce ? false : { scale: 0.82, opacity: 0 }}
+        animate={reduce ? undefined : { scale: 1, opacity: 1, y: [0, -6, 0] }}
+        transition={{ scale: { type: "spring", stiffness: 260, damping: 18 }, opacity: { duration: 0.25 }, y: { duration: 4, repeat: Infinity, ease: "easeInOut" } }}
       >
         <div ref={content} style={{ transform: `scale(${fit})` }}>
           {inner}

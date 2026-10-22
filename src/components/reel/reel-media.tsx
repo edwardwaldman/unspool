@@ -39,10 +39,14 @@ export function ReelMedia({
   if (videoUrl && videoRef) return <ReelVideo src={videoUrl} videoRef={videoRef} muted={muted} />;
   return (
     <>
+      {/* A deep, lit backdrop (as in the ads): the reel's accent glowing behind the graphic, falling off to near-black. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
-        style={{ background: "color-mix(in srgb, var(--thread) 9%, transparent)" }}
+        style={{
+          background:
+            "radial-gradient(120% 70% at 50% 42%, color-mix(in srgb, var(--thread) 30%, #20343c) 0%, color-mix(in srgb, var(--thread) 10%, #111b20) 48%, #070b0d 100%)",
+        }}
       />
       <ParticleField active={active && playing} pulse={pulse} />
       <div className="absolute inset-x-0 z-[5] flex items-center justify-center" style={stageBox}>

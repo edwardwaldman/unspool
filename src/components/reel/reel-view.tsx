@@ -101,6 +101,17 @@ export function ReelView({
   const look = spool.style;
   const paper = look?.theme === "paper" && !pb.videoMode;
 
+  // Hold-to-2x: a timer starts on press; letting go (or leaving) before it fires is just a tap.
+  const hold = useRef<{ timer: number; fired: boolean }>({ timer: 0, fired: false });
+  const endHold = () => {
+    window.clearTimeout(hold.current.timer);
+    if (getPrefs().boost) setPrefs({ boost: false });
+  };
+  useEffect(() => () => {
+    window.clearTimeout(hold.current.timer);
+    if (getPrefs().boost) setPrefs({ boost: false });
+  }, []);
+
   // M mutes / unmutes the reel that's playing.
   useEffect(() => {
     if (!active || preview) return;
@@ -116,10 +127,31 @@ export function ReelView({
   }, [active, preview]);
 
   return (
-    <div className="relative h-full w-full select-none overflow-hidden text-white [container-type:size]" style={{ ...reelVars(reel.index), ...reelStyleVars(look), ...(paper ? { filter: "invert(1) hue-rotate(180deg)" } : {}) }} data-reel-theme={paper ? "paper" : undefined} onClick={(e) => {
+    <div className="relative h-full w-full touch-manipulation select-none overflow-hidden text-white [container-type:size] [-webkit-touch-callout:none]" style={{ ...reelVars(reel.index), ...reelStyleVars(look), ...(paper ? { filter: "invert(1) hue-rotate(180deg)" } : {}) }} data-reel-theme={paper ? "paper" : undefined} onClick={(e) => {
+        // A hold for 2x ends in a click too: don't let it pause the reel.
+        if (hold.current.fired) {
+          hold.current.fired = false;
+          return;
+        }
         heart.onTap(e);
         pb.toggle();
-      }} data-testid="reel-view" data-seg={pb.segment.key} data-playing={pb.playing ? "1" : "0"}>
+      }}
+      onPointerDown={(e) => {
+        // Hold the right side of the reel (not a button) to play at 2x, like TikTok.
+        if (preview || !active || (e.target as HTMLElement).closest("button,a,input,textarea")) return;
+        const box = e.currentTarget.getBoundingClientRect();
+        if (e.clientX - box.left < box.width * 0.6) return;
+        window.clearTimeout(hold.current.timer);
+        hold.current.timer = window.setTimeout(() => {
+          hold.current.fired = true;
+          setPrefs({ boost: true });
+        }, 260);
+      }}
+      onPointerUp={endHold}
+      onPointerCancel={endHold}
+      onPointerLeave={endHold}
+      onContextMenu={(e) => hold.current.fired && e.preventDefault()}
+      data-testid="reel-view" data-seg={pb.segment.key} data-playing={pb.playing ? "1" : "0"}>
       <motion.div
         className="absolute inset-0"
         animate={preview ? undefined : { scale: [1.07, 1], rotate: [pb.seg % 2 ? 1.2 : -1.2, 0] }}
@@ -143,6 +175,29 @@ export function ReelView({
       />
       </motion.div>
 
+      {/* 2x while held */}
+      <AnimatePresence>
+        {prefs.boost && active && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="pointer-events-none absolute left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 bg-black/60 px-3 py-1.5 font-mono text-[13px] font-semibold text-white"
+            style={{ top: below - 6 }}
+            data-testid="boost"
+          >
+            2x <span aria-hidden>▶▶</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Progress through the reel, a thin line on top of the bottom band */}
+      {!preview && (
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 z-[7] h-[3px] bg-white/15" style={{ bottom: bottom + BAND }}>
+          <div className="h-full bg-white" style={{ width: `${Math.min(100, pb.progress * 100)}%` }} />
+        </div>
+      )}
+
       {/* Flat band so the account row reads on any frame */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] border-t border-line bg-paper/85" style={{ height: bottom + BAND }} />
 
@@ -156,7 +211,22 @@ export function ReelView({
             </motion.div>
           ) : (
             <motion.div key="stats" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <StatLine stats={script.stats} beat={pb.segment.beatIndex} />
+              {/* As in the ads: the reel's topic in big accent letters, with the live stats under it */}
+              <motion.div
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 18 }}
+                className="text-center font-hook font-extrabold uppercase leading-[1.02] tracking-[-0.02em] text-thread"
+                style={{ fontSize: `min(34px, ${(150 / Math.max(10, script.title.length)).toFixed(1)}cqw)`, textShadow: "0 2px 10px rgba(0,0,0,.45)" }}
+                data-testid="reel-topic"
+              >
+                {script.title}
+              </motion.div>
+              {script.stats.length > 0 && (
+                <div className="mt-3 flex justify-center">
+                  <StatLine stats={script.stats} beat={pb.segment.beatIndex} />
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

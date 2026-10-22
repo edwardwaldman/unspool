@@ -76,7 +76,7 @@ export function MoreSheet({
       <div className={row}>
         <Gauge size={19} strokeWidth={1.5} />
         <span className="flex-1">Speed</span>
-        {([1, 1.25, 1.5] as const).map((s) => (
+        {([1, 1.25, 1.5, 2] as const).map((s) => (
           <button
             key={s}
             type="button"
