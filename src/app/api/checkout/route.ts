@@ -14,6 +14,19 @@ export const dynamic = "force-dynamic";
  * kind "topup": a one-time pack of reel credits that never expire.
  */
 export async function POST(req: Request) {
+  try {
+    return await checkout(req);
+  } catch (err) {
+    // Stripe's own message ("Your account cannot currently make live charges", "No such price", ...) says what to
+    // fix; show it instead of a bare 500 the page can only call "Couldn't open checkout".
+    const e = err as { type?: string; code?: string; message?: string };
+    console.error("[checkout] failed", e?.type, e?.code, e?.message);
+    const stripeMsg = e?.type?.startsWith("Stripe") && e.message ? e.message : null;
+    return error(502, stripeMsg ? `Checkout error from Stripe: ${stripeMsg}` : "Couldn't open checkout. Try again in a minute.", { code: e?.code ?? "checkout_failed" });
+  }
+}
+
+async function checkout(req: Request) {
   if (!supabaseConfigured) return notConfigured();
   if (!stripeConfigured()) return error(503, "Payments aren't set up yet (STRIPE_SECRET_KEY).");
   const body = (await req.json().catch(() => ({}))) as { kind?: string; tier?: string; documentId?: string; reel?: number; billing?: string; pack?: string; returnTo?: string };

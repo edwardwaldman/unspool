@@ -17,7 +17,16 @@ export function getStripe() {
 }
 
 export async function ensureCustomer(profile: Profile, email: string | null) {
-  if (profile.stripe_customer_id) return profile.stripe_customer_id;
+  if (profile.stripe_customer_id) {
+    // A customer from another Stripe account or mode (test vs live keys) or one deleted in the dashboard can't be
+    // charged: make a fresh one instead of failing every checkout.
+    try {
+      const c = await getStripe().customers.retrieve(profile.stripe_customer_id);
+      if (!("deleted" in c && c.deleted)) return profile.stripe_customer_id;
+    } catch (err) {
+      if ((err as { code?: string }).code !== "resource_missing") throw err;
+    }
+  }
   const customer = await getStripe().customers.create({
     email: email ?? profile.email ?? undefined,
     metadata: { user_id: profile.id },
