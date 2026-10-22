@@ -173,13 +173,18 @@ export function Landing({ studioOnSignIn = true }: { /** Off while the owner tes
   // Desktop and iPad: the animation takes exactly the height the headline and buttons leave, with four equal gaps
   // (top bar, headline, animation, buttons, pull-up tab) of at least HERO_GAP, and stays clear of the side tags.
   // That way the hero fills the screen at any size without ever needing to scroll or zoom.
-  const HERO_GAP = 12;
-  const free = vh - 24 - 20 - (headH || 70) - (rowH || 150) - HERO_GAP * 4;
+  // Desktop: the wordmark gets its own band at the top, then title, animation and buttons sit one equal gap apart.
+  const TOP_BAND = 48, BOTTOM = 28;
+  const HERO_GAP = Math.round(Math.min(56, Math.max(24, vh * 0.045)));
+  const free = vh - TOP_BAND - BOTTOM - (headH || 70) - (rowH || 150) - HERO_GAP * 3;
   const k = lg ? Math.max(0.6, Math.min(2.8, free / ANIM_H, (vw - 480) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
 
   return (
     <div>
-    <div className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-[safe_center] gap-6 overflow-hidden px-3 pb-10 pt-20 min-[900px]:justify-evenly min-[900px]:gap-0 min-[900px]:px-6 min-[900px]:pb-5 min-[900px]:pt-6">
+    <div
+      className="sticky top-0 z-0 flex h-[100dvh] flex-col items-center justify-[safe_center] gap-6 overflow-hidden px-3 pb-10 pt-20 min-[900px]:justify-start min-[900px]:px-6"
+      style={lg ? { paddingTop: TOP_BAND + HERO_GAP, paddingBottom: BOTTOM, gap: HERO_GAP } : undefined}
+    >
       {/* Wordmark under the top bar: the bar slides down over it on scroll */}
       <Link href="/" aria-label="unspool" className="absolute left-5 top-5 origin-top-left min-[900px]:left-10 min-[900px]:top-[22px] ipad:scale-[1.5]">
         <Wordmark size={24} />
