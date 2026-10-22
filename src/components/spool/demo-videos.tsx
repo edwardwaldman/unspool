@@ -42,6 +42,8 @@ export function DemoVideos() {
   const [saved, setSaved] = useState<Set<number>>(new Set());
   const [following, setFollowing] = useState(false);
   const [progress, setProgress] = useState(0);
+  // The reel that just finished: its quiz covers the video until they answer and move on (or watch again).
+  const [ended, setEnded] = useState<number | null>(null);
   const [sheet, setSheet] = useState<null | "comments" | "share" | "more" | "quiz">(null);
   const [speed, setSpeed] = useState(1);
   const [burst, setBurst] = useState<{ i: number; key: number; x: number; y: number } | null>(null);
@@ -82,7 +84,10 @@ export function DemoVideos() {
   useEffect(() => {
     const el = scroller.current;
     if (!el) return;
-    const onScroll = () => setIndex(Math.round(el.scrollTop / el.clientHeight));
+    const onScroll = () => {
+      setIndex(Math.round(el.scrollTop / el.clientHeight));
+      setEnded(null);
+    };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
@@ -134,14 +139,35 @@ export function DemoVideos() {
                 src={r.src}
                 poster={r.poster}
                 playsInline
-                loop
                 muted
                 preload={i === 0 ? "auto" : "metadata"}
                 className="h-full w-full object-contain"
                 onTimeUpdate={(e) => i === index && setProgress(e.currentTarget.currentTime / (e.currentTarget.duration || 1))}
+                onEnded={() => i === index && setEnded(i)}
                 onClick={(e) => onTap(i, e)}
               />
-              {i === index && muted && (
+              <AnimatePresence>
+                {ended === i && (
+                  <EndQuiz
+                    key={`quiz-${i}`}
+                    reel={r}
+                    last={i === REELS.length - 1}
+                    onReplay={() => {
+                      setEnded(null);
+                      const v = videos.current[i];
+                      if (v) {
+                        v.currentTime = 0;
+                        void v.play().catch(() => {});
+                      }
+                    }}
+                    onNext={() => {
+                      setEnded(null);
+                      go(i + 1);
+                    }}
+                  />
+                )}
+              </AnimatePresence>
+              {i === index && muted && ended !== i && (
                 <button
                   type="button"
                   onClick={() => setMuted(false)}
@@ -376,6 +402,36 @@ function MoreDemo({ speed, onSpeed, onQuiz, onRead, onNext }: { speed: number; o
         <SkipForward size={19} strokeWidth={1.6} /> Next reel
       </button>
     </div>
+  );
+}
+
+/** The end of a reel: its quick-check question on top of the last frame, then on to the next reel. */
+function EndQuiz({ reel, last, onReplay, onNext }: { reel: DemoReel; last: boolean; onReplay: () => void; onNext: () => void }) {
+  return (
+    <motion.div
+      className="absolute inset-0 z-30 flex items-center justify-center bg-paper/80 px-5 backdrop-blur-[3px]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      data-testid="demo-end-quiz"
+    >
+      <motion.div
+        className="w-full max-w-[400px] border border-line bg-paper p-5 ipad:max-w-[560px] ipad:p-8 ipad:text-[1.25em]"
+        initial={{ y: 24, scale: 0.97 }}
+        animate={{ y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 320, damping: 28 }}
+      >
+        <QuizDemo reel={reel} />
+        <div className="mt-5 flex gap-2">
+          <button type="button" onClick={onReplay} className="btn-secondary flex-1 py-3 text-[14px]">
+            Watch again
+          </button>
+          <button type="button" onClick={onNext} className="btn-primary flex-1 py-3 text-[14px]">
+            {last ? "Make your own" : "Next reel"}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
