@@ -1,0 +1,47 @@
+{
+ "dur": 29.926,
+ "lines": [
+  {
+   "shot": "night",
+   "s": 0.5,
+   "e": 2.606,
+   "text": "What if you never had to read the whole thing again?"
+  },
+  {
+   "shot": "upload",
+   "s": 3.156,
+   "e": 7.528,
+   "text": "Drop in the forty-page reading. Get it back as reels you'd actually watch."
+  },
+  {
+   "shot": "scroll",
+   "s": 8.078,
+   "e": 12.632,
+   "text": "Hook, voiceover, captions, a quiz in every reel. Your thumb already knows how."
+  },
+  {
+   "shot": "test",
+   "s": 13.182,
+   "e": 16.263,
+   "text": "And the question the test always asks? You've already seen it."
+  },
+  {
+   "shot": "office",
+   "s": 16.813,
+   "e": 21.442,
+   "text": "Work reports too. Eighty pages, five reels, before your coffee goes cold."
+  },
+  {
+   "shot": "park",
+   "s": 21.992,
+   "e": 24.793,
+   "text": "You still learned all of it. It just didn't take all night."
+  },
+  {
+   "shot": "end",
+   "s": 25.343,
+   "e": 27.726,
+   "text": "Unspool. Turn any document into reels."
+  }
+ ]
+}

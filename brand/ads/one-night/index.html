@@ -1,7 +1,7 @@
 <!doctype html><html><head><meta charset="utf-8"><style>
 html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#05060d}
 canvas{width:720px;height:1280px;image-rendering:pixelated;display:block}
-</style></head><body><canvas id="c" width="180" height="320"></canvas>
+</style></head><body><canvas id="c" width="180" height="320"></canvas><div id="ov" style="position:absolute;inset:0;font-family:'DejaVu Sans',sans-serif;color:#fff"></div><script src="bio2.js"></script><script src="demo.js"></script>
 <script>
 const W=180,H=320,cv=document.getElementById("c"),g=cv.getContext("2d");g.imageSmoothingEnabled=false;
 const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>{x=clamp(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2},mix=(a,b,x)=>a+(b-a)*x;
@@ -39,9 +39,9 @@ window.renderAt=t=>{ if(!TL)return; const L=TL.lines; let i=0;for(let j=0;j<L.le
  else if(sh.shot==="forget"){space(t);brain(90,150,t,ease(u*1.3));box([["HOUR 3",6],["CHAPTER 1: FADING",8,"#ff8fb3"]],40,.3,t)}
  else if(sh.shot==="sunrise"){const k=ease(u*1.4);R(0,0,W,H,`rgb(${mix(10,244,k)|0},${mix(16,163,k)|0},${mix(48,92,k)|0})`);C(90,250-k*90,16,"#ffd34a");for(let h=0;h<6;h++){R(h*32,200+(h%2)*12,28,120,"#1b1a2a");for(let w=0;w<3;w++)R(h*32+5+w*8,215+(h%2)*12,4,5,(h+w)%3?"#ffd46a":"#2a2840")}R(0,300,W,20,"#121220");box([["RETAINED BY MORNING",6],["NOT MUCH",11,"#ff6b6b"]],40,.5,t)}
  else if(sh.shot==="unspool"){space(t);const k=ease(lt/.9);phone(90,175,1.7);book(90,mix(60,170,k),mix(1.8,.5,k));if(lt>.9){const q=clamp((lt-.9)/.5);C(90,175,q*40,`rgba(201,230,74,${.5*(1-q)})`)}txt("unspool",90,130,9,"#c9e64a")}
- else if(sh.shot==="reels"){space(t);const n=Math.min(38,Math.floor(clamp(lt/1.6)*38));for(let j=0;j<38;j++){const c=j%6,r=(j/6)|0,x=24+c*23,y=90+r*28;if(j<n){R(x,y,18,24,"#111");R(x+1,y+1,16,22,COLS[j%5]);R(x+3,y+17,8,2,"#0008")}else R(x,y,18,24,"#141a24")}
-  box([[`${n} REELS`,11,"#c9e64a"],["≈ 19 MIN · QUIZ IN EACH",5]],30,.1,t)}
+ else if(sh.shot==="reels"){space(t);}
  else {space(t);const k=ease(lt/.5);txt("unspool.cc",90,150,(20*k|0)||1,"#fff");txt("YOUR TEXTBOOK, AS REELS",90,176,6,"#9db5a6")}
+ document.getElementById("ov").innerHTML = sh.shot==="reels" ? demoOverlay(lt,{top:260,scale:0.95}) : "";
  if(t<.3)R(0,0,W,H,`rgba(0,0,0,${1-t/.3})`);
  const fo=clamp((t-(TL.dur-.4))/.4);if(fo>0)R(0,0,W,H,`rgba(0,0,0,${fo})`);
 };

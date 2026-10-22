@@ -8,7 +8,7 @@ lines = [
  ("k", "K", "I am studying."),
  ("f2", "F", "You're literally scrolling."),
  ("swipe", "K", "Exactly. Every chapter's a reel. Voiceover, captions, a quiz in every one."),
- ("swipe", "K", "I put the whole textbook into Unspool."),
+ ("upload", "K", "I put the whole textbook into Unspool."),
  ("f2", "F", "Wait... that's actually the textbook?"),
  ("k", "K", "Yep. I'm on reel thirty."),
  ("f", "F", "Send me the link."),
@@ -22,7 +22,7 @@ for i, (shot, who, text) in enumerate(lines):
     d = len(a) / SR
     shown = text.replace("!!", "!").replace("one AM", "1 AM").replace("Unspool dot C C.", "unspool.cc")
     out.append({"shot": shot, "who": who, "s": round(t, 3), "e": round(t + d, 3), "text": shown})
-    gap = {"swipe": 0.08}.get(shot, 0.06) if i < len(lines) - 1 else 2.0
+    gap = {"swipe": 0.08, "upload": 1.1}.get(shot, 0.06) if i < len(lines) - 1 else 2.0
     pcm += [a, np.zeros(int(SR * gap), np.float32)]; t += d + gap
 sf.write(f"{S}/ad4/voice.wav", np.concatenate(pcm), SR)
 json.dump({"dur": round(t, 3), "lines": out}, open(f"{S}/ad4/web/tl.json", "w"), indent=1)

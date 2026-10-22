@@ -21,7 +21,7 @@
 </head>
 <body>
 <div id="wrap"><canvas id="c" width="720" height="1280"></canvas><div class="vig"></div><div id="ov"></div></div>
-<script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
+<script src="bio2.js"></script><script src="demo.js"></script><script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
 <script type="module">
 import * as THREE from "three";
 
@@ -394,6 +394,7 @@ const SHOTS = {
   f:      { sets: ["room", "desk", "decor", "cast"], kind: "friend", d: [2.8, 2.4] },
   f2:     { sets: ["room", "desk", "decor", "cast"], kind: "friend", d: [2.3, 2.0], doubt: true },
   swipe:  { sets: ["room", "desk", "decor", "cast"], kind: "boy", d: [3.4, 3.0], phone: true, ui: "swipe" },
+  upload: { sets: ["room", "desk", "decor", "cast"], kind: "boy", d: [3.4, 3.0], phone: true },
   end:    { sets: ["cast"], kind: "end" },
 };
 const ov = document.getElementById("ov");
@@ -561,6 +562,7 @@ window.renderAt = (t) => {
   }
   const fadeIn = 1 - clamp(t / 0.25), fadeOut = clamp((t - (TL.dur - 0.7)) / 0.7);
   if (fadeIn + fadeOut > 0) html += `<div class="fade" style="opacity:${Math.max(fadeIn, fadeOut)}"></div>`;
+  if (L.shot === "upload") html = demoOverlay(t - (L.s - 0.25), { top: 150, scale: 0.9 }) + html;
   ov.innerHTML = html;
 };
 window.DUR = TL.dur;

@@ -2,7 +2,7 @@
 html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#06080f}
 #bg{position:absolute;inset:0;filter:blur(14px);transform:scale(1.08)} #c{position:absolute;inset:0} #ov{position:absolute;inset:0;font-family:"DejaVu Sans",sans-serif;color:#fff}
 </style></head><body><div id="bg"></div><canvas id="c" width="720" height="1280"></canvas><div id="ov"></div>
-<script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
+<script src="bio2.js"></script><script src="demo.js"></script><script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
 <script type="module">
 import * as THREE from "three";
 const TL = await (await fetch("tl.json")).json();
@@ -92,8 +92,9 @@ window.renderAt = (t) => {
   camera.updateProjectionMatrix();
   renderer.render(scene, camera);
   let h = "";
-  if (L.text && t >= L.s - 0.1 && t <= L.e + 0.35) h += `<div style="position:absolute;left:60px;right:60px;top:150px;text-align:center;font:600 30px/1.3 'DejaVu Sans';text-shadow:0 2px 6px rgba(0,0,0,.9)">${L.text}</div>`;
   if (L.shot === "end") { const k = clamp((t - L.s) / 0.4); h += `<div style="position:absolute;inset:0;background:rgba(10,14,24,${0.75 * k})"></div><div style="position:absolute;left:0;right:0;top:470px;text-align:center;font:800 96px 'DejaVu Sans';letter-spacing:-2px;opacity:${k}">unspool<span style="color:#c9e64a">.cc</span></div><div style="position:absolute;left:0;right:0;top:600px;text-align:center;font:400 32px 'DejaVu Sans';color:#e9f0e4;opacity:${clamp((t - L.s - 0.4) / 0.3)}">your textbook, as reels</div>`; }
+  { const a = lines.find((x) => x.text.startsWith("I just turned")), b = lines.find((x) => x.text.startsWith("You watched")); if (a && b && t >= a.s - 0.2 && t < b.e + 0.4) h += demoOverlay(t - (a.s - 0.2), { top: 240, scale: 0.92, dur: b.e + 0.6 - a.s }); }
+  if (L.text && t >= L.s - 0.1 && t <= L.e + 0.35) h += `<div style="position:absolute;left:60px;right:60px;top:150px;text-align:center;font:600 30px/1.3 'DejaVu Sans';text-shadow:0 2px 6px rgba(0,0,0,.9)">${L.text}</div>`;
   if (t < 0.4) h += `<div style="position:absolute;inset:0;background:#000;opacity:${1 - t / 0.4}"></div>`;
   ov.innerHTML = h;
 };

@@ -1,95 +1,95 @@
 {
- "dur": 29.279,
+ "dur": 29.579,
  "lines": [
   {
    "shot": "g",
    "who": "G",
    "s": 0.4,
-   "e": 2.628,
-   "text": "Spool. I got an A on the bio test."
+   "e": 2.928,
+   "text": "Spool. I got a 100 on the bio test."
   },
   {
    "shot": "s",
    "who": "S",
-   "s": 3.078,
-   "e": 3.788,
+   "s": 3.378,
+   "e": 4.088,
    "text": "Nice."
   },
   {
    "shot": "g",
    "who": "G",
-   "s": 4.238,
-   "e": 6.12,
+   "s": 4.538,
+   "e": 6.42,
    "text": "I didn't read the textbook. You did."
   },
   {
    "shot": "s",
    "who": "S",
-   "s": 6.57,
-   "e": 8.475,
+   "s": 6.87,
+   "e": 8.775,
    "text": "I just turned it into reels."
   },
   {
    "shot": "g2",
    "who": "G",
-   "s": 8.925,
-   "e": 9.868,
+   "s": 9.225,
+   "e": 10.168,
    "text": "Thirty-eight of them."
   },
   {
    "shot": "s",
    "who": "S",
-   "s": 10.318,
-   "e": 12.163,
+   "s": 10.618,
+   "e": 12.463,
    "text": "You watched all thirty-eight."
   },
   {
    "shot": "g2",
    "who": "G",
-   "s": 12.613,
-   "e": 13.583,
+   "s": 12.913,
+   "e": 13.883,
    "text": "Some of them twice."
   },
   {
    "shot": "s2",
    "who": "S",
-   "s": 14.033,
-   "e": 16.52,
+   "s": 14.333,
+   "e": 16.82,
    "text": "The mitochondria one? Four times."
   },
   {
    "shot": "g",
    "who": "G",
-   "s": 17.27,
-   "e": 18.208,
+   "s": 17.57,
+   "e": 18.508,
    "text": "...It was a good reel."
   },
   {
    "shot": "s2",
    "who": "S",
-   "s": 18.958,
-   "e": 21.8,
+   "s": 19.258,
+   "e": 22.1,
    "text": "It makes ATP. Knowing that is the job."
   },
   {
    "shot": "wide",
    "who": "G",
-   "s": 22.55,
-   "e": 24.147,
+   "s": 22.85,
+   "e": 24.447,
    "text": "Okay. Chemistry's next."
   },
   {
    "shot": "s",
    "who": "S",
-   "s": 24.597,
-   "e": 26.229,
+   "s": 24.897,
+   "e": 26.529,
    "text": "Upload the PDF."
   },
   {
    "shot": "end",
    "who": "S",
-   "s": 26.679,
-   "e": 29.279,
+   "s": 26.979,
+   "e": 29.579,
    "text": ""
   }
  ]

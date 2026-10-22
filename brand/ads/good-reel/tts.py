@@ -4,7 +4,7 @@ S = sys.argv[1]
 k = Kokoro(f"{S}/tts/kokoro-v1.0.onnx", f"{S}/tts/voices-v1.0.bin")
 V = {"G": ("af_bella", 1.05), "S": ("am_echo", 1.0)}
 lines = [
- ("g", "G", "Spool. I got an A on the bio test."),
+ ("g", "G", "Spool. I got a hundred on the bio test."),
  ("s", "S", "Nice."),
  ("g", "G", "I didn't read the textbook. You did."),
  ("s", "S", "I just turned it into reels."),
@@ -26,7 +26,7 @@ for i, (shot, who, text) in enumerate(lines):
     a, _ = k.create(text, voice=voice, speed=sp, lang="en-us")
     a = a.astype(np.float32); nz = np.where(np.abs(a) > 0.01)[0]; a = a[max(0, nz[0] - 600): nz[-1] + 1200]
     d = len(a) / SR
-    out.append({"shot": shot, "who": who, "s": round(t, 3), "e": round(t + d, 3), "text": text.replace("A T P", "ATP")})
+    out.append({"shot": shot, "who": who, "s": round(t, 3), "e": round(t + d, 3), "text": text.replace("A T P", "ATP").replace("a hundred", "a 100")})
     gap = 0.75 if text.startswith("...") or shot == "s2" else 0.45
     pcm += [a, np.zeros(int(SR * gap), np.float32)]; t += d + gap
 sf.write(f"{S}/ad9/voice.wav", np.concatenate(pcm), SR)

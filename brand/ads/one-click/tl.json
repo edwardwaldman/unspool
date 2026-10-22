@@ -1,0 +1,47 @@
+{
+ "dur": 26.475,
+ "lines": [
+  {
+   "shot": "hook",
+   "s": 0.5,
+   "e": 3.91,
+   "text": "What if studying only took you ten minutes, instead of two hours?"
+  },
+  {
+   "shot": "reels",
+   "s": 4.51,
+   "e": 8.693,
+   "text": "Your whole reading, as reels. A hook, a voiceover, captions, and a quiz."
+  },
+  {
+   "shot": "click",
+   "s": 9.293,
+   "e": 12.277,
+   "text": "Drop in the PDF. Click once. That's the whole thing."
+  },
+  {
+   "shot": "scroll",
+   "s": 12.877,
+   "e": 15.693,
+   "text": "Now your reading feels like scrolling. Because it is."
+  },
+  {
+   "shot": "test",
+   "s": 16.293,
+   "e": 18.434,
+   "text": "And when the test asks? You've already seen it."
+  },
+  {
+   "shot": "park",
+   "s": 19.034,
+   "e": 21.249,
+   "text": "Ten minutes of reels. Done before dinner."
+  },
+  {
+   "shot": "end",
+   "s": 21.849,
+   "e": 24.275,
+   "text": "Unspool. One click, and your reading's a reel."
+  }
+ ]
+}
