@@ -1,0 +1,101 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#06080f}
+#bg{position:absolute;inset:0;filter:blur(14px);transform:scale(1.08)} #c{position:absolute;inset:0} #ov{position:absolute;inset:0;font-family:"DejaVu Sans",sans-serif;color:#fff}
+</style></head><body><div id="bg"></div><canvas id="c" width="720" height="1280"></canvas><div id="ov"></div>
+<script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
+<script type="module">
+import * as THREE from "three";
+const TL = await (await fetch("tl.json")).json();
+const W = 720, H = 1280, clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), mix = (a, b, x) => a + (b - a) * x;
+const ease = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }, v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("c"), antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H, false); renderer.setPixelRatio(1); renderer.setClearColor(0x000000, 0);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(); const camera = new THREE.PerspectiveCamera(34, W / H, 0.05, 50);
+scene.add(new THREE.HemisphereLight("#9aa6e0", "#2a1e22", 0.8));
+const key = new THREE.PointLight("#ffd2a6", 4, 5, 1.5); key.position.set(-0.4, 1.9, -0.6); scene.add(key);
+const lampL = new THREE.PointLight("#ffb46a", 9, 6, 1.6); lampL.position.set(-0.9, 1.9, 0.6); lampL.castShadow = true; scene.add(lampL);
+const screenL = new THREE.PointLight("#7fb6ff", 3.5, 4, 1.6); screenL.position.set(0.5, 1.45, -0.55); scene.add(screenL);
+const rim = new THREE.DirectionalLight("#9fb4ff", 0.8); rim.position.set(2, 3, -3); scene.add(rim);
+const M = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6, ...o });
+const mesh = (g, m, p, parent, s) => { const x = new THREE.Mesh(g, m); x.castShadow = x.receiveShadow = true; if (p) x.position.copy(p); if (s) x.scale.copy(s); (parent || scene).add(x); return x; };
+const sph = (r, n = 40) => new THREE.SphereGeometry(r, n, n / 2);
+// desk
+mesh(new THREE.BoxGeometry(2.6, 0.08, 1.2), M("#2a2630", { roughness: 0.5 }), v3(0, 0.96, -0.2));
+const mon = new THREE.Group(); mon.position.set(0.55, 1.0, -0.6); mon.rotation.y = -0.35; scene.add(mon);
+mesh(new THREE.BoxGeometry(0.06, 0.32, 0.06), M("#222"), v3(0, 0.16, 0), mon); mesh(new THREE.BoxGeometry(0.95, 0.58, 0.04), M("#151821"), v3(0, 0.6, 0), mon);
+const cv = document.createElement("canvas"); cv.width = 380; cv.height = 230; { const c = cv.getContext("2d"); c.fillStyle = "#0e1a2c"; c.fillRect(0, 0, 380, 230); c.fillStyle = "#c9e64a"; c.font = "bold 24px sans-serif"; c.fillText("unspool", 20, 36); for (let i = 0; i < 5; i++) { c.fillStyle = ["#5aa0ff", "#c9e64a", "#e59cff", "#ffc58a", "#5aa0ff"][i]; c.fillRect(20 + i * 70, 70, 56, 100); } c.fillStyle = "#fff"; c.font = "16px sans-serif"; c.fillText("bio-textbook.pdf · 38 reels ✓", 20, 205); }
+const mt = new THREE.CanvasTexture(cv); mt.colorSpace = THREE.SRGBColorSpace;
+mesh(new THREE.PlaneGeometry(0.9, 0.53), new THREE.MeshBasicMaterial({ map: mt, toneMapped: false }), v3(0, 0.6, 0.022), mon);
+mesh(new THREE.BoxGeometry(0.7, 0.03, 0.22), M("#1c1c22"), v3(0.15, 1.015, -0.05));
+[[-0.7, "#ffd34a"], [-0.5, "#ff8fb3"]].forEach(([x, c]) => mesh(new THREE.BoxGeometry(0.12, 0.005, 0.12), M(c), v3(x, 1.003, 0.1)));
+const lampG = new THREE.Group(); lampG.position.set(-1.0, 1.0, -0.5); scene.add(lampG); mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.6), M("#333"), v3(0, 0.3, 0), lampG); mesh(new THREE.ConeGeometry(0.14, 0.16, 24, 1, true), M("#ffcf8a", { emissive: "#ff9d3a", emissiveIntensity: 0.6, side: THREE.DoubleSide }), v3(0.05, 0.62, 0.05), lampG);
+// a little bio textbook on the desk, unread
+const book = mesh(new THREE.BoxGeometry(0.34, 0.07, 0.46), M("#3a7d5c"), v3(-0.62, 1.035, -0.35)); book.rotation.y = 0.3;
+// the girl
+const girl = new THREE.Group(); girl.position.set(-0.05, 0, 0.75); scene.add(girl);
+const skin = M("#f3c9a6", { roughness: 0.75 }), hoodie = M("#f2b229", { roughness: 0.85 }), hairM = M("#2a1d18", { roughness: 0.7 }), ink = M("#1b1414", { roughness: 0.3 });
+const torso = mesh(sph(0.42), hoodie, v3(0, 1.0, 0), girl, v3(1, 1.15, 0.8));
+mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.5, 20), M("#1d1d24"), v3(0, 1.25, 0.12), girl).rotation.x = 0.2;
+mesh(new THREE.TorusGeometry(0.2, 0.06, 12, 32), hoodie, v3(0, 1.43, -0.02), girl).rotation.x = Math.PI / 2;
+[-1, 1].forEach((s) => { const z = mesh(new THREE.BoxGeometry(0.03, 0.4, 0.02), M("#e8a520"), v3(0.06 * s, 1.1, 0.33), girl); z.rotation.x = 0.15; });
+const head = new THREE.Group(); head.position.set(0, 1.68, 0.02); girl.add(head);
+mesh(sph(0.27, 48), skin, v3(0, 0, 0), head, v3(1, 1.05, 1));
+const hairTop = mesh(sph(0.29, 48), hairM, v3(0, 0.05, -0.03), head, v3(1.02, 1.0, 1.0));
+mesh(sph(0.3), hairM, v3(0, -0.2, -0.1), head, v3(1.05, 1.25, 0.75));
+mesh(sph(0.2), hairM, v3(-0.06, 0.17, 0.16), head, v3(1.2, 0.45, 0.6)).rotation.z = -0.25; mesh(sph(0.16), hairM, v3(0.13, 0.16, 0.17), head, v3(1.0, 0.45, 0.55)).rotation.z = 0.3;
+const eyes = [-0.095, 0.095].map((x) => mesh(sph(0.026, 20), ink, v3(x, 0.0, 0.25), head));
+const hl = [-0.095, 0.095].map((x) => mesh(sph(0.008, 10), M("#fff", { emissive: "#fff" }), v3(x + 0.01, 0.012, 0.272), head));
+[-0.095, 0.095].forEach((x) => mesh(new THREE.TorusGeometry(0.068, 0.009, 10, 40), M("#111", { metalness: 0.6, roughness: 0.25 }), v3(x, 0.0, 0.262), head));
+mesh(new THREE.BoxGeometry(0.06, 0.01, 0.01), M("#111"), v3(0, 0.01, 0.27), head);
+const mouth = mesh(new THREE.BoxGeometry(0.05, 0.012, 0.01), M("#7a3b33"), v3(0, -0.11, 0.255), head);
+const brows = [-0.095, 0.095].map((x) => mesh(new THREE.BoxGeometry(0.07, 0.012, 0.01), hairM, v3(x, 0.09, 0.258), head));
+mesh(new THREE.TorusGeometry(0.3, 0.015, 8, 40, Math.PI), M("#3a3f4a"), v3(0, 0.05, 0), head);
+[-1, 1].forEach((s) => mesh(sph(0.06), M("#3a3f4a"), v3(0.28 * s, -0.02, 0), head, v3(0.6, 1, 1)));
+const armR = new THREE.Group(); armR.position.set(0.36, 1.25, 0.05); girl.add(armR); mesh(sph(0.11), hoodie, v3(0, -0.22, 0.05), armR, v3(1, 2.3, 1)); const handR = mesh(sph(0.075), skin, v3(0, -0.47, 0.12), armR);
+const armL = new THREE.Group(); armL.position.set(-0.36, 1.25, 0.05); girl.add(armL); mesh(sph(0.11), hoodie, v3(0, -0.22, 0.05), armL, v3(1, 2.3, 1)); mesh(sph(0.075), skin, v3(0, -0.47, 0.12), armL);
+girl.rotation.y = Math.PI;
+// Spool: a little lime thread-spool on the desk
+const spool = new THREE.Group(); spool.position.set(-0.35, 1.0, 0.05); spool.rotation.y = Math.PI - 0.45; scene.add(spool);
+const lime = M("#c9e64a", { roughness: 0.45 }), limeD = M("#9fb534", { roughness: 0.45 });
+const body = new THREE.Group(); spool.add(body);
+mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.16, 32), M("#e9f0d0", { roughness: 0.8 }), v3(0, 0.13, 0), body);
+for (let i = 0; i < 6; i++) mesh(new THREE.TorusGeometry(0.112, 0.009, 8, 32), lime, v3(0, 0.07 + i * 0.024, 0), body).rotation.x = Math.PI / 2;
+[0.04, 0.22].forEach((y) => mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.035, 36), limeD, v3(0, y, 0), body));
+const sEyes = [-0.04, 0.04].map((x) => mesh(new THREE.BoxGeometry(0.022, 0.05, 0.01), ink, v3(x, 0.14, 0.117), body));
+[-0.07, 0.07].forEach((x) => mesh(sph(0.035), limeD, v3(x, 0.01, 0.03), spool, v3(1, 0.6, 1.3)));
+// background: night city bokeh (blurred)
+const bg = document.getElementById("bg");
+const lights = Array.from({ length: 60 }, (_, i) => ({ x: (i * 97) % 720, y: 40 + ((i * 53) % 700), r: 6 + (i % 5) * 4, c: ["#ffd46a", "#ff9d5a", "#7fd1ff", "#ffffff", "#ff6b6b"][i % 5] }));
+bg.innerHTML = `<div style="position:absolute;inset:0;background:linear-gradient(#0a0f24,#141a36 60%,#1b1520)"></div>` + Array.from({ length: 9 }, (_, i) => `<div style="position:absolute;left:${i * 82 - 10}px;top:${180 + (i * 47) % 200}px;width:70px;height:900px;background:#0b0e1c"></div>`).join("") + lights.map((l) => `<div style="position:absolute;left:${l.x}px;top:${l.y}px;width:${l.r}px;height:${l.r}px;border-radius:50%;background:${l.c};opacity:.85"></div>`).join("");
+
+const lines = TL.lines, DUR = TL.dur; const lineAt = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.2) k = i; return k; };
+const talk = (t, L, who) => (L.who === who && t >= L.s && t <= L.e ? Math.abs(Math.sin(t * 15)) * (0.6 + 0.4 * Math.sin(t * 4.7)) : 0);
+const ov = document.getElementById("ov");
+window.renderAt = (t) => {
+  const li = lineAt(t), L = lines[li], s0 = li ? L.s - 0.2 : 0, s1 = lines[li + 1] ? lines[li + 1].s - 0.2 : DUR, u = (t - s0) / (s1 - s0);
+  const gt = talk(t, L, "G"), st = talk(t, L, "S");
+  mouth.scale.set(1 + gt * 0.3, 1 + gt * 2.4, 1);
+  const blink = ((t + 0.4) % 3.6) < 0.12 ? 0.15 : 1; eyes.forEach((e) => e.scale.set(1, blink, 1)); hl.forEach((e) => (e.visible = blink === 1));
+  const sbl = ((t + 1.7) % 4.1) < 0.12 ? 0.15 : 1; sEyes.forEach((e) => e.scale.set(1, sbl * (L.text.startsWith("Four") || L.text.startsWith("The mito") ? 1.25 : 1), 1));
+  head.rotation.set(Math.sin(t * 0.8) * 0.03 + (L.shot === "g2" ? 0.08 : 0), 0.35 + Math.sin(t * 0.5) * 0.05, L.text.startsWith("...") ? 0.1 : 0);
+  brows.forEach((b, i) => (b.rotation.z = L.text.startsWith("...") ? (i ? 0.2 : -0.2) : 0));
+  armR.rotation.set(L.shot === "g" || L.shot === "g2" ? -2.2 : -0.6, 0, -0.25);   // hand to chin
+  armL.rotation.set(-0.7, 0, 0.2);
+  body.position.y = st * 0.015 + Math.abs(Math.sin(t * 2.2)) * 0.004; body.rotation.z = Math.sin(t * 1.1) * 0.03 + (L.text.startsWith("You watched") ? 0.08 : 0);
+  // cameras: close on the girl, close on Spool, or wide
+  const kind = L.shot.startsWith("g") ? "g" : L.shot.startsWith("s") ? "s" : L.shot;
+  if (kind === "g") { const hp = new THREE.Vector3(); head.getWorldPosition(hp); camera.fov = 30; camera.position.set(hp.x - 0.55, hp.y + 0.05, hp.z - 2.5 + u * 0.12); camera.lookAt(hp.x - 0.05, hp.y - 0.22, hp.z); }
+  else if (kind === "s") { camera.fov = 26; const sp = new THREE.Vector3(); body.getWorldPosition(sp); camera.position.set(sp.x - 0.1, sp.y + 0.28, sp.z - 1.35 + u * 0.06); camera.lookAt(sp.x + 0.06, sp.y + 0.2, sp.z + 0.3); }
+  else if (kind === "wide") { camera.fov = 40; camera.position.set(-0.6, 1.55, -1.9 + u * 0.1); camera.lookAt(-0.05, 1.25, 0.4); }
+  else { camera.fov = 40; camera.position.set(-0.6, 1.55, -1.85); camera.lookAt(-0.05, 1.25, 0.4); }
+  camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+  let h = "";
+  if (L.text && t >= L.s - 0.1 && t <= L.e + 0.35) h += `<div style="position:absolute;left:60px;right:60px;top:150px;text-align:center;font:600 30px/1.3 'DejaVu Sans';text-shadow:0 2px 6px rgba(0,0,0,.9)">${L.text}</div>`;
+  if (L.shot === "end") { const k = clamp((t - L.s) / 0.4); h += `<div style="position:absolute;inset:0;background:rgba(10,14,24,${0.75 * k})"></div><div style="position:absolute;left:0;right:0;top:470px;text-align:center;font:800 96px 'DejaVu Sans';letter-spacing:-2px;opacity:${k}">unspool<span style="color:#c9e64a">.cc</span></div><div style="position:absolute;left:0;right:0;top:600px;text-align:center;font:400 32px 'DejaVu Sans';color:#e9f0e4;opacity:${clamp((t - L.s - 0.4) / 0.3)}">your textbook, as reels</div>`; }
+  if (t < 0.4) h += `<div style="position:absolute;inset:0;background:#000;opacity:${1 - t / 0.4}"></div>`;
+  ov.innerHTML = h;
+};
+window.DUR = DUR; window.ready = true;
+</script></body></html>
