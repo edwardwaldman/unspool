@@ -49,6 +49,7 @@ export function ActionRail({
   onReplay,
   onMore,
   onShare,
+  onComments,
 }: {
   reelId: string;
   title: string;
@@ -58,6 +59,8 @@ export function ActionRail({
   onMore: () => void;
   /** Opens the share sheet; without it the rail shares the site link. */
   onShare?: () => void;
+  /** Opens the reel's text summary. */
+  onComments?: () => void;
 }) {
   const [saved, setSaved] = useState(false);
   useEffect(() => {
@@ -92,7 +95,7 @@ export function ActionRail({
       >
         <HeartIcon size={26} strokeWidth={2} filled={saved} style={{ color: saved ? "#ff4d6d" : undefined }} />
       </RailButton>
-      <RailButton label="Ask a question" count="Ask" onClick={() => toast("Questions about a reel are coming soon")}>
+      <RailButton label="Read the summary" count="Summary" onClick={onComments ?? (() => toast("Summary unavailable"))}>
         <ChatIcon size={25} strokeWidth={2} />
       </RailButton>
       <RailButton label="Replay" count="Replay" onClick={onReplay}>

@@ -9,6 +9,9 @@ export function canEditStyle(viewer: Viewer) {
   return tier === "pro" || tier === "ultra";
 }
 
+/** Editing a reel ("make it simpler", "add an example") is Pro too: same tiers as reel style. */
+export const canEditReels = canEditStyle;
+
 /** The style the viewer's own reels play with, or null for the default look (free tiers always get the default). */
 export function styleForViewer(viewer: Viewer): ReelStyle | null {
   if (!canEditStyle(viewer) || !viewer.profile?.reel_style) return null;

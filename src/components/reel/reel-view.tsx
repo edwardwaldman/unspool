@@ -16,6 +16,8 @@ import { StatLine } from "./stat-line";
 import { usePlayback } from "./use-playback";
 import { BeatPop, useDoubleTapHeart } from "./gimmicks";
 import { QuizCard } from "./visuals";
+import { Sheet } from "../ui/sheet";
+import { MarkedText } from "../ui/marked-text";
 
 export type ReelChrome = {
   /** Extra bottom inset (keeps overlays clear of the phone's home indicator). */
@@ -78,7 +80,9 @@ export function ReelView({
 }) {
   const script = reel.script!;
   const video = reel.videoUrl && reel.video ? { url: reel.videoUrl, timeline: reel.video } : undefined;
-  const pb = usePlayback({ script, audio: reel.audio, active, onEnded, silent: preview, video });
+  // The comments button opens the reel as text; the reel pauses while it's open.
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const pb = usePlayback({ script, audio: reel.audio, active: active && !summaryOpen, onEnded, silent: preview, video });
   const prefs = usePrefs();
   const fraction = pb.duration > 0 ? pb.t / pb.duration : 0;
   const kind = pb.segment.kind;
@@ -174,7 +178,7 @@ export function ReelView({
 
       {/* Right action rail */}
       <div className="absolute right-2 z-20 flex w-[60px] origin-bottom-right justify-center ipad:right-5 ipad:scale-[1.6]" style={{ bottom: bottom + 14 }}>
-        <ActionRail reelId={reel.id} title={script.title} muted={muted || preview} onToggleMute={toggleMute} onReplay={pb.replay} onMore={onMore} onShare={onShare} />
+        <ActionRail reelId={reel.id} title={script.title} muted={muted || preview} onToggleMute={toggleMute} onReplay={pb.replay} onMore={onMore} onShare={onShare} onComments={() => setSummaryOpen(true)} />
       </div>
 
       {/* Account row, title, audio */}
@@ -188,6 +192,10 @@ export function ReelView({
           sensitive={spool.sensitive}
         />
       </div>
+
+      <Sheet open={summaryOpen} onClose={() => setSummaryOpen(false)} label="Reel summary">
+        <ReelSummary script={script} index={reel.index} sensitive={spool.sensitive} />
+      </Sheet>
 
       {/* Paused */}
       <AnimatePresence>
@@ -226,4 +234,44 @@ export function ReelView({
       {overlay}
     </div>
   );
+}
+
+const plainText = (t: string) => t.replace(/[*#^~]/g, "");
+
+/** The reel as text: its summary, the points it makes in order, and its quick-check question. */
+function ReelSummary({ script, index, sensitive }: { script: ReelDTO["script"] & object; index: number; sensitive?: boolean }) {
+  const points = script.beats.slice(1).map((b) => plainText(b.say)).filter(Boolean);
+  return (
+    <div className="max-h-[70dvh] overflow-y-auto" data-testid="reel-summary" onClick={(e) => e.stopPropagation()}>
+      <div className="label">Reel {index} · summary</div>
+      <h2 className="mt-1.5 font-display text-[22px] leading-[1.12] text-ink">{sentence(script.title)}</h2>
+      <p className="mt-3 text-[15.5px] leading-[1.5] text-ink/90">
+        <MarkedText text={script.summary} />
+      </p>
+      {points.length > 0 && (
+        <>
+          <div className="label mt-5">What it covers</div>
+          <ol className="mt-2 space-y-2.5">
+            {points.map((p, i) => (
+              <li key={i} className="flex gap-3 text-[14.5px] leading-[1.45] text-ink/85">
+                <span className="w-5 shrink-0 pt-[1px] font-mono text-[12px] text-muted">{i + 1}</span>
+                <span>{p}</span>
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+      <div className="mt-5 border border-line p-4">
+        <div className="label">Quick check</div>
+        <p className="mt-1.5 text-[15px] font-semibold leading-snug text-ink">{plainText(script.quiz.question)}</p>
+        <p className="mt-2 text-[13.5px] text-muted">Answer: {plainText(script.quiz.options[script.quiz.answer] ?? "")}</p>
+      </div>
+      {sensitive && <p className="mt-4 text-[12px] text-muted">A summary, not legal or financial advice.</p>}
+    </div>
+  );
+}
+
+function sentence(t: string) {
+  const s = t.toLowerCase();
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }

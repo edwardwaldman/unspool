@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Link2, Mail, MessageSquare } from "lucide-react";
+import { Check, Copy, Link2, Mail, MessageSquare } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { ReelDTO, SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { openAuth } from "../auth/auth-store";
@@ -11,7 +11,7 @@ import { toast } from "../ui/toast";
 const plain = (s: string) => s.replace(/[*#^~]/g, "");
 
 export function shareText(hook: string) {
-  return `${plain(hook)} — made with Unspool`;
+  return `${plain(hook)} · made with Unspool`;
 }
 
 /** Quick share targets for a link. */
@@ -30,15 +30,22 @@ export function shareTargets(url: string, text: string) {
 async function copy(text: string) {
   try {
     await navigator.clipboard.writeText(text);
-    toast("Link copied");
+    return true;
   } catch {
     toast("Couldn't copy. Select the link and copy it.");
+    return false;
   }
 }
 
 /** Copy, native share and quick targets for one link. */
 export function ShareActions({ url, text }: { url: string; text: string }) {
   const [canNative, setCanNative] = useState(false);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const id = window.setTimeout(() => setCopied(false), 2200);
+    return () => window.clearTimeout(id);
+  }, [copied]);
   useEffect(() => {
     const id = requestAnimationFrame(() => setCanNative(typeof navigator !== "undefined" && typeof navigator.share === "function"));
     return () => cancelAnimationFrame(id);
@@ -47,8 +54,8 @@ export function ShareActions({ url, text }: { url: string; text: string }) {
     <div>
       <div className="flex">
         <input readOnly value={url} aria-label="Share link" onFocus={(e) => e.currentTarget.select()} className="field min-w-0 flex-1 px-3 py-2.5 font-mono text-[12.5px]" data-testid="share-url" />
-        <button type="button" onClick={() => copy(url)} className="-ml-px flex shrink-0 items-center gap-2 bg-thread px-4 text-[14px] font-semibold text-paper hover:opacity-90">
-          <Copy size={15} strokeWidth={2} /> Copy link
+        <button type="button" onClick={async () => setCopied(await copy(url))} aria-live="polite" className="-ml-px flex shrink-0 items-center gap-2 bg-thread px-4 text-[14px] font-semibold text-paper hover:opacity-90" data-testid="copy-link">
+          {copied ? <Check size={15} strokeWidth={2.5} /> : <Copy size={15} strokeWidth={2} />} {copied ? "Copied link" : "Copy link"}
         </button>
       </div>
       {canNative && (

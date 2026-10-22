@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Gauge, Speech, WandSparkles } from "lucide-react";
+import { Crown, Gauge, Speech, WandSparkles } from "lucide-react";
+import { ProBadge } from "../studio/reel-style-panel";
 import { GridIcon, TrashIcon, VolumeIcon } from "../ui/icons";
 import { Sheet } from "../ui/sheet";
 import { toast } from "../ui/toast";
@@ -15,6 +16,7 @@ export function MoreSheet({
   canDelete,
   sensitive,
   editReelId,
+  canEdit = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -23,6 +25,8 @@ export function MoreSheet({
   sensitive?: boolean;
   /** The reel on screen, when its owner can edit it. */
   editReelId?: string;
+  /** Pro and Ultra may edit; everyone else sees the row with a Pro badge that leads to pricing. */
+  canEdit?: boolean;
 }) {
   const prefs = usePrefs();
   const [confirm, setConfirm] = useState(false);
@@ -50,12 +54,22 @@ export function MoreSheet({
         />
       ) : (
         <>
-      {editReelId && (
-        <button type="button" className={row} onClick={() => setEditing(true)}>
-          <WandSparkles size={19} strokeWidth={1.5} /> <span className="flex-1">Edit this reel</span>
-          <span className="font-mono text-[12px] text-muted">Ask for a change</span>
-        </button>
-      )}
+      {editReelId &&
+        (canEdit ? (
+          <button type="button" className={row} onClick={() => setEditing(true)}>
+            <WandSparkles size={19} strokeWidth={1.5} /> <span className="flex-1">Edit this reel</span>
+            <span className="font-mono text-[12px] text-muted">Ask for a change</span>
+          </button>
+        ) : (
+          <Link href="/pricing" className={row} onClick={onClose} data-testid="edit-pro">
+            <WandSparkles size={19} strokeWidth={1.5} /> <span className="flex-1">Edit this reel</span>
+            <ProBadge />
+          </Link>
+        ))}
+      <Link href="/studio" className={row} onClick={onClose}>
+        <Crown size={19} strokeWidth={1.5} /> <span className="flex-1">Reel style</span>
+        {canEdit ? <span className="font-mono text-[12px] text-muted">Change the look</span> : <ProBadge />}
+      </Link>
       <button type="button" className={row} onClick={() => setPrefs({ muted: !prefs.muted, autoMuted: false })}>
         <VolumeIcon size={19} muted={prefs.muted} /> {prefs.muted ? "Unmute" : "Mute"}
       </button>

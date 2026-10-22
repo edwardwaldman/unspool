@@ -61,7 +61,8 @@ export function ReelSlot({
 }
 
 /** The "more" sheet for a spool's reel (mute, speed, delete the document). */
-export function SpoolMoreSheet({ spool, reel, open, onClose, onDeleted }: { spool: SpoolDTO; reel?: ReelDTO | null; open: boolean; onClose: () => void; onDeleted?: (spool: SpoolDTO) => void }) {
+export function SpoolMoreSheet({ spool, reel, viewer, open, onClose, onDeleted }: { spool: SpoolDTO; reel?: ReelDTO | null; viewer?: ViewerDTO | null; open: boolean; onClose: () => void; onDeleted?: (spool: SpoolDTO) => void }) {
+  const tier = viewer?.usage?.tier;
   return (
     <MoreSheet
       open={open}
@@ -69,6 +70,7 @@ export function SpoolMoreSheet({ spool, reel, open, onClose, onDeleted }: { spoo
       canDelete={!spool.demo}
       sensitive={spool.sensitive}
       editReelId={!spool.demo && reel && !reel.locked && reel.status === "ready" ? reel.id : undefined}
+      canEdit={tier === "pro" || tier === "ultra"}
       onDelete={async () => {
         const res = await fetch(`/api/documents/${spool.id}`, { method: "DELETE" });
         onClose();
@@ -270,7 +272,7 @@ export function Feed({
         />
       )}
       {active?.spool && active.reel && <ShareSheet open={shareOpen} onClose={() => setShareOpen(false)} spool={active.spool} reel={active.reel} viewer={viewer} />}
-      {active?.spool && <SpoolMoreSheet spool={active.spool} reel={active.reel} open={moreOpen} onClose={() => setMoreOpen(false)} onDeleted={onDeleted} />}
+      {active?.spool && <SpoolMoreSheet spool={active.spool} reel={active.reel} viewer={viewer} open={moreOpen} onClose={() => setMoreOpen(false)} onDeleted={onDeleted} />}
     </div>
   );
 }

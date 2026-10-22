@@ -3,6 +3,7 @@ import { entitlementFor } from "@/lib/credits";
 import { error, json, notConfigured } from "@/lib/http";
 import { dispatch } from "@/lib/jobs";
 import { loadReelWithDoc, ownerCanPlay } from "@/lib/shares";
+import { canEditReels } from "@/lib/studio";
 import { adminClient } from "@/lib/supabase/admin";
 import { getViewer } from "@/lib/viewer";
 
@@ -10,11 +11,12 @@ export const dynamic = "force-dynamic";
 
 const MAX_LEN = 300;
 
-/** Owner-only: rewrite one reel the way they ask. Body: { request: string }. Costs one credit (this period's allowance, then top-ups), refunded if the edit fails. */
+/** Owner-only, Pro and Ultra: rewrite one reel the way they ask. Body: { request: string }. Costs one credit (this period's allowance, then top-ups), refunded if the edit fails. */
 export async function POST(req: Request, ctx: RouteContext<"/api/reels/[id]/edit">) {
   if (!supabaseConfigured) return notConfigured();
   const viewer = await getViewer();
   if (!viewer.userId) return error(401, "Sign in to edit reels");
+  if (!canEditReels(viewer)) return error(403, "Editing reels is a Pro feature. Upgrade to Pro to edit.", { code: "pro_required" });
   const found = await loadReelWithDoc((await ctx.params).id);
   if (!found || found.doc.user_id !== viewer.userId) return error(404, "Not found");
   const { reel, doc } = found;
@@ -46,7 +48,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/reels/[id]/edit
   if (rpcErr || paid !== true) {
     await db.from("reels").update({ status: "ready", edit_request: null }).eq("id", reel.id);
     if (rpcErr) console.error("[edit] claim_edit_credit failed", rpcErr);
-    return error(402, ent.tier === "free" ? "Edits cost 1 credit. Upgrade or buy a top-up to edit reels." : "You're out of credits. Top up to keep editing.");
+    return error(402, "You're out of credits. Top up to keep editing.");
   }
   await db.from("reel_edits").insert({ reel_id: reel.id, user_id: viewer.userId, request });
   await dispatch({ name: "reel", reelId: reel.id });
