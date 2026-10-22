@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LegalH3, LegalHeader, LegalSection, LegalToc, type TocItem } from "@/components/legal/legal-doc";
 import { MarketingPage } from "@/components/shell/marketing-page";
 import { ACCEPTED_EXTENSIONS, LIMITS, MAX_FILE_BYTES, MAX_PAGES, MAX_REELS, MAX_WORDS, MIN_REELS } from "@/lib/config";
-import { formatCents, FREE_REEL_INTERVAL_MIN, FREE_REELS_PER_DAY, PAID_TIERS as PAID, PLANS, TOPUP, TRIAL } from "@/lib/plans";
+import { formatCents, FREE_REEL_INTERVAL_MIN, FREE_REELS_PER_DAY, PAID_TIERS as PAID, PLANS, TOPUP_PACKS, TRIAL } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -321,7 +321,7 @@ export default function TermsPage() {
               your credits cover and the rest stay locked until you have more. If a reel fails to generate for good, its credit is returned.
             </li>
             <li>
-              <strong>Top-ups.</strong> A one-time payment of {formatCents(TOPUP.priceCents)} adds {TOPUP.credits} reel credits to any account,
+              <strong>Top-ups.</strong> One-time packs of reel credits ({TOPUP_PACKS.map((p) => `${p.credits} for ${formatCents(p.priceCents)}`).join(", ")}) can be added to any account,
               including free accounts. Top-up credits don&apos;t expire while your account exists, are used after your weekly credits, and
               aren&apos;t refundable once used. They can&apos;t be moved to another account and are lost if you delete your account.
             </li>

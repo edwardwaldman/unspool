@@ -82,8 +82,25 @@ export const FREE_FIRST_REELS = 1;
 export const FREE_REEL_INTERVAL_MIN = Number(process.env.FREE_REEL_INTERVAL_MIN ?? 30);
 export const FREE_REELS_PER_DAY = Number(process.env.FREE_REELS_PER_DAY ?? 5);
 
-/** One-time top-up pack, any tier. Credits never expire. */
-export const TOPUP = { priceCents: cents("PRICE_TOPUP_CENTS", 249), credits: 20 };
+/**
+ * One-time top-up packs, any tier. Credits never expire. The smallest pack is the full rate; bigger packs
+ * cost less per credit (the discount is computed against the smallest pack's per-credit price).
+ */
+export type TopupPack = { id: "s" | "m" | "l" | "xl"; credits: number; priceCents: number };
+export const TOPUP_PACKS: TopupPack[] = [
+  { id: "s", credits: 20, priceCents: cents("PRICE_TOPUP_CENTS", 249) },
+  { id: "m", credits: 60, priceCents: cents("PRICE_TOPUP_M_CENTS", 649) },
+  { id: "l", credits: 150, priceCents: cents("PRICE_TOPUP_L_CENTS", 1399) },
+  { id: "xl", credits: 400, priceCents: cents("PRICE_TOPUP_XL_CENTS", 2999) },
+];
+/** The smallest pack (the one most pages quote). */
+export const TOPUP = TOPUP_PACKS[0];
+export const topupPack = (id: unknown) => TOPUP_PACKS.find((p) => p.id === id) ?? TOPUP;
+/** Percent saved per credit vs the smallest pack. */
+export function topupSavingsPct(pack: TopupPack) {
+  const base = TOPUP.priceCents / TOPUP.credits;
+  return Math.max(0, Math.round((1 - pack.priceCents / pack.credits / base) * 100));
+}
 
 /** The 1-day Plus trial (one per account, card required). */
 export const TRIAL = { tier: "plus" as const, days: 1, maxReels: 30 };

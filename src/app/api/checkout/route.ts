@@ -2,7 +2,7 @@ import { loadDocument } from "@/lib/access";
 import { tierOf } from "@/lib/credits";
 import { MAX_REELS, siteUrl, supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
-import { CURRENCY, isBilling, isTier, PLANS, TOPUP, TRIAL } from "@/lib/plans";
+import { CURRENCY, isBilling, isTier, PLANS, TRIAL, topupPack } from "@/lib/plans";
 import { ensureCustomer, getStripe, priceIdFor, stripeConfigured } from "@/lib/stripe";
 import { getViewer } from "@/lib/viewer";
 
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   if (!supabaseConfigured) return notConfigured();
   if (!stripeConfigured()) return error(503, "Payments aren't set up yet (STRIPE_SECRET_KEY).");
-  const body = (await req.json().catch(() => ({}))) as { kind?: string; tier?: string; documentId?: string; reel?: number; billing?: string };
+  const body = (await req.json().catch(() => ({}))) as { kind?: string; tier?: string; documentId?: string; reel?: number; billing?: string; pack?: string; returnTo?: string };
   const kind = body.kind === "topup" ? "topup" : body.kind === "trial" ? "trial" : "subscription";
   const tier = kind === "trial" ? TRIAL.tier : isTier(body.tier) && body.tier !== "free" ? body.tier : "plus";
   const billing = kind === "subscription" && isBilling(body.billing) ? body.billing : "week";
@@ -25,7 +25,8 @@ export async function POST(req: Request) {
 
   const origin = siteUrl(new URL(req.url).origin);
   const reel = Math.max(1, Math.min(MAX_REELS, Number(body.reel ?? 2)));
-  let returnPath = kind === "topup" ? "/profile" : "/library";
+  // Only known pages: never an arbitrary redirect target.
+  let returnPath = body.returnTo === "/studio" ? "/studio" : kind === "topup" ? "/profile" : "/library";
   if (body.documentId) {
     const doc = await loadDocument(body.documentId, viewer);
     if (!doc) return error(404, "Document not found");
@@ -60,18 +61,20 @@ export async function POST(req: Request) {
   const metadata = { kind: kind === "trial" ? "subscription" : kind, tier, user_id: viewer.userId, document_id: body.documentId ?? "" };
 
   if (kind === "topup") {
+    // The pack (and so the credits granted) is chosen from the server's list, never from the request's numbers.
+    const pack = topupPack(body.pack);
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       customer,
       client_reference_id: viewer.userId,
-      metadata: { ...metadata, credits: String(TOPUP.credits) },
+      metadata: { ...metadata, credits: String(pack.credits), pack: pack.id },
       line_items: [
         {
           quantity: 1,
           price_data: {
             currency: CURRENCY,
-            unit_amount: TOPUP.priceCents,
-            product_data: { name: `${TOPUP.credits} reel credits`, description: "Unspool top-up. Credits never expire." },
+            unit_amount: pack.priceCents,
+            product_data: { name: `${pack.credits} reel credits`, description: "Unspool top-up. Credits never expire." },
           },
         },
       ],

@@ -1,12 +1,12 @@
 "use client";
 
-import type { Billing, Tier } from "@/lib/plans";
+import type { Billing, Tier, TopupPack } from "@/lib/plans";
 import { track } from "../analytics/track";
 
 export type CheckoutRequest =
   | { kind: "subscription"; tier: Exclude<Tier, "free">; billing?: Billing }
   | { kind: "trial" }
-  | { kind: "topup" };
+  | { kind: "topup"; pack?: TopupPack["id"]; returnTo?: "/studio" };
 
 /** Open Stripe Checkout (or the billing portal for a plan switch). Returns an error message, or null after redirecting. */
 export async function startCheckout(req: CheckoutRequest, documentId?: string, reel?: number): Promise<string | null> {

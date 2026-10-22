@@ -38,6 +38,7 @@ export function CheckoutReturn() {
       })
       .catch(() => undefined)
       .finally(() => {
+        window.dispatchEvent(new Event("unspool:reload"));
         router.replace(window.location.pathname, { scroll: false });
         router.refresh();
       });

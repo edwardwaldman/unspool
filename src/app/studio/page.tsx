@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { CheckoutReturn } from "@/components/shell/account-actions";
 import { AppShell } from "@/components/shell/app-shell";
 import { Studio, type StudioDoc } from "@/components/studio/studio";
 import { extensionOf, supabaseConfigured } from "@/lib/config";
@@ -20,6 +22,9 @@ export default async function StudioPage() {
   const docs = await studioDocs(viewer).catch((err) => (console.error("studio: could not load documents", err), [] as StudioDoc[]));
   return (
     <AppShell active="reels" workbench>
+      <Suspense>
+        <CheckoutReturn />
+      </Suspense>
       <Studio docs={docs} style={parseReelStyle(viewer.profile?.reel_style)} canEdit={canEditStyle(viewer)} />
     </AppShell>
   );

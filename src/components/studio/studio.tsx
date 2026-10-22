@@ -12,6 +12,7 @@ import { Sheet } from "../ui/sheet";
 import { useLayout } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
+import { CreditBar } from "./credit-bar";
 import { ProBadge, ReelStylePanel } from "./reel-style-panel";
 
 export type StudioDoc = {
@@ -114,7 +115,10 @@ function DesktopStudio({ docs, style, canEdit }: StudioProps) {
       <aside className="flex w-[280px] shrink-0 flex-col overflow-y-auto border-r border-line xl:w-[320px]">
         <div className="px-5 pb-4 pt-5">
           <div className="text-[12.5px] text-muted">Studio</div>
-          <h1 className="mt-2 font-display text-[22px] leading-[1.1] text-ink">Your documents</h1>
+          <div className="mt-3">
+            <CreditBar />
+          </div>
+          <h1 className="mt-5 font-display text-[22px] leading-[1.1] text-ink">Your documents</h1>
           <div className="mt-4 h-px bg-line" />
         </div>
         {docs.length ? (
@@ -208,6 +212,9 @@ function MobileStudio({ docs, style, canEdit }: StudioProps) {
       </div>
 
       <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pb-5 ipad:max-w-[680px]">
+        <div className="mb-2.5">
+          <CreditBar />
+        </div>
         <button
           type="button"
           onClick={() => setStyleOpen(true)}
