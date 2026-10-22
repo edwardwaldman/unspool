@@ -37,15 +37,15 @@ export function InfoSlide({ toStudio = true }: { toStudio?: boolean } = {}) {
   const raw = useTransform(scrollY, range, [0, 1], { clamp: true });
   // Smooth the scrub so fast flicks still play out gently.
   const smooth = useSpring(raw, { stiffness: 60, damping: 22, mass: 0.6 });
-  // The demo plays over the first 74% of the track; the rest holds the last frame and eases it out.
-  const progress = useTransform(smooth, [0, 0.74], [0, 1], { clamp: true });
+  // The demo plays over the first 80% of the track; the rest holds the last frame and eases it out.
+  const progress = useTransform(smooth, [0, 0.8], [0, 1], { clamp: true });
   // Then the demo slides up and away, handing off to the upload section below.
   // The exit follows the raw scroll position (not the spring) so a fast flick can't leave the demo
   // lagging on screen while the upload section arrives over it.
-  // It's fully gone before the upload block below reaches the screen, so the two never overlap.
-  const exitOpacity = useTransform(raw, [0.76, 0.83], [1, 0]);
-  const exitScale = useTransform(raw, [0.74, 0.84], [1, 0.96]);
-  const exitY = useTransform(raw, [0.74, 0.84], ["0dvh", "-70dvh"]);
+  // It slides up in step with the upload block rising from below, so there is no empty screen between them.
+  const exitOpacity = useTransform(raw, [0.86, 0.97], [1, 0]);
+  const exitScale = useTransform(raw, [0.82, 1], [1, 0.96]);
+  const exitY = useTransform(raw, [0.82, 1], ["0dvh", "-70dvh"]);
 
   return (
     <>
@@ -144,7 +144,7 @@ export function BigUpload({ onClick, demoLink = true, wideTags = true, big = fal
         </div>
         <button
           type="button"
-          onClick={() => (onClick ? onClick() : studioIfSignedIn && user ? router.refresh() : input.current?.click())}
+          onClick={() => (onClick ? onClick() : studioIfSignedIn && user ? router.push("/studio") : input.current?.click())}
           className={`relative z-10 mx-auto flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-8 py-6 text-[20px] md:gap-4 md:px-24 md:py-10 md:text-[36px] ${big ? "lg:gap-5 lg:px-32 lg:py-14 lg:text-[50px]" : ""} font-medium text-paper transition-opacity hover:opacity-90`}
         >
           <UploadIcon size={big ? 40 : 28} /> Upload a document
