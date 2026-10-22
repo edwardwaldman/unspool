@@ -21,7 +21,7 @@
 </head>
 <body>
 <div id="wrap"><canvas id="c" width="720" height="1280"></canvas><div class="vig"></div><div id="ov"></div></div>
-<script src="bio.js"></script><script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
+<script src="bio.js"></script><script src="bio2.js"></script><script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
 <script type="module">
 import * as THREE from "three";
 
@@ -361,7 +361,7 @@ const flipG = new THREE.Group(); flipG.position.set(0, 0.035, 0); book.add(flipG
 const flipP = new THREE.Mesh(new THREE.PlaneGeometry(0.43, 0.58), new THREE.MeshStandardMaterial({ map: pageTex, side: THREE.DoubleSide })); flipP.position.x = 0.215; flipP.rotation.x = -Math.PI / 2; flipG.add(flipP);
 lamp.castShadow = false;
 
-const SH = [["intro", 2.6], ["read", 2.8], ["tired", 1.8], ["phone", 2.8], ["reels", 7.2], ["sleep", 1.6], ["test", 3.0], ["grade", 1.6], ["end", 2.6]];
+const SH = [["intro", 2.6], ["read", 2.8], ["tired", 1.8], ["phone", 2.8], ["reels", 14.8], ["sleep", 1.6], ["test", 3.0], ["grade", 1.6], ["end", 2.6]];
 let pacc = 0; const PTL = SH.map(([n, d]) => { const o = { n, s: pacc, e: pacc + d }; pacc += d; return o; }); const PDUR = pacc;
 const shotAt = (t) => PTL.find((x) => t < x.e) || PTL[PTL.length - 1];
 const CLOCK = { intro: "9:00", read: "9:40", tired: "10:58", phone: "11:02", reels: "11:06", sleep: "11:15", test: "8:05", grade: "8:40", end: "" };
@@ -411,7 +411,7 @@ window.renderAt = (t) => {
        ${prog > 0 ? `<div style="position:absolute;left:40px;right:40px;top:310px;color:#9db5a6;font:400 24px 'DejaVu Sans'">${ready ? "" : Math.round(412 * (1 - prog)) + " pages → " + Math.round(38 * prog) + " reels"}</div><div style="position:absolute;left:40px;right:40px;top:350px;height:14px;background:#22302a;border-radius:7px"><div style="height:100%;width:${prog * 100}%;background:#c9e64a;border-radius:7px"></div></div>` : ""}
        ${ready ? `<div style="position:absolute;left:0;right:0;top:400px;text-align:center;font:800 36px 'DejaVu Sans';color:#c9e64a;white-space:nowrap;transform:scale(${back((lt - 2.2) / 0.25)})">38 reels ready ✓</div>` : ""}</div>`;
       if (lt > 0.45 && lt < 0.9) scr += `<div style="position:absolute;left:${W / 2 - 40}px;top:255px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,${0.6 * (1 - (lt - 0.45) / 0.45)})"></div>`;
-    } else scr = `<div style="position:absolute;left:0;top:0;width:360px;height:640px;transform:scale(${(W - 24) / 360},${(H - 24) / 640});transform-origin:0 0">${bioReel(Math.min(lt, 7.0))}</div>`;
+    } else scr = `<div style="position:absolute;left:0;top:0;width:360px;height:640px;transform:scale(${(W - 24) / 360},${(H - 24) / 640});transform-origin:0 0">${bioFeed(lt)}</div>`;
     h += `<div style="position:absolute;inset:0;background:rgba(0,0,0,${0.35 * rise})"></div>
       <div style="position:absolute;left:${x}px;top:${y}px;width:${W}px;height:${H}px;border-radius:46px;background:#0a0a0a;padding:12px;box-sizing:border-box;box-shadow:0 30px 80px rgba(0,0,0,.6)"><div style="position:relative;width:100%;height:100%;border-radius:36px;overflow:hidden">${scr}</div></div>
       <div style="position:absolute;left:${x - 95}px;top:${y + H - 150}px;width:120px;height:320px;background:#c98c5a;border-radius:50px;box-shadow:inset -12px 0 0 rgba(0,0,0,.15)"></div>

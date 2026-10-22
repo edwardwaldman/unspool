@@ -1,6 +1,6 @@
 import numpy as np, soundfile as sf, subprocess
 SR=44100
-SH=[("intro",2.6),("read",2.8),("tired",1.8),("phone",2.8),("reels",7.2),("sleep",1.6),("test",3.0),("grade",1.6),("end",2.6)]
+SH=[("intro",2.6),("read",2.8),("tired",1.8),("phone",2.8),("reels",14.8),("sleep",1.6),("test",3.0),("grade",1.6),("end",2.6)]
 st={};acc=0
 for n,d in SH: st[n]=acc; acc+=d
 DUR=acc; N=int(SR*DUR); out=np.zeros(N); rng=np.random.default_rng(5)
@@ -21,8 +21,10 @@ add(st["phone"]+0.5,tone(1800,0.05,80),0.4)                                     
 add(st["phone"]+0.75,tone(300,0.15,20),0.4)                                         # pdf drop
 for k in range(7): add(st["phone"]+1.2+k*0.14,tone(900+k*110,0.05,40),0.15)
 for k,m in enumerate([72,76,79,84]): add(st["phone"]+2.2+k*0.06,tone(note(m),0.6,5),0.2)
-subprocess.run(["ffmpeg","-loglevel","error","-y","-i","../ad7/bio.wav","-ar","44100","-ac","1","bio44.wav"],check=True)
+subprocess.run(["ffmpeg","-loglevel","error","-y","-i","feed.wav","-ar","44100","-ac","1","bio44.wav"],check=True)
 bio,_=sf.read("bio44.wav"); add(st["reels"],bio,0.95)
+for k,m in enumerate([72,76,79]): add(st["reels"]+12.0+1.3+k*0.07,tone(note(m),0.5,6),0.2)
+for s0 in (3.0,5.8,8.55,11.7): add(st["reels"]+s0,nz(0.2,14,30),0.25)
 add(st["sleep"]+0.1,tone(120,0.2,12),0.3)                                           # lamp click
 for k in range(3): add(st["test"]+0.2+k*0.12,tone(2200,0.03,90),0.2)
 add(st["test"]+1.6,nz(0.35,8,6),0.25); add(st["test"]+2.0,nz(0.4,8,6),0.25)          # pencil scribbles

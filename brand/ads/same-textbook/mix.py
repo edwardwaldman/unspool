@@ -1,5 +1,5 @@
 import numpy as np, soundfile as sf
-SR=44100; P0,P1=1.3,11.4; DUR=P1+(15.5-3.3)/1.05; N=int(SR*DUR); out=np.zeros(N)
+SR=44100; P0,P1=1.3,19.0; DUR=P1+(15.5-3.3)/1.05; N=int(SR*DUR); out=np.zeros(N)
 def m(o): return o if o<1.3 else (P0+(o-1.3)/2.0*(P1-P0) if o<3.3 else P1+(o-3.3)/1.05)
 def add(t0,x,g=1.0):
     a=int(t0*SR); b=min(N,a+len(x)); 
@@ -17,7 +17,7 @@ add(P0+0.6,tone(300,0.15,20),0.4)                       # pdf drop
 for k in range(7): add(P0+1.2+k*0.14, tone(900+k*110,0.05,40), 0.15)
 for k,mm in enumerate([72,76,79,84]): add(P0+2.2+k*0.06, tone(note(mm),0.6,5), 0.2)
 import subprocess
-subprocess.run(["ffmpeg","-loglevel","error","-y","-i","bio.wav","-ar","44100","-ac","1","bio44.wav"],check=True)
+subprocess.run(["ffmpeg","-loglevel","error","-y","-i","feed.wav","-ar","44100","-ac","1","bio44.wav"],check=True)
 bio,_=sf.read("bio44.wav"); add(P0+2.7,bio,0.95)
 for k in range(10): add(m(1.6+k*0.6), tone(1200+k*60,0.06,30), 0.12)
 rng=np.random.default_rng(2); b=rng.standard_normal(int(0.4*SR))*np.exp(-np.arange(int(0.4*SR))/SR*8); add(m(9.0),np.convolve(b,np.ones(20)/20,"same"),0.4)
