@@ -3,7 +3,7 @@ import { tierOf } from "@/lib/credits";
 import { MAX_REELS, siteUrl, supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
 import { CURRENCY, isBilling, isTier, PLANS, TRIAL, topupPack } from "@/lib/plans";
-import { ensureCustomer, getStripe, priceIdFor, stripeConfigured } from "@/lib/stripe";
+import { ensureCustomer, getStripe, priceIdFor, stripeConfigured, TAX_CODE } from "@/lib/stripe";
 import { getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
@@ -87,7 +87,7 @@ async function checkout(req: Request) {
           price_data: {
             currency: CURRENCY,
             unit_amount: pack.priceCents,
-            product_data: { name: `${pack.credits} reel credits`, description: "Unspool top-up. Credits never expire." },
+            product_data: { name: `${pack.credits} reel credits`, description: "Unspool top-up. Credits never expire.", tax_code: TAX_CODE },
           },
         },
       ],

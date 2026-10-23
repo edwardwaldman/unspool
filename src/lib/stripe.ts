@@ -49,23 +49,49 @@ const lookupKey = (tier: Exclude<Tier, "free">, billing: Billing) => `unspool_${
 const envFor = (tier: Exclude<Tier, "free">, billing: Billing) => (billing === "year" ? `${PLANS[tier].priceEnv}_YEARLY` : PLANS[tier].priceEnv);
 
 /**
+ * Stripe tax category for everything Unspool sells: software as a service, personal use (consumer study tool).
+ * Required on every product when Stripe Managed Payments is on (it is by default on new accounts).
+ * Override with STRIPE_TAX_CODE.
+ */
+export const TAX_CODE = process.env.STRIPE_TAX_CODE?.trim() || "txcd_10103000";
+
+const taxed = new Set<string>();
+/** Give an existing product the tax code if it lacks one (prices made before this have none). Once per product per instance. */
+async function ensureTaxCode(product: string | Stripe.Product | Stripe.DeletedProduct | null) {
+  const id = typeof product === "string" ? product : product?.id;
+  if (!id || taxed.has(id)) return;
+  const stripe = getStripe();
+  const p = typeof product === "object" && product && "tax_code" in product ? product : await stripe.products.retrieve(id);
+  const code = typeof p.tax_code === "string" ? p.tax_code : p.tax_code?.id;
+  if (!code) await stripe.products.update(id, { tax_code: TAX_CODE });
+  taxed.add(id);
+}
+
+/**
  * The Stripe price id for a paid tier: STRIPE_PRICE_<TIER> when set, else a price found by lookup key,
  * else one created on the spot (same amount as PLANS, so plan switching in the portal can use it).
  */
 export async function priceIdFor(tier: Exclude<Tier, "free">, billing: Billing = "week"): Promise<string> {
   const env = envFor(tier, billing);
-  if (env && process.env[env]) return process.env[env]!;
   const stripe = getStripe();
+  if (env && process.env[env]) {
+    const fixed = process.env[env]!;
+    await ensureTaxCode((await stripe.prices.retrieve(fixed)).product);
+    return fixed;
+  }
   const key = lookupKey(tier, billing);
   const found = await stripe.prices.list({ lookup_keys: [key], active: true, limit: 1 });
-  if (found.data[0]) return found.data[0].id;
+  if (found.data[0]) {
+    await ensureTaxCode(found.data[0].product);
+    return found.data[0].id;
+  }
   const price = await stripe.prices.create({
     currency: CURRENCY,
     unit_amount: priceFor(tier, billing),
     recurring: { interval: billing },
     lookup_key: key,
     metadata: { tier, billing },
-    product_data: { name: `Unspool ${PLANS[tier].name}${billing === "year" ? " (yearly)" : ""}`, metadata: { tier } },
+    product_data: { name: `Unspool ${PLANS[tier].name}${billing === "year" ? " (yearly)" : ""}`, metadata: { tier }, tax_code: TAX_CODE },
   });
   return price.id;
 }
