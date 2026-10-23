@@ -16,7 +16,10 @@ function hasWebGL() {
   if (webgl === null) {
     try {
       const c = document.createElement("canvas");
-      webgl = Boolean(c.getContext("webgl2") || c.getContext("webgl"));
+      const gl = (c.getContext("webgl2") || c.getContext("webgl")) as WebGLRenderingContext | null;
+      webgl = Boolean(gl);
+      // Give the probe's context back at once: browsers cap live WebGL contexts (~16) and drop the oldest.
+      gl?.getExtension("WEBGL_lose_context")?.loseContext();
     } catch {
       webgl = false;
     }
@@ -74,12 +77,14 @@ export function ReelMedia({
 }) {
   const reduce = useReducedMotion();
   const [probe, sceneColors] = useSceneColors();
+  // The GPU dropped the scene's context (driver reset, too many contexts, backgrounded tab): flat graphics.
+  const [glLost, setGlLost] = useState(false);
   if (videoUrl && videoRef) return <ReelVideo src={videoUrl} videoRef={videoRef} muted={muted} />;
   // The playing reel's beats are real 3D scenes (as in the demo reels); off-screen reels and devices without
   // WebGL (or with reduced motion) keep the flat graphics.
   const visual = stage?.visual;
-  const story = Boolean(stage?.scene?.objects.length);
-  const in3d = Boolean(active && !reduce && sceneColors && visual && (story || (SCENE_TYPES.has(visual.type) && !(visual.type === "hook" && /soup|cooking-pot/.test(visual.icon)))) && hasWebGL());
+  const story = Boolean(stage?.scene?.objects?.length);
+  const in3d = Boolean(active && !glLost && !reduce && sceneColors && visual && (story || (SCENE_TYPES.has(visual.type) && !(visual.type === "hook" && /soup|cooking-pot/.test(visual.icon)))) && hasWebGL());
   return (
     <>
       <div ref={probe} aria-hidden className="hidden" />
@@ -95,7 +100,7 @@ export function ReelMedia({
       {in3d && stage && sceneColors ? (
         <div className="absolute inset-x-0 z-[5]" style={{ top: stageBox.top, bottom: stageBox.bottom }}>
           {/* @ts-expect-error quiz/outro never reach here (SCENE_TYPES) */}
-          <Scene3D visual={stage.visual} progress={stage.progress} accent={sceneColors.accent} colors={sceneColors.colors} beatKey={stageKey} scene={stage.scene} />
+          <Scene3D visual={stage.visual} progress={stage.progress} accent={sceneColors.accent} colors={sceneColors.colors} beatKey={stageKey} scene={stage.scene} onLost={() => setGlLost(true)} />
         </div>
       ) : (
         <>

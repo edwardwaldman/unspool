@@ -64,6 +64,8 @@ type Engine = {
   speaking: boolean;
   speechDone: boolean;
   durations: number[];
+  /** When the reel was paused (0 while playing): the quiz countdown doesn't run while paused. */
+  pausedAt: number;
 };
 
 function freshEngine(durations: number[]): Engine {
@@ -78,6 +80,7 @@ function freshEngine(durations: number[]): Engine {
     speaking: false,
     speechDone: false,
     durations,
+    pausedAt: 0,
   };
 }
 
@@ -102,8 +105,10 @@ export function usePlayback(opts: {
   silent?: boolean;
   /** A rendered MP4 of this reel and where each segment sits in it. */
   video?: { url: string; timeline: VideoTimeline };
+  /** Pause where it is (a sheet is open over the reel) without restarting it, unlike `active`. */
+  hold?: boolean;
 }): Playback {
-  const { script, active, silent } = opts;
+  const { script, active, silent, hold } = opts;
   const audio = silent ? undefined : opts.audio;
   const prefs = usePrefs();
   const segments = useMemo(() => buildSegments(script), [script]);
@@ -186,6 +191,14 @@ export function usePlayback(opts: {
       el.addEventListener("loadedmetadata", () => {
         if (Number.isFinite(el.duration) && el.duration > 0) engine.current.durations[i] = el.duration;
       });
+      // A clip that can't load (expired signed URL, deleted file, network): drop it, and the segment plays on
+      // the silent clock instead of sitting at 0:00 forever waiting for audio that never comes.
+      el.addEventListener("error", () => {
+        if (audios.current === els) {
+          els[i] = null;
+          if (engine.current.seg === i) engine.current.t = 0;
+        }
+      });
       return el;
     });
     audios.current = els;
@@ -238,6 +251,9 @@ export function usePlayback(opts: {
             setPrefs({ muted: true, autoMuted: true });
             el.muted = true;
             el.play().catch(() => undefined);
+          } else if (err?.name === "NotSupportedError" && audios.current[i] === el) {
+            // Unplayable clip: fall back to the silent clock for this segment.
+            audios.current[i] = null;
           }
         });
         return;
@@ -326,7 +342,7 @@ export function usePlayback(opts: {
         if (now - e.waitingSince > QUIZ_WAIT_MS) {
           e.quiz = { selected: null, revealed: true, waiting: false };
           const explain = segments.findIndex((s) => s.kind === "explain");
-          startSeg(explain);
+          startSeg(explain >= 0 ? explain : Math.min(segments.length - 1, e.seg + 1));
         } else render();
         return;
       }
@@ -424,6 +440,12 @@ export function usePlayback(opts: {
       return;
     }
     e.playing = !e.playing;
+    // The quiz countdown stops while paused: resuming gives back the time that was left.
+    if (!e.playing) e.pausedAt = performance.now();
+    else if (e.pausedAt) {
+      if (e.quiz.waiting) e.waitingSince += performance.now() - e.pausedAt;
+      e.pausedAt = 0;
+    }
     const v = vt ? videoRef.current : null;
     if (v) {
       // While the quiz waits for an answer the video stays parked at the question's end.
@@ -442,6 +464,23 @@ export function usePlayback(opts: {
     }
     render();
   }, [playClip, render, vt]);
+
+  // A sheet over the reel pauses it in place; closing it carries on from there.
+  const held = useRef(false);
+  useEffect(() => {
+    const e = engine.current;
+    if (!active) {
+      held.current = false;
+      return;
+    }
+    if (hold && e.playing && !e.ended) {
+      held.current = true;
+      toggle();
+    } else if (!hold && held.current) {
+      held.current = false;
+      if (!e.playing && !e.ended) toggle();
+    }
+  }, [hold, active, toggle]);
 
   const replay = useCallback(() => {
     stopAll();

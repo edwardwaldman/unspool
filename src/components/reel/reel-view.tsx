@@ -68,7 +68,7 @@ export function ReelView({
   const video = reel.videoUrl && reel.video ? { url: reel.videoUrl, timeline: reel.video } : undefined;
   // The comments button opens the reel as text; the reel pauses while it's open.
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const pb = usePlayback({ script, audio: reel.audio, active: active && !summaryOpen, onEnded, silent: preview, video });
+  const pb = usePlayback({ script, audio: reel.audio, active, hold: summaryOpen, onEnded, silent: preview, video });
   const prefs = usePrefs();
   const fraction = pb.duration > 0 ? pb.t / pb.duration : 0;
   const kind = pb.segment.kind;

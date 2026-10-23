@@ -252,7 +252,7 @@ export async function generateReel(reelId: string) {
       }
     }
 
-    const ready = { status: "ready" as const, script_json: script, audio_paths: audio, error: null, ...(edit ? { edit_request: null } : {}) };
+    const ready = { status: "ready" as const, script_json: script, audio_paths: audio, error: null, error_detail: null, ...(edit ? { edit_request: null } : {}) };
     let saved = false;
     if (video) {
       const { error } = await db.from("reels").update({ ...ready, video_path: video.path, video_meta: video.timeline }).eq("id", reelId);
@@ -265,11 +265,17 @@ export async function generateReel(reelId: string) {
       if (error) await db.from("reels").update(ready).eq("id", reelId);
     }
 
-    const { count } = await db
+    // Done when every reel that is paid for is ready: on the free drip the unpaid reels stay pending (they
+    // generate on demand when unlocked, which puts the document back to "scripting"), so counting them kept a
+    // finished document "scripting" forever.
+    const { data: paid } = await db.from("documents").select("credit_reels,unlocked").eq("id", reel.document_id).maybeSingle<Pick<DocumentRow, "credit_reels" | "unlocked">>();
+    let waiting = db
       .from("reels")
       .select("id", { count: "exact", head: true })
       .eq("document_id", reel.document_id)
       .neq("status", "ready");
+    if (paid && !paid.unlocked) waiting = waiting.lte("index", paid.credit_reels ?? 0);
+    const { count } = await waiting;
     if (count === 0) await db.from("documents").update({ status: "ready" }).eq("id", reel.document_id);
     else if (!edit) await queueRemainingReels(reel.document_id, { pendingOnly: true });
   } catch (err) {

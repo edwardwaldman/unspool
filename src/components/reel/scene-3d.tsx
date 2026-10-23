@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import * as THREE from "three";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import type { HighlightColor, SceneSpec, Visual } from "@/lib/schema";
 import { STORY_SHOTS, StoryObjects, layoutScene } from "./story-scene";
 import { ReelIcon } from "./icon";
@@ -14,7 +15,7 @@ import { sentenceCase } from "./text";
 // pushes in while the beat plays. One scene per visual type, built from the beat's own words and icons.
 
 type SceneVisual = Exclude<Visual, { type: "quiz" }>;
-export type Scene3DProps = { visual: SceneVisual; progress: number; accent: string; colors: Record<HighlightColor, string>; beatKey: string; scene?: SceneSpec };
+export type Scene3DProps = { visual: SceneVisual; progress: number; accent: string; colors: Record<HighlightColor, string>; beatKey: string; scene?: SceneSpec; onLost?: () => void };
 
 const SCENE_TYPES = new Set(["hook", "bigword", "split", "flow", "list", "icons", "crowd", "stat"]);
 export const hasScene = (v: { type: string }) => SCENE_TYPES.has(v.type);
@@ -30,6 +31,11 @@ const sentence = (s: string) => sentenceCase(s.replace(/[*#^~]/g, ""));
 const CREAM = "#efe8d6";
 const INK = "#121512";
 
+/** Frees a texture or geometry made in useMemo when it is replaced or unmounted (three.js never does). */
+function useDispose(x: { dispose: () => void }) {
+  useEffect(() => () => x.dispose(), [x]);
+}
+
 function hookFont() {
   if (typeof document === "undefined") return "sans-serif";
   const f = getComputedStyle(document.documentElement).getPropertyValue("--font-hook").trim();
@@ -41,7 +47,7 @@ function hookFont() {
 /** Words on a transparent canvas, shrunk to fit, for a plane standing in the scene. */
 function useTextTexture(text: string, color: string, opts: { w?: number; h?: number; weight?: number; max?: number } = {}) {
   const { w = 1024, h = 256, weight = 800, max = 190 } = opts;
-  return useMemo(() => {
+  const out = useMemo(() => {
     const c = document.createElement("canvas");
     c.width = w;
     c.height = h;
@@ -64,6 +70,8 @@ function useTextTexture(text: string, color: string, opts: { w?: number; h?: num
     t.anisotropy = 8;
     return { tex: t, aspect: w / h, fill: Math.min(1, (g.measureText(text).width + size * 0.2) / w) };
   }, [text, color, w, h, weight, max]);
+  useDispose(out.tex);
+  return out;
 }
 
 /** A Lucide icon drawn on a square face (the face of a tile). */
@@ -85,7 +93,31 @@ function useIconTexture(name: string, ink: string, bg: string) {
     img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.includes("xmlns") ? svg : svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"'))}`;
     return t;
   }, [name, ink, bg]);
+  useDispose(tex);
   return tex;
+}
+
+/**
+ * A soft studio reflection map (as the demo's glossy bowl and spoon have): without one, smooth and metal
+ * materials reflect nothing and read as flat plastic. Built once per canvas, freed with it.
+ */
+function StudioEnvironment() {
+  const get = useThree((s) => s.get);
+  useEffect(() => {
+    const { gl, scene } = get();
+    const pmrem = new THREE.PMREMGenerator(gl);
+    const room = new RoomEnvironment();
+    const env = pmrem.fromScene(room, 0.04).texture;
+    scene.environment = env;
+    scene.environmentIntensity = 0.55;
+    return () => {
+      scene.environment = null;
+      env.dispose();
+      room.dispose();
+      pmrem.dispose();
+    };
+  }, [get]);
+  return null;
 }
 
 // ---------------------------------------------------------------- labels (chips pinned to the scene)
@@ -162,6 +194,7 @@ function Tile({ icon, body, ink = INK, size = 1, spin = 0 }: { icon: string; bod
     g.translate(0, 0, -0.14);
     return g;
   }, []);
+  useDispose(geo);
   const face = useIconTexture(icon, ink, body);
   const ref = useRef<THREE.Group>(null);
   useFrame((s) => {
@@ -620,8 +653,12 @@ export function keyTerm(v: SceneVisual): string {
   }
 }
 
-export default function Scene3D({ visual, progress, accent, colors, beatKey, scene }: Scene3DProps) {
-  const story = Boolean(scene?.objects.length);
+export default function Scene3D({ visual, progress, accent, colors, beatKey, scene, onLost }: Scene3DProps) {
+  const story = Boolean(scene?.objects?.length);
+  const lostRef = useRef(onLost);
+  useEffect(() => {
+    lostRef.current = onLost;
+  }, [onLost]);
   const content = useRef<THREE.Group>(null);
   const term = story ? keyTerm(visual).replace(/[*#^~]/g, "").trim() : "";
   const pins = useRef(new Map<string, Pin>());
@@ -654,25 +691,34 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
           <span key={i} className="absolute rounded-full" style={{ left: `${x}%`, top: `${y}%`, width: s, height: s, background: "rgba(255,255,255,.07)", filter: "blur(6px)" }} />
         ))}
       </div>
-      <Canvas shadows dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ position: [0, 2, 7], fov: 36 }} style={{ position: "absolute", inset: 0 }}>
+      <Canvas shadows dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ position: [0, 2, 7], fov: 36 }} style={{ position: "absolute", inset: 0 }}
+        onCreated={({ gl }) => {
+          gl.domElement.addEventListener("webglcontextlost", (e) => {
+            e.preventDefault();
+            lostRef.current?.();
+          }, { once: true });
+        }}>
         <PinCtx.Provider value={api}>
-          <hemisphereLight args={["#e9f2d6", "#1c2418", 1.0]} />
+          <StudioEnvironment />
+          <hemisphereLight args={["#e9f2d6", "#1c2418", 0.7]} />
           <directionalLight
             position={[-3.5, 7, 4.5]}
-            intensity={2.2}
+            intensity={2.6}
             color="#fff1d8"
             castShadow
-            shadow-mapSize={[1024, 1024]}
+            shadow-mapSize={[2048, 2048]}
             shadow-camera-left={-6}
             shadow-camera-right={6}
             shadow-camera-top={6}
             shadow-camera-bottom={-6}
             shadow-bias={-0.0005}
           />
-          <directionalLight position={[4, 3, -5]} intensity={1.1} color={accent} />
+          {/* Rim light from behind in the reel's accent: the bright edge that lifts objects off the backdrop in the demo */}
+          <directionalLight position={[4, 3, -5]} intensity={1.6} color={accent} />
+          <spotLight position={[0, 6, 2]} angle={0.55} penumbra={0.9} intensity={18} distance={14} color="#fff6e6" />
           <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
             <planeGeometry args={[40, 40]} />
-            <shadowMaterial opacity={0.38} />
+            <shadowMaterial opacity={0.5} />
           </mesh>
           <ContentCtx.Provider value={content}>
             <group ref={content}>
@@ -714,13 +760,13 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
           >
             <div className="flex -translate-x-1/2 flex-col items-center" style={{ transform: `translate(-50%, calc(-100% - 2px))` }}>
               <span
-                className="whitespace-nowrap px-2 py-[3px] font-mono text-[11px] font-semibold uppercase tracking-[0.04em]"
-                style={p.tone === "accent" ? { background: accent, color: INK } : { background: "#0b0d0b", color: "#fff" }}
+                className="max-w-[34cqw] truncate whitespace-nowrap px-2 py-[3px] font-mono text-[11px] font-semibold uppercase tracking-[0.04em]"
+                style={{ background: "#0b0d0b", color: p.tone === "accent" ? accent : "#fff", boxShadow: "0 2px 8px rgba(0,0,0,.35)" }}
               >
                 {p.text}
               </span>
-              <span className="w-px" style={{ height: p.line, background: p.tone === "accent" ? accent : "#e5484d" }} />
-              <span className="h-[5px] w-[5px] rounded-full" style={{ background: p.tone === "accent" ? accent : "#e5484d" }} />
+              <span className="w-px" style={{ height: p.line, background: "#e5484d" }} />
+              <span className="h-[6px] w-[6px] rounded-full" style={{ background: "#e5484d", boxShadow: "0 0 6px #e5484d" }} />
             </div>
           </div>
         ))}

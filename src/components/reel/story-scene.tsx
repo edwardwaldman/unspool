@@ -1,7 +1,7 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { SceneObject, SceneSpec } from "@/lib/schema";
 
@@ -13,6 +13,7 @@ const PALETTE: Record<SceneObject["color"], string> = {
   accent: "", cream: "#efe8d6", white: "#f7f7f2", dark: "#2a2f2a", red: "#e5484d", orange: "#ff8a4c", yellow: "#f2d36b",
   green: "#5fb36b", blue: "#6fa8ff", purple: "#a98bff", pink: "#ff8fb3", brown: "#8a5a3b", gray: "#9aa39a", gold: "#e3b341",
 };
+const g0 = (g: THREE.BufferGeometry) => g.dispose();
 const clamp = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const back = (x: number) => {
   x = clamp(x);
@@ -20,12 +21,15 @@ const back = (x: number) => {
   return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2);
 };
 
+/** The demo's look: glazed, slightly glossy solids (a clear coat over the colour) that catch the studio light. */
 function Mat({ color, rough = 0.5, metal = 0, emissive, glass }: { color: string; rough?: number; metal?: number; emissive?: number; glass?: boolean }) {
   return (
-    <meshStandardMaterial
+    <meshPhysicalMaterial
       color={color}
-      roughness={rough}
+      roughness={rough * 0.8}
       metalness={metal}
+      clearcoat={metal > 0.5 ? 0 : 0.6}
+      clearcoatRoughness={0.28}
       emissive={emissive ? color : "#000000"}
       emissiveIntensity={emissive ?? 0}
       transparent={glass}
@@ -42,6 +46,7 @@ function Flat({ shape, color, depth = 0.25 }: { shape: THREE.Shape; color: strin
     g.center();
     return g;
   }, [shape, depth]);
+  useEffect(() => () => g0(geo), [geo]);
   return (
     <mesh geometry={geo} position={[0, 0.5, 0]} castShadow receiveShadow>
       <Mat color={color} rough={0.4} />
@@ -77,6 +82,7 @@ function Bowl({ color, deep = false }: { color: string; deep?: boolean }) {
     }
     return new THREE.LatheGeometry(pts, 40);
   }, [deep]);
+  useEffect(() => () => g0(geo), [geo]);
   const top = deep ? 0.74 : 0.42;
   return (
     <group>
@@ -106,15 +112,20 @@ function Shape({ o, color }: { o: SceneObject; color: string }) {
   const c = color;
   switch (o.shape) {
     case "person":
+      // The demo's figure: a smooth peg body that widens to the shoulders, and a round head.
       return (
         <group>
-          <mesh position={[0, 0.42, 0]} castShadow>
-            <capsuleGeometry args={[0.18, 0.42, 6, 16]} />
-            <Mat color={c} />
+          <mesh position={[0, 0.36, 0]} castShadow receiveShadow>
+            <cylinderGeometry args={[0.2, 0.25, 0.72, 28]} />
+            <Mat color={c} rough={0.35} />
           </mesh>
-          <mesh position={[0, 0.95, 0]} castShadow>
-            <sphereGeometry args={[0.17, 24, 16]} />
-            <Mat color={c} />
+          <mesh position={[0, 0.72, 0]} scale={[1, 0.55, 1]} castShadow>
+            <sphereGeometry args={[0.2, 28, 16]} />
+            <Mat color={c} rough={0.35} />
+          </mesh>
+          <mesh position={[0, 0.98, 0]} castShadow>
+            <sphereGeometry args={[0.17, 28, 18]} />
+            <Mat color={c} rough={0.35} />
           </mesh>
         </group>
       );
@@ -324,13 +335,19 @@ function Shape({ o, color }: { o: SceneObject; color: string }) {
       );
     case "target":
       return (
-        <group position={[0, 0.55, 0]}>
-          {[0.5, 0.36, 0.22, 0.09].map((r, i) => (
-            <mesh key={i} position={[0, 0, i * 0.012]} castShadow={i === 0}>
-              <circleGeometry args={[r, 40]} />
-              <Mat color={i % 2 ? "#f7f7f2" : c} />
-            </mesh>
-          ))}
+        <group>
+          <mesh position={[0, 0.2, -0.12]} rotation={[0.25, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.03, 0.04, 0.5, 10]} />
+            <Mat color="#8a5a3b" />
+          </mesh>
+          <group position={[0, 0.58, 0]} rotation={[-0.12, 0, 0]}>
+            {[0.5, 0.38, 0.26, 0.14].map((r, i) => (
+              <mesh key={i} position={[0, 0, i * 0.025]} rotation={[Math.PI / 2, 0, 0]} castShadow={i === 0} receiveShadow>
+                <cylinderGeometry args={[r, r, 0.1, 48]} />
+                <Mat color={i % 2 ? "#f7f7f2" : c} rough={0.4} />
+              </mesh>
+            ))}
+          </group>
         </group>
       );
     case "lock":
@@ -455,10 +472,20 @@ function Shape({ o, color }: { o: SceneObject; color: string }) {
           ))}
         </group>
       );
+    default:
+      // A shape from an older or newer kit than this player knows: a plain ball, so the object (and its label) still has a body.
+      return (
+        <mesh position={[0, 0.4, 0]} castShadow>
+          <sphereGeometry args={[0.4, 32, 20]} />
+          <Mat color={c} rough={0.35} />
+        </mesh>
+      );
   }
 }
 
 const HEIGHT: Partial<Record<SceneObject["shape"], number>> = { crowd: 0.9, bowl: 0.6, pot: 0.85, spoon: 1.2, building: 1.55, flag: 1.2, tree: 1.25, mountain: 1, scale: 1.1, chart: 1.2, coins: 0.55, coin: 0.4, book: 0.25 };
+/** Footprint width at size 1 (what a row of objects is packed by). */
+const WIDTH: Partial<Record<SceneObject["shape"], number>> = { crowd: 2.1, bowl: 1.7, pot: 1.7, spoon: 0.9, mountain: 1.8, scale: 1.4, chart: 1.1, house: 1.0, flag: 0.85, person: 0.55, building: 0.65, bottle: 0.5, flask: 0.75, key: 0.7, coin: 0.7, coins: 0.7, arrow: 1.0, clock: 0.95, target: 1.05, book: 0.95, planet: 1.25, cloud: 1.15, sun: 1.25 };
 export const shapeHeight = (o: SceneObject) => (HEIGHT[o.shape] ?? 1) * o.size;
 
 function Hand({ length, speed }: { length: number; speed: number }) {
@@ -506,14 +533,19 @@ function Balance({ color, tilt }: { color: string; tilt: boolean }) {
 function Crowd({ color }: { color: string }) {
   const N = 8;
   const ref = useRef<THREE.InstancedMesh>(null);
-  useFrame(() => {
+  // The crowd never moves: place it once (it was rebuilt, with a new matrix, every frame).
+  useLayoutEffect(() => {
+    const mesh = ref.current;
+    if (!mesh) return;
     const m = new THREE.Matrix4();
     for (let i = 0; i < N * N; i++) {
       m.makeTranslation(((i % N) - (N - 1) / 2) * 0.26, 0.2, (Math.floor(i / N) - (N - 1) / 2) * 0.26);
-      ref.current?.setMatrixAt(i, m);
+      mesh.setMatrixAt(i, m);
     }
-    if (ref.current) ref.current.instanceMatrix.needsUpdate = true;
-  });
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingBox();
+    mesh.computeBoundingSphere();
+  }, []);
   return (
     <instancedMesh ref={ref} args={[undefined, undefined, N * N]} castShadow>
       <capsuleGeometry args={[0.07, 0.2, 4, 10]} />
@@ -534,15 +566,23 @@ export function layoutScene(scene: SceneSpec): Slot[] {
   const objs = scene.objects;
   const order = objs.map((o, i) => ({ o, i })).sort((a, b) => a.o.x - b.o.x || a.i - b.i);
   const n = objs.length;
-  const spacing = n > 1 ? Math.min(2.3, 6 / (n - 1)) : 0;
   const maxSize = n === 1 ? 1.9 : n === 2 ? 1.5 : n <= 4 ? 1.15 : 0.9;
-  const slots: Slot[] = new Array(n);
-  order.forEach(({ o, i }, k) => {
-    const x = (k - (n - 1) / 2) * spacing;
+  const sizes = order.map(({ o }) => {
     const key = o.color === "accent" || o.motion === "glow" || o.motion === "pulse";
-    const size = Math.max(0.55, Math.min(maxSize, (o.size || 1) * (n === 1 ? 1.4 : 0.9))) * (key && n > 1 ? 1.12 : 1);
+    return Math.max(0.55, Math.min(maxSize, (o.size || 1) * (n === 1 ? 1.4 : 0.9))) * (key && n > 1 ? 1.12 : 1);
+  });
+  // Packed by real width with a small gap, like the demo's close groupings: spreading objects a fixed 2.3 apart
+  // left the camera framing mostly empty floor, so every object came out small.
+  const widths = order.map(({ o }, k) => (WIDTH[o.shape] ?? 0.9) * sizes[k]);
+  const gap = 0.45;
+  const span = widths.reduce((a, w) => a + w, 0) + gap * Math.max(0, n - 1);
+  const slots: Slot[] = new Array(n);
+  let left = -span / 2;
+  order.forEach(({ o, i }, k) => {
+    const x = left + widths[k] / 2;
+    left += widths[k] + gap;
     const z = n > 2 ? -Math.abs(x) * 0.18 + 0.2 : 0;
-    slots[i] = { x, z, size, height: (HEIGHT[o.shape] ?? 1) * size };
+    slots[i] = { x, z, size: sizes[k], height: (HEIGHT[o.shape] ?? 1) * sizes[k] };
   });
   return slots;
 }
@@ -552,7 +592,7 @@ function Placed({ o, slot, i, accent }: { o: SceneObject; slot: Slot; i: number;
   const ref = useRef<THREE.Group>(null);
   const t0 = useRef<number | null>(null);
   const cur = useRef({ x: slot.x, z: slot.z, size: slot.size });
-  const color = o.color === "accent" ? accent : PALETTE[o.color];
+  const color = o.color === "accent" ? accent : PALETTE[o.color] || PALETTE.cream;
   useFrame((s, dt) => {
     const g = ref.current;
     if (!g) return;
@@ -605,7 +645,8 @@ export function StoryObjects({ scene, accent, slots }: { scene: SceneSpec; accen
       {scene.objects.map((o, i) => {
         const n = seen.get(o.shape) ?? 0;
         seen.set(o.shape, n + 1);
-        return <Placed key={`${o.shape}-${n}-${o.color}`} o={o} slot={slots[i]} i={i} accent={accent} />;
+        // Not keyed by colour: recolouring an object to "accent" (the script's way to point at it) must glide, not re-pop.
+        return <Placed key={`${o.shape}-${n}`} o={o} slot={slots[i]} i={i} accent={accent} />;
       })}
     </>
   );
