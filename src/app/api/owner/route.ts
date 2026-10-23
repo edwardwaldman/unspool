@@ -4,7 +4,7 @@ import { error, json, notConfigured } from "@/lib/http";
 import { isOwnerEmail } from "@/lib/owner";
 import { deleteDocument } from "@/lib/spool";
 import { appSettings, setOpenAccess } from "@/lib/settings";
-import { getStripe, stripeConfigured } from "@/lib/stripe";
+import { getStripe, stripeAccount, stripeConfigured, wrongStripeAccount } from "@/lib/stripe";
 import { adminClient } from "@/lib/supabase/admin";
 import { getViewer } from "@/lib/viewer";
 import { lookupVisits, visitAnalytics } from "@/lib/visits";
@@ -22,8 +22,20 @@ async function owner() {
 const has = (name: string) => Boolean(process.env[name]?.trim());
 
 /** Which pieces of the deployment are switched on (env vars present, never their values). */
-function deployment() {
+async function deployment() {
+  // Which Stripe account the key belongs to, so a key from another business shows up here straight away.
+  let stripeLine = { name: "Stripe account", on: false, hint: "Set STRIPE_SECRET_KEY" };
+  if (has("STRIPE_SECRET_KEY")) {
+    try {
+      const a = await stripeAccount();
+      const wrong = await wrongStripeAccount();
+      stripeLine = { name: `Stripe account: ${a.name || "(no name)"} · ${a.id}`, on: !wrong, hint: wrong ? "WRONG ACCOUNT: replace STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET with the Unspool account's, and set STRIPE_ACCOUNT_ID" : "" };
+    } catch {
+      stripeLine = { name: "Stripe account (couldn't reach Stripe)", on: false, hint: "Check STRIPE_SECRET_KEY" };
+    }
+  }
   return [
+    stripeLine,
     { name: "Database (Supabase server key)", on: has("SUPABASE_SERVICE_ROLE_KEY"), hint: "Set SUPABASE_SERVICE_ROLE_KEY" },
     { name: "Reel scripts (Claude)", on: has("ANTHROPIC_API_KEY"), hint: "Set ANTHROPIC_API_KEY (made inside a workspace, or add ANTHROPIC_WORKSPACE_ID)" },
     { name: "Voiceover", on: has("OPENAI_API_KEY") || has("ELEVENLABS_API_KEY"), hint: "Set OPENAI_API_KEY" },
@@ -113,7 +125,7 @@ export async function GET(req: Request) {
       documents: docOwners?.length ?? 0,
       readyReels: readyReels ?? 0,
     },
-    deployment: deployment(),
+    deployment: await deployment(),
     accounts,
     visits: analytics.visits,
     addresses: analytics.addresses,

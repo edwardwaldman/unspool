@@ -10,6 +10,30 @@ let stripe: Stripe | null = null;
 
 export const stripeConfigured = () => Boolean(process.env.STRIPE_SECRET_KEY);
 
+/** The Stripe account behind STRIPE_SECRET_KEY: id and display name (cached per instance). */
+let account: Promise<{ id: string; name: string }> | null = null;
+export function stripeAccount() {
+  account ??= getStripe()
+    .accounts.retrieveCurrent()
+    .then((a) => ({ id: a.id, name: a.settings?.dashboard?.display_name || a.business_profile?.name || "" }))
+    .catch((err) => {
+      account = null;
+      throw err;
+    });
+  return account;
+}
+
+/**
+ * Refuse to take money on the wrong Stripe account. STRIPE_ACCOUNT_ID (acct_...) pins the account; without it,
+ * an account whose name doesn't mention Unspool is refused. Returns a message when checkout must not run.
+ */
+export async function wrongStripeAccount(): Promise<string | null> {
+  const a = await stripeAccount();
+  const pinned = process.env.STRIPE_ACCOUNT_ID?.trim();
+  if (pinned) return a.id === pinned ? null : `Payments are connected to the wrong Stripe account (${a.name || a.id}). Checkout is paused until STRIPE_SECRET_KEY is the Unspool account's key.`;
+  return /unspool/i.test(a.name) ? null : `Payments are connected to the Stripe account "${a.name || a.id}", not Unspool's. Checkout is paused until STRIPE_SECRET_KEY is the Unspool account's key.`;
+}
+
 export function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) throw new Error("STRIPE_SECRET_KEY is not set");
   if (!stripe) stripe = new Stripe(process.env.STRIPE_SECRET_KEY);

@@ -3,7 +3,7 @@ import { tierOf } from "@/lib/credits";
 import { MAX_REELS, siteUrl, supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
 import { CURRENCY, isBilling, isTier, PLANS, TRIAL, topupPack } from "@/lib/plans";
-import { ensureCustomer, getStripe, priceIdFor, stripeConfigured, TAX_CODE } from "@/lib/stripe";
+import { ensureCustomer, getStripe, priceIdFor, stripeConfigured, TAX_CODE, wrongStripeAccount } from "@/lib/stripe";
 import { getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +29,11 @@ export async function POST(req: Request) {
 async function checkout(req: Request) {
   if (!supabaseConfigured) return notConfigured();
   if (!stripeConfigured()) return error(503, "Payments aren't set up yet (STRIPE_SECRET_KEY).");
+  const wrong = await wrongStripeAccount();
+  if (wrong) {
+    console.error("[checkout] refused:", wrong);
+    return error(503, wrong, { code: "wrong_stripe_account" });
+  }
   const body = (await req.json().catch(() => ({}))) as { kind?: string; tier?: string; documentId?: string; reel?: number; billing?: string; pack?: string; returnTo?: string };
   const kind = body.kind === "topup" ? "topup" : body.kind === "trial" ? "trial" : "subscription";
   const tier = kind === "trial" ? TRIAL.tier : isTier(body.tier) && body.tier !== "free" ? body.tier : "plus";
