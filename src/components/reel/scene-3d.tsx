@@ -227,7 +227,7 @@ type Shot = { pos: [number, number, number]; look: [number, number, number]; fov
  * Where the scene may sit on screen, in normalized device coordinates of the 3D stage: clear of the beat's key
  * term at the top, the action rail on the right and the captions and account block at the bottom.
  */
-export const SAFE = { left: -0.84, right: 0.6, bottom: -0.3, top: 0.52 };
+export const SAFE = { left: -0.84, right: 0.6, bottom: -0.92, top: 0.5 };
 /** World units added above the content for the label chips (chip + leader line) pinned on top of objects. */
 const LABEL_HEADROOM = 0.45;
 

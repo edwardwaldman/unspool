@@ -29,7 +29,8 @@ export type ReelChrome = {
 // left of it. The motion graphic sits between the headline/stats at the top and the top of the rail,
 // so nothing in the frame ever overlaps, at any frame size.
 const GUTTER = 76;
-const RAIL_TOP = 300;
+/** Where the stage ends: above the captions (which sit at bottom + 178 and are at most two lines). Nothing in the scene can reach them. */
+const RAIL_TOP = 280;
 const BAND = 104;
 
 /**

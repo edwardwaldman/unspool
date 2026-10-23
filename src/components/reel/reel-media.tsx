@@ -93,7 +93,7 @@ export function ReelMedia({
         }}
       />
       {in3d && stage && sceneColors ? (
-        <div className="absolute inset-x-0 bottom-0 z-[5]" style={{ top: stageBox.top }}>
+        <div className="absolute inset-x-0 z-[5]" style={{ top: stageBox.top, bottom: stageBox.bottom }}>
           {/* @ts-expect-error quiz/outro never reach here (SCENE_TYPES) */}
           <Scene3D visual={stage.visual} progress={stage.progress} accent={sceneColors.accent} colors={sceneColors.colors} beatKey={stageKey} scene={stage.scene} />
         </div>
