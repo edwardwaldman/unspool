@@ -53,7 +53,7 @@ export function CreditBar({ size = "md" }: { size?: "md" | "lg" }) {
   const big = size === "lg";
   return (
     <>
-      <div className={`flex items-center gap-3 border border-line bg-surface ${big ? "px-4 py-2.5" : "px-3.5 py-2.5"}`} data-testid="credit-bar">
+      <div className={`flex items-center gap-3 border border-line bg-surface ${big ? "px-4 py-2.5" : "px-3.5 py-2.5"}`} data-testid="credit-bar" data-tour="credit-bar">
         <Zap size={big ? 18 : 16} className="shrink-0 text-thread" aria-hidden />
         <div className="min-w-0 flex-1" aria-live="polite">
           <div className={`font-display leading-none tabular-nums text-ink ${big ? "text-[22px]" : "text-[20px] ipad:text-[24px]"}`} data-testid="credit-count">

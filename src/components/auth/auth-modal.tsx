@@ -11,6 +11,7 @@ import { track } from "../analytics/track";
 import { fileLabel } from "../reel/accent";
 import { toast } from "../ui/toast";
 import { RESUME_PARAM, RESUME_VALUE, stashFile } from "../upload/file-stash";
+import { WELCOME_FLAG } from "../studio/welcome-tour";
 import { holdFile, useHeldFile } from "../upload/upload-store";
 import { closeAuth, setAuthMode, useAuthModal } from "./auth-store";
 import { markSignedIn } from "./use-session";
@@ -375,6 +376,12 @@ export function AuthModal() {
       fail(error);
       setCode(emptyCode());
       return;
+    }
+    // A brand-new account: Studio greets it with the welcome pop-up and tour.
+    try {
+      window.localStorage.setItem(WELCOME_FLAG, "1");
+    } catch {
+      // storage blocked: the server-side check still shows the tour on an empty Studio
     }
     if (data.session && data.user) return finish(data.user, true);
     // Confirmed but no session handed back: the password sign-in finishes the job.

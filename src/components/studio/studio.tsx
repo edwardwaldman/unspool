@@ -13,6 +13,7 @@ import { useLayout } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { CreditBar } from "./credit-bar";
+import { PICK_EVENT, WelcomeTour } from "./welcome-tour";
 import { ProBadge, ReelStylePanel } from "./reel-style-panel";
 
 export type StudioDoc = {
@@ -30,13 +31,13 @@ export type StudioDoc = {
   reels: { index: number; title: string; status: string; headline: string | null; locked: boolean }[];
 };
 
-export type StudioProps = { docs: StudioDoc[]; style: ReelStyle; canEdit: boolean; plan: string };
+export type StudioProps = { docs: StudioDoc[]; style: ReelStyle; canEdit: boolean; plan: string; isNew?: boolean; email?: string | null };
 
 /** The library's numbers, at the top of the document list. */
 function LibraryStats({ docs, plan }: { docs: StudioDoc[]; plan: string }) {
   const reels = docs.reduce((n, d) => n + d.readyCount, 0);
   return (
-    <div className="grid grid-cols-3 border-y border-line" data-testid="studio-stats">
+    <div className="grid grid-cols-3 border-y border-line" data-testid="studio-stats" data-tour="studio-stats">
       {[
         [docs.length, docs.length === 1 ? "Doc" : "Docs"],
         [reels, "Reels"],
@@ -133,6 +134,12 @@ function usePicker() {
     window.history.replaceState(window.history.state, "", url);
     input.current?.click();
   }, []);
+  // The welcome tour's "Upload a document" opens this picker.
+  useEffect(() => {
+    const open = () => input.current?.click();
+    window.addEventListener(PICK_EVENT, open);
+    return () => window.removeEventListener(PICK_EVENT, open);
+  }, []);
   const el = (
     <input
       ref={input}
@@ -160,6 +167,7 @@ function PlusButton({ onClick, pending, size }: { onClick: () => void; pending: 
       disabled={pending}
       aria-label="Upload a document"
       data-testid="studio-plus"
+      data-tour="studio-plus"
       className={`group relative flex ${box} items-center justify-center rounded-full bg-thread text-paper transition-transform hover:scale-[1.04] active:scale-[0.97] disabled:opacity-60`}
     >
       <span aria-hidden className="absolute inset-0 rounded-full border border-thread motion-safe:animate-[studio-ring_2.6s_ease-out_infinite]" />
@@ -240,7 +248,7 @@ function DesktopStudio({ docs, style, canEdit, plan }: StudioProps) {
       </div>
 
       {/* Right: Reel style (Pro) */}
-      <aside className="w-[300px] shrink-0 overflow-y-auto border-l border-line p-5 xl:w-[360px]">
+      <aside className="w-[300px] shrink-0 overflow-y-auto border-l border-line p-5 xl:w-[360px]" data-tour="studio-style">
         <ReelStylePanel initial={style} canEdit={canEdit} />
       </aside>
     </div>
@@ -283,6 +291,7 @@ function MobileStudio({ docs, style, canEdit, plan }: StudioProps) {
           onClick={() => setStyleOpen(true)}
           className="flex w-full items-center gap-3 border border-line bg-surface px-4 py-3 text-left"
           data-testid="style-row"
+          data-tour="studio-style"
         >
           <Crown size={17} className="text-thread" aria-hidden />
           <span className="flex-1 text-[14px] font-medium text-ink ipad:text-[16px]">Reel style</span>
@@ -323,5 +332,10 @@ function MobileStudio({ docs, style, canEdit, plan }: StudioProps) {
 export function Studio(props: StudioProps) {
   const layout = useLayout();
   if (layout === null) return <div className="h-full w-full bg-paper" />;
-  return layout === "desktop" ? <DesktopStudio {...props} /> : <MobileStudio {...props} />;
+  return (
+    <>
+      {layout === "desktop" ? <DesktopStudio {...props} /> : <MobileStudio {...props} />}
+      <WelcomeTour isNew={Boolean(props.isNew)} email={props.email} />
+    </>
+  );
 }
