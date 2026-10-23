@@ -1,6 +1,7 @@
 import { freeReelLimit, isUnlocked } from "./access";
 import { DOCUMENT_COLUMNS, type DocumentRow, type ReelRow } from "./db-types";
 import { extensionOf } from "./config";
+import { dispatch } from "./jobs";
 import { healIfStuck } from "./pipeline";
 import { styleForViewer } from "./studio";
 import type { ReelDTO, SpoolDTO } from "./spool-types";
@@ -18,16 +19,34 @@ type ReelLite = Pick<
 /** Build the client view of a document: titles/hooks for all reels, full script + audio only where unlocked. */
 const STALE_UPLOAD_MS = 15 * 60e3;
 /** An upload whose file never arrived (tab closed, connection dropped) is failed instead of "Uploading" forever. */
-async function expireStaleUploads(docs: DocumentRow[]) {
-  const stale = docs.filter((d) => d.status === "uploading" && Date.now() - Date.parse(d.created_at) > STALE_UPLOAD_MS);
-  if (!stale.length) return;
-  const error = "The upload didn't finish. Please upload the file again.";
-  await adminClient().from("documents").update({ status: "failed", error }).in("id", stale.map((d) => d.id)).eq("status", "uploading");
-  for (const d of stale) Object.assign(d, { status: "failed", error });
+/** A document still "uploading" this long after it was created gets checked against storage. */
+const CHECK_UPLOAD_MS = 20e3;
+
+/**
+ * Settle documents stuck on "uploading". The browser uploads the file, then calls /start; if that call never
+ * lands (tab closed or reloaded, a dropped connection), the file is in storage but nothing starts it. So:
+ * file there -> start unspooling it now; still no file after 15 minutes -> mark the upload failed.
+ */
+async function settleUploads(docs: DocumentRow[]) {
+  const waiting = docs.filter((d) => d.status === "uploading" && Date.now() - Date.parse(d.created_at) > CHECK_UPLOAD_MS);
+  if (!waiting.length) return;
+  const db = adminClient();
+  for (const d of waiting) {
+    const { data: files } = await db.storage.from("documents").list(d.id);
+    if (d.file_path && files?.some((f) => `${d.id}/${f.name}` === d.file_path)) {
+      const { data: moved } = await db.from("documents").update({ status: "uploaded" }).eq("id", d.id).eq("status", "uploading").select("id").maybeSingle();
+      Object.assign(d, { status: "uploaded" });
+      if (moved) await dispatch({ name: "process", documentId: d.id });
+    } else if (Date.now() - Date.parse(d.created_at) > STALE_UPLOAD_MS) {
+      const error = "The upload didn't finish. Please upload the file again.";
+      await db.from("documents").update({ status: "failed", error }).eq("id", d.id).eq("status", "uploading");
+      Object.assign(d, { status: "failed", error });
+    }
+  }
 }
 
 export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?: boolean } = {}): Promise<SpoolDTO> {
-  await expireStaleUploads([doc]);
+  await settleUploads([doc]);
   const db = adminClient();
   const unlocked = isUnlocked(doc, viewer);
   const style = styleForViewer(viewer);
@@ -106,7 +125,7 @@ export async function listDocuments(viewer: Viewer, limit = 50): Promise<Documen
       .order("created_at", { ascending: false })
       .limit(limit);
     const docs = (data ?? []) as DocumentRow[];
-    await expireStaleUploads(docs);
+    await settleUploads(docs);
     return docs;
   }
   if (!viewer.anonToken) return [];
