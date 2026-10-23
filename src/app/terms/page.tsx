@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: "The rules for using Unspool: accounts, your documents, AI-generated reels, the free plan, payments and subscriptions.",
 };
 
-const EFFECTIVE = "October 18, 2026";
+const EFFECTIVE = "October 23, 2026";
 const CONTACT = "hello@unspool.cc";
 const PRIVACY_CONTACT = "privacy@unspool.cc";
 
@@ -323,7 +323,7 @@ export default function TermsPage() {
             <li>
               <strong>Top-ups.</strong> One-time packs of reel credits ({TOPUP_PACKS.map((p) => `${p.credits} for ${formatCents(p.priceCents)}`).join(", ")}) can be added to any account,
               including free accounts. Top-up credits don&apos;t expire while your account exists, are used after your weekly credits, and
-              aren&apos;t refundable once used. They can&apos;t be moved to another account and are lost if you delete your account.
+              aren&apos;t refundable (see Refunds). They can&apos;t be moved to another account and are lost if you delete your account.
             </li>
             <li>
               <strong>Free trial.</strong> Each account can have one {TRIAL.days}-day free trial of Plus. A payment card is required. During
@@ -347,7 +347,7 @@ export default function TermsPage() {
               <strong>Cancelling.</strong> You can cancel at any time from your profile: choose &quot;Manage subscription&quot; to open the
               Stripe billing portal, where you can cancel, update your payment method and see your invoices. When you cancel there, your
               subscription stays active until the end of the period you have already paid for and then does not renew. Cancelling stops
-              future charges; it doesn&apos;t refund the current period (see Refunds).
+              future charges; nothing already paid is refunded (see Refunds).
             </li>
             <li>
               <strong>When a subscription ends.</strong> Reels already made stay available. Documents bought with the old one-time
@@ -372,38 +372,39 @@ export default function TermsPage() {
         </Section>
 
         <Section id="refunds">
-          {/* OWNER REVIEW: refund policy written as a reasonable default; confirm before relying on it. */}
-          <p>We want you to be happy with what you pay for. Our refund policy is:</p>
+          <p>
+            <strong>All payments are final. We do not give refunds</strong>, in whole or in part, for any reason, unless the law where you
+            live requires us to. This covers every payment on Unspool, including:
+          </p>
           <ul>
             <li>
-              <strong>Top-ups and credits.</strong> Because reels are delivered digitally and immediately, top-ups are generally
-              non-refundable once their credits are used. A reel that fails to generate gives its credit back automatically. If reels are so
-              broken that they can&apos;t reasonably be used and we can&apos;t fix the problem, contact us within 14 days and we will refund you.
+              <strong>Subscriptions.</strong> Weekly and yearly plans, including the current period after you cancel, unused weeks, partial
+              periods, renewals you forgot to cancel, and periods in which you didn&apos;t use the Service. Cancelling only stops future charges.
             </li>
             <li>
-              <strong>Subscriptions.</strong> You can cancel at any time to stop future charges. We don&apos;t give refunds or credits for
-              partial weeks, or for weeks in which you didn&apos;t use the Service, except as described here or where the law requires.
-              If you were charged for a renewal you didn&apos;t intend and haven&apos;t used the Service since, contact us within 7 days of
-              the charge and we will look at it sympathetically.
+              <strong>Top-ups and credits.</strong> Used or unused. Credits have no cash value and can&apos;t be exchanged for money. A reel
+              that fails to generate gives its <em>credit</em> back automatically; that is a credit, not a refund.
             </li>
             <li>
-              <strong>Mistakes and duplicate charges.</strong> If you were charged twice, or charged in error, we will refund the incorrect
-              charge.
+              <strong>Free trials that convert.</strong> If you don&apos;t cancel before the trial ends, the first charge is final.
             </li>
             <li>
-              <strong>Deleting your account.</strong> Deleting your account cancels any active subscription immediately, without a refund
-              for the rest of the current billing period. If you only want to stop paying, cancel the subscription first and keep your account
-              until the period ends.
+              <strong>Plan changes, account deletion and account closure.</strong> Downgrading, deleting your account, or having it closed for
+              breaking these terms doesn&apos;t entitle you to a refund.
+            </li>
+            <li>
+              <strong>Changes to the Service.</strong> Changes to features, limits, models, voices or prices, or the Service shutting down.
             </li>
           </ul>
           <p>
-            To ask for a refund, email <Mail to={CONTACT} /> from the address on your account, with the date of the charge. Approved refunds
-            go back to the original payment method through Stripe; how long they take to appear depends on your bank.
+            By completing a purchase you ask us to start delivering it straight away, and you agree that any right to cancel and get your money
+            back that would otherwise apply ends once delivery begins, to the extent the law allows.
           </p>
           <p>
-            Nothing in this section limits rights you have under the law where you live. For example, if you are a consumer in the European
-            Union or the United Kingdom, you may have a statutory right to cancel a purchase of digital content within 14 days, which can be
-            lost once delivery has begun with your agreement. Where such a right applies to you, we will honour it.
+            The only exception is where a refund is required by law. Nothing in these terms takes away a right you have under the consumer law
+            that applies to you and can&apos;t be waived (for example, certain statutory rights of consumers in the European Union or the United
+            Kingdom). If such a right applies, we will honour it to the extent the law requires and no further. To make a claim under such a
+            right, email <Mail to={CONTACT} /> from the address on your account with the date of the charge.
           </p>
         </Section>
 
@@ -438,7 +439,7 @@ export default function TermsPage() {
             Unspool is a young product and will change. We may add, change or remove features, file types, formats, AI models, voices, limits
             and plans at any time. If we make a change that significantly reduces what you get from a subscription you have paid for, we will
             let you know and you can cancel. If we decide to shut down the Service, we will try to give you at least 30 days&apos; notice so
-            you can save anything you want to keep, and we will refund the unused part of any prepaid subscription period.
+            you can save anything you want to keep. Shutting down doesn&apos;t entitle you to a refund (see Refunds).
           </p>
           <p>
             Unspool is not a backup or storage service. Keep your own copies of your original documents; we may delete content as described
@@ -459,8 +460,7 @@ export default function TermsPage() {
             We may suspend or terminate your access, remove content, or refuse to process a document, with or without notice, if we
             reasonably believe that you have broken these terms, that your use creates a legal, security or financial risk for us, our
             providers or other users, or if we are required to by law. Where it is reasonable to do so, we will tell you why and give you a
-            chance to respond. If we close your account without cause, we will refund the unused part of any prepaid subscription period.
-            If we close it because you broke these terms, you won&apos;t get a refund.
+            chance to respond. Closing or suspending an account doesn&apos;t entitle you to a refund (see Refunds).
           </p>
           <p>
             The sections on your promises about your content, intellectual property, disclaimers, limitation of liability, indemnity,
