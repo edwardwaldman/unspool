@@ -522,55 +522,91 @@ function Crowd({ color }: { color: string }) {
   );
 }
 
-/** One object of the scene: placed, sized, popped in, and moving the way the script asked. */
-function Placed({ o, i, accent }: { o: SceneObject; i: number; accent: string }) {
+/** Where an object sits once the scene is laid out. */
+export type Slot = { x: number; z: number; size: number; height: number };
+
+/**
+ * Lay a scene out tidily instead of trusting raw coordinates: the objects keep the writer's left-to-right order
+ * but sit in one evenly spaced row (a slight arc), centred, at sizes that read together (the key object, the
+ * accent one, a little bigger), and never overlapping.
+ */
+export function layoutScene(scene: SceneSpec): Slot[] {
+  const objs = scene.objects;
+  const order = objs.map((o, i) => ({ o, i })).sort((a, b) => a.o.x - b.o.x || a.i - b.i);
+  const n = objs.length;
+  const spacing = n > 1 ? Math.min(2.3, 6 / (n - 1)) : 0;
+  const maxSize = n === 1 ? 1.9 : n === 2 ? 1.5 : n <= 4 ? 1.15 : 0.9;
+  const slots: Slot[] = new Array(n);
+  order.forEach(({ o, i }, k) => {
+    const x = (k - (n - 1) / 2) * spacing;
+    const key = o.color === "accent" || o.motion === "glow" || o.motion === "pulse";
+    const size = Math.max(0.55, Math.min(maxSize, (o.size || 1) * (n === 1 ? 1.4 : 0.9))) * (key && n > 1 ? 1.12 : 1);
+    const z = n > 2 ? -Math.abs(x) * 0.18 + 0.2 : 0;
+    slots[i] = { x, z, size, height: (HEIGHT[o.shape] ?? 1) * size };
+  });
+  return slots;
+}
+
+/** One object: pops in the first time it appears, then glides (position and size) when a later beat moves it. */
+function Placed({ o, slot, i, accent }: { o: SceneObject; slot: Slot; i: number; accent: string }) {
   const ref = useRef<THREE.Group>(null);
   const t0 = useRef<number | null>(null);
+  const cur = useRef({ x: slot.x, z: slot.z, size: slot.size });
   const color = o.color === "accent" ? accent : PALETTE[o.color];
-  const base = useMemo(() => new THREE.Vector3(o.x * 0.95, 0, o.z * 0.9), [o.x, o.z]);
-  useFrame((s) => {
+  useFrame((s, dt) => {
     const g = ref.current;
     if (!g) return;
     if (t0.current === null) t0.current = s.clock.elapsedTime;
-    const t = s.clock.elapsedTime, lt = t - t0.current - i * 0.12;
-    const k = back(lt / 0.45);
-    let scale = o.size * Math.max(0.0001, o.motion === "drop" ? 1 : k), y = 0, ry = 0, rz = 0, x = base.x, z = base.z;
-    if (o.motion === "drop") y = Math.max(0, 2.6 * (1 - clamp(lt / 0.55)) ** 2);
-    if (o.motion === "bob") y = Math.abs(Math.sin(t * 2.4 + i)) * 0.12 * o.size;
-    if (o.motion === "spin") ry = t * 0.9;
-    if (o.motion === "pulse" || o.motion === "glow") scale *= 1 + Math.sin(t * 4) * 0.05;
+    const t = s.clock.elapsedTime, lt = t - t0.current - i * 0.1;
+    const k = 1 - Math.pow(0.004, dt);
+    cur.current.x += (slot.x - cur.current.x) * k;
+    cur.current.z += (slot.z - cur.current.z) * k;
+    cur.current.size += (slot.size - cur.current.size) * k;
+    const appear = o.motion === "drop" ? 1 : back(lt / 0.5);
+    let scale = cur.current.size * Math.max(0.0001, appear), y = 0, ry = -cur.current.x * 0.08, rz = 0, x = cur.current.x, z = cur.current.z;
+    if (o.motion === "drop") y = Math.max(0, 2.4 * (1 - clamp(lt / 0.6)) ** 2);
+    if (o.motion === "bob") y = Math.abs(Math.sin(t * 2.2 + i)) * 0.08 * cur.current.size;
+    if (o.motion === "spin") ry += t * 0.7;
+    if (o.motion === "pulse" || o.motion === "glow") scale *= 1 + Math.sin(t * 3.2) * 0.035;
     if (o.motion === "stir") {
-      x += Math.cos(t * 1.6) * 0.25;
-      z += Math.sin(t * 1.6) * 0.25;
+      x += Math.cos(t * 1.4) * 0.18;
+      z += Math.sin(t * 1.4) * 0.18;
     }
-    if (o.motion === "tilt" && o.shape !== "scale") rz = Math.sin(t * 1.4) * 0.15;
+    if (o.motion === "tilt" && o.shape !== "scale") rz = Math.sin(t * 1.2) * 0.1;
     g.position.set(x, y, z);
     g.rotation.set(0, ry, rz);
     g.scale.setScalar(scale);
   });
   return (
-    <group ref={ref} position={base} scale={0.0001}>
+    <group ref={ref} position={[slot.x, 0, slot.z]} scale={0.0001}>
       <Shape o={o} color={color} />
-      {o.motion === "glow" && <pointLight position={[0, 1, 0.6]} intensity={2.5} distance={3} color={color} />}
+      {o.motion === "glow" && <pointLight position={[0, 1, 0.6]} intensity={2} distance={3} color={color} />}
     </group>
   );
 }
 
 export const STORY_SHOTS: Record<SceneSpec["camera"], { pos: [number, number, number]; look: [number, number, number]; fov: number; sway: number }> = {
-  front: { pos: [0, 3.1, 6.2], look: [0, 0.55, 0], fov: 36, sway: 0.5 },
-  close: { pos: [0.3, 2.4, 4.0], look: [0, 0.65, 0], fov: 34, sway: 0.3 },
-  low: { pos: [0.4, 1.3, 5.6], look: [0, 0.8, 0], fov: 38, sway: 0.4 },
-  top: { pos: [0, 6.5, 4.2], look: [0, 0, 0.3], fov: 38, sway: 0.4 },
-  orbit: { pos: [0, 2.8, 6.4], look: [0, 0.6, 0], fov: 36, sway: 1.6 },
+  front: { pos: [0, 2.9, 6.4], look: [0, 0.6, 0], fov: 36, sway: 0.25 },
+  close: { pos: [0.2, 2.4, 4.6], look: [0, 0.7, 0], fov: 34, sway: 0.2 },
+  low: { pos: [0.3, 1.5, 5.8], look: [0, 0.8, 0], fov: 37, sway: 0.25 },
+  top: { pos: [0, 6.0, 4.6], look: [0, 0, 0.2], fov: 38, sway: 0.25 },
+  orbit: { pos: [0, 2.8, 6.4], look: [0, 0.6, 0], fov: 36, sway: 0.7 },
 };
 
 /** The objects of one beat's scene. */
-export function StoryObjects({ scene, accent }: { scene: SceneSpec; accent: string }) {
+/**
+ * The objects of one beat. Keyed by shape (and which one of that shape), not by beat, so an object that is still
+ * in the next beat's scene stays mounted and glides to its new place: the story carries on instead of restarting.
+ */
+export function StoryObjects({ scene, accent, slots }: { scene: SceneSpec; accent: string; slots: Slot[] }) {
+  const seen = new Map<string, number>();
   return (
     <>
-      {scene.objects.map((o, i) => (
-        <Placed key={`${i}-${o.shape}`} o={o} i={i} accent={accent} />
-      ))}
+      {scene.objects.map((o, i) => {
+        const n = seen.get(o.shape) ?? 0;
+        seen.set(o.shape, n + 1);
+        return <Placed key={`${o.shape}-${n}-${o.color}`} o={o} slot={slots[i]} i={i} accent={accent} />;
+      })}
     </>
   );
 }

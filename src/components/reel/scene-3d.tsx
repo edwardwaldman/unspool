@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import { renderToStaticMarkup } from "react-dom/server";
 import * as THREE from "three";
 import type { HighlightColor, SceneSpec, Visual } from "@/lib/schema";
-import { STORY_SHOTS, StoryObjects, shapeHeight } from "./story-scene";
+import { STORY_SHOTS, StoryObjects, layoutScene } from "./story-scene";
 import { ReelIcon } from "./icon";
 import { sentenceCase } from "./text";
 
@@ -500,21 +500,27 @@ function HookScene({ v, progress, accent, color }: { v: Extract<Visual, { type: 
   );
 }
 
-/** The beat as a moment in the reel's own story (the script's scene), with its labels pinned on. */
+/** The beat as a moment in the reel's own story: laid out, framed to fit, labels pinned on. */
 function StoryScene({ scene, progress, accent }: { scene: SceneSpec; progress: number; accent: string }) {
+  const slots = useMemo(() => layoutScene(scene), [scene]);
+  const base = STORY_SHOTS[scene.camera] ?? STORY_SHOTS.front;
+  // Pull back for a wide row so everything stays in frame.
+  const span = slots.length > 1 ? Math.max(...slots.map((s) => s.x)) - Math.min(...slots.map((s) => s.x)) : 0;
+  const tall = Math.max(...slots.map((s) => s.height), 1);
+  const far = Math.max(1, (span + 2.6) / 5.2, tall / 1.9);
+  const shot = { ...base, pos: [base.pos[0] + 0.2 * far, base.pos[1] * Math.min(far, 1.3) - 0.35 * far, base.pos[2] * far] as [number, number, number], look: [0.2 * far, Math.min(tall * 0.45, 1.1) - 0.35 * far, 0] as [number, number, number] }; // shifted so the scene clears the right rail and sits above the captions
   return (
     <>
-      <CameraRig shot={STORY_SHOTS[scene.camera] ?? STORY_SHOTS.front} progress={progress} />
-      <StoryObjects scene={scene} accent={accent} />
+      <CameraRig shot={shot} progress={progress} />
+      <StoryObjects scene={scene} accent={accent} slots={slots} />
       {scene.objects.map((o, i) =>
-        o.label ? <Label key={`l${i}`} id={`l${i}`} text={o.label.toUpperCase()} position={[o.x * 0.95, shapeHeight(o) + 0.15, o.z * 0.9]} tone={o.color === "accent" ? "accent" : "dark"} line={22} /> : null,
+        o.label ? <Label key={`l${i}-${o.label}`} id={`l${i}`} text={o.label.toUpperCase()} position={[slots[i].x, slots[i].height + 0.12, slots[i].z]} tone={o.color === "accent" ? "accent" : "dark"} line={20} /> : null,
       )}
     </>
   );
 }
 
-function SceneFor({ visual, progress, accent, colors, scene }: Omit<Scene3DProps, "beatKey">) {
-  if (scene?.objects.length) return <StoryScene scene={scene} progress={progress} accent={accent} />;
+function SceneFor({ visual, progress, accent, colors }: Omit<Scene3DProps, "beatKey" | "scene">) {
   const tone = (c?: HighlightColor) => (c ? colors[c] : accent);
   switch (visual.type) {
     case "crowd":
@@ -541,7 +547,33 @@ function SceneFor({ visual, progress, accent, colors, scene }: Omit<Scene3DProps
 // ---------------------------------------------------------------- the stage
 
 /** The full-frame 3D stage for one beat: lights, a shadow floor, the beat's scene, and its pinned labels. */
+/** The beat's key term ("= 7", "x → 2 vs f(x) → 7"), shown big at the top of a story scene so the point is never lost. */
+export function keyTerm(v: SceneVisual): string {
+  switch (v.type) {
+    case "bigword":
+      return v.word;
+    case "stat":
+      return v.value;
+    case "split":
+      return `${v.left.title} ${v.mode === "vs" ? "vs" : /→/.test(v.left.title + v.right.title) ? "·" : "→"} ${v.right.title}`;
+    case "flow":
+      return v.steps.map((s) => s.title).join(v.steps.some((s) => /→/.test(s.title)) ? " · " : " → ");
+    case "list":
+      return v.title;
+    case "icons":
+      return v.items.map((s) => s.label).join(v.arrow ? " → " : " · ");
+    case "crowd":
+      return v.highlight_label;
+    case "hook":
+      return v.tag;
+    default:
+      return "";
+  }
+}
+
 export default function Scene3D({ visual, progress, accent, colors, beatKey, scene }: Scene3DProps) {
+  const story = Boolean(scene?.objects.length);
+  const term = story ? keyTerm(visual).replace(/[*#^~]/g, "").trim() : "";
   const pins = useRef(new Map<string, Pin>());
   const els = useRef(new Map<string, HTMLDivElement>());
   const [list, setList] = useState<Pin[]>([]);
@@ -592,12 +624,28 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
             <planeGeometry args={[40, 40]} />
             <shadowMaterial opacity={0.38} />
           </mesh>
-          <group key={beatKey}>
-            <SceneFor visual={visual} progress={progress} accent={accent} colors={colors} scene={scene} />
-          </group>
+          {story ? (
+            // Not keyed by beat: objects that carry on into the next beat stay put and glide.
+            <StoryScene scene={scene!} progress={progress} accent={accent} />
+          ) : (
+            <group key={beatKey}>
+              <SceneFor visual={visual} progress={progress} accent={accent} colors={colors} />
+            </group>
+          )}
           <PinProjector pins={pins} els={els} />
         </PinCtx.Provider>
       </Canvas>
+      {/* The beat's key term, big and centred above the scene (as in the ads) */}
+      {term && (
+        <div key={beatKey} className="pointer-events-none absolute inset-x-4 top-2 text-center" data-testid="scene-term">
+          <span
+            className="inline-block animate-[term-in_.35s_cubic-bezier(.3,1.5,.5,1)] font-hook font-extrabold leading-[1.05] tracking-[-0.02em]"
+            style={{ color: accent, fontSize: `min(40px, ${(170 / Math.max(6, term.length)).toFixed(1)}cqw)`, textShadow: "0 2px 12px rgba(0,0,0,.5)" }}
+          >
+            {sentence(term)}
+          </span>
+        </div>
+      )}
       {/* The pinned label chips */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {list.map((p) => (
