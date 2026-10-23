@@ -26,9 +26,88 @@ export type StudioDoc = {
   readyCount: number;
   headline: string | null;
   hook: string | null;
+  /** Every reel of the document, in order (the library, per document). */
+  reels: { index: number; title: string; status: string; headline: string | null; locked: boolean }[];
 };
 
-export type StudioProps = { docs: StudioDoc[]; style: ReelStyle; canEdit: boolean };
+export type StudioProps = { docs: StudioDoc[]; style: ReelStyle; canEdit: boolean; plan: string };
+
+/** The library's numbers, at the top of the document list. */
+function LibraryStats({ docs, plan }: { docs: StudioDoc[]; plan: string }) {
+  const reels = docs.reduce((n, d) => n + d.readyCount, 0);
+  return (
+    <div className="grid grid-cols-3 border-y border-line" data-testid="studio-stats">
+      {[
+        [docs.length, docs.length === 1 ? "Doc" : "Docs"],
+        [reels, "Reels"],
+        [plan, "Plan"],
+      ].map(([v, l], i) => (
+        <div key={i} className={`px-3 py-2.5 ${i ? "border-l border-line" : ""}`}>
+          <div className="font-mono text-[17px] leading-none text-ink">{v}</div>
+          <div className="mt-1.5 text-[10.5px] uppercase tracking-[0.12em] text-muted">{l}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** A document's reels as a row of little 9:16 frames: tap one to watch it. */
+function ReelStrip({ doc }: { doc: StudioDoc }) {
+  if (!doc.reels.length) return <p className="px-2 pb-3 text-[12.5px] text-muted">Reels show up here as they&apos;re made.</p>;
+  const tone = fileTone(doc.fileType);
+  return (
+    <ol className="flex gap-2 overflow-x-auto px-2 pb-3 [scrollbar-width:thin]" aria-label={`Reels of ${doc.name}`} data-testid="studio-reels">
+      {doc.reels.map((r) => {
+        const ready = r.status === "ready" && !r.locked;
+        return (
+          <li key={r.index} className="shrink-0">
+            <Link
+              href={`/s/${doc.id}?reel=${r.index}`}
+              className={`relative block h-[112px] w-[63px] overflow-hidden border transition-transform hover:-translate-y-0.5 ipad:h-[150px] ipad:w-[84px] ${ready ? "border-white/[0.1]" : "border-line opacity-60"}`}
+              style={{ background: reelTint(tone, 22) }}
+              title={r.title}
+            >
+              <span className="absolute inset-x-[5px] top-[6px] line-clamp-6 font-hook text-[7px] font-extrabold leading-[1.25] text-white ipad:text-[9px]">
+                {r.headline ? <MarkedText text={r.headline} /> : r.title}
+              </span>
+              <span className="absolute bottom-[4px] left-[5px] font-mono text-[8px] text-white/75">{r.index}</span>
+              <span className="absolute bottom-[4px] right-[5px] font-mono text-[8px]" style={{ color: r.status === "failed" ? "var(--coral)" : "rgba(255,255,255,.75)" }}>
+                {r.locked ? "locked" : r.status === "ready" ? "" : r.status === "failed" ? "failed" : "…"}
+              </span>
+            </Link>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** One document in the Studio list: its row (opens the feed) and a toggle that shows its reels underneath. */
+function DocItem({ doc, open, onToggle, size = "md" }: { doc: StudioDoc; open: boolean; onToggle: () => void; size?: "sm" | "md" }) {
+  const s = docStatus(doc);
+  return (
+    <li>
+      <div className="flex items-center">
+        <Link href={`/s/${doc.id}`} className={`flex min-w-0 flex-1 items-center gap-3 ${size === "sm" ? "py-2.5" : "p-2"} text-left transition-colors hover:bg-white/[0.03]`}>
+          <DocThumb doc={doc} size={size} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[13.5px] font-semibold text-ink ipad:text-[16px]">{doc.name}</span>
+            <span className="mt-0.5 flex items-center gap-2 text-[11.5px] text-muted ipad:text-[13.5px]">
+              {fileLabel(doc.fileType)}, {reelsLabel(doc)}
+              <span className="font-medium tabular-nums" style={{ color: s.tone }}>
+                {s.label}
+              </span>
+            </span>
+          </span>
+        </Link>
+        <button type="button" onClick={onToggle} aria-expanded={open} aria-label={open ? "Hide reels" : "Show reels"} className="flex h-10 w-10 shrink-0 items-center justify-center text-muted hover:text-ink" data-testid="studio-doc-toggle">
+          <ChevronDown size={17} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
+      </div>
+      {open && <ReelStrip doc={doc} />}
+    </li>
+  );
+}
 
 const TYPES_HINT = "PDF, Word, slides, text or a photo of your notes";
 
@@ -106,8 +185,9 @@ function DocThumb({ doc, size = "md" }: { doc: StudioDoc; size?: "sm" | "md" }) 
   );
 }
 
-function DesktopStudio({ docs, style, canEdit }: StudioProps) {
+function DesktopStudio({ docs, style, canEdit, plan }: StudioProps) {
   const picker = usePicker();
+  const [openId, setOpenId] = useState<string | null>(docs[0]?.id ?? null);
   return (
     <div className="flex h-full w-full min-h-0" data-testid="studio" data-layout="desktop">
       {picker.el}
@@ -118,40 +198,23 @@ function DesktopStudio({ docs, style, canEdit }: StudioProps) {
           <div className="mt-3">
             <CreditBar />
           </div>
-          <h1 className="mt-5 font-display text-[22px] leading-[1.1] text-ink">Your documents</h1>
-          <div className="mt-4 h-px bg-line" />
+          <h1 className="mt-5 font-display text-[22px] leading-[1.1] text-ink">Your library</h1>
+          <div className="mt-3">
+            <LibraryStats docs={docs} plan={plan} />
+          </div>
         </div>
         {docs.length ? (
           <ol className="space-y-0.5 px-2.5 pb-4" aria-label="Your documents">
-            {docs.map((d) => {
-              const s = docStatus(d);
-              return (
-                <li key={d.id}>
-                  <Link href={`/s/${d.id}`} className="flex w-full items-center gap-3 p-2 text-left transition-colors hover:bg-white/[0.03]">
-                    <DocThumb doc={d} />
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] text-muted">
-                          {fileLabel(d.fileType)}, {reelsLabel(d)}
-                        </span>
-                        <span className="shrink-0 text-[12px] font-medium tabular-nums" style={{ color: s.tone }}>
-                          {s.label}
-                        </span>
-                      </span>
-                      <span className="mt-0.5 block truncate text-[13.5px] font-semibold text-ink">{d.name}</span>
-                      {d.name !== d.fileName && <span className="mt-0.5 block truncate text-[12px] text-muted">{d.fileName}</span>}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
+            {docs.map((d) => (
+              <DocItem key={d.id} doc={d} open={openId === d.id} onToggle={() => setOpenId(openId === d.id ? null : d.id)} />
+            ))}
           </ol>
         ) : (
           <p className="px-5 text-[13px] leading-snug text-muted">Nothing here yet. Upload a document and its reels show up in this list.</p>
         )}
         <div className="mt-auto border-t border-line px-5 py-4">
           <Link href="/library" className="flex items-center justify-between text-[13.5px] text-muted transition-colors hover:text-ink">
-            Library <span aria-hidden>→</span>
+            All reels, grid view <span aria-hidden>→</span>
           </Link>
         </div>
       </aside>
@@ -184,12 +247,12 @@ function DesktopStudio({ docs, style, canEdit }: StudioProps) {
   );
 }
 
-function MobileStudio({ docs, style, canEdit }: StudioProps) {
+function MobileStudio({ docs, style, canEdit, plan }: StudioProps) {
   const picker = usePicker();
+  const [openId, setOpenId] = useState<string | null>(docs[0]?.id ?? null);
   const [styleOpen, setStyleOpen] = useState(false);
   // The sheet remounts the panel each time it opens: keep what was saved meanwhile.
   const [saved, setSaved] = useState(style);
-  const recent = docs.slice(0, 5);
   return (
     <div className="safe-bottom flex h-full w-full flex-col overflow-y-auto bg-paper" data-testid="studio" data-layout="mobile">
       {picker.el}
@@ -228,35 +291,22 @@ function MobileStudio({ docs, style, canEdit }: StudioProps) {
         </button>
 
         <div className="mt-5 flex items-baseline justify-between">
-          <span className="text-[13px] font-medium text-ink ipad:text-[15px]">Recent</span>
+          <span className="text-[13px] font-medium text-ink ipad:text-[15px]">Your library</span>
           <Link href="/library" className="text-[12.5px] text-muted ipad:text-[14px]">
-            See all
+            Grid view
           </Link>
         </div>
-        {recent.length ? (
-          <ul className="mt-2 divide-y divide-line border-y border-line">
-            {recent.map((d) => {
-              const s = docStatus(d);
-              return (
-                <li key={d.id}>
-                  <Link href={`/s/${d.id}`} className="flex items-center gap-3 py-2.5">
-                    <DocThumb doc={d} size="sm" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[14px] font-medium text-ink ipad:text-[16px]">{d.name}</span>
-                      <span className="block text-[12px] text-muted ipad:text-[13.5px]">
-                        {fileLabel(d.fileType)}, {reelsLabel(d)}
-                      </span>
-                    </span>
-                    <span className="shrink-0 text-[12px] font-medium tabular-nums" style={{ color: s.tone }}>
-                      {s.label}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
+        <div className="mt-2">
+          <LibraryStats docs={docs} plan={plan} />
+        </div>
+        {docs.length ? (
+          <ul className="divide-y divide-line border-b border-line">
+            {docs.map((d) => (
+              <DocItem key={d.id} doc={d} size="sm" open={openId === d.id} onToggle={() => setOpenId(openId === d.id ? null : d.id)} />
+            ))}
           </ul>
         ) : (
-          <p className="mt-2 border-y border-line py-4 text-[13px] text-muted">Your documents show up here.</p>
+          <p className="border-b border-line py-4 text-[13px] text-muted">Your documents show up here.</p>
         )}
       </div>
 

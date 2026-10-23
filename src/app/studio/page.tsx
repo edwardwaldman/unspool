@@ -8,6 +8,9 @@ import { extensionOf, supabaseConfigured } from "@/lib/config";
 import { parseReelStyle } from "@/lib/reel-style";
 import { listDocuments } from "@/lib/spool";
 import { canEditStyle } from "@/lib/studio";
+import { freeReelLimit } from "@/lib/access";
+import { tierOf } from "@/lib/credits";
+import { PLANS } from "@/lib/plans";
 import { adminClient } from "@/lib/supabase/admin";
 import { getViewer, type Viewer } from "@/lib/viewer";
 
@@ -25,17 +28,17 @@ export default async function StudioPage() {
       <Suspense>
         <CheckoutReturn />
       </Suspense>
-      <Studio docs={docs} style={parseReelStyle(viewer.profile?.reel_style)} canEdit={canEditStyle(viewer)} />
+      <Studio docs={docs} plan={PLANS[tierOf(viewer.profile)].name} style={parseReelStyle(viewer.profile?.reel_style)} canEdit={canEditStyle(viewer)} />
     </AppShell>
   );
 }
 
 async function studioDocs(viewer: Viewer): Promise<StudioDoc[]> {
-  const docs = await listDocuments(viewer, 30);
+  const docs = await listDocuments(viewer, 100);
   if (!docs.length) return [];
   const { data: reels } = await adminClient()
     .from("reels")
-    .select("document_id,index,status,hook,headline:script_json->>headline")
+    .select("document_id,index,title,status,hook,headline:script_json->>headline")
     .in(
       "document_id",
       docs.map((d) => d.id),
@@ -43,6 +46,7 @@ async function studioDocs(viewer: Viewer): Promise<StudioDoc[]> {
   return docs.map((d) => {
     const mine = (reels ?? []).filter((r) => r.document_id === d.id);
     const first = mine.find((r) => r.index === 1);
+    const { playable } = freeReelLimit(d, viewer, { reelRows: mine.length });
     return {
       id: d.id,
       name: d.title ?? d.file_name,
@@ -53,6 +57,9 @@ async function studioDocs(viewer: Viewer): Promise<StudioDoc[]> {
       readyCount: mine.filter((r) => r.status === "ready").length,
       headline: (first?.headline as string | null) ?? null,
       hook: first?.hook ?? null,
+      reels: mine
+        .sort((a, b) => a.index - b.index)
+        .map((r) => ({ index: r.index, title: r.title, status: r.status, headline: (r.headline as string | null) ?? r.hook ?? null, locked: !d.unlocked && r.index > playable })),
     };
   });
 }
