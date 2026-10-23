@@ -34,7 +34,9 @@ export function tierOf(profile: Profile | null): Tier {
 
 export function entitlementFor(profile: Profile | null, fallbackSubject?: string | null): Entitlement {
   const tier = tierOf(profile);
-  const subject = profile ? `u:${profile.id}` : fallbackSubject ?? "ip:unknown";
+  // An owner test view gets its own ledger, so it starts like a real account of that tier instead of
+  // inheriting the owner's unlimited spending (which would show a Plus view as already used up).
+  const subject = profile ? `u:${profile.id}${profile.view_as ? `:view:${profile.view_as}` : ""}` : fallbackSubject ?? "ip:unknown";
   // The owner tests without limits: Ultra features and effectively unlimited credits every week.
   if (profile && ownerUnlimited(profile)) {
     return { tier, trialing: false, trialEndsAt: null, subject, allowance: 1_000_000, periodStart: weekStart().toISOString(), resetsAt: new Date(weekStart().getTime() + 7 * 864e5).toISOString() };
@@ -110,7 +112,8 @@ export async function usageFor(ent: Entitlement, profile: Profile | null): Promi
     tier: ent.tier,
     trialing: ent.trialing,
     trialEndsAt: ent.trialEndsAt,
-    trialEligible: Boolean(profile) && !profile?.trial_used && ent.tier === "free",
+    // Same rule as /api/checkout: one trial per account, and none after any earlier subscription.
+    trialEligible: Boolean(profile) && !profile?.trial_used && !profile?.stripe_subscription_id && ent.tier === "free",
     allowance: ent.allowance,
     used,
     left: Math.max(0, ent.allowance - used),

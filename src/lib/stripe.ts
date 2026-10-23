@@ -4,7 +4,7 @@ import { entitlementFor, unlockWithCredits } from "./credits";
 import { DOCUMENT_COLUMNS, type DocumentRow } from "./db-types";
 import { BILLING_INTERVAL, CURRENCY, isTier, PAID_TIERS, PLANS, priceFor, TOPUP, type Billing, type Tier } from "./plans";
 import { adminClient } from "./supabase/admin";
-import type { Profile } from "./viewer";
+import { withStoredView, type Profile } from "./viewer";
 
 let stripe: Stripe | null = null;
 
@@ -162,8 +162,20 @@ export async function syncSubscription(sub: Stripe.Subscription) {
   if (sub.trial_start) update.trial_used = true;
   const db = adminClient();
   const userId = sub.metadata?.user_id;
+  // A late or retried event for an old, ended subscription must not downgrade the account's newer one.
+  if (!active) {
+    const q = db.from("profiles").select("stripe_subscription_id");
+    const { data: cur } = await (userId ? q.eq("id", userId) : q.eq("stripe_customer_id", customerId)).maybeSingle<{ stripe_subscription_id: string | null }>();
+    if (cur?.stripe_subscription_id && cur.stripe_subscription_id !== sub.id) return;
+  }
   if (userId) await db.from("profiles").update({ ...update, stripe_customer_id: customerId }).eq("id", userId);
   else await db.from("profiles").update(update).eq("stripe_customer_id", customerId);
+}
+
+/** The ledger a top-up lands in: the account's, or the owner's active test view's (so a test purchase shows up there). */
+async function topupSubject(userId: string) {
+  const { data } = await adminClient().from("profiles").select("*").eq("id", userId).maybeSingle<Profile>();
+  return data ? entitlementFor(withStoredView(data)).subject : `u:${userId}`;
 }
 
 /** Idempotently grant whatever a completed Checkout Session paid for. */
@@ -198,7 +210,7 @@ export async function fulfillCheckout(session: Stripe.Checkout.Session) {
     const credits = Number(session.metadata?.credits) || TOPUP.credits;
     const { error } = await db
       .from("credit_events")
-      .insert({ subject: `u:${userId}`, kind: "topup", topup_delta: credits, stripe_session_id: session.id });
+      .insert({ subject: await topupSubject(userId), kind: "topup", topup_delta: credits, stripe_session_id: session.id });
     if (error && error.code !== "23505") throw error;
     await db.from("purchases").upsert(
       { user_id: userId, document_id: documentId, kind, stripe_session_id: session.id, amount: session.amount_total, currency: session.currency },
@@ -216,7 +228,7 @@ export async function fulfillCheckout(session: Stripe.Checkout.Session) {
       .maybeSingle<DocumentRow>();
     if (doc?.reel_count) {
       const { data: profile } = await db.from("profiles").select("*").eq("id", userId).maybeSingle<Profile>();
-      await unlockWithCredits(doc, entitlementFor(profile ?? null));
+      await unlockWithCredits(doc, entitlementFor(withStoredView(profile ?? null)));
     }
   }
   return { fulfilled: true, kind, documentId };

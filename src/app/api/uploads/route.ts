@@ -2,7 +2,7 @@ import { ACCEPTED_EXTENSIONS, LIMITS, MAX_FILE_BYTES, extensionOf, isAccepted, s
 import { error, json, notConfigured } from "@/lib/http";
 import { appSettings } from "@/lib/settings";
 import { adminClient } from "@/lib/supabase/admin";
-import { topupBalance } from "@/lib/credits";
+import { entitlementFor, topupBalance } from "@/lib/credits";
 import { claimUsage, freeDocumentUsed } from "@/lib/usage";
 import { clientIpHash, getViewer } from "@/lib/viewer";
 
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
   // Bought credits are what they bought: a free account with top-up credits left can keep unspooling.
   let paidByTopup = false;
   if (oneFree && (await freeDocumentUsed(viewer.userId))) {
-    if ((await topupBalance(`u:${viewer.userId}`)) === 0) {
+    if ((await topupBalance(entitlementFor(viewer.profile).subject)) === 0) {
       return error(402, "Free accounts get 1 document. Upgrade or buy a top-up to unspool more.", { code: "free_used" });
     }
     oneFree = false;
