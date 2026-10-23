@@ -42,9 +42,35 @@ export const VisualSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("stat"), value: z.string(), label: z.string(), color: ColorSchema }),
 ]);
 
+/** The 3D story kit: shapes the player can build (see components/reel/story-scene.tsx). */
+export const SCENE_SHAPES = [
+  "person", "crowd", "bowl", "pot", "spoon", "cube", "ball", "cylinder", "cone", "crate", "book", "coin", "coins", "card",
+  "phone", "clock", "scale", "flag", "tree", "house", "building", "bottle", "flask", "heart", "star", "arrow", "magnifier",
+  "target", "dice", "lock", "key", "lightbulb", "cell", "molecule", "mountain", "cloud", "sun", "planet", "chart",
+] as const;
+export const SCENE_COLORS = ["accent", "cream", "white", "dark", "red", "orange", "yellow", "green", "blue", "purple", "pink", "brown", "gray", "gold"] as const;
+export const SCENE_MOTIONS = ["none", "bob", "spin", "pulse", "drop", "stir", "tilt", "glow"] as const;
+export const SceneObjectSchema = z.object({
+  shape: z.enum(SCENE_SHAPES),
+  color: z.enum(SCENE_COLORS),
+  label: z.string().describe("1-3 word ALL-CAPS chip pinned to this object, or empty"),
+  x: z.number().describe("left/right, -3 to 3"),
+  z: z.number().describe("back/front, -2 to 2 (front is closer to the viewer)"),
+  size: z.number().describe("0.4 to 2.5; 1 is about knee height"),
+  motion: z.enum(SCENE_MOTIONS),
+});
+export const SceneSchema = z.object({
+  camera: z.enum(["front", "close", "low", "top", "orbit"]),
+  objects: z.array(SceneObjectSchema).describe("1-8 objects; [] to use the visual instead"),
+});
+export type SceneSpec = z.infer<typeof SceneSchema>;
+export type SceneObject = z.infer<typeof SceneObjectSchema>;
+
 export const BeatSchema = z.object({
   say: z.string(),
   visual: VisualSchema,
+  /** The beat as a 3D scene in the reel's story (the player draws it; the flat visual is the fallback). */
+  scene: SceneSchema,
   /** Scene for this beat's illustration in the rendered video (style is appended in code). Absent on older scripts. */
   image_prompt: z.string(),
 });
@@ -83,7 +109,7 @@ export const ReelScriptSchema = z.object({
 export type Visual = z.infer<typeof VisualSchema>;
 export type VisualType = Visual["type"] | "quiz" | "outro";
 /** image_prompt is required from the model but absent on scripts written before videos (and on the demo). */
-export type Beat = Omit<z.infer<typeof BeatSchema>, "image_prompt"> & { image_prompt?: string };
+export type Beat = Omit<z.infer<typeof BeatSchema>, "image_prompt" | "scene"> & { image_prompt?: string; scene?: SceneSpec };
 export type ReelScript = Omit<z.infer<typeof ReelScriptSchema>, "beats"> & { beats: Beat[] };
 export type HighlightColor = z.infer<typeof ColorSchema>;
 export type Stat = z.infer<typeof StatSchema>;
@@ -110,7 +136,19 @@ export function reelScriptProblems(s: ReelScript): string[] {
 /** Clamp anything slightly out of range instead of failing the whole reel. */
 export function normalizeReelScript(s: ReelScript): ReelScript {
   const beats = s.beats.map((raw) => {
-    const b = { ...raw, image_prompt: (raw.image_prompt ?? "").trim().slice(0, 400) };
+    const scene = raw.scene
+      ? {
+          camera: raw.scene.camera,
+          objects: raw.scene.objects.slice(0, 8).map((o) => ({
+            ...o,
+            label: o.label.trim().slice(0, 28),
+            x: Math.max(-3, Math.min(3, o.x)),
+            z: Math.max(-2, Math.min(2, o.z)),
+            size: Math.max(0.4, Math.min(2.5, o.size || 1)),
+          })),
+        }
+      : undefined;
+    const b = { ...raw, scene, image_prompt: (raw.image_prompt ?? "").trim().slice(0, 400) };
     const v = b.visual;
     if (v.type === "flow") return { ...b, visual: { ...v, steps: v.steps.slice(0, 4) } };
     if (v.type === "list") return { ...b, visual: { ...v, items: v.items.slice(0, 5) } };

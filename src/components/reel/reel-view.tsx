@@ -9,10 +9,9 @@ import { reelVars } from "./accent";
 import { ActionRail } from "./action-rail";
 import { CaptionBlock } from "./caption-block";
 import { Captions } from "./captions";
-import { KineticHeadline, useHitCount } from "./hook-scene";
+import { useHitCount } from "./hook-scene";
 import { getPrefs, setPrefs, usePrefs } from "./prefs";
 import { ReelMedia } from "./reel-media";
-import { StatLine } from "./stat-line";
 import { usePlayback } from "./use-playback";
 import { BeatPop, useDoubleTapHeart } from "./gimmicks";
 import { QuizCard } from "./visuals";
@@ -32,20 +31,6 @@ export type ReelChrome = {
 const GUTTER = 76;
 const RAIL_TOP = 300;
 const BAND = 104;
-
-/** Height of an element, kept up to date (the headline's height decides where the graphic starts). */
-function useHeight<T extends HTMLElement>(initial: number) {
-  const ref = useRef<T>(null);
-  const [h, setH] = useState(initial);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setH(Math.round(el.getBoundingClientRect().height)));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-  return [ref, h] as const;
-}
 
 /**
  * One playable reel, laid out like an Instagram Reel: the headline (opening beat) or live stats at the
@@ -92,9 +77,9 @@ export function ReelView({
   const bottom = chrome.bottomInset;
   const opening = pb.seg === 0;
   const muted = prefs.muted;
-  const [headRef, headH] = useHeight<HTMLDivElement>(opening ? 110 : 40);
   const hits = useHitCount(script.headline, pb.segments[0]?.text ?? "", opening ? pb.words : [], opening ? fraction : 0);
-  const below = top + 20 + headH + 18;
+  // Under the top chip (the demo layout: chip and wordmark on top, everything else is the scene).
+  const below = top + 58;
   const heart = useDoubleTapHeart();
   const toggleMute = () => setPrefs({ muted: !getPrefs().muted, autoMuted: false });
   // The owner's Pro reel style (only ever set on their own documents). A rendered video keeps its own look.
@@ -169,7 +154,7 @@ export function ReelView({
         stageBox={{ top: below, bottom: bottom + RAIL_TOP, right: preview ? 0 : GUTTER - 8, left: preview ? 0 : 8 }}
         stage={
           (active || pb.seg > 0) && !isQuiz
-            ? { visual: pb.segment.visual, script, progress: fraction, last: reel.index === total, pulse: hits }
+            ? { visual: pb.segment.visual, script, progress: fraction, last: reel.index === total, pulse: hits, scene: pb.segment.kind === "beat" ? script.beats[pb.segment.beatIndex]?.scene : undefined }
             : null
         }
       />
@@ -191,46 +176,25 @@ export function ReelView({
         )}
       </AnimatePresence>
 
-      {/* Progress through the reel, a thin line on top of the bottom band */}
+      {/* Top: the document chip, as in the demo ("| AP STATS · UNIT 3"), and the wordmark */}
       {!preview && (
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 z-[7] h-[3px] bg-white/15" style={{ bottom: bottom + BAND }}>
-          <div className="h-full bg-white" style={{ width: `${Math.min(100, pb.progress * 100)}%` }} />
+        <div className="pointer-events-none absolute inset-x-0 z-10 flex items-start justify-between px-3.5" style={{ top: top + 14 }}>
+          <span className="max-w-[70%] truncate border-l-[3px] border-thread bg-black/85 px-2 py-[3px] font-hook text-[11.5px] font-extrabold uppercase tracking-[0.04em] text-white" data-testid="reel-chip">
+            {chipText(spool.title ?? spool.fileName, reel.index)}
+          </span>
+          <span className="pt-[3px] font-wordmark text-[12.5px] font-bold text-white/85">unspool</span>
         </div>
       )}
 
-      {/* Flat band so the account row reads on any frame */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] border-t border-line bg-paper/85" style={{ height: bottom + BAND }} />
+      {/* Bottom shade so the account row reads on any frame (the demo's gradient, no flat band) */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] h-[34%] bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
-      {/* Kinetic headline on the opening beat, then the live stats */}
-      <div ref={headRef} className="absolute inset-x-0 z-10 px-5" style={{ top: top + 20 }}>
-        <AnimatePresence mode="wait">
-          {opening ? (
-            <motion.div key="hook" exit={{ opacity: 0, y: -8, transition: { duration: 0.2 } }}>
-              {/* Remounts when the reel comes into view, so the headline builds as it starts playing. */}
-              <KineticHeadline key={active ? "on" : "off"} headline={script.headline} beatText={pb.segments[0]?.text ?? ""} words={pb.words} fraction={active ? fraction : 1} />
-            </motion.div>
-          ) : (
-            <motion.div key="stats" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              {/* As in the ads: the reel's topic in big accent letters, with the live stats under it */}
-              <motion.div
-                initial={{ scale: 0.85, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 300, damping: 18 }}
-                className="text-center font-hook font-extrabold uppercase leading-[1.02] tracking-[-0.02em] text-thread"
-                style={{ fontSize: `min(34px, ${(150 / Math.max(10, script.title.length)).toFixed(1)}cqw)`, textShadow: "0 2px 10px rgba(0,0,0,.45)" }}
-                data-testid="reel-topic"
-              >
-                {script.title}
-              </motion.div>
-              {script.stats.length > 0 && (
-                <div className="mt-3 flex justify-center">
-                  <StatLine stats={script.stats} beat={pb.segment.beatIndex} />
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      {/* Progress: a hairline along the very bottom */}
+      {!preview && (
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[25] h-[2px] bg-white/25">
+          <div className="h-full bg-white" style={{ width: `${Math.min(100, pb.progress * 100)}%` }} />
+        </div>
+      )}
 
       {/* Quiz: an overlay card inside the frame */}
       {isQuiz && (
@@ -241,27 +205,32 @@ export function ReelView({
 
       {/* Burned-in captions, lower third (already in the frames when playing a rendered video) */}
       {!isQuiz && !pb.burnedCaptions && (
-        <div className="absolute left-4 z-10" style={look?.position === "middle" ? { right: GUTTER, top: "50%", transform: "translateY(-50%)" } : { right: GUTTER, bottom: bottom + BAND + 12 }}>
+        <div className="absolute left-5 right-16 z-10" style={look?.position === "middle" ? { top: "50%", transform: "translateY(-50%)" } : { bottom: bottom + 178 }}>
           <Captions text={pb.segment.text} words={pb.words} fraction={fraction} variant={look?.captions} />
         </div>
       )}
 
-      {/* Right action rail */}
-      <div className="absolute right-2 z-20 flex w-[60px] origin-bottom-right justify-center ipad:right-5 ipad:scale-[1.6]" style={{ bottom: bottom + 14 }}>
+      {/* Right rail, as in the demo: like, summary, share, save, more, and the audio square */}
+      <div className="absolute right-2 z-20 origin-bottom-right ipad:right-5 ipad:scale-[1.6]" style={{ bottom: bottom + 96 }}>
         <ActionRail reelId={reel.id} title={script.title} muted={muted || preview} onToggleMute={toggleMute} onReplay={pb.replay} onMore={onMore} onShare={onShare} onComments={() => setSummaryOpen(true)} />
       </div>
 
-      {/* Account row, title, audio */}
-      <div className="absolute left-3.5 z-20 origin-bottom-left ipad:left-6 ipad:right-[40%]! ipad:scale-[1.6]" style={{ right: GUTTER, bottom: bottom + 14 }}>
-        <CaptionBlock
-          fileName={spool.title ?? spool.fileName}
-          title={script.title}
-          index={reel.index}
-          total={total}
-          summary={script.summary}
-          sensitive={spool.sensitive}
-        />
+      {/* Account row, caption, audio line and the mute button (the demo's bottom block) */}
+      <div className="absolute inset-x-0 z-20 origin-bottom-left px-3.5 pr-16 ipad:scale-[1.6]" style={{ bottom: bottom + 16 }}>
+        <CaptionBlock title={script.title} hook={script.headline} docName={spool.title ?? spool.fileName} summary={script.summary} sensitive={spool.sensitive} />
       </div>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleMute();
+        }}
+        aria-label={muted ? "Unmute" : "Mute"}
+        className="absolute right-3 z-20 rounded-full bg-black/40 p-2 text-white"
+        style={{ bottom: bottom + 16 }}
+      >
+        <VolumeIcon size={18} muted={muted || preview} />
+      </button>
 
       <Sheet open={summaryOpen} onClose={() => setSummaryOpen(false)} label="Reel summary">
         <ReelSummary script={script} index={reel.index} sensitive={spool.sensitive} />
@@ -276,7 +245,7 @@ export function ReelView({
             exit={{ opacity: 0, scale: 0.9 }}
             className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
           >
-            <div className="flex h-[72px] w-[72px] items-center justify-center border border-white/20 bg-paper/85 pl-1 text-white">
+            <div className="flex h-[72px] w-[72px] items-center justify-center border border-white/20 bg-paper/85 pl-1 text-white" data-testid="paused">
               <PlayIcon size={34} />
             </div>
           </motion.div>
@@ -307,6 +276,13 @@ export function ReelView({
 }
 
 const plainText = (t: string) => t.replace(/[*#^~]/g, "");
+
+/** "AP STATS · PART 4": the document's name, shortened, and which part this reel is. */
+function chipText(doc: string, index: number) {
+  const name = doc.replace(/\.[a-z0-9]{2,5}$/i, "").replace(/[+_]+/g, " ").replace(/\s+/g, " ").trim();
+  const short = name.length > 22 ? `${name.slice(0, 21).trim()}…` : name;
+  return `${short} · Part ${index}`;
+}
 
 /** The reel as text: its summary, the points it makes in order, and its quick-check question. */
 function ReelSummary({ script, index, sensitive }: { script: ReelDTO["script"] & object; index: number; sensitive?: boolean }) {

@@ -4,7 +4,8 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import * as THREE from "three";
-import type { HighlightColor, Visual } from "@/lib/schema";
+import type { HighlightColor, SceneSpec, Visual } from "@/lib/schema";
+import { STORY_SHOTS, StoryObjects, shapeHeight } from "./story-scene";
 import { ReelIcon } from "./icon";
 import { sentenceCase } from "./text";
 
@@ -13,7 +14,7 @@ import { sentenceCase } from "./text";
 // pushes in while the beat plays. One scene per visual type, built from the beat's own words and icons.
 
 type SceneVisual = Exclude<Visual, { type: "quiz" }>;
-export type Scene3DProps = { visual: SceneVisual; progress: number; accent: string; colors: Record<HighlightColor, string>; beatKey: string };
+export type Scene3DProps = { visual: SceneVisual; progress: number; accent: string; colors: Record<HighlightColor, string>; beatKey: string; scene?: SceneSpec };
 
 const SCENE_TYPES = new Set(["hook", "bigword", "split", "flow", "list", "icons", "crowd", "stat"]);
 export const hasScene = (v: { type: string }) => SCENE_TYPES.has(v.type);
@@ -499,7 +500,21 @@ function HookScene({ v, progress, accent, color }: { v: Extract<Visual, { type: 
   );
 }
 
-function SceneFor({ visual, progress, accent, colors }: Omit<Scene3DProps, "beatKey">) {
+/** The beat as a moment in the reel's own story (the script's scene), with its labels pinned on. */
+function StoryScene({ scene, progress, accent }: { scene: SceneSpec; progress: number; accent: string }) {
+  return (
+    <>
+      <CameraRig shot={STORY_SHOTS[scene.camera] ?? STORY_SHOTS.front} progress={progress} />
+      <StoryObjects scene={scene} accent={accent} />
+      {scene.objects.map((o, i) =>
+        o.label ? <Label key={`l${i}`} id={`l${i}`} text={o.label.toUpperCase()} position={[o.x * 0.95, shapeHeight(o) + 0.15, o.z * 0.9]} tone={o.color === "accent" ? "accent" : "dark"} line={22} /> : null,
+      )}
+    </>
+  );
+}
+
+function SceneFor({ visual, progress, accent, colors, scene }: Omit<Scene3DProps, "beatKey">) {
+  if (scene?.objects.length) return <StoryScene scene={scene} progress={progress} accent={accent} />;
   const tone = (c?: HighlightColor) => (c ? colors[c] : accent);
   switch (visual.type) {
     case "crowd":
@@ -526,7 +541,7 @@ function SceneFor({ visual, progress, accent, colors }: Omit<Scene3DProps, "beat
 // ---------------------------------------------------------------- the stage
 
 /** The full-frame 3D stage for one beat: lights, a shadow floor, the beat's scene, and its pinned labels. */
-export default function Scene3D({ visual, progress, accent, colors, beatKey }: Scene3DProps) {
+export default function Scene3D({ visual, progress, accent, colors, beatKey, scene }: Scene3DProps) {
   const pins = useRef(new Map<string, Pin>());
   const els = useRef(new Map<string, HTMLDivElement>());
   const [list, setList] = useState<Pin[]>([]);
@@ -578,7 +593,7 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey }: S
             <shadowMaterial opacity={0.38} />
           </mesh>
           <group key={beatKey}>
-            <SceneFor visual={visual} progress={progress} accent={accent} colors={colors} />
+            <SceneFor visual={visual} progress={progress} accent={accent} colors={colors} scene={scene} />
           </group>
           <PinProjector pins={pins} els={els} />
         </PinCtx.Provider>

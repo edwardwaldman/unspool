@@ -1,61 +1,40 @@
 "use client";
 
-import { MoreHorizontal } from "lucide-react";
+import { Bookmark, Heart, MessageCircle, MoreHorizontal, Send } from "lucide-react";
 import { useEffect, useState } from "react";
-import { ChatIcon, HeartIcon, ReplayIcon, ShareIcon, VolumeIcon } from "../ui/icons";
 import { toast } from "../ui/toast";
-
 import { loadSaved, toggleSaved } from "./prefs";
 
-const SHADOW = { filter: "drop-shadow(0 1px 0 rgba(0,0,0,.55))" };
-
-function RailButton({
-  label,
-  count,
-  onClick,
-  pressed,
-  children,
-}: {
-  label: string;
-  count?: string;
-  onClick: () => void;
-  pressed?: boolean;
-  children: React.ReactNode;
-}) {
+function RailButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
       type="button"
       aria-label={label}
       title={label}
-      aria-pressed={pressed}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
       }}
-      className="flex flex-col items-center gap-[3px] text-white transition-transform hover:scale-110 active:scale-95"
-      style={SHADOW}
+      className="flex flex-col items-center gap-1 text-white transition-transform active:scale-90"
     >
       {children}
-      {count !== undefined && <span className="text-[11px] font-semibold leading-none text-white">{count}</span>}
     </button>
   );
 }
 
+/** The right rail, as in the demo reels: like, summary, share, save, more, and the audio square. */
 export function ActionRail({
   reelId,
   title,
-  muted,
-  onToggleMute,
-  onReplay,
   onMore,
   onShare,
   onComments,
 }: {
   reelId: string;
   title: string;
-  muted: boolean;
-  onToggleMute: () => void;
-  onReplay: () => void;
+  muted?: boolean;
+  onToggleMute?: () => void;
+  onReplay?: () => void;
   onMore: () => void;
   /** Opens the share sheet; without it the rail shares the site link. */
   onShare?: () => void;
@@ -63,6 +42,7 @@ export function ActionRail({
   onComments?: () => void;
 }) {
   const [saved, setSaved] = useState(false);
+  const [liked, setLiked] = useState(false);
   useEffect(() => {
     const id = requestAnimationFrame(() => setSaved(loadSaved().has(reelId)));
     return () => cancelAnimationFrame(id);
@@ -83,35 +63,30 @@ export function ActionRail({
   };
 
   return (
-    <div className="flex flex-col items-center gap-[14px]">
+    <div className="flex flex-col items-center gap-5 [text-shadow:0_1px_2px_rgba(0,0,0,.6)]" style={{ filter: "drop-shadow(0 1px 1px rgba(0,0,0,.45))" }}>
+      <RailButton label={liked ? "Unlike" : "Like"} onClick={() => setLiked((l) => !l)}>
+        <Heart size={28} strokeWidth={1.8} fill={liked ? "#ff3040" : "none"} color={liked ? "#ff3040" : "currentColor"} />
+      </RailButton>
+      <RailButton label="Read the summary" onClick={onComments ?? (() => toast("Summary unavailable"))}>
+        <MessageCircle size={27} strokeWidth={1.8} className="-scale-x-100" />
+      </RailButton>
+      <RailButton label="Share" onClick={onShare ?? share}>
+        <Send size={26} strokeWidth={1.8} />
+      </RailButton>
       <RailButton
-        label={saved ? "Unsave" : "Save"}
-        count={saved ? "Saved" : "Save"}
+        label={saved ? "Unsave" : "Save for review"}
         onClick={() => {
           const on = toggleSaved(reelId);
           setSaved(on);
           if (on) toast("Saved for review");
         }}
       >
-        <HeartIcon size={26} strokeWidth={2} filled={saved} style={{ color: saved ? "#ff4d6d" : undefined }} />
-      </RailButton>
-      <RailButton label="Read the summary" count="Summary" onClick={onComments ?? (() => toast("Summary unavailable"))}>
-        <ChatIcon size={25} strokeWidth={2} />
-      </RailButton>
-      <RailButton label="Replay" count="Replay" onClick={onReplay}>
-        <ReplayIcon size={24} strokeWidth={2} />
-      </RailButton>
-      <RailButton label="Share" count="Share" onClick={onShare ?? share}>
-        <ShareIcon size={23} strokeWidth={2} />
-      </RailButton>
-      <RailButton label={muted ? "Unmute (M)" : "Mute (M)"} pressed={muted} onClick={onToggleMute}>
-        <span className={muted ? "text-white" : "text-white/70"}>
-          <VolumeIcon size={20} muted={muted} strokeWidth={2} />
-        </span>
+        <Bookmark size={26} strokeWidth={1.8} fill={saved ? "currentColor" : "none"} />
       </RailButton>
       <RailButton label="More" onClick={onMore}>
-        <MoreHorizontal size={24} strokeWidth={2} />
+        <MoreHorizontal size={24} strokeWidth={1.8} />
       </RailButton>
+      <span className="h-7 w-7 rounded-[7px] border-2 border-white bg-thread" aria-hidden />
     </div>
   );
 }

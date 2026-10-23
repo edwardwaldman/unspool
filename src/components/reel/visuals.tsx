@@ -4,7 +4,7 @@ import { ArrowRight, Check, ChevronUp, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { COLOR_VAR } from "@/lib/markup";
-import type { HighlightColor, ReelScript, Visual } from "@/lib/schema";
+import type { HighlightColor, ReelScript, SceneSpec, Visual } from "@/lib/schema";
 import { MarkedText } from "../ui/marked-text";
 import { CrowdCanvas } from "./crowd-canvas";
 import { HookScene } from "./hook-scene";
@@ -392,6 +392,8 @@ export type StageProps = {
   last: boolean;
   /** Voiceover hits reached so far in the opening beat (the hook graphic pulses on each). */
   pulse?: number;
+  /** The beat's 3D story scene from the script, when it has one (drawn by Scene3D; the flat stage ignores it). */
+  scene?: SceneSpec;
 };
 
 /** One beat's motion graphic, centred and as large as the space allows, popping in and floating gently (as in the ads). The quiz is an interactive overlay (QuizCard), not part of the stage. */

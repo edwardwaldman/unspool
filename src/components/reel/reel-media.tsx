@@ -78,7 +78,8 @@ export function ReelMedia({
   // The playing reel's beats are real 3D scenes (as in the demo reels); off-screen reels and devices without
   // WebGL (or with reduced motion) keep the flat graphics.
   const visual = stage?.visual;
-  const in3d = Boolean(active && !reduce && sceneColors && visual && SCENE_TYPES.has(visual.type) && !(visual.type === "hook" && /soup|cooking-pot/.test(visual.icon)) && hasWebGL());
+  const story = Boolean(stage?.scene?.objects.length);
+  const in3d = Boolean(active && !reduce && sceneColors && visual && (story || (SCENE_TYPES.has(visual.type) && !(visual.type === "hook" && /soup|cooking-pot/.test(visual.icon)))) && hasWebGL());
   return (
     <>
       <div ref={probe} aria-hidden className="hidden" />
@@ -94,7 +95,7 @@ export function ReelMedia({
       {in3d && stage && sceneColors ? (
         <div className="absolute inset-x-0 bottom-0 z-[5]" style={{ top: stageBox.top }}>
           {/* @ts-expect-error quiz/outro never reach here (SCENE_TYPES) */}
-          <Scene3D visual={stage.visual} progress={stage.progress} accent={sceneColors.accent} colors={sceneColors.colors} beatKey={stageKey} />
+          <Scene3D visual={stage.visual} progress={stage.progress} accent={sceneColors.accent} colors={sceneColors.colors} beatKey={stageKey} scene={stage.scene} />
         </div>
       ) : (
         <>
