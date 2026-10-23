@@ -41,9 +41,10 @@ export function reelTotal(doc: Pick<DocumentRow, "reel_count">, reelRows = 0) {
 }
 
 /** Load a document the viewer is allowed to see, or null (treated as 404 so ids don't leak). */
-export async function loadDocument(id: string, viewer: Viewer): Promise<DocumentRow | null> {
+export async function loadDocument(id: string, viewer: Viewer, opts: { ownerMayView?: boolean } = {}): Promise<DocumentRow | null> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
   const { data } = await adminClient().from("documents").select(DOCUMENT_COLUMNS).eq("id", id).maybeSingle<DocumentRow>();
-  if (!data || !canAccess(data, viewer)) return null;
+  // `ownerMayView`: the site owner (verified, see getViewer) may watch any document from the owner panel; read only.
+  if (!data || !(canAccess(data, viewer) || (opts.ownerMayView && viewer.isOwner))) return null;
   return data;
 }

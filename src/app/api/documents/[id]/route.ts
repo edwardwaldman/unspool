@@ -11,7 +11,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/documents/[id]"
   if (!supabaseConfigured) return notConfigured();
   const { id } = await ctx.params;
   const viewer = await getViewer();
-  const doc = await loadDocument(id, viewer);
+  const doc = await loadDocument(id, viewer, { ownerMayView: true });
   if (!doc) return error(404, "Not found");
   const spool = await buildSpool(doc, viewer, { heal: true });
   return json({ spool, viewer: await viewerDTO(viewer) });

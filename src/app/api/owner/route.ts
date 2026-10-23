@@ -75,7 +75,11 @@ export async function GET(req: Request) {
   const { data: docOwners } = await db.from("documents").select("user_id");
   const perUser = new Map<string, number>();
   for (const d of docOwners ?? []) if (d.user_id) perUser.set(d.user_id, (perUser.get(d.user_id) ?? 0) + 1);
-  const { data: reelRows } = await db.from("reels").select("document_id,status").in("document_id", (docs ?? []).map((d) => d.id));
+  const { data: reelRows } = await db
+    .from("reels")
+    .select("id,document_id,index,title,status,error_detail,attempts,updated_at")
+    .in("document_id", (docs ?? []).map((d) => d.id))
+    .order("index");
   const { count: readyReels } = await db.from("reels").select("id", { count: "exact", head: true }).eq("status", "ready");
 
   const analytics = await visitAnalytics();
@@ -125,6 +129,7 @@ export async function GET(req: Request) {
         ready: mine.filter((r) => r.status === "ready").length,
         total: d.reel_count ?? mine.length,
         at: d.created_at,
+        reels: mine.map((r) => ({ id: r.id, index: r.index, title: r.title, status: r.status, error: r.error_detail, attempts: r.attempts, at: r.updated_at })),
       };
     }),
   });

@@ -16,7 +16,8 @@ type BeforeSignup = {
   list: { id: string; ip: string | null; country: string | null; at: string; duration: number; events: TrailEvent[] }[];
   stops: { key: string; label: string; count: number; leads: { trail: string; n: number }[] }[];
 };
-type Doc = { id: string; file: string; email: string; status: string; error: string | null; ready: number; total: number | null; at: string };
+type DocReel = { id: string; index: number; title: string; status: string; error: string | null; attempts: number; at: string };
+type Doc = { id: string; file: string; email: string; status: string; error: string | null; ready: number; total: number | null; at: string; reels: DocReel[] };
 type Lookup = {
   q: string;
   ipToEmails: { ip: string; country: string | null; emails: string[] }[];
@@ -293,6 +294,28 @@ export function OwnerPanel() {
                 {d.email} · {ago(d.at)}
               </div>
               {d.error && <pre className="mt-2 whitespace-pre-wrap break-words border border-coral/40 bg-coral/5 p-2 font-mono text-[11.5px] text-coral">{d.error}</pre>}
+              {d.reels.length > 0 && (
+                <details className="mt-2" data-testid="owner-doc-reels">
+                  <summary className="cursor-pointer font-mono text-[12px] text-thread">Reels ({d.reels.length})</summary>
+                  <ol className="mt-1.5 divide-y divide-line border-y border-line">
+                    {d.reels.map((r) => (
+                      <li key={r.id} className="py-1.5">
+                        <div className="flex items-center gap-3 text-[13px]">
+                          <span className="w-6 shrink-0 font-mono text-[11.5px] text-muted">{r.index}</span>
+                          <a href={`/s/${d.id}?reel=${r.index}`} className="min-w-0 flex-1 truncate hover:text-thread">
+                            {r.title}
+                          </a>
+                          <span className={`shrink-0 font-mono text-[11px] ${r.status === "failed" ? "text-coral" : r.status === "ready" ? "text-sage" : r.status === "generating" ? "text-thread" : "text-muted"}`}>
+                            {r.status}
+                            {r.attempts > 1 ? ` · ${r.attempts} tries` : ""} · {ago(r.at)}
+                          </span>
+                        </div>
+                        {r.error && r.status !== "ready" && <pre className="ml-9 mt-1 whitespace-pre-wrap break-words font-mono text-[11px] text-coral">{r.error.slice(0, 400)}</pre>}
+                      </li>
+                    ))}
+                  </ol>
+                </details>
+              )}
             </li>
           ))}
           {!data.documents.length && <li className="py-3 text-[14px] text-muted">No documents yet.</li>}
