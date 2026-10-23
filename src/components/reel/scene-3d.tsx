@@ -221,33 +221,84 @@ function Arrow({ from, to, color }: { from: [number, number, number]; to: [numbe
 
 // ---------------------------------------------------------------- camera
 
-type Shot = { pos: [number, number, number]; look: [number, number, number]; fov?: number; sway?: number; push?: number };
+type Shot = { pos: [number, number, number]; look: [number, number, number]; fov?: number; sway?: number; push?: number; /** Bleeds off the frame on purpose (a crowd field): skip auto-framing. */ noFit?: boolean };
 
-/** Glides to the shot, then drifts sideways and pushes in a little as the beat plays. */
+/**
+ * Where the scene may sit on screen, in normalized device coordinates of the 3D stage: clear of the beat's key
+ * term at the top, the action rail on the right and the captions and account block at the bottom.
+ */
+export const SAFE = { left: -0.84, right: 0.6, bottom: -0.3, top: 0.52 };
+/** World units added above the content for the label chips (chip + leader line) pinned on top of objects. */
+const LABEL_HEADROOM = 0.45;
+
+/** The beat's content group, which the camera keeps framed. */
+const ContentCtx = createContext<React.RefObject<THREE.Group | null> | null>(null);
+
+/**
+ * Glides to the shot, then drifts sideways and pushes in a little as the beat plays, and keeps everything in the
+ * beat framed: every frame it measures the real content (whatever shapes, sizes and count the script produced,
+ * on any screen shape), then moves back or in and slides sideways so all of it sits inside SAFE. Nothing is ever
+ * cropped, hidden under the rail or under the captions, however a future scene is laid out.
+ */
 function CameraRig({ shot, progress }: { shot: Shot; progress: number }) {
+  const content = useContext(ContentCtx);
   const look = useRef(new THREE.Vector3(...shot.look));
   const prog = useRef(progress);
+  const fit = useRef({ scale: 1, off: new THREE.Vector3() });
+  const tmp = useRef({ box: new THREE.Box3(), corner: new THREE.Vector3() });
   useEffect(() => {
     prog.current = progress;
   }, [progress]);
   useFrame((s, dt) => {
-    const camera = s.camera;
+    const camera = s.camera as THREE.PerspectiveCamera;
     const t = s.clock.elapsedTime, k = 1 - Math.pow(0.002, dt);
     const sway = shot.sway ?? 0.5, push = shot.push ?? 0.12;
-    // Shots are composed for a square frame; a tall, narrow reel needs the camera further back to fit the width.
     const aspect = s.size.width / Math.max(1, s.size.height);
     const back = clamp(1.05 / aspect, 1, 2.4) * (1 - push * easeOut(prog.current));
     const lk = new THREE.Vector3(...shot.look);
-    const goal = new THREE.Vector3(shot.pos[0] + Math.sin(t * 0.35) * sway, shot.pos[1] + Math.sin(t * 0.27) * 0.08, shot.pos[2]).sub(lk).multiplyScalar(back).add(lk);
+    const f = fit.current;
+    const goal = new THREE.Vector3(shot.pos[0] + Math.sin(t * 0.35) * sway, shot.pos[1] + Math.sin(t * 0.27) * 0.08, shot.pos[2])
+      .sub(lk)
+      .multiplyScalar(back * f.scale)
+      .add(lk)
+      .add(f.off);
     camera.position.lerp(goal, k);
-    look.current.lerp(new THREE.Vector3(...shot.look), k);
+    look.current.lerp(lk.clone().add(f.off), k);
     camera.lookAt(look.current);
-    const cam = camera as THREE.PerspectiveCamera;
     const fov = shot.fov ?? 34;
-    if (Math.abs(cam.fov - fov) > 0.05) {
-      cam.fov += (fov - cam.fov) * k;
-      cam.updateProjectionMatrix();
+    if (Math.abs(camera.fov - fov) > 0.05) {
+      camera.fov += (fov - camera.fov) * k;
+      camera.updateProjectionMatrix();
     }
+
+    // Auto-framing: project the content's bounds and correct distance and position toward SAFE.
+    const g = content?.current;
+    if (!g || shot.noFit) return;
+    const { box, corner } = tmp.current;
+    box.setFromObject(g);
+    if (box.isEmpty()) return;
+    box.max.y += LABEL_HEADROOM;
+    camera.updateMatrixWorld();
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (let i = 0; i < 8; i++) {
+      corner.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).project(camera);
+      x0 = Math.min(x0, corner.x);
+      x1 = Math.max(x1, corner.x);
+      y0 = Math.min(y0, corner.y);
+      y1 = Math.max(y1, corner.y);
+    }
+    const sw = SAFE.right - SAFE.left, sh = SAFE.top - SAFE.bottom;
+    // How much bigger (or smaller) than the safe area the content is; aim to fill ~90% of it.
+    const need = Math.max((x1 - x0) / sw, (y1 - y0) / sh) / 0.9;
+    const kk = 1 - Math.pow(0.004, dt);
+    if (Number.isFinite(need) && need > 0) f.scale = clamp(f.scale * (1 + (need - 1) * kk), 0.45, 5);
+    // Slide so the content's centre lands on the safe area's centre.
+    const dist = camera.position.distanceTo(look.current);
+    const halfH = Math.tan((camera.fov * Math.PI) / 360) * dist, halfW = halfH * camera.aspect;
+    const dx = ((x0 + x1) / 2 - (SAFE.left + SAFE.right) / 2) * halfW, dy = ((y0 + y1) / 2 - (SAFE.bottom + SAFE.top) / 2) * halfH;
+    const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0), up = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
+    if (Number.isFinite(dx) && Number.isFinite(dy)) f.off.addScaledVector(right, dx * kk).addScaledVector(up, dy * kk);
+    f.off.clampLength(0, 6);
   });
   return null;
 }
@@ -293,7 +344,7 @@ function CrowdScene({ v, progress, accent }: { v: Extract<Visual, { type: "crowd
   const fx = ((firstPicked % N) - (N - 1) / 2) * GAP, fz = (Math.floor(firstPicked / N) - (N - 1) / 2) * GAP;
   return (
     <>
-      <CameraRig shot={{ pos: [0, 4.2, 7.4], look: [0, 0, 0.6], fov: 38, sway: 0.8, push: 0.25 }} progress={progress} />
+      <CameraRig shot={{ pos: [0, 4.2, 7.4], look: [0, 0, 0.6], fov: 38, sway: 0.8, push: 0.25, noFit: true }} progress={progress} />
       <instancedMesh ref={ref} args={[undefined, undefined, N * N]} castShadow>
         <capsuleGeometry args={[0.11, 0.3, 6, 12]} />
         <meshStandardMaterial roughness={0.55} />
@@ -504,11 +555,9 @@ function HookScene({ v, progress, accent, color }: { v: Extract<Visual, { type: 
 function StoryScene({ scene, progress, accent }: { scene: SceneSpec; progress: number; accent: string }) {
   const slots = useMemo(() => layoutScene(scene), [scene]);
   const base = STORY_SHOTS[scene.camera] ?? STORY_SHOTS.front;
-  // Pull back for a wide row so everything stays in frame.
-  const span = slots.length > 1 ? Math.max(...slots.map((s) => s.x)) - Math.min(...slots.map((s) => s.x)) : 0;
+  // The angle comes from the shot; CameraRig's auto-framing decides distance and position from the real content.
   const tall = Math.max(...slots.map((s) => s.height), 1);
-  const far = Math.max(1, (span + 2.6) / 5.2, tall / 1.9);
-  const shot = { ...base, pos: [base.pos[0] + 0.2 * far, base.pos[1] * Math.min(far, 1.3) - 0.35 * far, base.pos[2] * far] as [number, number, number], look: [0.2 * far, Math.min(tall * 0.45, 1.1) - 0.35 * far, 0] as [number, number, number] }; // shifted so the scene clears the right rail and sits above the captions
+  const shot = { ...base, look: [0, Math.min(tall * 0.45, 1.1), 0] as [number, number, number] };
   return (
     <>
       <CameraRig shot={shot} progress={progress} />
@@ -573,6 +622,7 @@ export function keyTerm(v: SceneVisual): string {
 
 export default function Scene3D({ visual, progress, accent, colors, beatKey, scene }: Scene3DProps) {
   const story = Boolean(scene?.objects.length);
+  const content = useRef<THREE.Group>(null);
   const term = story ? keyTerm(visual).replace(/[*#^~]/g, "").trim() : "";
   const pins = useRef(new Map<string, Pin>());
   const els = useRef(new Map<string, HTMLDivElement>());
@@ -624,14 +674,18 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
             <planeGeometry args={[40, 40]} />
             <shadowMaterial opacity={0.38} />
           </mesh>
-          {story ? (
-            // Not keyed by beat: objects that carry on into the next beat stay put and glide.
-            <StoryScene scene={scene!} progress={progress} accent={accent} />
-          ) : (
-            <group key={beatKey}>
-              <SceneFor visual={visual} progress={progress} accent={accent} colors={colors} />
+          <ContentCtx.Provider value={content}>
+            <group ref={content}>
+              {story ? (
+                // Not keyed by beat: objects that carry on into the next beat stay put and glide.
+                <StoryScene scene={scene!} progress={progress} accent={accent} />
+              ) : (
+                <group key={beatKey}>
+                  <SceneFor visual={visual} progress={progress} accent={accent} colors={colors} />
+                </group>
+              )}
             </group>
-          )}
+          </ContentCtx.Provider>
           <PinProjector pins={pins} els={els} />
         </PinCtx.Provider>
       </Canvas>
