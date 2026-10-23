@@ -1,8 +1,44 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
+import type { HighlightColor } from "@/lib/schema";
 import { ParticleField } from "./particle-field";
 import { VisualStage, type StageProps } from "./visuals";
+
+const Scene3D = dynamic(() => import("./scene-3d"), { ssr: false });
+const SCENE_TYPES = new Set(["hook", "bigword", "split", "flow", "list", "icons", "crowd", "stat"]);
+
+/** WebGL is there (checked once per page). */
+let webgl: boolean | null = null;
+function hasWebGL() {
+  if (webgl === null) {
+    try {
+      const c = document.createElement("canvas");
+      webgl = Boolean(c.getContext("webgl2") || c.getContext("webgl"));
+    } catch {
+      webgl = false;
+    }
+  }
+  return webgl;
+}
+
+/** The reel's accent and the markup colours, resolved from the reel's own CSS scope (three.js needs real colours). */
+function useSceneColors() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [c, setC] = useState<{ accent: string; colors: Record<HighlightColor, string> } | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const css = getComputedStyle(el), v = (n: string, f: string) => css.getPropertyValue(n).trim() || f;
+    const id = requestAnimationFrame(() =>
+      setC({ accent: v("--thread", "#d3f05a"), colors: { primary: v("--thread", "#d3f05a"), warn: v("--coral", "#ff8b6c"), yellow: v("--butter", "#f2d36b"), cyan: v("--sage", "#8fd0a8") } }),
+    );
+    return () => cancelAnimationFrame(id);
+  }, []);
+  return [ref, c] as const;
+}
 
 /**
  * The reel's media layer: everything that would be "the video" (backdrop + motion graphic for the
@@ -36,9 +72,16 @@ export function ReelMedia({
   videoUrl?: string;
   videoRef?: React.RefObject<HTMLVideoElement | null>;
 }) {
+  const reduce = useReducedMotion();
+  const [probe, sceneColors] = useSceneColors();
   if (videoUrl && videoRef) return <ReelVideo src={videoUrl} videoRef={videoRef} muted={muted} />;
+  // The playing reel's beats are real 3D scenes (as in the demo reels); off-screen reels and devices without
+  // WebGL (or with reduced motion) keep the flat graphics.
+  const visual = stage?.visual;
+  const in3d = Boolean(active && !reduce && sceneColors && visual && SCENE_TYPES.has(visual.type) && !(visual.type === "hook" && /soup|cooking-pot/.test(visual.icon)) && hasWebGL());
   return (
     <>
+      <div ref={probe} aria-hidden className="hidden" />
       {/* A deep, lit backdrop (as in the ads): the reel's accent glowing behind the graphic, falling off to near-black. */}
       <div
         aria-hidden
@@ -48,6 +91,13 @@ export function ReelMedia({
             "radial-gradient(120% 70% at 50% 42%, color-mix(in srgb, var(--thread) 30%, #20343c) 0%, color-mix(in srgb, var(--thread) 10%, #111b20) 48%, #070b0d 100%)",
         }}
       />
+      {in3d && stage && sceneColors ? (
+        <div className="absolute inset-x-0 bottom-0 z-[5]" style={{ top: stageBox.top }}>
+          {/* @ts-expect-error quiz/outro never reach here (SCENE_TYPES) */}
+          <Scene3D visual={stage.visual} progress={stage.progress} accent={sceneColors.accent} colors={sceneColors.colors} beatKey={stageKey} />
+        </div>
+      ) : (
+        <>
       <ParticleField active={active && playing} pulse={pulse} />
       <div className="absolute inset-x-0 z-[5] flex items-center justify-center" style={stageBox}>
         <AnimatePresence mode="wait">
@@ -63,6 +113,8 @@ export function ReelMedia({
           </motion.div>
         </AnimatePresence>
       </div>
+        </>
+      )}
     </>
   );
 }
