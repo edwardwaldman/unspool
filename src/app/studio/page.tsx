@@ -31,7 +31,7 @@ export default async function StudioPage() {
       <Suspense>
         <CheckoutReturn />
       </Suspense>
-      <Studio docs={docs} isNew={docs.length === 0 && isNew} email={viewer.email} plan={PLANS[tierOf(viewer.profile)].name} style={parseReelStyle(viewer.profile?.reel_style)} canEdit={canEditStyle(viewer)} />
+      <Studio docs={docs} isNew={docs.length === 0 && isNew} fresh={isNew} email={viewer.email} plan={PLANS[tierOf(viewer.profile)].name} style={parseReelStyle(viewer.profile?.reel_style)} canEdit={canEditStyle(viewer)} />
     </AppShell>
   );
 }

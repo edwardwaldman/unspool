@@ -31,7 +31,7 @@ export type StudioDoc = {
   reels: { index: number; title: string; status: string; headline: string | null; locked: boolean }[];
 };
 
-export type StudioProps = { docs: StudioDoc[]; style: ReelStyle; canEdit: boolean; plan: string; isNew?: boolean; email?: string | null };
+export type StudioProps = { docs: StudioDoc[]; style: ReelStyle; canEdit: boolean; plan: string; isNew?: boolean; fresh?: boolean; email?: string | null };
 
 /** The library's numbers, at the top of the document list. */
 function LibraryStats({ docs, plan }: { docs: StudioDoc[]; plan: string }) {
@@ -335,7 +335,7 @@ export function Studio(props: StudioProps) {
   return (
     <>
       {layout === "desktop" ? <DesktopStudio {...props} /> : <MobileStudio {...props} />}
-      <WelcomeTour isNew={Boolean(props.isNew)} email={props.email} />
+      <WelcomeTour isNew={Boolean(props.isNew)} fresh={Boolean(props.fresh)} email={props.email} />
     </>
   );
 }

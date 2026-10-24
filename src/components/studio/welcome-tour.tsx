@@ -68,17 +68,26 @@ function Confetti() {
  * `isNew`: the server's view (account created in the last day, no documents yet). The sign-up flag covers the
  * moments right after confirming; either one starts the tour, and finishing or skipping it marks it seen.
  */
-export function WelcomeTour({ isNew, email }: { isNew: boolean; email?: string | null }) {
+export function WelcomeTour({ isNew, fresh, email }: { isNew: boolean; fresh: boolean; email?: string | null }) {
   const [phase, setPhase] = useState<"off" | "hello" | "tour" | "go">("off");
   const [stop, setStop] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
 
   useEffect(() => {
     const flagged = readFlag(WELCOME_FLAG) === "1";
-    if ((!isNew && !flagged) || readFlag(SEEN) === "1") return;
-    const id = window.setTimeout(() => setPhase("hello"), 500);
+    // Only ever for an account made in the last day, and only once: it counts as seen the moment it shows,
+    // however it's closed (finished, skipped, a file picked mid-tour, the tab left).
+    if (!fresh || (!isNew && !flagged) || readFlag(SEEN) === "1") {
+      if (!fresh && flagged) writeFlag(WELCOME_FLAG, null);
+      return;
+    }
+    const id = window.setTimeout(() => {
+      writeFlag(SEEN, "1");
+      writeFlag(WELCOME_FLAG, null);
+      setPhase("hello");
+    }, 500);
     return () => window.clearTimeout(id);
-  }, [isNew]);
+  }, [isNew, fresh]);
 
   const finish = useCallback(() => {
     writeFlag(SEEN, "1");
