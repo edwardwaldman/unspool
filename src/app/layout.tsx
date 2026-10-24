@@ -12,6 +12,9 @@ const wordmark = Syne({ variable: "--font-syne", subsets: ["latin"], weight: ["7
 const headline = Unbounded({ variable: "--font-unbounded", subsets: ["latin"], weight: ["600", "700"] });
 const numeric = Martian_Mono({ variable: "--font-martian", subsets: ["latin"], weight: ["400", "500"] });
 
+/** Official Unspool profiles, so search engines tie them to unspool.cc. Add new ones here. */
+const SAME_AS = ["https://x.com/unspoolcc"];
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://unspool.cc"),
   title: { default: "Unspool — Turn any document into study reels", template: "%s · Unspool" },
@@ -63,7 +66,7 @@ export const viewport: Viewport = {
 const SITE_LD = JSON.stringify({
   "@context": "https://schema.org",
   "@graph": [
-    { "@type": "Organization", "@id": "https://unspool.cc/#org", name: "Unspool", url: "https://unspool.cc", logo: "https://unspool.cc/android-chrome-512.png", email: "hello@unspool.cc" },
+    { "@type": "Organization", "@id": "https://unspool.cc/#org", name: "Unspool", url: "https://unspool.cc", logo: "https://unspool.cc/android-chrome-512.png", email: "hello@unspool.cc", sameAs: SAME_AS },
     { "@type": "WebSite", "@id": "https://unspool.cc/#site", name: "Unspool", url: "https://unspool.cc", publisher: { "@id": "https://unspool.cc/#org" }, inLanguage: "en-US" },
     {
       "@type": "SoftwareApplication",
