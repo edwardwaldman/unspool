@@ -22,14 +22,19 @@ const VOICE_STYLE =
   "Energetic, warm, confident short-form creator voice. Fast but clear, like a top TikTok explainer. Punch the key words, smile in the voice, no announcer cadence.";
 
 async function openaiSpeech(text: string): Promise<TtsResult> {
+  /** Consistent voice by default; set OPENAI_TTS_MODEL=gpt-4o-mini-tts for the styled (but less consistent) one. */
+  const model = process.env.OPENAI_TTS_MODEL?.trim() || "tts-1-hd";
   const res = await fetch("https://api.openai.com/v1/audio/speech", {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: process.env.OPENAI_TTS_MODEL ?? "gpt-4o-mini-tts",
-      voice: process.env.OPENAI_TTS_VOICE ?? "coral",
+      model,
+      voice: process.env.OPENAI_TTS_VOICE ?? "nova",
       input: text,
-      instructions: VOICE_STYLE,
+      // Only the gpt-4o voices take style instructions, and they read them a little differently on every call,
+      // which made one reel's segments sound like different takes. tts-1-hd has no style prompt: same voice every time.
+      ...(model.startsWith("gpt-4o") ? { instructions: VOICE_STYLE } : {}),
+      speed: Number(process.env.OPENAI_TTS_SPEED ?? 1.05),
       response_format: "mp3",
     }),
   });
