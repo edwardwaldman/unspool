@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AuthModal } from "../auth/auth-modal";
 import { Toaster } from "../ui/toast";
+import { SocialLinks } from "./social-links";
 import { Wordmark } from "../ui/icons";
 
 /** Scrolling layout for marketing and legal pages. */
@@ -32,6 +33,7 @@ export function MarketingPage({ children }: { children: React.ReactNode }) {
         <Link href="/privacy" className="hover:text-ink">Privacy</Link>
         <Link href="/terms" className="hover:text-ink">Terms</Link>
         <Link href="/pricing" className="hover:text-ink">Pricing</Link>
+        <SocialLinks className="ml-auto" />
       </footer>
       <AuthModal />
       <Toaster />

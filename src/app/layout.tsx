@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { SOCIALS } from "@/components/shell/social-links";
 import { Archivo, Bricolage_Grotesque, Instrument_Sans, Martian_Mono, Syne, Unbounded } from "next/font/google";
 import { VisitTracker } from "@/components/analytics/visit-tracker";
 import { OwnerViewBox } from "@/components/owner/owner-view-box";
@@ -13,7 +14,7 @@ const headline = Unbounded({ variable: "--font-unbounded", subsets: ["latin"], w
 const numeric = Martian_Mono({ variable: "--font-martian", subsets: ["latin"], weight: ["400", "500"] });
 
 /** Official Unspool profiles, so search engines tie them to unspool.cc. Add new ones here. */
-const SAME_AS = ["https://x.com/unspoolcc"];
+const SAME_AS = SOCIALS.map((s) => s.href);
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://unspool.cc"),
