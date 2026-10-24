@@ -5,8 +5,9 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import { renderToStaticMarkup } from "react-dom/server";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import type { HighlightColor, SceneSpec, Visual } from "@/lib/schema";
+import type { HighlightColor, Mood, SceneSpec, Visual } from "@/lib/schema";
 import { STORY_SHOTS, StoryObjects, layoutScene } from "./story-scene";
+import { mat, popEase, rbox, rcyl, tone } from "./toy-kit";
 import { ReelIcon } from "./icon";
 import { sentenceCase } from "./text";
 
@@ -15,18 +16,13 @@ import { sentenceCase } from "./text";
 // pushes in while the beat plays. One scene per visual type, built from the beat's own words and icons.
 
 type SceneVisual = Exclude<Visual, { type: "quiz" }>;
-export type Scene3DProps = { visual: SceneVisual; progress: number; accent: string; colors: Record<HighlightColor, string>; beatKey: string; scene?: SceneSpec; onLost?: () => void };
+export type Scene3DProps = { visual: SceneVisual; progress: number; accent: string; colors: Record<HighlightColor, string>; beatKey: string; scene?: SceneSpec; mood?: Mood; onLost?: () => void };
 
 const SCENE_TYPES = new Set(["hook", "bigword", "split", "flow", "list", "icons", "crowd", "stat"]);
 export const hasScene = (v: { type: string }) => SCENE_TYPES.has(v.type);
 
 const clamp = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const easeOut = (x: number) => 1 - Math.pow(1 - clamp(x), 3);
-const back = (x: number) => {
-  x = clamp(x);
-  const c = 1.6;
-  return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2);
-};
 const sentence = (s: string) => sentenceCase(s.replace(/[*#^~]/g, ""));
 const CREAM = "#efe8d6";
 const INK = "#121512";
@@ -148,7 +144,8 @@ function PinProjector({ pins, els }: { pins: React.RefObject<Map<string, Pin>>; 
       v.copy(p.pos).project(camera);
       const sx = ((v.x + 1) / 2) * size.width;
       const sy = ((1 - v.y) / 2) * size.height;
-      el.style.transform = `translate(${sx}px, ${sy}px)`;
+      // Whole pixels: a chip on a fractional offset renders its text blurry.
+      el.style.transform = `translate3d(${Math.round(sx)}px, ${Math.round(sy)}px, 0)`;
       el.style.opacity = v.z < 1 ? "1" : "0";
     }
   });
@@ -163,7 +160,7 @@ function Pop({ delay = 0, children, position }: { delay?: number; children: Reac
   const t0 = useRef<number | null>(null);
   useFrame((s) => {
     if (t0.current === null) t0.current = s.clock.elapsedTime;
-    const k = back((s.clock.elapsedTime - t0.current - delay) / 0.45);
+    const k = popEase((s.clock.elapsedTime - t0.current - delay) / 0.7);
     ref.current?.scale.setScalar(Math.max(0.0001, k));
   });
   return (
@@ -203,7 +200,7 @@ function Tile({ icon, body, ink = INK, size = 1, spin = 0 }: { icon: string; bod
   return (
     <group ref={ref} scale={size}>
       <mesh geometry={geo} castShadow receiveShadow>
-        <meshStandardMaterial color={body} roughness={0.45} />
+        <meshPhysicalMaterial color={body} roughness={0.5} clearcoat={0.3} clearcoatRoughness={0.45} />
       </mesh>
       <mesh position={[0, 0, 0.196]}>
         <planeGeometry args={[0.86, 0.86]} />
@@ -213,12 +210,13 @@ function Tile({ icon, body, ink = INK, size = 1, spin = 0 }: { icon: string; bod
   );
 }
 
+/** A soft-edged plinth with a lighter top inlay, the stand the template scenes put things on. */
 function Pedestal({ radius = 0.75, height = 0.35, color = "#262b26" }: { radius?: number; height?: number; color?: string }) {
   return (
-    <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
-      <cylinderGeometry args={[radius, radius * 1.06, height, 48]} />
-      <meshStandardMaterial color={color} roughness={0.35} metalness={0.25} />
-    </mesh>
+    <group>
+      <mesh geometry={rcyl(radius * 1.04, height, 0.07, radius)} material={mat(color)} castShadow receiveShadow />
+      <mesh geometry={rcyl(radius * 0.86, 0.025, 0.012)} material={mat(tone(color, 0.08))} position={[0, height - 0.012, 0]} receiveShadow />
+    </group>
   );
 }
 
@@ -278,13 +276,14 @@ function CameraRig({ shot, progress }: { shot: Shot; progress: number }) {
   const look = useRef(new THREE.Vector3(...shot.look));
   const prog = useRef(progress);
   const fit = useRef({ scale: 1, off: new THREE.Vector3() });
-  const tmp = useRef({ box: new THREE.Box3(), corner: new THREE.Vector3() });
+  const tmp = useRef({ box: new THREE.Box3(), part: new THREE.Box3(), corner: new THREE.Vector3() });
   useEffect(() => {
     prog.current = progress;
   }, [progress]);
   useFrame((s, dt) => {
     const camera = s.camera as THREE.PerspectiveCamera;
-    const t = s.clock.elapsedTime, k = 1 - Math.pow(0.002, dt);
+    // Smooth, frame-rate independent dolly: the camera eases toward its goal instead of snapping to it.
+    const t = s.clock.elapsedTime, k = 1 - Math.pow(0.02, dt);
     const sway = shot.sway ?? 0.5, push = shot.push ?? 0.12;
     const aspect = s.size.width / Math.max(1, s.size.height);
     const back = clamp(1.05 / aspect, 1, 2.4) * (1 - push * easeOut(prog.current));
@@ -307,8 +306,8 @@ function CameraRig({ shot, progress }: { shot: Shot; progress: number }) {
     // Auto-framing: project the content's bounds and correct distance and position toward SAFE.
     const g = content?.current;
     if (!g || shot.noFit) return;
-    const { box, corner } = tmp.current;
-    box.setFromObject(g);
+    const { box, part, corner } = tmp.current;
+    measure(g, box, part);
     if (box.isEmpty()) return;
     box.max.y += LABEL_HEADROOM;
     camera.updateMatrixWorld();
@@ -323,8 +322,10 @@ function CameraRig({ shot, progress }: { shot: Shot; progress: number }) {
     const sw = SAFE.right - SAFE.left, sh = SAFE.top - SAFE.bottom;
     // How much bigger (or smaller) than the safe area the content is; aim to fill ~90% of it.
     const need = Math.max((x1 - x0) / sw, (y1 - y0) / sh) / 0.9;
-    const kk = 1 - Math.pow(0.004, dt);
-    if (Number.isFinite(need) && need > 0) f.scale = clamp(f.scale * (1 + (need - 1) * kk), 0.45, 5);
+    // Gentler than the dolly itself (so the two never chase each other into a wobble), and a small dead band so
+    // breathing, bobbing objects don't make the camera hunt.
+    const kk = 1 - Math.pow(0.05, dt);
+    if (Number.isFinite(need) && need > 0 && Math.abs(need - 1) > 0.025) f.scale = clamp(f.scale * (1 + (need - 1) * kk), 0.45, 5);
     // Slide so the content's centre lands on the safe area's centre.
     const dist = camera.position.distanceTo(look.current);
     const halfH = Math.tan((camera.fov * Math.PI) / 360) * dist, halfW = halfH * camera.aspect;
@@ -334,6 +335,41 @@ function CameraRig({ shot, progress }: { shot: Shot; progress: number }) {
     f.off.clampLength(0, 6);
   });
   return null;
+}
+
+/**
+ * The content's real bounds: every visible mesh, except helpers that aren't the content (contact shadows,
+ * floor glows: userData.noFit), which would otherwise make the camera frame empty floor.
+ */
+function measure(g: THREE.Object3D, box: THREE.Box3, part: THREE.Box3) {
+  box.makeEmpty();
+  g.updateWorldMatrix(true, true);
+  // Story objects carry an invisible stand-in at their settled size: frame those alone when there are any, so the
+  // camera holds steady while things pop in, bob and breathe instead of chasing every frame of the animation.
+  let proxies = false;
+  g.traverse((o) => {
+    if (!o.userData.fitProxy) return;
+    const m = o as THREE.Mesh;
+    if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+    box.union(part.copy(m.geometry.boundingBox!).applyMatrix4(m.matrixWorld));
+    proxies = true;
+  });
+  if (proxies) return;
+  g.traverseVisible((o) => {
+    if (o.userData.noFit) return;
+    const m = o as THREE.Mesh & { isInstancedMesh?: boolean; boundingBox?: THREE.Box3 | null; computeBoundingBox?: () => void };
+    if (!m.isMesh) return;
+    let bb: THREE.Box3 | null | undefined;
+    if (m.isInstancedMesh) {
+      if (!m.boundingBox) m.computeBoundingBox?.();
+      bb = m.boundingBox;
+    } else {
+      if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+      bb = m.geometry.boundingBox;
+    }
+    if (!bb || bb.isEmpty()) return;
+    box.union(part.copy(bb).applyMatrix4(m.matrixWorld));
+  });
 }
 
 // ---------------------------------------------------------------- scenes
@@ -516,10 +552,7 @@ function ListScene({ v, progress, accent }: { v: Extract<Visual, { type: "list" 
       <Label id="title" text={v.title.toUpperCase()} position={[0, 0.5 + items.length * 0.42, 0]} />
       {items.slice(0, shown).map((it, i) => (
         <Drop key={i} y={0.2 + i * 0.42} rot={(i % 2 ? 1 : -1) * 0.12}>
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[2.4, 0.36, 1.5]} />
-            <meshStandardMaterial color={i === shown - 1 ? accent : i % 2 ? "#d9cfb6" : CREAM} roughness={0.6} />
-          </mesh>
+          <mesh geometry={rbox(2.4, 0.36, 1.5, 0.09)} material={mat(i === shown - 1 ? accent : i % 2 ? "#d9cfb6" : CREAM)} castShadow receiveShadow />
           <Words text={sentence(it.label)} color={INK} height={0.24} position={[0, 0, 0.752]} max={150} />
         </Drop>
       ))}
@@ -653,7 +686,74 @@ export function keyTerm(v: SceneVisual): string {
   }
 }
 
-export default function Scene3D({ visual, progress, accent, colors, beatKey, scene, onLost }: Scene3DProps) {
+/** The rim light's colour per mood: the bright edge that lifts objects off that mood's backdrop. */
+const MOOD_RIM: Record<Mood, string> = { hot: "#ffd0e6", calm: "", warn: "#ffc6ad", win: "#c9ffdc" };
+
+/** A soft pool of light on the floor under the scene (as a studio spot makes), fading out to nothing. */
+function FloorGlow({ color }: { color: string }) {
+  const tex = useMemo(() => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 256;
+    const g = c.getContext("2d")!;
+    const grd = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+    grd.addColorStop(0, "rgba(255,255,255,.55)");
+    grd.addColorStop(0.45, "rgba(255,255,255,.18)");
+    grd.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = grd;
+    g.fillRect(0, 0, 256, 256);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }, []);
+  useDispose(tex);
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]} renderOrder={-2}>
+      <planeGeometry args={[7, 5]} />
+      <meshBasicMaterial map={tex} color={color} transparent opacity={0.3} depthWrite={false} toneMapped={false} />
+    </mesh>
+  );
+}
+
+/** Lights and floor: a warm key with soft (filtered, small-map) shadows, a cool fill, a rim from behind, a top spot. */
+function Studio({ accent, mood }: { accent: string; mood?: Mood }) {
+  const rim = (mood && MOOD_RIM[mood]) || accent;
+  return (
+    <>
+      <StudioEnvironment />
+      <hemisphereLight args={["#eef4e2", "#1a2118", 0.75]} />
+      <directionalLight
+        position={[-2.6, 8, 5]}
+        intensity={2.4}
+        color="#fff3de"
+        castShadow
+        shadow-mapSize={[1024, 1024]}
+        shadow-radius={7}
+        shadow-blurSamples={12}
+        shadow-camera-left={-9}
+        shadow-camera-right={9}
+        shadow-camera-top={9}
+        shadow-camera-bottom={-9}
+        shadow-camera-near={1}
+        shadow-camera-far={20}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.02}
+      />
+      {/* Fill from the camera's right, so the shadow side of every object still shows its colour */}
+      <directionalLight position={[4, 2.5, 4]} intensity={0.55} color="#dfe8ff" />
+      {/* Rim from behind in the reel's accent (or the beat's mood): the bright edge that lifts objects off the backdrop */}
+      <directionalLight position={[3.5, 3.5, -5]} intensity={1.8} color={rim} />
+      <directionalLight position={[-4, 2.5, -4]} intensity={0.8} color={rim} />
+      <spotLight position={[0, 6, 2]} angle={0.55} penumbra={1} intensity={14} distance={14} color="#fff6e6" />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow renderOrder={-1}>
+        <planeGeometry args={[40, 40]} />
+        <shadowMaterial opacity={0.26} transparent depthWrite={false} />
+      </mesh>
+      <FloorGlow color={rim} />
+    </>
+  );
+}
+
+export default function Scene3D({ visual, progress, accent, colors, beatKey, scene, mood, onLost }: Scene3DProps) {
   const story = Boolean(scene?.objects?.length);
   const lostRef = useRef(onLost);
   useEffect(() => {
@@ -691,7 +791,14 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
           <span key={i} className="absolute rounded-full" style={{ left: `${x}%`, top: `${y}%`, width: s, height: s, background: "rgba(255,255,255,.07)", filter: "blur(6px)" }} />
         ))}
       </div>
-      <Canvas shadows dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={{ position: [0, 2, 7], fov: 36 }} style={{ position: "absolute", inset: 0 }}
+      <Canvas
+        shadows="percentage"
+        dpr={[1, 2]}
+        gl={{ alpha: true, antialias: true, powerPreference: "high-performance", toneMapping: THREE.NeutralToneMapping, toneMappingExposure: 1.02 }}
+        camera={{ position: [0, 2, 7], fov: 36 }}
+        // The floor would end in a hard line where the stage stops above the captions: fade its last 4%
+        // (below SAFE.bottom, so the content itself is never faded).
+        style={{ position: "absolute", inset: 0, maskImage: "linear-gradient(#000 96%, transparent)", WebkitMaskImage: "linear-gradient(#000 96%, transparent)" }}
         onCreated={({ gl }) => {
           gl.domElement.addEventListener("webglcontextlost", (e) => {
             e.preventDefault();
@@ -699,27 +806,7 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
           }, { once: true });
         }}>
         <PinCtx.Provider value={api}>
-          <StudioEnvironment />
-          <hemisphereLight args={["#e9f2d6", "#1c2418", 0.7]} />
-          <directionalLight
-            position={[-3.5, 7, 4.5]}
-            intensity={2.6}
-            color="#fff1d8"
-            castShadow
-            shadow-mapSize={[2048, 2048]}
-            shadow-camera-left={-6}
-            shadow-camera-right={6}
-            shadow-camera-top={6}
-            shadow-camera-bottom={-6}
-            shadow-bias={-0.0005}
-          />
-          {/* Rim light from behind in the reel's accent: the bright edge that lifts objects off the backdrop in the demo */}
-          <directionalLight position={[4, 3, -5]} intensity={1.6} color={accent} />
-          <spotLight position={[0, 6, 2]} angle={0.55} penumbra={0.9} intensity={18} distance={14} color="#fff6e6" />
-          <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[40, 40]} />
-            <shadowMaterial opacity={0.5} />
-          </mesh>
+          <Studio accent={accent} mood={mood} />
           <ContentCtx.Provider value={content}>
             <group ref={content}>
               {story ? (
@@ -758,15 +845,16 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
             className="absolute left-0 top-0 transition-opacity duration-200"
             style={{ transform: "translate(-999px,-999px)" }}
           >
-            <div className="flex -translate-x-1/2 flex-col items-center" style={{ transform: `translate(-50%, calc(-100% - 2px))` }}>
+            {/* The demo's chip: a near-black rounded tag in bold wide-tracked caps, a hairline red leader, a red dot */}
+            <div className="flex flex-col items-center" style={{ transform: `translate(-50%, calc(-100% + 3px))` }}>
               <span
-                className="max-w-[34cqw] truncate whitespace-nowrap px-2 py-[3px] font-mono text-[11px] font-semibold uppercase tracking-[0.04em]"
-                style={{ background: "#0b0d0b", color: p.tone === "accent" ? accent : "#fff", boxShadow: "0 2px 8px rgba(0,0,0,.35)" }}
+                className="max-w-[36cqw] origin-bottom animate-[term-in_.32s_cubic-bezier(.3,1.5,.5,1)_both] truncate whitespace-nowrap rounded-[4px] px-[7px] pb-[3px] pt-[4px] font-hook text-[10.5px] font-extrabold uppercase leading-none tracking-[0.07em] antialiased"
+                style={{ background: "rgba(12,13,12,.92)", color: p.tone === "accent" ? accent : "#fff", boxShadow: "0 3px 10px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.06)" }}
               >
                 {p.text}
               </span>
-              <span className="w-px" style={{ height: p.line, background: "#e5484d" }} />
-              <span className="h-[6px] w-[6px] rounded-full" style={{ background: "#e5484d", boxShadow: "0 0 6px #e5484d" }} />
+              <span className="w-px" style={{ height: p.line, background: "linear-gradient(#ff5a5f, #e5484d)" }} />
+              <span className="-mt-px h-[5px] w-[5px] rounded-full" style={{ background: "#ff4d52", boxShadow: "0 0 0 2px rgba(229,72,77,.25), 0 0 6px rgba(229,72,77,.8)" }} />
             </div>
           </div>
         ))}
