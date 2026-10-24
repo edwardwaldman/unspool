@@ -98,6 +98,19 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
 
   return (
     <Modal label="Next free reel" onClose={onClose}>
+      {/* A free account that can still take the trial: lead with it. */}
+      {usage.trialEligible && (
+        <div className="mb-5 mr-10" data-testid="trial-pitch">
+          <p className="font-mono text-[11.5px] uppercase tracking-[0.12em] text-thread">Free for 1 day</p>
+          <h2 className="mt-1 font-display text-[28px] leading-[1.05]">Watch every reel now</h2>
+          <p className="mt-2 text-[14px] leading-snug text-muted">
+            Try Plus free for a day: up to 30 reels, no watermark, no waiting. Cancel before it ends and you pay nothing.
+          </p>
+          <button type="button" onClick={() => go("trial", { kind: "trial" })} disabled={busy !== null} className="mt-4 min-h-[52px] w-full bg-thread px-4 text-[16px] font-semibold text-paper hover:opacity-90 disabled:opacity-60" data-testid="trial-cta">
+            {busy === "trial" ? "Opening checkout" : "Start my free day"}
+          </button>
+        </div>
+      )}
       <div
         className="mr-10 px-4 py-5 text-center"
         style={{ background: "color-mix(in srgb, var(--thread) 10%, var(--paper))", border: "1px solid color-mix(in srgb, var(--thread) 45%, transparent)" }}
@@ -134,16 +147,11 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
         {plus.credits} reels a week, all at once.
       </p>
 
-      {usage.trialEligible ? (
-        <button type="button" onClick={() => go("trial", { kind: "trial" })} disabled={busy !== null} className="mt-5 min-h-[48px] w-full bg-thread px-4 text-[15px] font-semibold text-paper hover:opacity-90 disabled:opacity-60">
-          {busy === "trial" ? "Opening checkout" : "Start 1-day free trial"}
-        </button>
-      ) : null}
       <button
         type="button"
         onClick={() => go("plus", { kind: "subscription", tier: "plus" })}
         disabled={busy !== null}
-        className={`${usage.trialEligible ? "btn-secondary mt-2" : "btn-primary mt-5"} w-full justify-between px-4 py-3 text-[14.5px]`}
+        className={`${usage.trialEligible ? "btn-secondary mt-5" : "btn-primary mt-5"} w-full justify-between px-4 py-3 text-[14.5px]`}
       >
         <span>{busy === "plus" ? "Opening checkout" : "Upgrade to Plus"}</span>
         <Price cents={plus.cents} />

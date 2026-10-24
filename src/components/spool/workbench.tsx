@@ -576,6 +576,8 @@ export function Workbench({
   const ext = spool?.fileType ?? upload?.fileName?.split(".").pop() ?? "";
 
   const paywallTimer = useRef(0);
+  // Locked reels whose pop-up has already shown (by scrolling); clicking a locked reel always shows it.
+  const paywalled = useRef(new Set<string>());
   useEffect(() => () => window.clearTimeout(paywallTimer.current), []);
   const select = useCallback(
     (i: number, opts: { paywall?: boolean } = {}) => {
@@ -583,7 +585,11 @@ export function Workbench({
       window.clearTimeout(paywallTimer.current);
       setIndex((from) => {
         // A locked reel's paywall waits for the track to land on it instead of covering the scroll.
-        if (opts.paywall && items[i]?.reel?.locked) paywallTimer.current = window.setTimeout(() => setPaywall(true), Math.min(650, 300 + 70 * Math.abs(i - from)));
+        // Landing on a locked reel by scrolling (wheel, keys, arrows) shows the pop-up once per reel, as on phones.
+        const locked = items[i]?.reel;
+        const autoPop = locked?.locked && !paywalled.current.has(locked.id);
+        if (locked?.locked) paywalled.current.add(locked.id);
+        if ((opts.paywall || autoPop) && items[i]?.reel?.locked) paywallTimer.current = window.setTimeout(() => setPaywall(true), Math.min(650, 300 + 70 * Math.abs(i - from)));
         return i;
       });
       onIndexChange?.(i);

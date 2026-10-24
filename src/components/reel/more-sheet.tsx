@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Crown, Gauge, Speech, WandSparkles } from "lucide-react";
+import { Crown, Gauge, Music2, Speech, WandSparkles } from "lucide-react";
 import { ProBadge } from "../studio/reel-style-panel";
 import { GridIcon, TrashIcon, VolumeIcon } from "../ui/icons";
 import { Sheet } from "../ui/sheet";
@@ -87,6 +87,11 @@ export function MoreSheet({
           </button>
         ))}
       </div>
+      <button type="button" className={row} onClick={() => setPrefs({ music: prefs.music === false })}>
+        <Music2 size={19} strokeWidth={1.5} />
+        <span className="flex-1">Background music</span>
+        <span className={`font-mono text-[12px] ${prefs.music !== false ? "text-thread" : "text-muted"}`}>{prefs.music !== false ? "On" : "Off"}</span>
+      </button>
       <button type="button" className={row} onClick={() => setPrefs({ deviceVoice: !prefs.deviceVoice })}>
         <Speech size={19} strokeWidth={1.5} />
         <span className="flex-1">Device voice for silent reels</span>

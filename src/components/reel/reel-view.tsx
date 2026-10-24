@@ -10,6 +10,7 @@ import { ActionRail } from "./action-rail";
 import { CaptionBlock } from "./caption-block";
 import { Captions } from "./captions";
 import { useHitCount } from "./hook-scene";
+import { setMusic } from "./music";
 import { getPrefs, setPrefs, usePrefs } from "./prefs";
 import { ReelMedia } from "./reel-media";
 import { usePlayback } from "./use-playback";
@@ -97,6 +98,13 @@ export function ReelView({
     window.clearTimeout(hold.current.timer);
     if (getPrefs().boost) setPrefs({ boost: false });
   }, []);
+
+  // The soft music bed plays under the reel on screen while it plays with sound (rendered videos carry their own).
+  const wantMusic = active && !preview && pb.playing && !muted && !pb.videoMode && prefs.music !== false;
+  useEffect(() => {
+    setMusic(reel.id, wantMusic);
+  }, [reel.id, wantMusic]);
+  useEffect(() => () => setMusic(reel.id, false), [reel.id]);
 
   // M mutes / unmutes the reel that's playing.
   useEffect(() => {

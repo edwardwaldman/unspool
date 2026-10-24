@@ -11,12 +11,14 @@ export type Prefs = {
   speed: 1 | 1.25 | 1.5 | 2;
   /** Held down on the right side of a reel: plays at 2x until let go (never persisted). */
   boost: boolean;
+  /** The soft background music under reels. */
+  music: boolean;
   /** Read reels that have no generated voiceover with the device's built-in voice. */
   deviceVoice: boolean;
 };
 
 const KEY = "unspool:prefs";
-const DEFAULTS: Prefs = { muted: false, autoMuted: false, speed: 1, boost: false, deviceVoice: true };
+const DEFAULTS: Prefs = { muted: false, autoMuted: false, speed: 1, boost: false, music: true, deviceVoice: true };
 
 let state: Prefs = DEFAULTS;
 let loaded = false;
