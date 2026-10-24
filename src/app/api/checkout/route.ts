@@ -122,10 +122,6 @@ async function checkout(req: Request) {
     ...(kind === "trial" ? { payment_method_collection: "always" as const } : {}),
     line_items: [{ price: await priceIdFor(tier, billing), quantity: 1 }],
     allow_promotion_codes: kind !== "trial",
-    custom_text:
-      kind === "trial"
-        ? { submit: { message: `Free for ${TRIAL.days} day, then ${PLANS.plus.name} at $${(PLANS.plus.priceCents / 100).toFixed(2)}/week unless you cancel.` } }
-        : undefined,
     success_url,
     cancel_url,
   });
