@@ -667,36 +667,63 @@ function Crowd({ color }: { color: string }) {
   );
 }
 
-/** Where an object sits once the scene is laid out. */
-export type Slot = { x: number; z: number; size: number; height: number };
+/** Where an object sits once the scene is laid out. `focus`: the beat's hero, the one the camera pushes in on. */
+export type Slot = { x: number; z: number; size: number; height: number; focus: boolean };
+
+/** The object a beat is about: the accent one (the script's way to point at it), else a glowing one, else the biggest. */
+export function focusIndex(scene: SceneSpec): number {
+  const objs = scene.objects;
+  let best = 0, score = -Infinity;
+  objs.forEach((o, i) => {
+    const s = (o.color === "accent" ? 10 : 0) + (o.motion === "glow" || o.motion === "pulse" ? 4 : 0) + (o.size || 1);
+    if (s > score) {
+      score = s;
+      best = i;
+    }
+  });
+  return best;
+}
 
 /**
- * Lay a scene out tidily instead of trusting raw coordinates: the objects keep the writer's left-to-right order
- * but sit in one evenly spaced row (a slight arc), centred, at sizes that read together (the key object, the
- * accent one, a little bigger), and never overlapping.
+ * Lay a scene out like a shot, not a slide: the hero object stands big at centre front, and the supporting cast
+ * is staged around it, smaller and stepping back into depth on the side the writer put it (left or right of the
+ * hero), so the frame has a foreground, a background and a clear subject. Nothing overlaps.
  */
 export function layoutScene(scene: SceneSpec): Slot[] {
   const objs = scene.objects;
-  const order = objs.map((o, i) => ({ o, i })).sort((a, b) => a.o.x - b.o.x || a.i - b.i);
   const n = objs.length;
-  const maxSize = n === 1 ? 1.9 : n === 2 ? 1.5 : n <= 4 ? 1.15 : 0.9;
-  const sizes = order.map(({ o }) => {
-    const key = o.color === "accent" || o.motion === "glow" || o.motion === "pulse";
-    return Math.max(0.55, Math.min(maxSize, (o.size || 1) * (n === 1 ? 1.4 : 0.9))) * (key && n > 1 ? 1.12 : 1);
-  });
-  // Packed by real width with a small gap, like the demo's close groupings: spreading objects a fixed 2.3 apart
-  // left the camera framing mostly empty floor, so every object came out small.
-  const widths = order.map(({ o }, k) => (WIDTH[o.shape] ?? 0.9) * sizes[k]);
-  const gap = 0.45;
-  const span = widths.reduce((a, w) => a + w, 0) + gap * Math.max(0, n - 1);
   const slots: Slot[] = new Array(n);
-  let left = -span / 2;
-  order.forEach(({ o, i }, k) => {
-    const x = left + widths[k] / 2;
-    left += widths[k] + gap;
-    const z = n > 2 ? -Math.abs(x) * 0.18 + 0.2 : 0;
-    slots[i] = { x, z, size: sizes[k], height: (HEIGHT[o.shape] ?? 1) * sizes[k] };
-  });
+  if (!n) return slots;
+  const h = focusIndex(scene);
+  const hero = objs[h];
+  const heroSize = n === 1 ? 1.9 : Math.max(1.25, Math.min(1.8, (hero.size || 1) * 1.3));
+  const heroW = (WIDTH[hero.shape] ?? 0.9) * heroSize;
+  slots[h] = { x: 0, z: 0.35, size: heroSize, height: (HEIGHT[hero.shape] ?? 1) * heroSize, focus: true };
+  // The cast, split by which side of the hero the writer placed them, nearest first on each side.
+  const rest = objs.map((o, i) => ({ o, i })).filter(({ i }) => i !== h);
+  const left: typeof rest = [], right: typeof rest = [];
+  rest.sort((a, b) => Math.abs(a.o.x - hero.x) - Math.abs(b.o.x - hero.x) || a.i - b.i);
+  for (const r of rest) {
+    const side = r.o.x < hero.x ? left : r.o.x > hero.x ? right : left.length <= right.length ? left : right;
+    side.push(r);
+  }
+  // Keep the shot balanced: one side never holds two more than the other.
+  while (left.length > right.length + 1) right.push(left.pop()!);
+  while (right.length > left.length + 1) left.push(right.pop()!);
+  const gap = 0.45;
+  for (const [dir, list] of [[-1, left], [1, right]] as const) {
+    let edge = heroW / 2 + gap;
+    list.forEach(({ o, i }, j) => {
+      // Writer's relative size still reads (0.5..1.05 of a unit), but always clearly smaller than the hero, and
+      // each step out from the hero a little smaller and further back.
+      const size = Math.max(0.65, Math.min(1.1, (o.size || 1) * 0.8)) * (1 - j * 0.1) * Math.min(1, heroSize / 1.4);
+      const w = (WIDTH[o.shape] ?? 0.9) * size;
+      const x = dir * (edge + w / 2);
+      edge += w + gap * 0.7;
+      const z = -0.4 - j * 0.6 + (dir > 0 ? -0.15 : 0);
+      slots[i] = { x, z, size, height: (HEIGHT[o.shape] ?? 1) * size, focus: false };
+    });
+  }
   return slots;
 }
 
@@ -763,7 +790,7 @@ function Placed({ o, slot, i, accent }: { o: SceneObject; slot: Slot; i: number;
   });
   return (
     <>
-    <mesh ref={proxy} geometry={unitBox()} visible={false} userData={{ fitProxy: true }} position={[slot.x, 0, slot.z]} scale={[foot * slot.size, slot.height, foot * 0.8 * slot.size]} />
+    <mesh ref={proxy} geometry={unitBox()} visible={false} userData={{ fitProxy: true, focus: slot.focus }} position={[slot.x, 0, slot.z]} scale={[foot * slot.size, slot.height, foot * 0.8 * slot.size]} />
     <group ref={ref} position={[slot.x, 0, slot.z]} scale={0.0001}>
       <mesh ref={shadow} geometry={plane(1, 1)} material={contactMaterial()} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 0]} userData={{ noFit: true }} renderOrder={-1} />
       <group ref={body}>

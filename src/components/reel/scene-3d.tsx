@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import type { HighlightColor, Mood, SceneSpec, Visual } from "@/lib/schema";
-import { STORY_SHOTS, StoryObjects, layoutScene } from "./story-scene";
+import { STORY_SHOTS, StoryObjects, focusIndex, layoutScene } from "./story-scene";
 import { mat, popEase, rbox, rcyl, tone } from "./toy-kit";
 import { ReelIcon } from "./icon";
 import { sentenceCase } from "./text";
@@ -23,6 +23,7 @@ export const hasScene = (v: { type: string }) => SCENE_TYPES.has(v.type);
 
 const clamp = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const easeOut = (x: number) => 1 - Math.pow(1 - clamp(x), 3);
+const smooth = (x: number) => clamp(x) * clamp(x) * (3 - 2 * clamp(x));
 const sentence = (s: string) => sentenceCase(s.replace(/[*#^~]/g, ""));
 const CREAM = "#efe8d6";
 const INK = "#121512";
@@ -146,7 +147,9 @@ function PinProjector({ pins, els }: { pins: React.RefObject<Map<string, Pin>>; 
       const sy = ((1 - v.y) / 2) * size.height;
       // Whole pixels: a chip on a fractional offset renders its text blurry.
       el.style.transform = `translate3d(${Math.round(sx)}px, ${Math.round(sy)}px, 0)`;
-      el.style.opacity = v.z < 1 ? "1" : "0";
+      // A chip whose object the push-in has moved off the safe area (under the rail or toward the captions) hides.
+      const inside = v.x > -1 && v.x < SAFE.right + 0.08 && v.y > SAFE.bottom && v.y < 1;
+      el.style.opacity = v.z < 1 && inside ? "1" : "0";
     }
   });
   return null;
@@ -252,7 +255,7 @@ function Arrow({ from, to, color }: { from: [number, number, number]; to: [numbe
 
 // ---------------------------------------------------------------- camera
 
-type Shot = { pos: [number, number, number]; look: [number, number, number]; fov?: number; sway?: number; push?: number; /** Bleeds off the frame on purpose (a crowd field): skip auto-framing. */ noFit?: boolean };
+type Shot = { pos: [number, number, number]; look: [number, number, number]; fov?: number; sway?: number; push?: number; /** 0..1: how far the beat pushes in from the whole cast to its hero (story scenes). */ focus?: number; /** Bleeds off the frame on purpose (a crowd field): skip auto-framing. */ noFit?: boolean };
 
 /**
  * Where the scene may sit on screen, in normalized device coordinates of the 3D stage: clear of the beat's key
@@ -276,7 +279,7 @@ function CameraRig({ shot, progress }: { shot: Shot; progress: number }) {
   const look = useRef(new THREE.Vector3(...shot.look));
   const prog = useRef(progress);
   const fit = useRef({ scale: 1, off: new THREE.Vector3() });
-  const tmp = useRef({ box: new THREE.Box3(), part: new THREE.Box3(), corner: new THREE.Vector3() });
+  const tmp = useRef({ box: new THREE.Box3(), hero: new THREE.Box3(), part: new THREE.Box3(), corner: new THREE.Vector3() });
   useEffect(() => {
     prog.current = progress;
   }, [progress]);
@@ -306,10 +309,20 @@ function CameraRig({ shot, progress }: { shot: Shot; progress: number }) {
     // Auto-framing: project the content's bounds and correct distance and position toward SAFE.
     const g = content?.current;
     if (!g || shot.noFit) return;
-    const { box, part, corner } = tmp.current;
-    measure(g, box, part);
+    const { box, hero, part, corner } = tmp.current;
+    measure(g, box, part, hero);
     if (box.isEmpty()) return;
     box.max.y += LABEL_HEADROOM;
+    // The push-in: as the beat plays, the frame tightens from the whole cast onto the hero (with a little room
+    // around it), so the camera ends close on what the beat is about, the rest of the cast at the frame's edges.
+    const w = (shot.focus ?? 0) * (0.45 + 0.55 * smooth(prog.current));
+    if (w > 0 && !hero.isEmpty()) {
+      const pad = Math.max(0.2, (hero.max.y - hero.min.y) * 0.12);
+      hero.expandByVector(new THREE.Vector3(pad, 0, pad));
+      hero.max.y += LABEL_HEADROOM;
+      box.min.lerp(hero.min, w);
+      box.max.lerp(hero.max, w);
+    }
     camera.updateMatrixWorld();
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
     for (let i = 0; i < 8; i++) {
@@ -341,8 +354,9 @@ function CameraRig({ shot, progress }: { shot: Shot; progress: number }) {
  * The content's real bounds: every visible mesh, except helpers that aren't the content (contact shadows,
  * floor glows: userData.noFit), which would otherwise make the camera frame empty floor.
  */
-function measure(g: THREE.Object3D, box: THREE.Box3, part: THREE.Box3) {
+function measure(g: THREE.Object3D, box: THREE.Box3, part: THREE.Box3, hero?: THREE.Box3) {
   box.makeEmpty();
+  hero?.makeEmpty();
   g.updateWorldMatrix(true, true);
   // Story objects carry an invisible stand-in at their settled size: frame those alone when there are any, so the
   // camera holds steady while things pop in, bob and breathe instead of chasing every frame of the animation.
@@ -352,6 +366,7 @@ function measure(g: THREE.Object3D, box: THREE.Box3, part: THREE.Box3) {
     const m = o as THREE.Mesh;
     if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
     box.union(part.copy(m.geometry.boundingBox!).applyMatrix4(m.matrixWorld));
+    if (o.userData.focus) hero?.union(part);
     proxies = true;
   });
   if (proxies) return;
@@ -617,13 +632,27 @@ function HookScene({ v, progress, accent, color }: { v: Extract<Visual, { type: 
   );
 }
 
+/** A steady per-scene camera angle (about ±15-25°), picked from the cast and its hero so it repeats for the same shot. */
+function angleFor(scene: SceneSpec) {
+  const key = `${scene.objects.map((o) => o.shape).join()}|${focusIndex(scene)}`;
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
+  const side = h & 1 ? 1 : -1;
+  return side * (0.26 + ((h >>> 1) % 5) * 0.035);
+}
+
 /** The beat as a moment in the reel's own story: laid out, framed to fit, labels pinned on. */
 function StoryScene({ scene, progress, accent }: { scene: SceneSpec; progress: number; accent: string }) {
   const slots = useMemo(() => layoutScene(scene), [scene]);
   const base = STORY_SHOTS[scene.camera] ?? STORY_SHOTS.front;
   // The angle comes from the shot; CameraRig's auto-framing decides distance and position from the real content.
   const tall = Math.max(...slots.map((s) => s.height), 1);
-  const shot = { ...base, look: [0, Math.min(tall * 0.45, 1.1), 0] as [number, number, number] };
+  // A three-quarter angle, not a flat front-on view, swinging to the other side when the hero changes, so the
+  // cast has depth and consecutive beats feel like different camera setups.
+  const yaw = scene.objects.length > 1 && scene.camera !== "top" ? angleFor(scene) : 0;
+  const [px, py, pz] = base.pos;
+  const pos: [number, number, number] = [px * Math.cos(yaw) + pz * Math.sin(yaw), py, pz * Math.cos(yaw) - px * Math.sin(yaw)];
+  const shot = { ...base, pos, look: [0, Math.min(tall * 0.45, 1.1), 0] as [number, number, number], focus: scene.objects.length > 1 ? 1 : 0, push: 0.05 };
   return (
     <>
       <CameraRig shot={shot} progress={progress} />
