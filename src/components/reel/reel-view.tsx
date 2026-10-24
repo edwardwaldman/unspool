@@ -155,7 +155,7 @@ export function ReelView({
         stageBox={{ top: below, bottom: bottom + RAIL_TOP, right: preview ? 0 : GUTTER - 8, left: preview ? 0 : 8 }}
         stage={
           (active || pb.seg > 0) && !isQuiz
-            ? { visual: pb.segment.visual, script, progress: fraction, last: reel.index === total, pulse: hits, scene: pb.segment.kind === "beat" ? script.beats[pb.segment.beatIndex]?.scene : undefined }
+            ? { visual: pb.segment.visual, script, progress: fraction, last: reel.index === total, pulse: hits, scene: pb.segment.kind === "beat" ? script.beats[pb.segment.beatIndex]?.scene : undefined, mood: pb.segment.kind === "beat" ? script.beats[pb.segment.beatIndex]?.mood : undefined }
             : null
         }
       />
@@ -180,10 +180,12 @@ export function ReelView({
       {/* Top: the document chip, as in the demo ("| AP STATS · UNIT 3"), and the wordmark */}
       {!preview && (
         <div className="pointer-events-none absolute inset-x-0 z-10 flex items-start justify-between px-3.5" style={{ top: top + 14 }}>
-          <span className="max-w-[70%] truncate border-l-[3px] border-thread bg-black/85 px-2 py-[3px] font-hook text-[11.5px] font-extrabold uppercase tracking-[0.04em] text-white" data-testid="reel-chip">
+          <span className="max-w-[70%] truncate rounded-[3px] bg-black/80 px-2 py-[3px] font-hook text-[10.5px] font-extrabold uppercase tracking-[0.04em] text-white" data-testid="reel-chip">
             {chipText(spool.title ?? spool.fileName, reel.index)}
           </span>
-          <span className="pt-[3px] font-wordmark text-[12.5px] font-bold text-white/85">unspool</span>
+          <span className="rounded-full bg-[#ff3d8b] px-2.5 py-[3px] font-hook text-[10.5px] font-extrabold tabular-nums text-white shadow-[0_2px_8px_rgba(255,61,139,.45)]" data-testid="reel-pill">
+            {reel.index}/{total}
+          </span>
         </div>
       )}
 
@@ -282,7 +284,7 @@ const plainText = (t: string) => t.replace(/[*#^~]/g, "");
 function chipText(doc: string, index: number) {
   const name = doc.replace(/\.[a-z0-9]{2,5}$/i, "").replace(/[+_]+/g, " ").replace(/\s+/g, " ").trim();
   const short = name.length > 22 ? `${name.slice(0, 21).trim()}…` : name;
-  return `${short} · Part ${index}`;
+  return `${short} · Part ${index}`.toUpperCase();
 }
 
 /** The reel as text: its summary, the points it makes in order, and its quick-check question. */

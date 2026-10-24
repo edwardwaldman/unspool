@@ -4,7 +4,9 @@ import { ArrowRight, Check, ChevronUp, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { COLOR_VAR } from "@/lib/markup";
-import type { HighlightColor, ReelScript, SceneSpec, Visual } from "@/lib/schema";
+import type { HighlightColor, Mood, ReelScript, SceneSpec, Visual } from "@/lib/schema";
+import { DIAGRAM_TYPES } from "@/lib/schema";
+import { DiagramStage } from "./diagrams";
 import { MarkedText } from "../ui/marked-text";
 import { CrowdCanvas } from "./crowd-canvas";
 import { HookScene } from "./hook-scene";
@@ -394,6 +396,8 @@ export type StageProps = {
   pulse?: number;
   /** The beat's 3D story scene from the script, when it has one (drawn by Scene3D; the flat stage ignores it). */
   scene?: SceneSpec;
+  /** The beat's background mood, when the script sets one. */
+  mood?: Mood;
 };
 
 /** One beat's motion graphic, centred and as large as the space allows, popping in and floating gently (as in the ads). The quiz is an interactive overlay (QuizCard), not part of the stage. */
@@ -413,7 +417,7 @@ export function VisualStage(props: StageProps) {
     return () => ro.disconnect();
   }, []);
   const inner = <StageInner {...props} />;
-  if (props.visual.type === "quiz" || props.visual.type === "hook") return inner;
+  if (props.visual.type === "quiz" || props.visual.type === "hook" || DIAGRAM_TYPES.has(props.visual.type)) return inner;
   return (
     <div ref={box} className="relative flex h-full w-full items-center justify-center overflow-hidden">
       <motion.div
@@ -449,6 +453,10 @@ function StageInner({ visual, script, progress, last, pulse = 0 }: StageProps) {
       return <CrowdVisual v={visual} progress={progress} />;
     case "stat":
       return <StatVisual v={visual} />;
+    case "graph":
+    case "equation":
+    case "emoji":
+      return <DiagramStage visual={visual} progress={progress} />;
     case "quiz":
       return null;
     case "outro":

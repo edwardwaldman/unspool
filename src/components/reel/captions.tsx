@@ -7,9 +7,12 @@ import type { ReelStyle } from "@/lib/reel-style";
 /**
  * Burned-in TikTok-style captions: a short chunk of words, the word being said lit up in the reel's accent.
  * `variant` (Pro reel style): "spotlight" (the default, as in the ads) shows spoken words white, the ones still
- * coming dim and key terms in the accent; "pop" boxes and tilts the current word, "clean" just colors it,
+ * coming dim and every marked key term yellow; "pop" boxes and tilts the current word, "clean" just colors it,
  * "karaoke" fills every spoken word with the accent.
  */
+/** The default (spotlight) look, as in hand-made study reels: bold white, every marked key word yellow. */
+const KEY_YELLOW = "#ffd84d";
+
 export function Captions({ text, words, fraction, variant = "spotlight" }: { text: string; words: number[]; fraction: number; variant?: ReelStyle["captions"] }) {
   const list = useMemo(() => markupWords(text), [text]);
   const chunks = useMemo(() => {
@@ -35,7 +38,7 @@ export function Captions({ text, words, fraction, variant = "spotlight" }: { tex
   return (
     <p
       className={`text-center font-hook leading-[1.3] tracking-[-0.015em] text-white ${variant === "clean" ? "font-bold" : "font-extrabold"}`}
-      style={{ textShadow: variant === "clean" ? "0 1px 3px rgba(0,0,0,.7)" : variant === "spotlight" ? "0 2px 6px rgba(0,0,0,.75)" : "0 2px 0 rgba(0,0,0,.6)", fontSize: variant === "spotlight" ? "min(32px, 7.8cqw, 4.2cqh)" : "min(30px, 7.2cqw, 3.9cqh)" }}
+      style={{ textShadow: variant === "clean" ? "0 1px 3px rgba(0,0,0,.7)" : variant === "spotlight" ? "0 2px 0 rgba(0,0,0,.55), 0 3px 10px rgba(0,0,0,.6)" : "0 2px 0 rgba(0,0,0,.6)", fontSize: variant === "spotlight" ? "min(32px, 7.8cqw, 4.2cqh)" : "min(30px, 7.2cqw, 3.9cqh)" }}
       aria-live="off"
     >
       {chunk.map((i) => {
@@ -48,7 +51,7 @@ export function Captions({ text, words, fraction, variant = "spotlight" }: { tex
             className="mx-[0.04em] inline-block px-[0.14em] transition-transform duration-150 ease-[cubic-bezier(.3,1.8,.5,1)]"
             style={
               variant === "spotlight"
-                ? { color: w.color ? COLOR_VAR[w.color] : isNow ? "var(--thread)" : "#fff", opacity: spoken ? 1 : 0.38, transform: isNow ? "scale(1.08)" : undefined }
+                ? { color: w.color ? KEY_YELLOW : "#fff", opacity: spoken ? 1 : 0.38, transform: isNow ? "scale(1.08)" : undefined }
                 : variant === "clean"
                 ? { color: isNow ? "var(--thread)" : w.color ? COLOR_VAR[w.color] : "#fff", opacity: spoken ? 1 : 0.72 }
                 : variant === "karaoke"

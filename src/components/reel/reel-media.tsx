@@ -3,7 +3,8 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import type { HighlightColor } from "@/lib/schema";
+import { DIAGRAM_TYPES, type HighlightColor } from "@/lib/schema";
+import { MOOD_BG } from "./diagrams";
 import { ParticleField } from "./particle-field";
 import { VisualStage, type StageProps } from "./visuals";
 
@@ -84,7 +85,10 @@ export function ReelMedia({
   // WebGL (or with reduced motion) keep the flat graphics.
   const visual = stage?.visual;
   const story = Boolean(stage?.scene?.objects?.length);
-  const in3d = Boolean(active && !glLost && !reduce && sceneColors && visual && (story || (SCENE_TYPES.has(visual.type) && !(visual.type === "hook" && /soup|cooking-pot/.test(visual.icon)))) && hasWebGL());
+  // Graphs, equations and emoji props are full-frame flat diagrams: never inside the 3D scene.
+  const diagram = Boolean(visual && DIAGRAM_TYPES.has(visual.type));
+  const mood = stage?.mood ?? (diagram ? "calm" : undefined);
+  const in3d = Boolean(!diagram && active && !glLost && !reduce && sceneColors && visual && (story || (SCENE_TYPES.has(visual.type) && !(visual.type === "hook" && /soup|cooking-pot/.test(visual.icon)))) && hasWebGL());
   return (
     <>
       <div ref={probe} aria-hidden className="hidden" />
@@ -97,6 +101,12 @@ export function ReelMedia({
             "radial-gradient(120% 70% at 50% 42%, color-mix(in srgb, var(--thread) 30%, #20343c) 0%, color-mix(in srgb, var(--thread) 10%, #111b20) 48%, #070b0d 100%)",
         }}
       />
+      {/* The beat's mood (hot pink hook, calm navy, warning red, win green) cross-fades over the accent backdrop. */}
+      <AnimatePresence>
+        {mood && (
+          <motion.div key={mood} aria-hidden className="pointer-events-none absolute inset-0" style={{ background: MOOD_BG[mood] }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} />
+        )}
+      </AnimatePresence>
       {in3d && stage && sceneColors ? (
         <div className="absolute inset-x-0 z-[5]" style={{ top: stageBox.top, bottom: stageBox.bottom }}>
           {/* @ts-expect-error quiz/outro never reach here (SCENE_TYPES) */}
@@ -104,7 +114,7 @@ export function ReelMedia({
         </div>
       ) : (
         <>
-      <ParticleField active={active && playing} pulse={pulse} />
+      {!diagram && <ParticleField active={active && playing} pulse={pulse} />}
       <div className="absolute inset-x-0 z-[5] flex items-center justify-center" style={stageBox}>
         <AnimatePresence mode="wait">
           <motion.div

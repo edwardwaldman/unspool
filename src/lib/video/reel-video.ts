@@ -60,6 +60,12 @@ function cardTitle(v: Visual): string {
       return v.highlight_label;
     case "stat":
       return `${v.value} ${v.label}`;
+    case "graph":
+      return v.title;
+    case "equation":
+      return v.expr;
+    case "emoji":
+      return v.title || v.caption;
   }
 }
 

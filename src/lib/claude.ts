@@ -227,7 +227,7 @@ Rules:
 
 const SCRIPT_GUIDE = `Reel format:
 - ~30–60 seconds when spoken. Made of beats; a beat = one or two spoken sentences + one visual.
-- beats[0] is the HOOK beat (visual.type "hook"): the scroll-stopping opener, using the planned hook (you may tighten it). Its tag is a short ALL-CAPS label like "GUARANTEED QUESTION", "COMMON TRAP", "READ THIS CLAUSE", "MONEY ON THE LINE".
+- beats[0] is the HOOK beat (visual.type "hook", or "emoji"/"equation" for a math/science hook like "sin(∞) = ?" with a 📳): the scroll-stopping opener, using the planned hook (you may tighten it). Its tag is a short ALL-CAPS label like "GUARANTEED QUESTION", "COMMON TRAP", "READ THIS CLAUSE", "MONEY ON THE LINE".
 - Then 6–10 BODY beats that explain the concept with stories, analogies, concrete examples and memory hacks. Cover every detail of this reel's section: definitions, numbers, dates, rules, exceptions.
 - The quiz and outro are separate fields (don't add them as beats).
 - quiz: one multiple-choice question (3 options, at most 4) that checks the key idea; "answer" is the 0-based index of the correct option; "explain" starts with the correct answer in *highlight* then one short sentence why, e.g. "*Parameter.* It describes the whole population." For work docs, frame as a practical "what would you do" check.
@@ -246,7 +246,16 @@ Visuals — choose the one that best shows each beat; vary them across the reel 
 - icons {items:[{icon,label}], arrow}: 1–3 icons with short labels; arrow=true shows a left-to-right arrow between them.
 - crowd {total_label, highlight_label, ratio}: a field of glowing dots (the whole group) with a highlighted subset (ratio 0.02–0.9). Great for population vs sample, "who this applies to", percentages.
 - stat {value, label, color}: one big number with a label, e.g. value "$2,500" label "LATE PENALTY", value "30 DAYS" label "NOTICE REQUIRED". Only use numbers that appear in the document.
-color is one of primary | warn | yellow | cyan, with the same meanings as the markup (primary is the default; warn only for risks). Labels and titles are short (1–4 words), usually ALL CAPS. "icon" is a name from the allowed list (line icons, no emoji). Never put emoji in any text.
+- equation {label, expr, note, ask}: a big equation header. label = small pink tag ("PART D", "KEY RULE", "THE FORMULA"); expr = the equation itself, short and exact ("sin(f(x))", "lim x→4⁻ f(x) = −∞", "MR = MC", "p̂ = x / n"; unicode math ∞ ± → ≤ ≥ √ π ² is fine); note = one short supporting line ("no limit due to INFINITE OSCILLATION"); ask = a short yellow question or punchline ("where? why?"). Use "" for parts you don't need.
+- graph {title, x_range, y_range, curves, points, asymptotes, bounds, highlight, zoom}: a REAL plotted graph on a dark grid. Draw the actual function from the document, accurately:
+  - curves: 1–3, each {expr, pieces, color: cyan|pink|yellow|green}. expr is a math expression in x using only + - * / ^ ( ) and sin cos tan sqrt abs log ln exp, pi, e (e.g. "sin(x)", "1/(x-4)", "x^2 - 3", "2*x+1"). For a piecewise function leave expr "" and list pieces [{expr, from, to}] (each piece only on its own x interval; jumps between pieces are drawn as breaks).
+  - x_range/y_range: [min, max] framing the interesting part. points: dots {x, y, open (true = hole), label}. asymptotes: {axis "x" (vertical line x=at) or "y", at, label like "x = 4"}. bounds: dashed orange horizontal lines {y, label} (e.g. y=1 "1" and y=-1 "−1" for sine's range).
+  - highlight {show, x, y, label}: a red circle that pops on the key point with a red caption ("f → ±∞ only at x = 4"); show=false if none. zoom {show, x_range, y_range, label}: zooms into a region late in the beat ("near x = 4"); show=false if none (copy the main ranges).
+  - title: the function's name as on a whiteboard ("y = sin(u)", "f(x)", "Supply & demand").
+  Only plot what the document states or implies; numbers in the graph must match it.
+- emoji {emoji, title, caption, motion: vibrate|bounce|spin|pulse}: ONE big emoji as a prop for a metaphor beat (📳 vibrating phone for "it oscillates forever", 🏃 for approaching, 💸 for cost), optional big title above ("sin(∞) = ?") and a short yellow caption under it ("no limit"). This is the ONLY place emoji are allowed.
+For math, physics, chemistry, economics or statistics documents (anything with equations, functions, data or diagrams), PREFER equation and graph visuals for the explanation beats, and give those beats "scene": {"camera":"front","objects":[]} — an accurate diagram beats a 3D metaphor. A strong math reel looks like: emoji hook → equation header → graph of the base function → graph of the specific function with its key point highlighted → zoomed graph → equation summary.
+color is one of primary | warn | yellow | cyan, with the same meanings as the markup (primary is the default; warn only for risks). Labels and titles are short (1–4 words), usually ALL CAPS. "icon" is a name from the allowed list (line icons, no emoji). Never put emoji in any text except the emoji visual's "emoji" field.
 
 Other fields:
 - "headline": the reel's on-screen hook headline that stays at the top: 8–18 words, the key term wrapped in *…*. E.g. "A chef never eats the whole pot. So how does she know the *soup* is salty?"
@@ -259,6 +268,7 @@ Other fields:
   5. Motions: "stir" (a spoon), "drop" (something arriving this beat), "glow" (the thing that matters right now; one per beat), "bob" (a person or living thing), "tilt" (a scale), "spin" (a coin, a planet), else "none".
   6. camera: "front" (default), "close" (one object), "low" (dramatic reveal), "top" (a crowd or layout). Keep it the same for several beats; change it only for a reveal.
   The quiz and outro have no scene. Use "objects": [] only for a beat where no picture helps (the "visual" is shown instead).
+- "mood" (on every beat): the background colour: "hot" (hot pink, for the hook and big surprises), "calm" (deep navy with soft glows — the default for explanations, graphs and equations), "warn" (red-orange, traps and mistakes), "win" (green, the correct answer / payoff).
 - "image_prompt" (on every beat): the scene for an illustration shown behind that beat in the video, 8–20 words. Concrete and visual: objects, people, places or a simple visual metaphor for what the beat says (e.g. "a chef tasting one spoon of soup beside a huge steaming pot"). Never ask for words, letters, numbers, charts, logos, UI or real named people in the image, and don't describe an art style (the style is added automatically).
 - "stats": 0–3 numbers from the document shown in a live monospace stat line, counting up when they're mentioned: {label (1–2 lowercase words), value (number), prefix (e.g. "$" or ""), suffix (e.g. "%", " days" or ""), at_beat (index of the beat where it's first mentioned)}. Only real numbers from the document; use [] if the reel has none.`;
 
