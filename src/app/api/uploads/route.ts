@@ -28,7 +28,10 @@ export async function POST(req: Request) {
   // Free accounts get one document, ever (counted from the upload ledger, so deleting it doesn't give it back),
   // unless the owner has switched on open access.
   const owner = viewer.ownerUnlimited;
-  let oneFree = !owner && !viewer.subscribed && !(await appSettings()).openAccess;
+  const settings = await appSettings();
+  let oneFree = !owner && !viewer.subscribed && !settings.openAccess;
+  // A network the owner uses is trusted for testing: fresh accounts on it are limited per account only.
+  const ownerNetwork = settings.ownerNetworks.includes(ipHash);
   // Bought credits are what they bought: a free account with top-up credits left can keep unspooling.
   let paidByTopup = false;
   if (oneFree && (await freeDocumentUsed(viewer.userId))) {
@@ -45,7 +48,7 @@ export async function POST(req: Request) {
   const allowed = await claimUsage({
     kind: "upload",
     // first_user_or_ip re-checks "never uploaded" under the same lock, so parallel requests can't each get a free document.
-    scope: viewer.subscribed || paidByTopup ? "user" : oneFree ? "first_user_or_ip" : "user_or_ip",
+    scope: viewer.subscribed || paidByTopup || ownerNetwork ? "user" : oneFree ? "first_user_or_ip" : "user_or_ip",
     limit,
     userId: viewer.userId,
     ipHash,
@@ -54,9 +57,9 @@ export async function POST(req: Request) {
   if (!allowed) {
     return error(
       429,
-      viewer.subscribed
+      viewer.subscribed || paidByTopup || ownerNetwork
         ? "You've hit today's upload limit. Try again tomorrow."
-        : `Free accounts can unspool ${limit} documents a day. Upgrade to keep going.`,
+        : "Too many free documents from this network today. Upgrade, or try again tomorrow.",
       { code: "limit" },
     );
   }

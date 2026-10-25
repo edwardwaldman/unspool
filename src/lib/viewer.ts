@@ -1,4 +1,5 @@
 import { isOwnerEmail } from "./owner";
+import { rememberOwnerNetwork } from "./settings";
 import { cookies, headers } from "next/headers";
 import { ANON_COOKIE, supabaseConfigured } from "./config";
 import { adminClient } from "./supabase/admin";
@@ -127,6 +128,8 @@ export async function getViewer(): Promise<Viewer> {
 
   // The owner can look at the site as a signed-out visitor or as a real account of any tier (the
   // TEST: OWNER VIEW box). Honoured only here, after the real identity is known to be the owner.
+  // The owner's network is trusted for testing: fresh accounts made on it skip the per-network free limits.
+  await rememberOwnerNetwork(await clientIpHash()).catch(() => {});
   const raw = (await cookies()).get(OWNER_VIEW_COOKIE)?.value as OwnerView | undefined;
   const view = raw && OWNER_VIEWS.includes(raw) ? raw : null;
   const owner = { ...real, isOwner: true, ownerView: view };
