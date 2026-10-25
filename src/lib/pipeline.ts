@@ -265,19 +265,7 @@ export async function generateReel(reelId: string) {
       if (error) await db.from("reels").update(ready).eq("id", reelId);
     }
 
-    // Done when every reel that is paid for is ready: on the free drip the unpaid reels stay pending (they
-    // generate on demand when unlocked, which puts the document back to "scripting"), so counting them kept a
-    // finished document "scripting" forever.
-    const { data: paid } = await db.from("documents").select("credit_reels,unlocked").eq("id", reel.document_id).maybeSingle<Pick<DocumentRow, "credit_reels" | "unlocked">>();
-    let waiting = db
-      .from("reels")
-      .select("id", { count: "exact", head: true })
-      .eq("document_id", reel.document_id)
-      .neq("status", "ready");
-    if (paid && !paid.unlocked) waiting = waiting.lte("index", paid.credit_reels ?? 0);
-    const { count } = await waiting;
-    if (count === 0) await db.from("documents").update({ status: "ready" }).eq("id", reel.document_id);
-    else if (!edit) await queueRemainingReels(reel.document_id, { pendingOnly: true });
+    if (!(await settleDocument(reel.document_id)) && !edit) await queueRemainingReels(reel.document_id, { pendingOnly: true });
   } catch (err) {
     console.error("[pipeline] generateReel failed", reelId, err);
     // A failed edit leaves the reel as it was: its old script, audio and video are untouched until success.
@@ -291,7 +279,30 @@ export async function generateReel(reelId: string) {
     await db.from("reels").update({ status: "failed", error: friendlyError(err), error_detail: errorDetail(err) }).eq("id", reelId);
     // Out of attempts: this reel failed for good, so give its credit back.
     if (reel.attempts + 1 >= LIMITS.maxReelAttempts) await refundReel(reelId);
+    // A failed reel is settled too (it shows a retry button): if it was the last one in flight, the document
+    // is done, instead of showing "making your reels" forever.
+    await settleDocument(reel.document_id).catch((e) => console.error("[pipeline] settle failed", e));
   }
+}
+
+/**
+ * Mark a document "ready" once none of its paid-for reels is still pending or generating (ready and failed
+ * both count as settled). On the free drip the unpaid reels stay pending (they generate on demand when
+ * unlocked, which puts the document back to "scripting"), so only paid ones are counted. True when settled.
+ */
+async function settleDocument(documentId: string) {
+  const db = adminClient();
+  const { data: paid } = await db.from("documents").select("credit_reels,unlocked").eq("id", documentId).maybeSingle<Pick<DocumentRow, "credit_reels" | "unlocked">>();
+  let waiting = db
+    .from("reels")
+    .select("id", { count: "exact", head: true })
+    .eq("document_id", documentId)
+    .in("status", ["pending", "generating"]);
+  if (paid && !paid.unlocked) waiting = waiting.lte("index", paid.credit_reels ?? 0);
+  const { count, error } = await waiting;
+  if (error || count !== 0) return false;
+  await db.from("documents").update({ status: "ready" }).eq("id", documentId).eq("status", "scripting");
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -315,6 +326,8 @@ export async function healIfStuck(doc: DocumentRow, reels: Pick<ReelRow, "id" | 
     return;
   }
   if (doc.status !== "scripting") return;
+  // Every paid reel already settled (ready or failed) but the document never flipped: finish it now.
+  if (await settleDocument(doc.id)) return;
   const firstReady = reels.find((r) => r.index === 1)?.status === "ready";
   // Reels waiting their turn in the standard queue aren't orphans: only refill the in-flight slots.
   let slots = doc.priority ? Infinity : STANDARD_IN_FLIGHT - reels.filter((r) => r.status === "generating" && !isStale(r)).length;

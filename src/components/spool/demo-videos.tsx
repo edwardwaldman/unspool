@@ -89,6 +89,9 @@ export function DemoVideos() {
       setEnded(null);
     };
     el.addEventListener("scroll", onScroll, { passive: true });
+    // A shared link (/s/demo?reel=2) opens on that reel, not always the first.
+    const want = Number(new URLSearchParams(window.location.search).get("reel")) - 1;
+    if (want > 0 && want < REELS.length) el.scrollTo({ top: want * el.clientHeight });
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
