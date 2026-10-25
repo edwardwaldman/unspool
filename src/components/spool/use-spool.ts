@@ -5,7 +5,9 @@ import type { ReelDTO, SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 
 function settled(s: SpoolDTO) {
   if (s.status === "failed") return true;
-  if (!s.reels.length) return false;
+  // Still being processed: right after planning every reel is briefly locked until the free reel (or credits)
+  // are granted a few seconds later, so "everything locked" mustn't stop polling yet.
+  if (s.status !== "ready" || !s.reels.length) return false;
   return s.reels.every((r) => r.locked || r.status === "ready" || r.status === "failed");
 }
 
