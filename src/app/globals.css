@@ -132,3 +132,8 @@ em.font-display {
 .prose-unspool p, .prose-unspool li { color: color-mix(in srgb, var(--ink) 82%, var(--muted)); line-height: 1.7; margin-bottom: 0.75rem; }
 .prose-unspool ul { list-style: disc; padding-left: 1.25rem; }
 .prose-unspool a { color: var(--thread); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Terms and Privacy: denser legal copy (smaller type, tighter spacing) */
+.prose-unspool.legal-dense p, .prose-unspool.legal-dense li { font-size: 14.5px; line-height: 1.58; margin-bottom: 0.55rem; }
+.prose-unspool.legal-dense h2 { font-size: 1.3rem; margin-top: 1.9rem; margin-bottom: 0.45rem; }
+.prose-unspool.legal-dense ul { padding-left: 1.1rem; }
