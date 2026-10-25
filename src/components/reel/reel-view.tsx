@@ -32,7 +32,6 @@ export type ReelChrome = {
 const GUTTER = 76;
 /** Where the stage ends: above the captions (which sit at bottom + 178 and are at most two lines). Nothing in the scene can reach them. */
 const RAIL_TOP = 280;
-const BAND = 104;
 
 /**
  * One playable reel, laid out like an Instagram Reel: the headline (opening beat) or live stats at the
@@ -75,6 +74,7 @@ export function ReelView({
   const kind = pb.segment.kind;
   const isQuiz = kind === "quiz" || kind === "explain";
   const stageKey = isQuiz ? `q${pb.segment.beatIndex}` : pb.segment.key;
+  const quizBeat = [...script.beats].reverse().find((b) => b.scene?.objects?.length);
   const top = chrome.topInset ?? 0;
   const bottom = chrome.bottomInset;
   const opening = pb.seg === 0;
@@ -164,7 +164,10 @@ export function ReelView({
         stage={
           (active || pb.seg > 0) && !isQuiz
             ? { visual: pb.segment.visual, script, progress: fraction, last: reel.index === total, pulse: hits, scene: pb.segment.kind === "beat" ? script.beats[pb.segment.beatIndex]?.scene : undefined, mood: pb.segment.kind === "beat" ? script.beats[pb.segment.beatIndex]?.mood : undefined }
-            : null
+            : isQuiz && quizBeat
+              ? // The story's last 3D scene keeps playing behind the quiz, and its mood reacts to the answer.
+                { visual: quizBeat.visual, script, progress: 1, last: reel.index === total, pulse: 0, scene: quizBeat.scene, mood: !pb.quiz.revealed ? "calm" : pb.quiz.selected === script.quiz.answer ? "win" : "warn" }
+              : null
         }
       />
       </motion.div>
@@ -209,7 +212,7 @@ export function ReelView({
 
       {/* Quiz: an overlay card inside the frame */}
       {isQuiz && (
-        <div className="absolute left-3 z-20 flex items-center" style={{ right: GUTTER, top: below - 6, bottom: bottom + BAND + 10 }}>
+        <div className="absolute left-3 z-20 flex items-end" style={{ right: GUTTER, top: below + 4, bottom: bottom + 20 }}>
           <QuizCard quiz={script.quiz} state={pb.quiz} waitLeft={pb.quizWaitLeft} onAnswer={pb.answer} />
         </div>
       )}
@@ -227,7 +230,8 @@ export function ReelView({
       </div>
 
       {/* Account row, caption, audio line and the mute button (the demo's bottom block) */}
-      <div className="absolute inset-x-0 z-20 origin-bottom-left px-3.5 pr-16 ipad:scale-[1.6]" style={{ bottom: bottom + 16 }}>
+      {/* Hidden during the quiz, which takes the bottom of the frame. */}
+      <div className={`absolute inset-x-0 z-20 origin-bottom-left px-3.5 pr-16 transition-opacity duration-300 ipad:scale-[1.6] ${isQuiz ? "pointer-events-none opacity-0" : ""}`} style={{ bottom: bottom + 16 }}>
         <CaptionBlock title={script.title} hook={script.headline} docName={spool.title ?? spool.fileName} summary={script.summary} sensitive={spool.sensitive} />
       </div>
       <button

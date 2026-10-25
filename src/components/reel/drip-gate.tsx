@@ -98,6 +98,27 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
 
   return (
     <Modal label="Next free reel" onClose={onClose}>
+      {/* The whole top of the popup (trial pitch and countdown) is one big tap target to checkout: the trial if they
+          can still take it, else Plus. Buttons inside keep their own clicks. */}
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={usage.trialEligible ? "Start my free day" : "Upgrade to Plus"}
+        className="cursor-pointer"
+        data-testid="gate-top"
+        onClick={(e) => {
+          if (busy !== null || (e.target as HTMLElement).closest("button")) return;
+          if (usage.trialEligible) go("trial", { kind: "trial" });
+          else go("plus", { kind: "subscription", tier: "plus" });
+        }}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          e.preventDefault();
+          if (busy !== null) return;
+          if (usage.trialEligible) go("trial", { kind: "trial" });
+          else go("plus", { kind: "subscription", tier: "plus" });
+        }}
+      >
       {/* A free account that can still take the trial: lead with it. */}
       {usage.trialEligible && (
         <div className="mb-5 mr-10" data-testid="trial-pitch">
@@ -139,6 +160,8 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
             <p className="mt-2 text-[13px] text-muted">Open part {nextReel} to unspool it.</p>
           </>
         )}
+      </div>
+
       </div>
 
       <h2 className="mt-5 font-display text-[26px] leading-[1.1]">Don&apos;t want to wait?</h2>

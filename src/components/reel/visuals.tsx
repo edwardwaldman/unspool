@@ -270,8 +270,41 @@ function StatVisual({ v }: { v: Extract<Visual, { type: "stat" }> }) {
 }
 
 const LETTERS = ["A", "B", "C", "D"];
+/** Each answer's badge colour, game-show style. */
+const BADGE = ["#d3f05a", "#5fd4ff", "#ff7ac6", "#ffd25a"];
+const CONFETTI = ["#d3f05a", "#5fd4ff", "#ff7ac6", "#ffd25a", "#ffffff"];
 
-/** The quiz, as an overlay card inside the frame: question, tappable answers, and a ring timing the wait. */
+/**
+ * Shrinks its child to fit the box it is given (never grows it): a long question with long answers stays inside
+ * the frame instead of running under the account row and the rail.
+ */
+function FitBox({ children }: { children: React.ReactNode }) {
+  const outer = useRef<HTMLDivElement>(null);
+  const inner = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const o = outer.current, i = inner.current;
+    if (!o || !i) return;
+    const fit = () => {
+      const h = i.scrollHeight, room = o.clientHeight;
+      setScale(h > room && h > 0 ? Math.max(0.55, room / h) : 1);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(o);
+    ro.observe(i);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={outer} className="flex h-full w-full items-end">
+      <div ref={inner} className="w-full origin-bottom" style={{ transform: scale < 1 ? `scale(${scale})` : undefined }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** The quiz, as a game-show card inside the frame: sticker, countdown ring, colour-coded answers, a reaction. */
 export function QuizCard({
   quiz,
   state,
@@ -283,75 +316,114 @@ export function QuizCard({
   waitLeft: number;
   onAnswer: (i: number) => void;
 }) {
-  const verdict = state.selected === null ? "Time's up" : state.selected === quiz.answer ? "Correct" : "Not quite";
-  const verdictColor = state.selected === null ? "rgba(255,255,255,.7)" : state.selected === quiz.answer ? "var(--sage)" : "var(--coral)";
+  const reduce = useReducedMotion();
+  const right = state.revealed && state.selected === quiz.answer;
+  const wrong = state.revealed && state.selected !== null && state.selected !== quiz.answer;
+  const verdict = state.selected === null ? "⏰ Time's up" : right ? "🎉 Correct!" : "😬 Not quite";
+  const verdictColor = state.selected === null ? "rgba(255,255,255,.8)" : right ? "var(--sage)" : "var(--coral)";
+  const secs = Math.ceil((waitLeft * QUIZ_WAIT_MS) / 1000);
+  const urgent = state.waiting && secs <= 3;
+  const R = 15, C = 2 * Math.PI * R;
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.45, ease }}
-      className="w-full border border-line bg-paper/90 p-5"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="flex items-center justify-between">
-        <span className="text-[13px] font-semibold text-thread">Quick check</span>
-        {state.waiting ? (
-          <span className="flex items-center gap-2" aria-label="Time left to answer">
-            <span className="h-[3px] w-14 bg-white/15">
-              <span className="block h-full bg-thread" style={{ width: `${waitLeft * 100}%` }} />
-            </span>
-            <span className="w-6 text-right text-[12px] tabular-nums text-white">{Math.ceil((waitLeft * QUIZ_WAIT_MS) / 1000)}s</span>
-          </span>
-        ) : state.revealed ? (
-          <motion.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-[13px] font-bold" style={{ color: verdictColor }}>
-            {verdict}
+    <FitBox>
+      <motion.div
+        initial={{ opacity: 0, y: 40, scale: 0.9, rotate: -1.5 }}
+        animate={wrong && !reduce ? { opacity: 1, y: 0, scale: 1, rotate: 0, x: [0, -10, 9, -6, 4, 0] } : { opacity: 1, y: 0, scale: 1, rotate: 0 }}
+        transition={wrong ? { duration: 0.45 } : { type: "spring", stiffness: 260, damping: 20 }}
+        className="relative w-full overflow-visible border bg-black/55 p-4 backdrop-blur-md"
+        style={{ borderColor: right ? "var(--sage)" : wrong ? "var(--coral)" : "rgba(255,255,255,.16)", boxShadow: right ? "0 0 40px color-mix(in srgb, var(--sage) 45%, transparent)" : wrong ? "0 0 40px color-mix(in srgb, var(--coral) 40%, transparent)" : "0 18px 50px rgba(0,0,0,.45)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Confetti on a right answer */}
+        {right && !reduce && (
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-0">
+            {Array.from({ length: 22 }, (_, i) => (
+              <motion.span
+                key={i}
+                className="absolute block h-2.5 w-1.5"
+                style={{ left: `${(i * 47) % 100}%`, background: CONFETTI[i % CONFETTI.length] }}
+                initial={{ y: 0, opacity: 1, rotate: 0 }}
+                animate={{ y: [0, -60 - (i % 5) * 14, 260], x: ((i % 7) - 3) * 14, opacity: [1, 1, 0], rotate: (i % 2 ? 1 : -1) * 420 }}
+                transition={{ duration: 1.5 + (i % 4) * 0.15, ease: "easeOut" }}
+              />
+            ))}
+          </div>
+        )}
+        <div className="flex items-center justify-between">
+          <motion.span
+            initial={{ scale: 0, rotate: -20 }}
+            animate={{ scale: 1, rotate: -4 }}
+            transition={{ type: "spring", stiffness: 420, damping: 14, delay: 0.1 }}
+            className="inline-block bg-thread px-2.5 py-1 text-[12px] font-black uppercase tracking-[0.08em] text-paper"
+          >
+            ⚡ Quick check
           </motion.span>
-        ) : null}
-      </div>
-      <div className="mt-4 text-[19px] font-semibold leading-snug tracking-[-0.01em] text-white">
-        <MarkedText text={quiz.question} />
-      </div>
-      <div className="mt-4 flex flex-col gap-2">
-        {quiz.options.map((o, i) => {
-          const correct = i === quiz.answer;
-          const chosen = state.selected === i;
-          const revealed = state.revealed;
-          const tone = revealed && correct ? "var(--sage)" : revealed && chosen ? "var(--coral)" : null;
-          return (
-            <motion.button
-              key={i}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAnswer(i);
-              }}
-              disabled={revealed}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: revealed && !correct && !chosen ? 0.45 : 1, y: 0 }}
-              transition={{ delay: revealed ? 0 : 0.15 + i * 0.08, duration: 0.35, ease }}
-              className="flex items-center gap-3 border px-3.5 py-3 text-left text-[15.5px] font-medium text-white transition-colors enabled:hover:bg-white/[0.14]"
-              style={{
-                borderColor: tone ?? "rgba(255,255,255,.14)",
-                background: tone ? `color-mix(in srgb, ${tone} 14%, var(--paper))` : "transparent",
-              }}
+          {state.waiting ? (
+            <motion.span
+              className="relative flex h-10 w-10 items-center justify-center"
+              animate={urgent && !reduce ? { scale: [1, 1.18, 1] } : { scale: 1 }}
+              transition={urgent ? { duration: 0.5, repeat: Infinity } : undefined}
+              aria-label="Time left to answer"
             >
-              <span
-                className="flex w-4 shrink-0 items-center justify-center text-[13px] font-bold"
-                style={{ color: tone ?? "rgba(255,255,255,.55)" }}
+              <svg viewBox="0 0 36 36" className="absolute inset-0 -rotate-90">
+                <circle cx="18" cy="18" r={R} fill="none" stroke="rgba(255,255,255,.15)" strokeWidth="3.5" />
+                <circle cx="18" cy="18" r={R} fill="none" stroke={urgent ? "var(--coral)" : "var(--thread)"} strokeWidth="3.5" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - waitLeft)} />
+              </svg>
+              <span className="relative text-[14px] font-black tabular-nums" style={{ color: urgent ? "var(--coral)" : "#fff" }}>{secs}</span>
+            </motion.span>
+          ) : state.revealed ? (
+            <motion.span initial={{ opacity: 0, scale: 0.4, rotate: 8 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 380, damping: 12 }} className="text-[15px] font-black" style={{ color: verdictColor }}>
+              {verdict}
+            </motion.span>
+          ) : null}
+        </div>
+        <div className="mt-3 text-[18px] font-bold leading-snug tracking-[-0.01em] text-white">
+          <MarkedText text={quiz.question} />
+        </div>
+        <div className="mt-3 flex flex-col gap-2">
+          {quiz.options.map((o, i) => {
+            const correct = i === quiz.answer;
+            const chosen = state.selected === i;
+            const revealed = state.revealed;
+            const tone = revealed && correct ? "var(--sage)" : revealed && chosen ? "var(--coral)" : null;
+            return (
+              <motion.button
+                key={i}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAnswer(i);
+                }}
+                disabled={revealed}
+                initial={{ opacity: 0, x: i % 2 ? 40 : -40, scale: 0.9 }}
+                animate={{ opacity: revealed && !correct && !chosen ? 0.4 : 1, x: 0, scale: revealed && correct ? [1, 1.05, 1] : 1 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{ delay: revealed ? 0 : 0.2 + i * 0.1, type: "spring", stiffness: 300, damping: 22 }}
+                className="flex items-center gap-3 border px-3 py-2.5 text-left text-[15px] font-semibold text-white transition-colors enabled:hover:bg-white/[0.12]"
+                style={{
+                  borderColor: tone ?? "rgba(255,255,255,.16)",
+                  background: tone ? `color-mix(in srgb, ${tone} 22%, transparent)` : "rgba(255,255,255,.04)",
+                }}
               >
-                {revealed && correct ? <Check size={15} strokeWidth={3} /> : revealed && chosen ? <X size={15} strokeWidth={3} /> : LETTERS[i]}
-              </span>
-              <MarkedText text={o} />
-            </motion.button>
-          );
-        })}
-      </div>
-      {state.revealed && (
-        <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mt-4 text-[14.5px] leading-snug text-white/85">
-          <MarkedText text={quiz.explain} />
-        </motion.p>
-      )}
-    </motion.div>
+                <span
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[13px] font-black"
+                  style={{ background: tone ?? BADGE[i % BADGE.length], color: "#0b0f0d" }}
+                >
+                  {revealed && correct ? <Check size={15} strokeWidth={3.2} /> : revealed && chosen ? <X size={15} strokeWidth={3.2} /> : LETTERS[i]}
+                </span>
+                <MarkedText text={o} />
+              </motion.button>
+            );
+          })}
+        </div>
+        {state.revealed && (
+          <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mt-3 text-[14px] leading-snug text-white/85">
+            {right && <span className="mr-1.5 font-black text-sage">+1 🧠</span>}
+            <MarkedText text={quiz.explain} />
+          </motion.p>
+        )}
+      </motion.div>
+    </FitBox>
   );
 }
 
