@@ -34,5 +34,8 @@ for i,t in enumerate([9.0,11.2,13.4,15.6]):
         add(t+2.4, tone(note(88),0.8,3,(1,.3)), 0.12)
 add(19.4, whoosh(0.8), 0.18)
 for j,m in enumerate([69,72,76]): add(19.6+j*0.12, tone(note(m),1.5,1.8,(1,.3)), 0.1)
+import soundfile as _sf
+vv,_=_sf.read("/tmp/claude-0/-home-user/a6768946-caac-5edd-b0c9-ac1afa389d34/scratchpad/ad4/voice.wav"); vv=np.pad(vv,(0,max(0,N-len(vv))))[:N]
+env=np.convolve(np.abs(vv),np.ones(6000)/6000,"same"); out=out/np.abs(out).max()*0.55*(1-0.45*np.minimum(1,env/0.04))+vv*1.0
 t=np.arange(N)/SR; out*=np.minimum(1,t/0.2)*np.minimum(1,(DUR-t)/0.8); out/=np.abs(out).max()/0.9
 w=wave.open("/tmp/claude-0/-home-user/a6768946-caac-5edd-b0c9-ac1afa389d34/scratchpad/ad4/mix.wav","wb"); w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((out*32767).astype(np.int16).tobytes()); w.close(); print("ok")

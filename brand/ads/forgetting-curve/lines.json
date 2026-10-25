@@ -1,0 +1,18 @@
+{"voice": "am_michael", "speed": 1.08, "lead": 0.3, "tail": 0.2, "lines": [
+ ["year", "In 1885, a German scientist named Hermann Ebbinghaus did something strange."],
+ ["words", "He memorized lists of made-up nonsense words."],
+ ["test", "Then he tested himself, again and again, to see how fast he'd forget them."],
+ ["curve", "Within a day, most of it was gone."],
+ ["named", "He'd found the forgetting curve."],
+ ["you", "It's why rereading your notes the night before doesn't stick."],
+ ["fix", "What does stick? Short reviews, and testing yourself.", 0.5],
+ ["logo", "That's Unspool."],
+ ["for", "For students buried in reading."],
+ ["week", "The rereading. The rewriting. The flashcards."],
+ ["cards", "Drop in any PDF, notes, or slides."],
+ ["check", "Unspool turns it into short reels, with a quiz at the end."],
+ ["works", "Works with what you already have."],
+ ["free", "Your first reel is free."],
+ ["cta", "Only at unspool dot c c.", 0.2, "Only at unspool.cc"],
+ ["end", "", 2.2]
+]}

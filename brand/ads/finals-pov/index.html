@@ -1,0 +1,203 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#000}
+#c{position:absolute;inset:0} #ov{position:absolute;inset:0;font-family:Ins}
+.b{position:absolute;max-width:430px;padding:14px 20px;border-radius:18px;font:600 27px/1.2 Ins;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.u{right:34px;background:#fff;color:#16141c;border-bottom-right-radius:6px}
+.a{left:34px;background:#6b8cff;color:#fff;border-bottom-left-radius:6px}
+</style></head><body><canvas id="c" width="720" height="1280"></canvas><div id="ov"></div>
+<script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
+<script type="module">
+import * as THREE from "three";
+import { RoomEnvironment } from "./three/RoomEnvironment.js";
+const W = 720, H = 1280, clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), mix = (a, b, x) => a + (b - a) * x;
+const ease = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }, v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+const outBack = (x) => { x = clamp(x); const k = 1.7; return 1 + (k + 1) * Math.pow(x - 1, 3) + k * Math.pow(x - 1, 2); };
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("c"), antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H, false); renderer.setPixelRatio(1); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(); { const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = 0.25; }
+scene.background = new THREE.Color("#211a3a"); scene.fog = new THREE.Fog("#211a3a", 6, 14);
+const camera = new THREE.PerspectiveCamera(40, W / H, 0.02, 60);
+const M = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, ...o });
+const mesh = (g, m, p, parent, s) => { const x = new THREE.Mesh(g, m); x.castShadow = x.receiveShadow = true; if (p) x.position.copy(p); if (s) x.scale.copy(s); (parent || scene).add(x); return x; };
+const sph = (r, n = 40) => new THREE.SphereGeometry(r, n, n / 2), cyl = (a, b, h, n = 32) => new THREE.CylinderGeometry(a, b, h, n);
+const grp = (parent, p) => { const g = new THREE.Group(); if (p) g.position.copy(p); (parent || scene).add(g); return g; };
+const tex = (w, h, draw) => { const c = document.createElement("canvas"); c.width = w; c.height = h; const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.userData.c = c; t.userData.draw = draw; draw(c.getContext("2d"), w, h); return t; };
+const redraw = (t, ...a) => { const c = t.userData.c; t.userData.draw(c.getContext("2d"), c.width, c.height, ...a); t.needsUpdate = true; };
+function rbox(w, h, d, r) { const s = new THREE.Shape(); const x = -w / 2, y = -h / 2; s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); const g = new THREE.ExtrudeGeometry(s, { depth: d - r * 2, bevelEnabled: true, bevelSize: r, bevelThickness: r, bevelSegments: 6, curveSegments: 10 }); g.translate(0, 0, -(d - r * 2) / 2); return g; }
+
+// lights: warm key, purple fill, lime neon
+scene.add(new THREE.HemisphereLight("#b7a6ff", "#2a2040", 0.6));
+const key = new THREE.SpotLight("#ffe2c6", 24, 12, 0.6, 0.7, 1.3); key.position.set(-1.6, 3.4, 2.6); key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; scene.add(key, key.target); key.target.position.set(0, 0.8, 0);
+const neonL = new THREE.PointLight("#d3f05a", 3, 4, 1.6); neonL.position.set(0.9, 1.9, -1.0); scene.add(neonL);
+const screenL = new THREE.PointLight("#9fb4ff", 1.6, 2, 2); screenL.position.set(-0.1, 1.0, 0.05); scene.add(screenL);
+
+// room
+mesh(new THREE.PlaneGeometry(12, 6), M("#3b2f63"), v3(0, 3, -1.6));
+const floor = mesh(new THREE.PlaneGeometry(12, 12), M("#2b2346"), v3(0, 0, 0)); floor.rotation.x = -Math.PI / 2;
+const neonTex = tex(512, 160, (c, w, h) => { c.clearRect(0, 0, w, h); c.font = "italic bold 96px 'DejaVu Sans'"; c.textAlign = "center"; c.textBaseline = "middle"; c.shadowColor = "#d3f05a"; c.shadowBlur = 30; c.fillStyle = "#efffb0"; c.fillText("lock in", w / 2, h / 2); c.fillText("lock in", w / 2, h / 2); });
+const neon = mesh(new THREE.PlaneGeometry(1.2, 0.375), new THREE.MeshBasicMaterial({ map: neonTex, transparent: true, toneMapped: false }), v3(0.85, 1.95, -1.55)); neon.castShadow = false;
+// posters / shelf
+mesh(new THREE.BoxGeometry(0.5, 0.65, 0.02), M("#e8b04a"), v3(-1.1, 1.9, -1.58)); mesh(new THREE.BoxGeometry(0.4, 0.5, 0.02), M("#5fc0b0"), v3(-0.5, 2.05, -1.58));
+// desk
+const desk = mesh(rbox(2.2, 0.08, 0.9, 0.03), M("#8a6a52"), v3(0, 0.75, 0));
+[-1, 1].forEach((s) => mesh(new THREE.BoxGeometry(0.06, 0.75, 0.8), M("#6e5240"), v3(1.0 * s, 0.375, 0)));
+
+// laptop (screen faces the student, who sits behind the desk facing camera: so the laptop's back faces camera; we show the screen in close-ups from behind the student)
+const laptop = grp(scene, v3(-0.15, 0.79, 0.12)); laptop.rotation.y = Math.PI;
+mesh(rbox(0.5, 0.02, 0.34, 0.008), M("#b9bcc6", { metalness: 0.5, roughness: 0.4 }), v3(0, 0.01, 0), laptop);
+const lid = grp(laptop, v3(0, 0.02, -0.17)); lid.rotation.x = -0.25;
+mesh(rbox(0.5, 0.33, 0.012, 0.005), M("#b9bcc6", { metalness: 0.5, roughness: 0.4 }), v3(0, 0.165, 0), lid);
+const chatTex = tex(512, 340, (c, w, h, text = "", typed = 0) => { c.fillStyle = "#f4f3f8"; c.fillRect(0, 0, w, h); c.fillStyle = "#6b8cff"; c.fillRect(0, 0, w, 40); c.fillStyle = "#fff"; c.font = "bold 22px 'DejaVu Sans'"; c.fillText("Chatbot", 16, 28); c.fillStyle = "#fff"; c.strokeStyle = "#ccc"; c.fillRect(20, h - 70, w - 40, 46); c.strokeRect(20, h - 70, w - 40, 46); c.fillStyle = "#222"; c.font = "22px 'DejaVu Sans'"; c.fillText(text.slice(0, Math.floor(typed)) + (Math.floor(typed * 2) % 2 ? "|" : ""), 34, h - 40); });
+const screen = mesh(new THREE.PlaneGeometry(0.47, 0.31), new THREE.MeshBasicMaterial({ map: chatTex, toneMapped: false }), v3(0, 0.165, 0.0065), lid); screen.castShadow = false;
+
+// receipt paper that pours out of the laptop
+const paperTex = tex(256, 2048, (c, w, h) => { c.fillStyle = "#fbfaf4"; c.fillRect(0, 0, w, h); c.fillStyle = "#9a97a8"; for (let y = 20; y < h; y += 22) { const l = 40 + ((y * 37) % 160); c.fillRect(16, y, l, 7); if ((y / 22) % 7 === 3) { c.fillStyle = "#6b8cff"; c.fillRect(16, y, 90, 9); c.fillStyle = "#9a97a8"; } } });
+paperTex.wrapT = THREE.RepeatWrapping;
+const paper = mesh(new THREE.PlaneGeometry(0.3, 1), M("#ffffff", { map: paperTex, side: THREE.DoubleSide, roughness: 0.9 }), v3(0, 0, 0)); paper.visible = false;
+const pile = grp(scene, v3(0.45, 0, 0.75)); const pileBits = [];
+for (let i = 0; i < 26; i++) { const b = mesh(new THREE.BoxGeometry(0.3, 0.012, 0.32), M("#fbfaf4", { map: paperTex }), v3((i % 3 - 1) * 0.08, i * 0.016, ((i * 7) % 5 - 2) * 0.03), pile); b.rotation.y = (i * 1.3) % 0.6 - 0.3; pileBits.push(b); }
+
+// ---------- the student: clay, big head, hood ----------
+const hoodie = M("#5b5873"), skin = M("#d89670", { roughness: 0.7 }), hair = M("#2a2026", { roughness: 0.7 }), ink = M("#1d1a22", { roughness: 0.4 });
+const stu = grp(scene, v3(-0.1, 0, -0.55));
+const body = mesh(sph(0.3), hoodie, v3(0, 1.0, 0), stu, v3(1, 1.15, 0.85));
+mesh(new THREE.BoxGeometry(0.35, 0.05, 0.35), M("#3a3248"), v3(0, 0.55, 0), stu); mesh(cyl(0.03, 0.03, 0.55, 12), M("#3a3248"), v3(0, 0.27, 0), stu);
+const head = grp(stu, v3(0, 1.55, 0.05));
+mesh(sph(0.27, 48), skin, v3(0, 0, 0), head, v3(1, 1.03, 0.95));
+const hood = mesh(new THREE.SphereGeometry(0.33, 48, 24, 0, Math.PI * 2, 0, Math.PI * 0.62), hoodie, v3(0, 0.02, -0.04), head); hood.rotation.x = -0.35;
+mesh(new THREE.SphereGeometry(0.285, 48, 24, 0, Math.PI * 2, 0, Math.PI * 0.42), hair, v3(0, 0.01, 0.01), head).rotation.x = 0.15;   // bangs cap
+[-1, 1].forEach((s) => mesh(sph(0.1), hair, v3(0.2 * s, -0.08, 0.05), head, v3(0.5, 1.4, 0.6)));
+const eyes = [-1, 1].map((s) => { const e = grp(head, v3(0.09 * s, -0.02, 0.245)); mesh(sph(0.03, 20), ink, v3(0, 0, 0), e, v3(1, 1, 0.5)); const lid2 = mesh(new THREE.SphereGeometry(0.036, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), skin, v3(0, 0.0, 0.004), e, v3(1.05, 1, 0.7)); return { e, lid2 }; });
+const mouth = mesh(sph(0.022, 16), M("#7a3f3a"), v3(0, -0.12, 0.25), head, v3(1.4, 0.35, 0.5));
+[-1, 1].forEach((s) => mesh(sph(0.03, 12), M("#e39a86"), v3(0.16 * s, -0.08, 0.21), head, v3(1, 0.6, 0.4)));
+const arms = [-1, 1].map((s) => { const sh = grp(stu, v3(0.27 * s, 1.18, 0)); mesh(new THREE.CapsuleGeometry(0.075, 0.32, 8, 16), hoodie, v3(0, -0.2, 0), sh); const hand = mesh(sph(0.065), skin, v3(0, -0.42, 0), sh); return { sh, hand }; });
+const phone = grp(scene); phone.visible = false;
+mesh(rbox(0.1, 0.2, 0.012, 0.004), M("#111"), v3(0, 0, 0), phone);
+const phoneScreen = mesh(new THREE.PlaneGeometry(0.09, 0.18), new THREE.MeshBasicMaterial({ color: "#d3f05a", toneMapped: false }), v3(0, 0, -0.007), phone); phoneScreen.rotation.y = Math.PI;
+
+// ---------- the chatbot: a soft blue box with a face screen ----------
+const bot = grp(scene, v3(0.62, 0.79, 0.22)); bot.rotation.y = -0.35;
+const botBody = mesh(rbox(0.36, 0.3, 0.3, 0.06), M("#6b8cff", { roughness: 0.75 }), v3(0, 0.25, 0), bot);
+const faceTex = tex(256, 160, (c, w, h, mood = "happy", blink = false) => {
+  c.fillStyle = "#1c2140"; c.fillRect(0, 0, w, h); c.strokeStyle = "#cfe0ff"; c.fillStyle = "#cfe0ff"; c.lineWidth = 12; c.lineCap = "round";
+  const E = (x) => { if (blink) { c.beginPath(); c.moveTo(x - 20, 70); c.lineTo(x + 20, 70); c.stroke(); return; }
+    if (mood === "happy") { c.beginPath(); c.arc(x, 82, 20, Math.PI * 1.15, Math.PI * 1.85); c.stroke(); }
+    else if (mood === "excited") { c.beginPath(); c.moveTo(x - 18, 56); c.lineTo(x + 14, 72); c.lineTo(x - 18, 88); c.stroke(); }
+    else if (mood === "sad") { c.beginPath(); c.moveTo(x - 20, 66); c.lineTo(x + 20, 76); c.stroke(); }
+    else { c.beginPath(); c.arc(x, 72, 12, 0, 7); c.fill(); } };
+  E(84); if (mood === "excited") { c.save(); c.translate(w, 0); c.scale(-1, 1); E(84); c.restore(); } else E(172);
+  if (mood === "happy" || mood === "talk") { c.beginPath(); c.arc(128, 104, 16, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke(); }
+  if (mood === "sad") { c.beginPath(); c.arc(128, 128, 16, 1.15 * Math.PI, 1.85 * Math.PI); c.stroke(); }
+});
+const face = mesh(new THREE.PlaneGeometry(0.28, 0.175), new THREE.MeshBasicMaterial({ map: faceTex, toneMapped: false }), v3(0, 0.26, 0.151), bot); face.castShadow = false;
+mesh(cyl(0.008, 0.008, 0.1, 8), M("#c9d3ff"), v3(0, 0.45, 0), bot); const bulb = mesh(sph(0.025, 16), new THREE.MeshBasicMaterial({ color: "#d3f05a", toneMapped: false }), v3(0, 0.51, 0), bot);
+const tie = mesh(new THREE.ConeGeometry(0.03, 0.12, 4), M("#d3f05a"), v3(0, 0.06, 0.152), bot); tie.rotation.z = Math.PI;
+const botLegs = [-1, 1].map((s) => mesh(cyl(0.025, 0.025, 0.1, 12), M("#4f6ad6"), v3(0.09 * s, 0.05, 0), bot));
+const botArms = [-1, 1].map((s) => { const a = grp(bot, v3(0.2 * s, 0.25, 0)); mesh(new THREE.CapsuleGeometry(0.022, 0.1, 6, 10), M("#4f6ad6"), v3(0, -0.06, 0), a); return a; });
+botBody.position.y = 0.25; botLegs.forEach((l) => (l.position.y = 0.05)); [botBody, face, tie].forEach((m) => (m.position.y += 0.05)); bulb.position.y += 0.05;
+
+// ---------- timeline ----------
+// Bubbles: [time, who ("u" user / "a" bot), text]
+const CHAT = [
+  [3.0, "u", "summarize my 400 page textbook"],
+  [5.0, "a", "Ooh, a textbook! What's it for?"],
+  [6.6, "u", "the final. it's tomorrow"],
+  [8.0, "a", "Okay! I'll keep it short."],
+  [11.8, "u", "shorter"],
+  [12.9, "a", "You're absolutely right!"],
+  [15.6, "u", "make it make sense"],
+  [16.8, "a", "Before I continue, I have a few quick questions—"],
+];
+const T = { title: 0, type: 2.4, chat: 5.0, print: 8.6, print2: 13.4, q: 16.8, close: 19.0, phone: 20.2, wow: 26.6, end: 29.6, dur: 33.0 };
+window.DUR = T.dur;
+window.TL = { T, CHAT };
+const cam = (p, l, f) => { camera.position.copy(p); camera.lookAt(l); camera.fov = f; camera.updateProjectionMatrix(); };
+const R = (o, x, y, z) => o.rotation.set(x, y, z);
+
+const ov = document.getElementById("ov");
+const REELS = ["reel-1.jpg", "reel-2.jpg", "reel-3.jpg"];
+window.renderAt = (t) => {
+  // defaults
+  const blink = (t % 3.1) < 0.12;
+  eyes.forEach(({ lid2 }) => { lid2.scale.y = blink ? 1.6 : 1; lid2.position.y = blink ? -0.012 : 0.006; });
+  R(head, 0.05 + Math.sin(t * 1.2) * 0.02, Math.sin(t * 0.7) * 0.05, 0); R(stu, 0, 0, 0); stu.position.set(-0.1, 0, -0.55);
+  arms.forEach(({ sh }, i) => R(sh, -0.9, 0, (i ? 1 : -1) * 0.25));
+  let mood = "happy", talk = false;
+  paper.visible = false; pile.visible = false; phone.visible = false; lid.rotation.x = -0.25 - 1.1 * 0;
+  let typed = 0, typedText = "";
+  bot.position.y = 0.79 + Math.abs(Math.sin(t * 3)) * 0.01; R(bot, 0, -0.35, 0);
+  botArms.forEach((a, i) => R(a, 0, 0, (i ? -1 : 1) * 0.2));
+  // which chat bubble is "speaking"
+  const last = CHAT.filter((c) => t >= c[0]).pop();
+  if (last && last[1] === "a" && t - last[0] < 1.6) { talk = true; mood = last[2].startsWith("Before") ? "talk" : "excited"; bot.position.y += Math.abs(Math.sin(t * 14)) * 0.025; botArms.forEach((a, i) => R(a, 0, 0, (i ? -1 : 1) * (0.6 + Math.sin(t * 12) * 0.3))); }
+  // paper pours from the laptop
+  const pr = clamp((t - T.print) / 3.4) + clamp((t - T.print2) / 2.6) * 1.4;
+  if (t > T.print && t < T.phone) {
+    paper.visible = true; const len = 0.2 + pr * 1.6;
+    paper.scale.y = len; paperTex.repeat.set(1, len); paperTex.offset.y = -t * 0.8;
+    paper.position.set(-0.15, 0.85 - len / 2 + 0.05, 0.3); paper.rotation.set(-0.3, 0, 0);
+    if (len > 0.9) { paper.position.set(-0.15, 0.82 - 0.4, 0.42); paper.scale.y = 0.85; pile.visible = true; pileBits.forEach((b, i) => (b.visible = i < (len - 0.9) * 16)); }
+  }
+  if (t > T.q) mood = t > T.q + 2 ? "sad" : "talk";
+  if (t > T.close) { lid.rotation.x = mix(-0.25, -1.62, ease((t - T.close) / 0.5)); mood = "sad"; }
+  redraw(faceTex, mood, blink && !talk);
+
+  let shot;
+  if (t < T.type) { // title: close on the face under the hood
+    shot = "title"; cam(v3(0.05, 1.5, 0.95 - t * 0.06), v3(-0.1, 1.5, -0.5), 34);
+  } else if (t < T.chat) { // typing over the shoulder
+    shot = "type"; typedText = CHAT[0][2]; typed = (t - T.type) * 14;
+    arms.forEach(({ sh }, i) => R(sh, -1.25 + Math.sin(t * 20 + i * 2) * 0.06, 0, (i ? 1 : -1) * 0.2));
+    cam(v3(-0.75, 1.55, -0.75), v3(-0.12, 0.93, 0.12), 34);
+  } else if (t < T.print) { shot = "two"; cam(v3(0.2, 1.35, 2.3 - (t - T.chat) * 0.05), v3(0.15, 1.05, -0.2), 40);
+  } else if (t < T.q) {
+    shot = "print"; const k = (t - T.print);
+    cam(v3(0.5 + Math.sin(k * 0.3) * 0.3, 1.0, 2.0), v3(0.0, 0.7, 0.1), 46);
+    if (t > T.print2 - 1.6 && t < T.print2) { arms.forEach(({ sh }) => R(sh, -0.6, 0, 0)); }
+  } else if (t < T.close) { // the questions: student puts her face in her hands
+    shot = "q"; arms.forEach(({ sh }, i) => R(sh, -1.15, 0, (i ? 1 : -1) * 0.1)); R(head, 0.5, 0, Math.sin(t * 2) * 0.05);
+    cam(v3(0.3, 1.3, 1.6), v3(0.15, 1.15, -0.3), 40);
+  } else if (t < T.phone) { shot = "close"; cam(v3(0.2, 1.35, 2.0), v3(0.1, 1.0, -0.3), 40);
+  } else { // phone time
+    shot = "phone"; phone.visible = true; R(arms[0].sh, -1.5, 0.3, -0.3); R(arms[1].sh, -1.5, -0.3, 0.3); R(head, 0.4, 0, 0);
+    phone.position.set(-0.1, 1.18, -0.2); phone.rotation.set(-0.5, 0, 0); lid.rotation.x = -1.62; mood = t > T.wow ? "sad" : "sad";
+    if (t > T.wow) { R(head, 0, 0, 0); eyes.forEach(({ lid2 }) => { lid2.scale.y = 0.6; lid2.position.y = 0.02; }); arms.forEach(({ sh }, i) => R(sh, -2.9, 0, (i ? 1 : -1) * 0.5)); phone.position.set(-0.1, 1.95, 0.0); }
+    cam(v3(0.15, 1.45, 1.7), v3(0.05, 1.3, -0.4), 40);
+  }
+  redraw(chatTex, typedText, typed);
+  mouth.scale.set(1.4, t > T.wow && t < T.wow + 1.4 ? 1.4 : 0.35, 0.5);
+  renderer.render(scene, camera);
+
+  // ---------- overlay ----------
+  let h = `<div style="position:absolute;left:0;right:0;top:64px;text-align:center;font:600 22px Ins;color:#fff;text-shadow:0 2px 6px #000">POV: it's <span style="color:#d3f05a">finals week</span></div>`;
+  if (shot === "title") { const k = clamp(t / 0.4); h = `<div style="position:absolute;left:0;right:0;top:330px;text-align:center;opacity:${k}"><div style="font:700 58px/1.05 Unb;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.6)">POV: it's<br><span style="color:#d3f05a">finals week</span></div><div style="margin-top:22px;font:600 32px Ins;color:#fff;opacity:${clamp((t - 0.9) / 0.4)}">“Okay. Lock in.”</div></div>`; }
+  if (shot !== "title" && shot !== "phone" && t < T.close + 1) {
+    // newest at the bottom of the stack, like a chat
+    const shown = CHAT.filter((c) => t >= c[0]).slice(-3);
+    shown.forEach((c, k) => { const age = t - c[0]; const y = 140 + k * 92; const a = clamp(age / 0.18); const typing = c[1] === "a" && age < 0.55;
+      h += `<div class="b ${c[1]}" style="top:${y}px;opacity:${a};transform:translateY(${(1 - a) * 14}px) scale(${0.9 + 0.1 * a})">${typing ? "• • •" : c[2]}</div>`; });
+  }
+  if (shot === "phone") {
+    // the phone screen, full size: upload → reels
+    const lt = t - T.phone, up = clamp((lt - 0.4) / 1.2), reelsAt = 2.0;
+    let screenHtml;
+    if (lt < reelsAt) screenHtml = `<div style="position:absolute;inset:0;background:#0f1612;color:#e9f0e4"><div style="position:absolute;left:24px;top:28px;font:700 26px Unb">unspool</div><div style="position:absolute;left:24px;right:24px;top:${mix(120, 230, ease(lt / 0.5))}px;padding:16px;border:2px solid #d3f05a;border-radius:14px;font:600 22px Ins">bio-textbook.pdf<div style="margin-top:12px;height:10px;background:#26302b;border-radius:5px"><div style="width:${up * 100}%;height:100%;background:#d3f05a;border-radius:5px"></div></div><div style="margin-top:10px;font-size:18px;color:#9fb19c">${up < 1 ? "Unspooling…" : "12 reels ready ✓"}</div></div></div>`;
+    else { const k = Math.floor((lt - reelsAt) / 1.3) % 3; const sw = clamp(((lt - reelsAt) % 1.3 - 1.0) / 0.3);
+      screenHtml = `<img src="${REELS[k]}" style="position:absolute;left:0;top:${-sw * 100}%;width:100%;height:100%;object-fit:cover"><img src="${REELS[(k + 1) % 3]}" style="position:absolute;left:0;top:${(1 - sw) * 100}%;width:100%;height:100%;object-fit:cover">`; }
+    const pin = outBack(lt / 0.5);
+    if (t < T.wow) h += `<div style="position:absolute;left:50%;top:150px;width:330px;height:640px;margin-left:-165px;border-radius:40px;background:#000;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);transform:scale(${pin})"><div style="position:relative;width:100%;height:100%;border-radius:30px;overflow:hidden">${screenHtml}</div></div>`;
+    if (t >= T.wow) { const a = clamp((t - T.wow) / 0.3), b = clamp((t - T.wow - 0.9) / 0.3);
+      h += `<div style="position:absolute;left:40px;right:40px;top:170px;font:700 54px/1.1 Unb;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.6)"><span style="opacity:${a}">“Wow.</span> <span style="opacity:${b}">I actually <span style="color:#d3f05a">get this.</span>”</span></div>`;
+      if (t > T.wow + 1.8) h += `<div class="b a" style="top:420px;opacity:${clamp((t - T.wow - 1.8) / 0.2)};transform:scale(.85);transform-origin:left">You're absolutely right.</div>`; }
+  }
+  if (t >= T.end) { const k = clamp((t - T.end) / 0.4); h += `<div style="position:absolute;inset:0;background:rgba(15,29,24,${0.94 * k})"></div><img src="lockup-horizontal.svg" style="position:absolute;left:140px;width:440px;top:${520 - (1 - k) * 20}px;opacity:${k}"><div style="position:absolute;left:0;right:0;top:650px;text-align:center;font:600 28px Ins;color:#b9c7b5;opacity:${clamp((t - T.end - 0.4) / 0.4)}">Turn any document into study reels.</div><div style="position:absolute;left:50%;top:720px;transform:translateX(-50%);opacity:${clamp((t - T.end - 0.8) / 0.4)};background:#d3f05a;color:#0f1d18;font:600 30px Ins;padding:18px 34px;border-radius:40px;white-space:nowrap">First reel free · unspool.cc</div>`; }
+  h += `<div style="position:absolute;right:26px;top:${t >= T.end ? -100 : 1190}px;font:600 20px Ins;color:rgba(255,255,255,.75);text-shadow:0 1px 3px #000">@unspoolcc</div>`;
+  if (t < 0.2) h += `<div style="position:absolute;inset:0;background:#000;opacity:${1 - t / 0.2}"></div>`;
+  ov.innerHTML = h;
+};
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins")]);
+await Promise.all(REELS.map((s) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = s; })));
+window.renderAt(0); setTimeout(() => (window.ready = true), 400);
+</script></body></html>

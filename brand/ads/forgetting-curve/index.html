@@ -1,0 +1,201 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#000}
+</style></head><body><canvas id="c" width="720" height="1280"></canvas>
+<script>
+const W = 720, H = 1280, cx = document.getElementById("c").getContext("2d");
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), mix = (a, b, x) => a + (b - a) * x;
+const ease = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const outBack = (x) => { x = clamp(x); const k = 1.7; return 1 + (k + 1) * Math.pow(x - 1, 3) + k * Math.pow(x - 1, 2); };
+const LIME = "#d3f05a", INK = "#e9f0e4", BG = "#0b0f0d";
+const img = (s) => { const i = new Image(); i.src = s; return i; };
+const LOGO = img("lockup-horizontal.svg"), MARK = img("mark-transparent.svg"), REEL = img("reel-1.jpg");
+let TL, lines;
+const shotOf = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.15) k = i; return k; };
+const startOf = (name) => lines.find((l) => l.shot === name).s - 0.15;
+
+function rr(x, y, w, h, r) { cx.beginPath(); cx.moveTo(x + r, y); cx.arcTo(x + w, y, x + w, y + h, r); cx.arcTo(x + w, y + h, x, y + h, r); cx.arcTo(x, y + h, x, y, r); cx.arcTo(x, y, x + w, y, r); cx.closePath(); }
+function txt(s, x, y, font, color, align = "center", alpha = 1) { cx.save(); cx.globalAlpha *= alpha; cx.font = font; cx.fillStyle = color; cx.textAlign = align; cx.textBaseline = "middle"; cx.fillText(s, x, y); cx.restore(); }
+
+// ---------- flat illustration kit ----------
+function room(t, night = false) {
+  cx.fillStyle = night ? "#2b3350" : "#e7c99a"; cx.fillRect(0, 0, W, H);
+  // wallpaper stripes
+  for (let i = 0; i < 12; i++) { cx.fillStyle = night ? "rgba(255,255,255,.025)" : "rgba(120,70,30,.06)"; cx.fillRect(i * 64, 0, 30, H); }
+  // window
+  cx.fillStyle = night ? "#121a33" : "#9fd0ea"; rr(430, 170, 210, 260, 8); cx.fill();
+  if (night) { cx.fillStyle = "#f4f0c8"; cx.beginPath(); cx.arc(560, 240, 26, 0, 7); cx.fill(); cx.fillStyle = "#121a33"; cx.beginPath(); cx.arc(572, 232, 24, 0, 7); cx.fill(); for (let i = 0; i < 14; i++) { cx.fillStyle = "#fff"; cx.fillRect(445 + (i * 53) % 190, 185 + (i * 37) % 230, 2, 2); } }
+  else { cx.fillStyle = "#fff"; cx.beginPath(); cx.ellipse(500 + Math.sin(t * 0.2) * 10, 250, 50, 18, 0, 0, 7); cx.fill(); }
+  cx.strokeStyle = night ? "#4a5578" : "#7a4e2a"; cx.lineWidth = 12; rr(430, 170, 210, 260, 8); cx.stroke(); cx.lineWidth = 6; cx.beginPath(); cx.moveTo(535, 170); cx.lineTo(535, 430); cx.moveTo(430, 300); cx.lineTo(640, 300); cx.stroke();
+  // floor + desk
+  cx.fillStyle = night ? "#1d233a" : "#8a5a33"; cx.fillRect(0, 900, W, H - 900);
+  cx.fillStyle = night ? "#3d2f2a" : "#5e3a1e"; cx.fillRect(40, 760, 640, 34); cx.fillRect(70, 794, 26, 200); cx.fillRect(624, 794, 26, 200);
+}
+function professor(x, y, t, write = 0) {
+  // seated, three-quarter: coat, big beard, round glasses
+  cx.save(); cx.translate(x, y);
+  cx.fillStyle = "#2c2a33"; rr(-80, -40, 160, 220, 40); cx.fill();                      // coat
+  cx.fillStyle = "#f2efe6"; cx.beginPath(); cx.moveTo(-22, -40); cx.lineTo(22, -40); cx.lineTo(0, 40); cx.fill(); // shirt
+  cx.fillStyle = "#e5b48d"; cx.beginPath(); cx.ellipse(0, -110, 58, 66, 0, 0, 7); cx.fill();   // head
+  cx.fillStyle = "#6d5a48"; cx.beginPath(); cx.ellipse(0, -60, 64, 62, 0, 0, Math.PI); cx.fill(); // beard
+  cx.beginPath(); cx.ellipse(0, -150, 60, 34, 0, Math.PI, 0); cx.fill();               // hair
+  cx.fillStyle = "#e5b48d"; cx.fillRect(-36, -98, 72, 24);
+  cx.strokeStyle = "#1b1b1b"; cx.lineWidth = 4; [-22, 22].forEach((s) => { cx.beginPath(); cx.arc(s, -110, 16, 0, 7); cx.stroke(); });
+  cx.beginPath(); cx.moveTo(-6, -110); cx.lineTo(6, -110); cx.stroke();
+  const blink = (t % 3.4) < 0.12; cx.fillStyle = "#1b1b1b"; [-22, 22].forEach((s) => { if (blink) cx.fillRect(s - 6, -110, 12, 2); else { cx.beginPath(); cx.arc(s, -110, 4, 0, 7); cx.fill(); } });
+  cx.fillStyle = "#d39a73"; cx.beginPath(); cx.ellipse(0, -92, 8, 12, 0, 0, 7); cx.fill();   // nose
+  // writing arm
+  const a = write ? Math.sin(t * 14) * 6 : 0;
+  cx.strokeStyle = "#2c2a33"; cx.lineWidth = 34; cx.lineCap = "round"; cx.beginPath(); cx.moveTo(60, 10); cx.lineTo(110 + a, 110); cx.stroke();
+  cx.fillStyle = "#e5b48d"; cx.beginPath(); cx.arc(118 + a, 118, 18, 0, 7); cx.fill();
+  cx.strokeStyle = "#222"; cx.lineWidth = 5; cx.beginPath(); cx.moveTo(122 + a, 112); cx.lineTo(150 + a, 80); cx.stroke();
+  cx.restore();
+}
+function student(x, y, t) {
+  cx.save(); cx.translate(x, y);
+  cx.fillStyle = "#c9584a"; rr(-78, -40, 156, 220, 44); cx.fill();                     // hoodie
+  cx.fillStyle = "#8a5a3c"; cx.beginPath(); cx.ellipse(0, -110, 56, 64, 0, 0, 7); cx.fill();
+  cx.fillStyle = "#1e1714"; cx.beginPath(); cx.ellipse(0, -138, 64, 46, 0, Math.PI, 0); cx.fill(); cx.fillRect(-64, -140, 20, 70); cx.fillRect(44, -140, 20, 70);
+  const droop = 4 + Math.sin(t * 1.1) * 2; cx.fillStyle = "#1e1714"; [-20, 20].forEach((s) => cx.fillRect(s - 9, -108 + droop * 0.3, 18, 4));
+  cx.fillStyle = "#6e4a32"; cx.fillRect(-12, -78, 24, 4);
+  cx.restore();
+}
+function nonsenseCard(word, x, y, rot, s = 1, alpha = 1) {
+  cx.save(); cx.globalAlpha = alpha; cx.translate(x, y); cx.rotate(rot); cx.scale(s, s);
+  cx.fillStyle = "rgba(0,0,0,.18)"; rr(-58 + 6, -36 + 8, 116, 72, 8); cx.fill();
+  cx.fillStyle = "#fbf6e8"; rr(-58, -36, 116, 72, 8); cx.fill();
+  cx.strokeStyle = "#d9cfb4"; cx.lineWidth = 2; cx.stroke();
+  txt(word, 0, 2, "bold 34px 'DejaVu Sans Mono'", "#3a2a1e");
+  cx.restore();
+}
+const WORDS = ["DAX", "BOK", "ZOF", "YAT", "KEL", "MUP", "RIV", "TOJ", "WUX", "FEP", "GAZ", "LOM"];
+function curve(x0, y0, w, h, p, opts = {}) {
+  // axes
+  cx.strokeStyle = opts.dark ? "#56615a" : "#3a2a1e"; cx.lineWidth = 5; cx.beginPath(); cx.moveTo(x0, y0 - h); cx.lineTo(x0, y0); cx.lineTo(x0 + w, y0); cx.stroke();
+  txt("REMEMBERED", x0 + 12, y0 - h - 26, "bold 20px 'DejaVu Sans Mono'", opts.dark ? "#8fa08f" : "#3a2a1e", "left");
+  txt("TIME", x0 + w, y0 + 30, "bold 20px 'DejaVu Sans Mono'", opts.dark ? "#8fa08f" : "#3a2a1e", "right");
+  // Ebbinghaus-style decay: steep, then flattening
+  const f = (u) => 0.22 + 0.78 * Math.exp(-u * 6);
+  cx.strokeStyle = opts.color || "#c9473a"; cx.lineWidth = 9; cx.lineCap = "round"; cx.beginPath();
+  const N = 80; for (let i = 0; i <= N * p; i++) { const u = i / N; const yy = opts.reviews ? reviewed(u) : f(u); const X = x0 + u * w, Y = y0 - yy * h; i ? cx.lineTo(X, Y) : cx.moveTo(X, Y); } cx.stroke();
+  return f;
+}
+// spaced reviews: each review lifts retention back up and the next drop is gentler
+function reviewed(u) { const R = [0, 0.18, 0.42, 0.75]; let k = 0; for (let i = 0; i < R.length; i++) if (u >= R[i]) k = i; const d = u - R[k]; const rate = 6 / (1 + k * 1.6); return 0.25 + 0.75 * (0.25 + 0.75 * Math.exp(-d * rate)) * (k ? 1 : 1) - (k ? 0 : 0); }
+
+// ---------- dark product UI kit ----------
+function dark(t) {
+  cx.fillStyle = BG; cx.fillRect(0, 0, W, H);
+  cx.strokeStyle = "rgba(255,255,255,.035)"; cx.lineWidth = 1; for (let x = 0; x < W; x += 40) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); } for (let y = 0; y < H; y += 40) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
+  const g = cx.createRadialGradient(W / 2, 560, 20, W / 2, 560, 420); g.addColorStop(0, "rgba(211,240,90,.10)"); g.addColorStop(1, "rgba(211,240,90,0)"); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+}
+function rowCard(label, y, a, tag, done) {
+  const x = 110, w = 500, h = 84;
+  cx.save(); cx.globalAlpha = a; cx.translate(0, (1 - a) * 24);
+  cx.fillStyle = done ? "#101a12" : "#111513"; rr(x, y, w, h, 12); cx.fill();
+  cx.strokeStyle = done ? LIME : tag ? "rgba(255,107,90,.55)" : "rgba(255,255,255,.1)"; cx.lineWidth = 2; cx.stroke();
+  txt(label, x + 28, y + h / 2, "600 30px Ins", "#fff", "left");
+  if (done) { cx.fillStyle = LIME; cx.beginPath(); cx.arc(x + w - 42, y + h / 2, 18, 0, 7); cx.fill(); cx.strokeStyle = BG; cx.lineWidth = 5; cx.beginPath(); cx.moveTo(x + w - 51, y + h / 2); cx.lineTo(x + w - 44, y + h / 2 + 7); cx.lineTo(x + w - 32, y + h / 2 - 7); cx.stroke(); }
+  else if (tag) { txt("● BY HAND", x + w - 26, y + h / 2, "bold 16px 'DejaVu Sans Mono'", "#ff6b5a", "right"); }
+  cx.restore();
+}
+function chip(label, y, a) {
+  cx.save(); cx.globalAlpha = a; const w = 330, x = W / 2 - w / 2; cx.fillStyle = "#121714"; rr(x, y, w, 64, 32); cx.fill(); cx.strokeStyle = "rgba(255,255,255,.12)"; cx.lineWidth = 2; cx.stroke();
+  cx.fillStyle = LIME; cx.beginPath(); cx.arc(x + 36, y + 32, 14, 0, 7); cx.fill(); cx.strokeStyle = BG; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(x + 29, y + 32); cx.lineTo(x + 35, y + 38); cx.lineTo(x + 44, y + 26); cx.stroke();
+  txt(label, x + 62, y + 33, "600 27px Ins", "#fff", "left"); cx.restore();
+}
+function logoAt(x, y, w, a) { if (!LOGO.complete) return; cx.save(); cx.globalAlpha = a; const h = w * 100 / 820.89; cx.drawImage(LOGO, x - w / 2, y - h / 2, w, h); cx.restore(); }
+
+// ---------- caption chips: 1-3 words at a time, timed through the line ----------
+function chunks(text) { const ws = text.split(" "); const out = []; let cur = []; for (const w of ws) { cur.push(w); if (cur.length >= 3 || /[,.?!]$/.test(w) || (cur.join(" ").length > 14 && cur.length >= 2)) { out.push(cur.join(" ")); cur = []; } } if (cur.length) out.push(cur.join(" ")); return out; }
+function caption(t, L, y = 1010) {
+  if (!L.text || t < L.s - 0.05 || t > L.e + 0.15) return;
+  const cs = chunks(L.text); const tot = cs.reduce((a, c) => a + c.length + 2, 0); let acc = 0, cur = cs[cs.length - 1];
+  const u = clamp((t - L.s) / (L.e - L.s)) * tot; for (const c of cs) { acc += c.length + 2; if (u < acc) { cur = c; break; } }
+  const s = cur.replace(/[,.]$/, "").toUpperCase();
+  cx.save(); cx.font = "bold 30px 'DejaVu Sans'"; const w = cx.measureText(s).width + 34;
+  cx.fillStyle = "rgba(10,10,10,.92)"; rr(W / 2 - w / 2, y - 26, w, 52, 6); cx.fill();
+  txt(s, W / 2, y + 1, "bold 30px 'DejaVu Sans'", L.shot === "cta" ? LIME : "#fff"); cx.restore();
+}
+
+window.renderAt = function (t) {
+  const i = shotOf(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.15);
+  cx.save();
+  if (["year", "words", "test", "curve", "named"].includes(shot)) {
+    // slow push-in on the whole illustration
+    const z = 1 + (t / 18) * 0.12; cx.translate(W / 2, H / 2); cx.scale(z, z); cx.translate(-W / 2, -H / 2);
+    room(t);
+    if (shot === "year" || shot === "words" || shot === "test") professor(250, 700, t, shot === "test");
+    cx.fillStyle = "#f4ead2"; rr(330, 730, 170, 34, 4); cx.fill(); // papers on desk
+    if (shot === "year") { const p = outBack(lt / 0.6); cx.save(); cx.translate(W / 2, 330); cx.rotate(-0.06); cx.scale(p, p); txt("1885", 0, 0, "88px Unb", "#3a2a1e"); cx.restore(); }
+    if (shot === "words" || shot === "test") {
+      WORDS.forEach((w, k) => { const d = lt - k * 0.12; if (d < 0 && shot === "words") return; const p = shot === "words" ? ease(d / 0.5) : 1; const gx = 120 + (k % 4) * 160, gy = 160 + Math.floor(k / 4) * 110; nonsenseCard(w, mix(420, gx, p), mix(740, gy, p), (k % 3 - 1) * 0.08 * p, mix(0.3, 1, p), shot === "test" ? 1 : clamp(d / 0.2)); });
+    }
+    if (shot === "test") { // pocket watch + tally marks
+      cx.save(); cx.translate(600, 690); cx.fillStyle = "#c9a24a"; cx.beginPath(); cx.arc(0, 0, 44, 0, 7); cx.fill(); cx.fillStyle = "#fbf6e8"; cx.beginPath(); cx.arc(0, 0, 36, 0, 7); cx.fill(); cx.strokeStyle = "#222"; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(0, 0); cx.lineTo(Math.sin(t * 3) * 28, -Math.cos(t * 3) * 28); cx.stroke(); cx.restore();
+      for (let k = 0; k < Math.min(9, Math.floor(lt * 2.4)); k++) { cx.strokeStyle = "#3a2a1e"; cx.lineWidth = 4; cx.beginPath(); cx.moveTo(350 + k * 14, 738); cx.lineTo(350 + k * 14 + (k % 5 === 4 ? -60 : 0), 758); cx.stroke(); }
+    }
+    if (shot === "curve" || shot === "named") {
+      cx.fillStyle = "rgba(244,234,210,.94)"; rr(60, 120, 600, 560, 18); cx.fill();
+      const p = shot === "curve" ? ease(lt / 1.6) : 1;
+      curve(120, 600, 500, 400, p);
+      // the cards fall away as the curve drops
+      WORDS.slice(0, 6).forEach((w, k) => { const d = clamp(p * 1.6 - k * 0.18); nonsenseCard(w, 160 + k * 80, 260 + d * 500, d * 0.6, 0.6, 1 - d); });
+      txt("1 DAY", 120 + 500 * 0.2, 640, "bold 20px 'DejaVu Sans Mono'", "#c9473a");
+      if (shot === "named") { const s = outBack(lt / 0.5); cx.save(); cx.translate(W / 2, 770); cx.rotate(-0.05); cx.scale(s, s); cx.fillStyle = "#c9473a"; rr(-250, -44, 500, 88, 10); cx.fill(); txt("THE FORGETTING CURVE", 0, 2, "30px Unb", "#fff"); cx.restore(); }
+    }
+  } else if (shot === "you" || shot === "fix") {
+    room(t, true);
+    // desk lamp glow
+    const g = cx.createRadialGradient(470, 720, 10, 470, 720, 330); g.addColorStop(0, "rgba(255,226,150,.35)"); g.addColorStop(1, "rgba(255,226,150,0)"); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+    student(250, 700, t);
+    cx.fillStyle = "#f4ead2"; rr(330, 728, 190, 36, 4); cx.fill(); cx.fillStyle = "#ffe95a"; for (let k = 0; k < 4; k++) cx.fillRect(345, 734 + k * 7, 150, 4);
+    txt("2:00 AM", 600, 520, "bold 34px 'DejaVu Sans Mono'", "#ff6b5a");
+    cx.fillStyle = "rgba(244,234,210,.95)"; rr(80, 110, 560, 360, 16); cx.fill();
+    if (shot === "you") { curve(130, 440, 470, 210, ease(lt / 1.4)); txt("REREAD THE NIGHT BEFORE", W / 2, 142, "bold 20px 'DejaVu Sans Mono'", "#c9473a"); }
+    else { curve(130, 440, 470, 210, ease(lt / 1.8), { reviews: true, color: "#3f8f4a" }); txt("SHORT REVIEWS + QUIZZES", W / 2, 142, "bold 20px 'DejaVu Sans Mono'", "#3f8f4a"); [0.18, 0.42, 0.75].forEach((u, k) => { if (ease(lt / 1.8) > u) { const X = 130 + u * 470; cx.fillStyle = "#3f8f4a"; cx.beginPath(); cx.arc(X, 240, 14, 0, 7); cx.fill(); txt("✓", X, 241, "bold 18px 'DejaVu Sans'", "#fff"); } }); }
+  } else {
+    dark(t);
+    if (shot === "logo") { const a = clamp(lt / 0.4); const s = 0.9 + 0.1 * outBack(lt / 0.6); cx.save(); cx.translate(W / 2, 560); cx.scale(s, s); logoAt(0, 0, 480, a); cx.restore(); }
+    if (shot === "for") {
+      cx.fillStyle = "#101512"; rr(90, 330, 540, 420, 18); cx.fill(); cx.strokeStyle = "rgba(255,255,255,.08)"; cx.stroke();
+      txt("BUILT FOR", W / 2, 370, "bold 18px 'DejaVu Sans Mono'", "#6f7d71");
+      [["AP & IB classes", 0], ["College courses", 1], ["Med & law school", 2], ["Work training PDFs", 3]].forEach(([s, k]) => { const a = clamp((lt - 0.2 - k * 0.25) / 0.3); cx.save(); cx.globalAlpha = a; cx.fillStyle = LIME; cx.beginPath(); cx.arc(170, 450 + k * 72, 9, 0, 7); cx.fill(); cx.shadowColor = LIME; cx.shadowBlur = 14; cx.fill(); cx.restore(); txt(s, 200, 451 + k * 72, "600 30px Ins", "#fff", "left", a); });
+    }
+    if (shot === "week") {
+      txt("YOUR WEEK", W / 2, 330, "bold 18px 'DejaVu Sans Mono'", "#6f7d71");
+      ["Rereading chapter 6", "Rewriting notes", "Making flashcards", "Highlighting slides"].forEach((s, k) => rowCard(s, 370 + k * 104, clamp((lt - k * 0.22) / 0.3), true, false));
+    }
+    if (shot === "cards") {
+      // a PDF drops into the drop zone
+      cx.setLineDash([12, 10]); cx.strokeStyle = LIME; cx.lineWidth = 3; rr(160, 520, 400, 260, 20); cx.stroke(); cx.setLineDash([]);
+      txt("Drop a document", W / 2, 740, "600 24px Ins", "#8fa08f");
+      ["PDF", "DOCX", "PPTX"].forEach((f, k) => { const d = ease((lt - 0.2 - k * 0.35) / 0.5); const x = mix(160 + k * 200, 250 + k * 110, d), y = mix(300, 610, d); cx.save(); cx.translate(x, y); cx.rotate((1 - d) * (k - 1) * 0.4); cx.fillStyle = "#f4f2ea"; rr(-50, -62, 100, 124, 8); cx.fill(); cx.fillStyle = ["#e5533d", "#2f6fd6", "#d9692e"][k]; rr(-50, 22, 100, 40, 0); cx.fill(); txt(f, 0, 43, "bold 20px 'DejaVu Sans'", "#fff"); for (let j = 0; j < 4; j++) { cx.fillStyle = "#c9c4b4"; cx.fillRect(-34, -44 + j * 14, 68, 6); } cx.restore(); });
+    }
+    if (shot === "check") {
+      // the chores tick off, and a reel appears
+      ["Rereading chapter 6", "Rewriting notes", "Making flashcards"].forEach((s, k) => rowCard(s, 170 + k * 100, 1, false, lt > 0.4 + k * 0.45));
+      const p = outBack((lt - 1.6) / 0.6); if (p > 0 && REEL.complete) { cx.save(); cx.translate(W / 2, 510); cx.scale(p, p); cx.fillStyle = "#000"; rr(-118, -10, 236, 400, 26); cx.fill(); cx.save(); rr(-110, -2, 220, 384, 20); cx.clip(); cx.drawImage(REEL, -110, -2, 220, 384); cx.restore(); cx.restore(); }
+    }
+    if (shot === "works") { txt("WORKS WITH", W / 2, 420, "bold 18px 'DejaVu Sans Mono'", "#6f7d71"); ["Your PDFs", "Your slides", "Your Word docs", "Photos of notes"].forEach((s, k) => chip(s, 460 + k * 88, clamp((lt - k * 0.2) / 0.3))); }
+    if (shot === "free") { const p = outBack(lt / 0.5); cx.save(); cx.translate(W / 2, 580); cx.scale(p, p); cx.shadowColor = LIME; cx.shadowBlur = 40; cx.fillStyle = LIME; rr(-230, -110, 460, 220, 24); cx.fill(); cx.shadowBlur = 0; txt("FIRST REEL", 0, -58, "bold 20px 'DejaVu Sans Mono'", "#2b3a12"); txt("Free", 0, 14, "72px Unb", BG); cx.restore(); }
+    if (shot === "cta" || shot === "end") {
+      logoAt(W / 2, 480, 440, clamp(lt / 0.3) || 1);
+      txt("Turn any document into study reels", W / 2, 560, "600 24px Ins", "#8fa08f");
+      const b = clamp(((shot === "cta" ? lt : 5) - 0.3) / 0.3); cx.save(); cx.globalAlpha = b; cx.shadowColor = LIME; cx.shadowBlur = 30; cx.fillStyle = LIME; rr(W / 2 - 190, 620, 380, 90, 45); cx.fill(); cx.restore();
+      txt("unspool.cc  →", W / 2, 666, "34px Unb", BG, "center", b);
+      txt("@UNSPOOLCC", W / 2, 760, "bold 22px 'DejaVu Sans Mono'", "#c9d4c5", "center", b);
+    }
+  }
+  cx.restore();
+  caption(t, L, ["logo", "free", "cta", "end"].includes(shot) ? 1010 : 1010);
+  // handle watermark, like the reference
+  txt("@UNSPOOLCC", W - 34, 150, "bold 16px 'DejaVu Sans Mono'", "rgba(255,255,255,.75)", "right");
+  if (t < 0.2) { cx.fillStyle = `rgba(0,0,0,${1 - t / 0.2})`; cx.fillRect(0, 0, W, H); }
+};
+(async () => {
+  TL = await (await fetch("tl.json")).json(); lines = TL.lines; window.DUR = TL.dur;
+  await Promise.all([document.fonts.load("40px Unb"), document.fonts.load("600 20px Ins"), ...[LOGO, MARK, REEL].map((i) => i.decode().catch(() => {}))]);
+  window.renderAt(0); window.ready = true;
+})();
+</script></body></html>
