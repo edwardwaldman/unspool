@@ -21,8 +21,8 @@ export type AccountInfo = {
 };
 
 const UNREACHABLE = "Couldn't reach the server, try again.";
-const fieldLabel = "font-mono text-[11px] uppercase tracking-[0.14em] text-[#9ba1ab]";
-const helper = "mt-2.5 text-[13px] leading-relaxed text-[#9ba1ab]";
+const fieldLabel = "font-mono text-[11px] uppercase tracking-[0.14em] text-muted";
+const helper = "mt-2.5 text-[13px] leading-relaxed text-muted";
 const callback = (next: string) => `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
 
 /** The Manage account popup. Mounted once in AppShell; open it with openAccount(). */
@@ -68,27 +68,27 @@ function AccountDialog() {
         role="dialog"
         aria-modal
         aria-labelledby="account-title"
-        className="relative max-h-[94dvh] w-full max-w-[494px] overflow-y-auto rounded-[3px] border border-[#2a2d34] bg-[#0b0d11] px-5 pb-6 pt-6 font-sans text-[#e7e9ee] sm:px-7"
+        className="relative max-h-[94dvh] w-full max-w-[494px] overflow-y-auto border border-line bg-paper px-5 pb-6 pt-6 font-sans text-ink shadow-[0_24px_80px_rgba(0,0,0,.55)] sm:px-7"
       >
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h2 id="account-title" className="text-[22px] font-bold leading-tight text-[#e7e9ee]">
+            <h2 id="account-title" className="font-display text-[28px] leading-[1.05] text-ink">
               Manage account
             </h2>
-            <p className="mt-1 text-[13.5px] text-[#9ba1ab]">
+            <p className="mt-1 text-[13.5px] text-muted">
               {info ? (
                 <>
-                  Current plan: <span className="text-white">{info.plan}</span>
+                  Current plan: <span className="text-thread">{info.plan}</span>
                   {info.accountNumber != null && <> · Account #{info.accountNumber.toLocaleString("en-US")}</>}
                 </>
               ) : loadErr ? (
-                <span className="text-[#e5484d]">{loadErr}</span>
+                <span className="text-coral">{loadErr}</span>
               ) : (
                 "Loading your account"
               )}
             </p>
           </div>
-          <button type="button" onClick={closeAccount} className="shrink-0 py-1 text-[14px] text-[#9ba1ab] hover:text-white">
+          <button type="button" onClick={closeAccount} className="shrink-0 py-1 text-[14px] text-muted hover:text-ink">
             Cancel
           </button>
         </div>
@@ -103,10 +103,10 @@ function AccountSections({ info, email }: { info: AccountInfo; email: string }) 
   return (
     <>
       <EmailSection email={email} />
-      <hr className="my-7 border-[#23262d]" />
+      <hr className="my-7 border-line" />
       <PasswordSection email={email} />
       <SubscriptionLink info={info} />
-      <hr className="my-7 border-[#23262d]" />
+      <hr className="my-7 border-line" />
       <DangerZone />
     </>
   );
@@ -149,20 +149,20 @@ function EmailSection({ email }: { email: string }) {
           }}
           autoComplete="email"
           aria-invalid={err ? true : undefined}
-          className={`field mt-1.5 rounded-[3px] !border-[#2a2e36] !bg-[#0e1016] text-[#c9ccd3] w-full px-3.5 py-3 text-[15px] ${err ? "!border-[#e5484d]" : ""}`}
+          className={`field mt-1.5 !border-line !bg-surface text-ink w-full px-3.5 py-3 text-[15px] ${err ? "!border-coral" : ""}`}
         />
       </label>
-      {err && <p className="mt-2 text-[13px] text-[#e5484d]">{err}</p>}
+      {err && <p className="mt-2 text-[13px] text-coral">{err}</p>}
       <p className={helper}>
-        Signed in as <b className="font-semibold text-white">{email}</b>. Changing this sends a confirmation link to <em>both</em> addresses, the old one and the
+        Signed in as <b className="font-semibold text-ink">{email}</b>. Changing this sends a confirmation link to <em>both</em> addresses, the old one and the
         new one, and the address only switches once you have opened both. Links expire in an hour.
       </p>
       {sentTo && (
-        <p className="mt-3 border border-[#5b9bf0]/40 px-3.5 py-2.5 text-[13px] leading-relaxed text-[#5b9bf0]" role="status">
+        <p className="mt-3 border border-thread/40 px-3.5 py-2.5 text-[13px] leading-relaxed text-thread" role="status">
           Check both inboxes: we sent a link to {email} and to {sentTo}. Open both and your email switches to {sentTo}.
         </p>
       )}
-      <button type="submit" disabled={busy} className="rounded-[3px] border border-[#2f333b] bg-transparent font-semibold text-white transition-colors hover:bg-white/5 disabled:opacity-60 mt-4 w-full py-3.5 text-[15px]">
+      <button type="submit" disabled={busy} className="border border-line bg-transparent font-semibold text-ink transition-colors hover:border-thread/60 hover:bg-white/[0.03] disabled:opacity-60 mt-4 w-full py-3.5 text-[15px]">
         {busy ? "Sending links" : "Change email"}
       </button>
     </form>
@@ -242,7 +242,7 @@ function PasswordSection({ email }: { email: string }) {
             autoComplete="current-password"
             invalid={Boolean(currentErr)}
           />
-          {currentErr && <p className="mt-2 text-[13px] text-[#e5484d]">{currentErr}</p>}
+          {currentErr && <p className="mt-2 text-[13px] text-coral">{currentErr}</p>}
         </div>
         <div>
           <PasswordInput
@@ -255,26 +255,26 @@ function PasswordSection({ email }: { email: string }) {
             autoComplete="new-password"
             invalid={Boolean(nextErr)}
           />
-          {nextErr && <p className="mt-2 text-[13px] text-[#e5484d]">{nextErr}</p>}
+          {nextErr && <p className="mt-2 text-[13px] text-coral">{nextErr}</p>}
           <p className={helper}>{PASSWORD_HINT}</p>
         </div>
-        {err && <p className="text-[13px] text-[#e5484d]">{err}</p>}
-        <button type="submit" disabled={busy} className="w-full rounded-[3px] bg-[#2f66b1] py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#3672bf] disabled:opacity-60">
+        {err && <p className="text-[13px] text-coral">{err}</p>}
+        <button type="submit" disabled={busy} className="btn-primary w-full py-3.5 text-[15px]">
           {busy ? "Changing password" : "Change password"}
         </button>
       </form>
-      <button type="button" onClick={sendReset} disabled={resetBusy || resetSent} className="rounded-[3px] border border-[#2f333b] bg-transparent font-semibold text-white transition-colors hover:bg-white/5 disabled:opacity-60 mt-3 w-full py-3.5 text-[15px]">
+      <button type="button" onClick={sendReset} disabled={resetBusy || resetSent} className="border border-line bg-transparent font-semibold text-ink transition-colors hover:border-thread/60 hover:bg-white/[0.03] disabled:opacity-60 mt-3 w-full py-3.5 text-[15px]">
         {resetBusy ? "Sending link" : resetSent ? "Link sent" : "I don't have my current password"}
       </button>
-      {resetErr && <p className="mt-2 text-[13px] text-[#e5484d]">{resetErr}</p>}
+      {resetErr && <p className="mt-2 text-[13px] text-coral">{resetErr}</p>}
       <p className={helper} role={resetSent ? "status" : undefined}>
         {resetSent ? (
-          <span className="text-[#5b9bf0]">
+          <span className="text-thread">
             Sent to {email}. Open the link within an hour to set a new password.
           </span>
         ) : (
           <>
-            Sends a one-time link to <b className="font-semibold text-white">{email}</b>. Open it and you can set a new password without the old one. Useful if
+            Sends a one-time link to <b className="font-semibold text-ink">{email}</b>. Open it and you can set a new password without the old one. Useful if
             you sign in with Google and never typed a password here.
           </>
         )}
@@ -289,7 +289,7 @@ function SubscriptionLink({ info }: { info: AccountInfo }) {
   if (!info.hasBilling) {
     return info.tier === "free" ? (
       <div className="mt-6 text-center">
-        <Link href="/pricing" onClick={closeAccount} className="text-[14px] text-[#5b9bf0] hover:underline underline-offset-4">
+        <Link href="/pricing" onClick={closeAccount} className="text-[14px] text-thread hover:underline underline-offset-4">
           Upgrade
         </Link>
       </div>
@@ -309,11 +309,11 @@ function SubscriptionLink({ info }: { info: AccountInfo }) {
           setErr(b.error ?? UNREACHABLE);
           setBusy(false);
         }}
-        className="text-[14px] text-[#5b9bf0] hover:underline underline-offset-4 disabled:opacity-60"
+        className="text-[14px] text-thread hover:underline underline-offset-4 disabled:opacity-60"
       >
         {busy ? "Opening billing" : "Manage or cancel subscription"}
       </button>
-      {err && <p className="mt-2 text-[13px] text-[#e5484d]">{err}</p>}
+      {err && <p className="mt-2 text-[13px] text-coral">{err}</p>}
     </div>
   );
 }
@@ -342,16 +342,16 @@ function DangerZone() {
 
   return (
     <div>
-      <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#e5484d]">Danger zone</div>
-      <p className="mt-2 text-[13.5px] leading-relaxed text-[#9ba1ab]">Permanently delete your account, documents, reels and credits. This cannot be undone.</p>
+      <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-coral">Danger zone</div>
+      <p className="mt-2 text-[13.5px] leading-relaxed text-muted">Permanently delete your account, documents, reels and credits. This cannot be undone.</p>
       {!confirming ? (
-        <button type="button" onClick={() => setConfirming(true)} className="mt-4 w-full border border-[#e5484d] py-3.5 text-[15px] font-medium text-[#e5484d] transition-colors hover:bg-[#e5484d]/10">
+        <button type="button" onClick={() => setConfirming(true)} className="mt-4 w-full border border-coral/70 py-3.5 text-[15px] font-medium text-coral transition-colors hover:bg-coral/10">
           Delete account
         </button>
       ) : (
-        <div className="mt-4 border border-[#e5484d]/60 p-4">
+        <div className="mt-4 border border-coral/60 p-4">
           <label className="block">
-            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#e5484d]">Type DELETE to confirm</span>
+            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-coral">Type DELETE to confirm</span>
             <input
               value={typed}
               onChange={(e) => setTyped(e.target.value)}
@@ -359,11 +359,11 @@ function DangerZone() {
               autoComplete="off"
               autoCapitalize="characters"
               spellCheck={false}
-              className="field mt-1.5 rounded-[3px] !border-[#2a2e36] !bg-[#0e1016] text-[#c9ccd3] w-full px-3.5 py-3 font-mono text-[15px] focus:!border-[#e5484d]"
+              className="field mt-1.5 !border-line !bg-surface text-ink w-full px-3.5 py-3 font-mono text-[15px] focus:!border-coral"
             />
           </label>
-          <p className="mt-2.5 text-[13px] leading-relaxed text-[#9ba1ab]">Any subscription is cancelled first. Every document, reel and audio file is removed.</p>
-          {err && <p className="mt-2 text-[13px] text-[#e5484d]">{err}</p>}
+          <p className="mt-2.5 text-[13px] leading-relaxed text-muted">Any subscription is cancelled first. Every document, reel and audio file is removed.</p>
+          {err && <p className="mt-2 text-[13px] text-coral">{err}</p>}
           <div className="mt-4 flex gap-3">
             <button
               type="button"
@@ -372,7 +372,7 @@ function DangerZone() {
                 setTyped("");
                 setErr(null);
               }}
-              className="rounded-[3px] border border-[#2f333b] bg-transparent font-semibold text-white transition-colors hover:bg-white/5 disabled:opacity-60 flex-1 py-3 text-[14.5px]"
+              className="border border-line bg-transparent font-semibold text-ink transition-colors hover:border-thread/60 hover:bg-white/[0.03] disabled:opacity-60 flex-1 py-3 text-[14.5px]"
             >
               Keep account
             </button>
@@ -380,7 +380,7 @@ function DangerZone() {
               type="button"
               disabled={!armed || busy}
               onClick={remove}
-              className="flex-1 border border-[#e5484d] bg-[#e5484d] py-3 text-[14.5px] font-semibold text-white transition-opacity disabled:opacity-40"
+              className="flex-1 border border-coral bg-coral py-3 text-[14.5px] font-semibold text-paper transition-opacity disabled:opacity-40"
             >
               {busy ? "Deleting" : "Delete forever"}
             </button>
