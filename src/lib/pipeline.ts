@@ -258,14 +258,15 @@ export async function generateReel(reelId: string) {
     const ready = { status: "ready" as const, script_json: script, audio_paths: audio, error: null, error_detail: null, ...(edit ? { edit_request: null } : {}) };
     let saved = false;
     if (video) {
-      const { error } = await db.from("reels").update({ ...ready, video_path: video.path, video_meta: video.timeline }).eq("id", reelId);
+      // Only while still ours: a reel the owner stopped meanwhile stays stopped.
+      const { error } = await db.from("reels").update({ ...ready, video_path: video.path, video_meta: video.timeline }).eq("id", reelId).eq("status", "generating");
       if (error) console.error("[pipeline] saving the video failed, keeping the animated player", reelId, error);
       else saved = true;
     }
     if (!saved) {
-      const { error } = await db.from("reels").update({ ...ready, video_path: null, video_meta: null }).eq("id", reelId);
+      const { error } = await db.from("reels").update({ ...ready, video_path: null, video_meta: null }).eq("id", reelId).eq("status", "generating");
       // Before the video columns exist (migration not applied yet), save without them.
-      if (error) await db.from("reels").update(ready).eq("id", reelId);
+      if (error) await db.from("reels").update(ready).eq("id", reelId).eq("status", "generating");
     }
 
     if (!(await settleDocument(reel.document_id)) && !edit) await queueRemainingReels(reel.document_id, { pendingOnly: true });
@@ -293,7 +294,7 @@ export async function generateReel(reelId: string) {
  * both count as settled). On the free drip the unpaid reels stay pending (they generate on demand when
  * unlocked, which puts the document back to "scripting"), so only paid ones are counted. True when settled.
  */
-async function settleDocument(documentId: string) {
+export async function settleDocument(documentId: string) {
   const db = adminClient();
   const { data: paid } = await db.from("documents").select("credit_reels,unlocked").eq("id", documentId).maybeSingle<Pick<DocumentRow, "credit_reels" | "unlocked">>();
   let waiting = db

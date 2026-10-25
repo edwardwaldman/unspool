@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useState } from "react";
 import type { SpoolDTO } from "@/lib/spool-types";
 import type { UploadState } from "../upload/upload-store";
 import { reelAccent, reelVars } from "./accent";
@@ -82,6 +83,7 @@ export function LoadingReel({
             ? errorText
             : `${stage < 3 ? "Usually under a minute. " : ""}Reel ${reelIndex} plays here the moment it's ready.`}
         </p>
+        {spool && spool.status === "scripting" && !isError && !spool.id.startsWith("share-") && <StopButton id={spool.id} />}
         {isError && onRetry && (
           <button
             type="button"
@@ -170,5 +172,28 @@ export function LoadingReel({
         )}
       </div>
     </div>
+  );
+}
+
+/** Stop making this document's reels (the ones already made stay; Retry resumes the rest). */
+function StopButton({ id }: { id: string }) {
+  const [state, setState] = useState<"idle" | "busy" | "err">("idle");
+  return (
+    <button
+      type="button"
+      disabled={state === "busy"}
+      onClick={async () => {
+        if (!window.confirm("Stop making this document's reels? Reels already made stay, and you can retry the rest later.")) return;
+        setState("busy");
+        const res = await fetch(`/api/documents/${id}/stop`, { method: "POST" }).catch(() => null);
+        if (!res?.ok) return setState("err");
+        setState("idle");
+        window.dispatchEvent(new Event("unspool:reload"));
+      }}
+      className="mt-3 text-[13px] text-white/60 underline underline-offset-4 hover:text-white disabled:opacity-50"
+      data-testid="stop-reels"
+    >
+      {state === "busy" ? "Stopping…" : state === "err" ? "Couldn't stop. Try again" : "Stop making reels"}
+    </button>
   );
 }
