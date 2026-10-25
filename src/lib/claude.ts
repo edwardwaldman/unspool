@@ -254,7 +254,7 @@ Visuals — choose the one that best shows each beat; vary them across the reel 
   - title: the function's name as on a whiteboard ("y = sin(u)", "f(x)", "Supply & demand").
   Only plot what the document states or implies; numbers in the graph must match it.
 - emoji {emoji, title, caption, motion: vibrate|bounce|spin|pulse}: ONE big emoji as a prop for a metaphor beat (📳 vibrating phone for "it oscillates forever", 🏃 for approaching, 💸 for cost), optional big title above ("sin(∞) = ?") and a short yellow caption under it ("no limit"). This is the ONLY place emoji are allowed.
-For math, physics, chemistry, economics or statistics documents (anything with equations, functions, data or diagrams), PREFER equation and graph visuals for the explanation beats, and give those beats "scene": {"camera":"front","objects":[]} — an accurate diagram beats a 3D metaphor. A strong math reel looks like: emoji hook → equation header → graph of the base function → graph of the specific function with its key point highlighted → zoomed graph → equation summary.
+For math, physics, chemistry, economics or statistics documents, use an accurate graph or equation visual for the ONE or TWO beats where the exact function or formula matters (give only those beats "scene": {"camera":"front","objects":[]}); never more than two such flat beats per reel. Every other beat still gets a 3D scene from the reel's story, even in math: a limit = a ball rolling down a ramp toward a flag it never quite touches; a derivative = a skateboarder's speed at one instant; a sum = blocks stacking up. A strong math reel: 3D hook → 3D story beats → one graph with the key point highlighted → 3D payoff → equation summary.
 color is one of primary | warn | yellow | cyan, with the same meanings as the markup (primary is the default; warn only for risks). Labels and titles are short (1–4 words), usually ALL CAPS. "icon" is a name from the allowed list (line icons, no emoji). Never put emoji in any text except the emoji visual's "emoji" field.
 
 Other fields:
@@ -267,10 +267,19 @@ Other fields:
   4. Labels are 1-3 word ALL-CAPS chips on the objects that carry the idea this beat ("SAMPLE", "THE WHOLE POT", "x → 2", "LIMIT = 7"); at most 2 labelled objects per beat, others "".
   5. Motions: "stir" (a spoon), "drop" (something arriving this beat), "glow" (the thing that matters right now; one per beat), "bob" (a person or living thing), "tilt" (a scale), "spin" (a coin, a planet), else "none".
   6. camera: "front" (default), "close" (tight on the hero), "low" (dramatic reveal, looking up at the hero), "top" (a crowd or layout). Mix them like a film: a "close" or "low" every two or three beats, never the same camera for the whole reel.
-  The quiz and outro have no scene. Use "objects": [] only for a beat where no picture helps (the "visual" is shown instead).
+  7. Make it fun to watch, like a cartoon: something arrives, flips, spins, glows or is added in EVERY beat. The hook beat opens with a dramatic arrival ("drop" on the hero, camera "low"). Somewhere mid-reel, a twist: a new object drops in, the hero changes, or a supporting object becomes the accent. Prefer 3-4 objects over 2 when the story allows.
+  The quiz and outro have no scene. Every other beat MUST have 2-4 objects; "objects": [] is allowed ONLY on the (at most two) graph/equation beats described above.
 - "mood" (on every beat): the background colour: "hot" (hot pink, for the hook and big surprises), "calm" (deep navy with soft glows — the default for explanations, graphs and equations), "warn" (red-orange, traps and mistakes), "win" (green, the correct answer / payoff).
 - "image_prompt" (on every beat): the scene for an illustration shown behind that beat in the video, 8–20 words. Concrete and visual: objects, people, places or a simple visual metaphor for what the beat says (e.g. "a chef tasting one spoon of soup beside a huge steaming pot"). Never ask for words, letters, numbers, charts, logos, UI or real named people in the image, and don't describe an art style (the style is added automatically).
 - "stats": 0–3 numbers from the document shown in a live monospace stat line, counting up when they're mentioned: {label (1–2 lowercase words), value (number), prefix (e.g. "$" or ""), suffix (e.g. "%", " days" or ""), at_beat (index of the beat where it's first mentioned)}. Only real numbers from the document; use [] if the reel has none.`;
+
+/** Reel 1 is every new user's free first reel: the one that decides whether they keep going. */
+const FIRST_REEL = `THIS IS REEL 1: the viewer's free first reel, their first impression of Unspool. Make it the most fun, most visual reel of the set:
+- EVERY beat (except the quiz and outro) is a 3D scene with 3-4 objects. No graph or equation beats in this reel; save diagrams for later reels.
+- Open big: the hook beat drops the hero in (motion "drop", camera "low", mood "hot").
+- Something new happens on screen in every beat (an object drops in, spins, glows, swaps places or becomes the accent), with at least one surprising twist mid-reel.
+- Vary the camera every beat or two ("close", "low", "front", "top").
+`;
 
 /** The owner's change request, with the current version for reference. */
 function editBrief(edit: { request: string; previous: ReelScript | null }) {
@@ -305,6 +314,7 @@ Write reel ${index} of ${plan.reels.length}: "${reel.title}".
 Planned hook: ${reel.hook}
 Covers: ${reel.section}
 ${next ? `The next reel is "${next.title}".` : "This is the final reel."}
+${index === 1 ? FIRST_REEL : ""}
 
 ${input.long ? SCRIPT_GUIDE.replace("~30–60 seconds", "~45–90 seconds").replace("6–10 BODY beats", "8–14 BODY beats") : SCRIPT_GUIDE}
 

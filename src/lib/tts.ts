@@ -40,12 +40,82 @@ async function openaiSpeech(text: string): Promise<TtsResult> {
   });
   if (!res.ok) throw new Error(`OpenAI TTS failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
   const audio = Buffer.from(await res.arrayBuffer());
-  return {
-    audio,
-    duration: mp3Duration(audio) ?? estimateDuration(text),
-    words: estimateWordFractions(text),
-    exact: false,
-  };
+  const duration = mp3Duration(audio) ?? estimateDuration(text);
+  // OpenAI's speech API returns no timings; estimates drift (pauses, numbers, symbols), so captions lagged the
+  // voice. Transcribe the clip with word timestamps and line them up with the script instead.
+  const timed = await wordTimesFromAudio(audio, text, duration).catch((err) => {
+    console.error("[tts] word timing failed, using estimates", (err as Error).message?.slice(0, 200));
+    return null;
+  });
+  return { audio, duration, words: timed ?? estimateWordFractions(text), exact: Boolean(timed) };
+}
+
+const norm = (w: string) => w.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+const SPOKEN: Record<string, string> = { "0": "zero", "1": "one", "2": "two", "3": "three", "4": "four", "5": "five", "6": "six", "7": "seven", "8": "eight", "9": "nine", "10": "ten" };
+
+/**
+ * Word start times (fractions of the clip) for `text`, from a word-level transcription of the audio. Script
+ * words are matched in order to transcript words (allowing for numbers read out and symbols the transcript
+ * spells differently); unmatched words are spread between their matched neighbours. Null when too few match.
+ */
+async function wordTimesFromAudio(audio: Buffer, text: string, duration: number): Promise<number[] | null> {
+  const form = new FormData();
+  form.append("file", new Blob([new Uint8Array(audio)], { type: "audio/mpeg" }), "clip.mp3");
+  form.append("model", "whisper-1");
+  form.append("response_format", "verbose_json");
+  form.append("timestamp_granularities[]", "word");
+  form.append("prompt", text.slice(0, 800));
+  const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+    body: form,
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!res.ok) throw new Error(`transcription ${res.status}: ${(await res.text()).slice(0, 150)}`);
+  const body = (await res.json()) as { words?: { word: string; start: number }[] };
+  const heard = (body.words ?? []).map((w) => ({ w: norm(w.word), start: w.start }));
+  const script = splitWords(text);
+  if (!heard.length || !script.length || !(duration > 0)) return null;
+
+  const starts: (number | null)[] = new Array(script.length).fill(null);
+  let j = 0;
+  script.forEach((word, i) => {
+    const want = norm(word);
+    if (!want) return;
+    const alt = SPOKEN[want];
+    // Look a few words ahead: the transcript may split ("f of 2") or merge words the script writes differently.
+    for (let k = j; k < Math.min(heard.length, j + 4); k++) {
+      const h = heard[k].w;
+      if (h === want || (alt && h === alt) || (want.length > 3 && (h.startsWith(want.slice(0, 4)) || want.startsWith(h) && h.length > 3))) {
+        starts[i] = heard[k].start;
+        j = k + 1;
+        return;
+      }
+    }
+  });
+  const matched = starts.filter((s) => s !== null).length;
+  if (matched < Math.max(2, script.length * 0.6)) return null;
+
+  // Fill the gaps: spread unmatched words evenly between the matched times on either side.
+  const est = estimateWordFractions(text).map((f) => f * duration);
+  const out = starts.slice();
+  for (let i = 0; i < out.length; i++) {
+    if (out[i] !== null) continue;
+    let a = i - 1;
+    while (a >= 0 && out[a] === null) a--;
+    let b = i + 1;
+    while (b < out.length && starts[b] === null) b++;
+    const t0 = a >= 0 ? (out[a] as number) : 0;
+    const t1 = b < out.length ? (starts[b] as number) : duration;
+    const e0 = a >= 0 ? est[a] : 0, e1 = b < out.length ? est[b] : duration;
+    out[i] = t0 + ((est[i] - e0) / Math.max(1e-6, e1 - e0)) * (t1 - t0);
+  }
+  // Monotonic and inside the clip.
+  let last = 0;
+  return out.map((s) => {
+    last = Math.max(last, Math.min(duration, s as number));
+    return Math.min(1, last / duration);
+  });
 }
 
 type Alignment = {
