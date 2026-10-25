@@ -67,7 +67,7 @@ export function useSpool(id: string, opts: { keepPolling?: boolean } = {}) {
         setError(null);
         setSpool((prev) => keepStable(prev, body.spool));
         setViewer(body.viewer);
-        if (!settled(body.spool) || keep.current) schedule(2000);
+        if (!settled(body.spool) || keep.current) schedule(settled(body.spool) ? 2000 : 1200);
         // Free drip: refetch when the next free reel can be unlocked, so the countdown flips to "ready".
         else if (body.spool.nextFreeUnlockAt && Date.parse(body.spool.nextFreeUnlockAt) > Date.now()) schedule(Math.min(2 ** 31 - 1, Math.max(1000, Date.parse(body.spool.nextFreeUnlockAt) - Date.now() + 1500)));
       } catch {

@@ -126,9 +126,10 @@ export async function processDocument(documentId: string) {
       return;
     }
 
-    // Reel 1 first; it queues the rest once its script is written (so they reuse the warm prompt cache).
+    // Reel 1 first, right here in this job (no second invocation to spin up: the first reel is what the user is
+    // waiting on); it queues the rest once its script is written (so they reuse the warm prompt cache).
     const first = reels.find((r) => r.index === 1);
-    if (first) await dispatch({ name: "reel", reelId: first.id });
+    if (first) await generateReel(first.id);
   } catch (err) {
     console.error("[pipeline] processDocument failed", documentId, err);
     await db.from("documents").update({ status: "failed", error: friendlyError(err), error_detail: errorDetail(err) }).eq("id", documentId);
@@ -218,14 +219,16 @@ export async function generateReel(reelId: string) {
       reels: (siblings ?? []).map((s) => ({ index: s.index, title: s.title, hook: s.hook, section: s.section ?? "" })),
     };
 
-    const script = await writeReelScript({ fileName: doc.file_name, text: doc.extracted_text, plan, index: reel.index, long: doc.long_reels, edit });
+    // A free account's first reel (the watermark marks a free document): short and dense, so it is ready fast.
+    const quick = reel.index === 1 && !edit && Boolean(doc.watermark) && !doc.long_reels;
+    const script = await writeReelScript({ fileName: doc.file_name, text: doc.extracted_text, plan, index: reel.index, long: doc.long_reels, edit, quick });
 
     // Then the rest of the reels that are paid for (none on free: the drip generates on demand).
     if (reel.index === 1 && !edit) await queueRemainingReels(reel.document_id);
 
     const segments = buildSegments(script);
     const clips = new Map<string, Buffer>();
-    const entries = await mapLimit(segments, 4, async (seg) => {
+    const entries = await mapLimit(segments, 8, async (seg) => {
       const tts = await synthesize(seg.speech);
       if (!tts) {
         return [seg.key, { duration: estimateDuration(seg.speech), words: estimateWordFractions(seg.speech) }] as const;

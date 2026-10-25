@@ -262,7 +262,7 @@ Other fields:
 - "summary": 1–2 sentence plain-text caption summarizing the reel (shown under the reel, no markup).
 - "scene" (on every beat): the beat as a small 3D scene. The scenes of a reel are ONE short story, like a cartoon strip:
   1. Before writing, choose ONE concrete, physical story/metaphor for the whole reel that makes the idea click (sampling = a chef tasting one spoonful from a huge pot; a limit = a runner getting closer and closer to a finish flag; compound interest = a snowball rolling downhill growing bigger). Never switch metaphors mid-reel.
-  2. Pick a CAST of 2-4 objects for that story and keep them in EVERY beat (same shape and colour, so they carry over on screen). Each beat changes something about the cast: move it (order left to right), relabel it, recolour the one that matters now to "accent", add one object or remove one. Don't fill beats with unrelated shapes (no random cubes, balls or targets just to have something).
+  2. Pick 1-2 MAIN objects for that story and keep them in most beats (same shape and colour, so they carry over on screen and glide to new places). Around them, bring in NEW props as the story moves: almost every beat adds, swaps or removes at least one object, so the reel feels like a moving cartoon, not a list of slides. Use a wide variety of shapes across the reel (5 or more different shapes in a typical reel). Every prop must belong to the story (a stopwatch for time, coins for cost, a flag for a goal); no random cubes, balls or targets just to have something.
   3. 2-4 objects per beat (1 only for a dramatic close-up of the main object). Every beat has ONE hero: the object the line is about. Colour it "accent" and make it the biggest (size 1.4-1.8); supporting objects 0.6-1.0. The player stages the hero big at centre front, puts the others smaller behind it on the side their x puts them (x -3..3, left or right of the hero), and the camera pushes in on the hero during the beat. Change which object is the hero as the story moves, so the camera moves with it. Leave z at 0.
   4. Labels are 1-3 word ALL-CAPS chips on the objects that carry the idea this beat ("SAMPLE", "THE WHOLE POT", "x → 2", "LIMIT = 7"); at most 2 labelled objects per beat, others "".
   5. Motions: "stir" (a spoon), "drop" (something arriving this beat), "glow" (the thing that matters right now; one per beat), "bob" (a person or living thing), "tilt" (a scale), "spin" (a coin, a planet), else "none".
@@ -276,6 +276,8 @@ Other fields:
 /** Reel 1 is every new user's free first reel: the one that decides whether they keep going. */
 const FIRST_REEL = `THIS IS REEL 1: the viewer's free first reel, their first impression of Unspool. Make it the most fun, most visual reel of the set:
 - EVERY beat (except the quiz and outro) is a 3D scene with 3-4 objects. No graph or equation beats in this reel; save diagrams for later reels.
+- Dense and fast: every beat is ONE short, punchy sentence that teaches something concrete. No filler, no "let's dive in".
+- Variety: use at least 6 different shapes across the reel; every beat brings in or swaps at least one object, while 1-2 main objects carry the story.
 - Open big: the hook beat drops the hero in (motion "drop", camera "low", mood "hot").
 - Something new happens on screen in every beat (an object drops in, spins, glows, swaps places or becomes the accent), with at least one surprising twist mid-reel.
 - Vary the camera every beat or two ("close", "low", "front", "top").
@@ -300,6 +302,8 @@ export async function writeReelScript(input: {
   long?: boolean;
   /** Rewrite an existing reel the way its owner asked. */
   edit?: { request: string; previous: ReelScript | null };
+  /** A free account's first reel: ~30 s, dense, quick to write and voice. */
+  quick?: boolean;
 }): Promise<ReelScript> {
   const { plan, index } = input;
   const reel = plan.reels[index - 1];
@@ -316,7 +320,7 @@ Covers: ${reel.section}
 ${next ? `The next reel is "${next.title}".` : "This is the final reel."}
 ${index === 1 ? FIRST_REEL : ""}
 
-${input.long ? SCRIPT_GUIDE.replace("~30–60 seconds", "~45–90 seconds").replace("6–10 BODY beats", "8–14 BODY beats") : SCRIPT_GUIDE}
+${input.long ? SCRIPT_GUIDE.replace("~30–60 seconds", "~45–90 seconds").replace("6–10 BODY beats", "8–14 BODY beats") : input.quick ? SCRIPT_GUIDE.replace("~30–60 seconds", "~25–35 seconds (keep it SHORT)").replace("6–10 BODY beats", "4–6 BODY beats, each ONE short punchy sentence,") : SCRIPT_GUIDE}
 
 Set "index" to ${index} and "title" to "${reel.title}".${input.edit ? editBrief(input.edit) : ""}`;
 
