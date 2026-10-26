@@ -91,7 +91,9 @@ export function AppShell({
       }}
     >
       {picker.el}
-      <div className={`fixed inset-x-0 z-30 ${barShown || workbench ? "top-0 lg:top-16 ipad:lg:top-0" : "top-0"}`}>
+      {/* On phones the reel screens fill the frame (their tabs sit at the very top) and carry their own upgrade
+          prompts, so the banner is desktop-only there. */}
+      <div className={`fixed inset-x-0 z-30 ${barShown || workbench ? "top-0 lg:top-16 ipad:lg:top-0" : "top-0"} ${feed || workbench ? "hidden lg:block" : ""}`}>
         <FreeBanner signedIn={Boolean(user)} />
       </div>
 

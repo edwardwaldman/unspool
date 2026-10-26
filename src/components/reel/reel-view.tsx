@@ -83,7 +83,11 @@ export function ReelView({
   // Under the top chip (the demo layout: chip and wordmark on top, everything else is the scene).
   const below = top + 58;
   const heart = useDoubleTapHeart();
-  const toggleMute = () => setPrefs({ muted: !getPrefs().muted, autoMuted: false });
+  const toggleMute = () => {
+    setPrefs({ muted: !getPrefs().muted, autoMuted: false });
+    // Inside the tap: unlock the clips on phones and carry on where it is (never restart the reel).
+    pb.resume();
+  };
   // The owner's Pro reel style (only ever set on their own documents). A rendered video keeps its own look.
   const look = spool.style;
   const paper = look?.theme === "paper" && !pb.videoMode;
@@ -260,8 +264,11 @@ export function ReelView({
             exit={{ opacity: 0, scale: 0.9 }}
             className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
           >
-            <div className="flex h-[72px] w-[72px] items-center justify-center border border-white/20 bg-paper/85 pl-1 text-white" data-testid="paused">
-              <PlayIcon size={34} />
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex h-[72px] w-[72px] items-center justify-center border border-white/20 bg-paper/85 pl-1 text-white" data-testid="paused">
+                <PlayIcon size={34} />
+              </div>
+              {pb.blocked && <span className="bg-black/60 px-3 py-1.5 text-[14px] font-semibold text-white">Tap to play with sound</span>}
             </div>
           </motion.div>
         )}
@@ -272,7 +279,8 @@ export function ReelView({
           onClick={(e) => {
             e.stopPropagation();
             setPrefs({ muted: false, autoMuted: false });
-            pb.replay();
+            // Carry on from here with sound (restarting the reel made it repeat itself).
+            pb.resume();
           }}
           className="absolute left-1/2 top-[50%] z-30 flex -translate-x-1/2 items-center gap-2 bg-thread px-4 py-2.5 text-[14px] font-semibold text-[#08110e]"
         >

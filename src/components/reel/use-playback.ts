@@ -28,9 +28,13 @@ export type Playback = {
   elapsed: number;
   playing: boolean;
   ended: boolean;
+  /** The phone blocked starting with sound: waiting for a tap (which starts it with sound). */
+  blocked: boolean;
   quiz: QuizState;
   quizWaitLeft: number;
   toggle: () => void;
+  /** Call from a tap (e.g. unmute): unlocks every clip on phones and resumes the current one where it is. */
+  resume: () => void;
   replay: () => void;
   answer: (i: number) => void;
   /** Playing a rendered MP4: attach this ref to the <video>; the clock follows it. */
@@ -49,6 +53,7 @@ type Snapshot = {
   elapsed: number;
   playing: boolean;
   ended: boolean;
+  blocked: boolean;
   quiz: QuizState;
   quizWaitLeft: number;
 };
@@ -66,6 +71,8 @@ type Engine = {
   durations: number[];
   /** When the reel was paused (0 while playing): the quiz countdown doesn't run while paused. */
   pausedAt: number;
+  /** A phone refused to start the clip (no tap yet): hold at the start until the user taps. */
+  blocked: boolean;
 };
 
 function freshEngine(durations: number[]): Engine {
@@ -81,7 +88,13 @@ function freshEngine(durations: number[]): Engine {
     speechDone: false,
     durations,
     pausedAt: 0,
+    blocked: false,
   };
+}
+
+/** Phones and tablets (iOS Safari blocks even muted <audio> autoplay, and each clip until it is unlocked). */
+function touchDevice() {
+  return typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
 }
 
 function canSpeak() {
@@ -161,6 +174,7 @@ export function usePlayback(opts: {
       elapsed: e.ended ? total : Math.min(total, before + e.t),
       playing: e.playing,
       ended: e.ended,
+      blocked: e.blocked,
       quiz: e.quiz,
       quizWaitLeft: e.quiz.waiting ? Math.max(0, 1 - (performance.now() - e.waitingSince) / QUIZ_WAIT_MS) : 1,
     };
@@ -174,6 +188,7 @@ export function usePlayback(opts: {
     elapsed: 0,
     playing: false,
     ended: false,
+    blocked: false,
     quiz: { selected: null, revealed: false, waiting: false },
     quizWaitLeft: 1,
   }));
@@ -212,6 +227,39 @@ export function usePlayback(opts: {
     };
   }, [segments, audio, initialDurations, videoMode]);
 
+  /** A phone refused to start sound without a tap: stop the clock at the start and wait for one. */
+  const block = useCallback(() => {
+    const e = engine.current;
+    if (!e.playing) return;
+    e.playing = false;
+    e.blocked = true;
+    render();
+  }, [render]);
+
+  /**
+   * Inside a tap: start every clip once, muted, and stop it again. iOS only lets a media element play without a
+   * gesture after it has played inside one, and each segment is its own element, so without this every later
+   * line was blocked again.
+   */
+  const unlocked = useRef<(HTMLAudioElement | null)[] | null>(null);
+  const unlock = useCallback(() => {
+    const els = audios.current;
+    if (unlocked.current === els) return;
+    unlocked.current = els;
+    els.forEach((el, i) => {
+      if (!el || i === engine.current.seg) return;
+      el.muted = true;
+      el.play()
+        .then(() => {
+          if (engine.current.seg !== i) {
+            el.pause();
+            el.currentTime = 0;
+          }
+        })
+        .catch(() => undefined);
+    });
+  }, []);
+
   const stopAll = useCallback(() => {
     audios.current.forEach((el) => el && !el.paused && el.pause());
     const v = videoRef.current;
@@ -233,6 +281,7 @@ export function usePlayback(opts: {
         v.muted = silent || p.muted;
         v.playbackRate = rateOf(p);
         v.play().catch((err: DOMException) => {
+          if (err?.name === "NotAllowedError" && touchDevice()) return block();
           if (err?.name === "NotAllowedError" && !v.muted) {
             setPrefs({ muted: true, autoMuted: true });
             v.muted = true;
@@ -246,6 +295,9 @@ export function usePlayback(opts: {
         el.muted = p.muted;
         el.playbackRate = rateOf(p);
         el.play().catch((err: DOMException) => {
+          // Phones: don't fall back to muted (iOS blocks that too, and the reel froze, then played muted on the
+          // first tap); wait for a tap, which starts it with sound.
+          if (err?.name === "NotAllowedError" && touchDevice()) return block();
           if (err?.name === "NotAllowedError") {
             // Autoplay with sound blocked: keep playing muted, show the unmute hint.
             setPrefs({ muted: true, autoMuted: true });
@@ -273,7 +325,7 @@ export function usePlayback(opts: {
         window.speechSynthesis.speak(u);
       }
     },
-    [segments, silent, vt],
+    [segments, silent, vt, block],
   );
 
   const startSeg = useCallback(
@@ -433,6 +485,16 @@ export function usePlayback(opts: {
 
   const toggle = useCallback(() => {
     const e = engine.current;
+    unlock();
+    if (e.blocked) {
+      // The first tap on a phone: start with sound, right here inside the gesture.
+      e.blocked = false;
+      e.playing = true;
+      if (getPrefs().autoMuted) setPrefs({ muted: false, autoMuted: false });
+      playClip(e.seg);
+      render();
+      return;
+    }
     if (e.ended) {
       Object.assign(e, freshEngine(e.durations), { playing: true });
       playClip(0);
@@ -456,14 +518,37 @@ export function usePlayback(opts: {
     }
     const el = audios.current[e.seg];
     if (e.playing) {
-      if (el) el.play().catch(() => undefined);
+      if (el) {
+        el.muted = getPrefs().muted;
+        el.play().catch(() => undefined);
+      }
       else if (e.speaking && canSpeak()) window.speechSynthesis.resume();
     } else {
       if (el) el.pause();
       else if (e.speaking && canSpeak()) window.speechSynthesis.pause();
     }
     render();
-  }, [playClip, render, vt]);
+  }, [playClip, render, vt, unlock]);
+
+  /** From a tap (unmute): unlock the clips and carry on from where the current one is, with the new mute state. */
+  const resume = useCallback(() => {
+    const e = engine.current;
+    unlock();
+    if (e.blocked) return toggle();
+    if (!e.playing || e.ended || e.quiz.waiting) return;
+    const muted = silent || getPrefs().muted;
+    const v = vt ? videoRef.current : null;
+    if (v) {
+      // The live-mute effect sets the video's muted flag; here we only need the gesture to start it.
+      if (v.paused) v.play().catch(() => undefined);
+      return;
+    }
+    const el = audios.current[e.seg];
+    if (el) {
+      el.muted = muted;
+      if (el.paused) el.play().catch(() => undefined);
+    }
+  }, [unlock, toggle, vt, silent]);
 
   // A sheet over the reel pauses it in place; closing it carries on from there.
   const held = useRef(false);
@@ -503,9 +588,11 @@ export function usePlayback(opts: {
     elapsed: snap.elapsed,
     playing: snap.playing,
     ended: snap.ended,
+    blocked: snap.blocked,
     quiz: snap.quiz,
     quizWaitLeft: snap.quizWaitLeft,
     toggle,
+    resume,
     replay,
     answer,
     videoMode,
