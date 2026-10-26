@@ -255,7 +255,7 @@ function DesktopStudio({ docs, style, canEdit, plan }: StudioProps) {
   );
 }
 
-function MobileStudio({ docs, style, canEdit, plan }: StudioProps) {
+function MobileStudio({ docs, style, canEdit, plan, email }: StudioProps) {
   const picker = usePicker();
   const [openId, setOpenId] = useState<string | null>(docs[0]?.id ?? null);
   const [styleOpen, setStyleOpen] = useState(false);
@@ -271,8 +271,14 @@ function MobileStudio({ docs, style, canEdit, plan }: StudioProps) {
         <Link href="/library" className="px-2.5 py-2 text-[14px] text-muted ipad:text-[16px]">
           Library
         </Link>
-        <button type="button" onClick={openAccount} aria-label="Account" className="flex h-9 w-9 items-center justify-center border border-line text-ink ipad:h-11 ipad:w-11">
-          <UserIcon size={18} />
+        <button
+          type="button"
+          onClick={openAccount}
+          aria-label="Account"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-thread font-display text-[16px] leading-none text-paper ring-2 ring-thread/30 transition-transform active:scale-95 ipad:h-11 ipad:w-11 ipad:text-[19px]"
+        >
+          {/* The account's initial, like the reels' avatar; the outline icon only if there's no email. */}
+          {email?.trim() ? email.trim()[0].toUpperCase() : <UserIcon size={18} />}
         </button>
       </div>
 
