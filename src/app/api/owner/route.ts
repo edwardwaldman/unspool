@@ -6,6 +6,7 @@ import { deleteDocument } from "@/lib/spool";
 import { appSettings, setOpenAccess } from "@/lib/settings";
 import { getStripe, stripeAccount, stripeConfigured, wrongStripeAccount } from "@/lib/stripe";
 import { adminClient } from "@/lib/supabase/admin";
+import { ownerNeedsUnlock } from "@/lib/owner-passkey";
 import { getViewer } from "@/lib/viewer";
 import { lookupVisits, visitAnalytics } from "@/lib/visits";
 
@@ -17,6 +18,11 @@ export const dynamic = "force-dynamic";
 async function owner() {
   const viewer = await getViewer();
   return viewer.isOwner && viewer.realUserId ? viewer : null;
+}
+
+/** Once Face ID is set up, the panel's data and actions need a recent Face ID unlock too. */
+async function locked(userId: string) {
+  return (await ownerNeedsUnlock(userId)) ? error(403, "Unlock the owner panel with Face ID.", { code: "locked" }) : null;
 }
 
 const has = (name: string) => Boolean(process.env[name]?.trim());
@@ -67,7 +73,10 @@ const ACCOUNT_FOOTER = "You're getting this because you have an Unspool account.
 /** The panel's data, or with ?lookup=<ip or email, or part of one> the IP ↔ email lookup. */
 export async function GET(req: Request) {
   if (!supabaseConfigured) return notConfigured();
-  if (!(await owner())) return error(404, "Not found");
+  const viewer = await owner();
+  if (!viewer) return error(404, "Not found");
+  const lock = await locked(viewer.realUserId!);
+  if (lock) return lock;
   const db = adminClient();
   const lookup = new URL(req.url).searchParams.get("lookup");
   if (lookup !== null) {
@@ -158,6 +167,8 @@ export async function POST(req: Request) {
   if (!supabaseConfigured) return notConfigured();
   const me = await owner();
   if (!me) return error(404, "Not found");
+  const lock = await locked(me.realUserId!);
+  if (lock) return lock;
   const body = (await req.json().catch(() => ({}))) as Body;
   const db = adminClient();
 
