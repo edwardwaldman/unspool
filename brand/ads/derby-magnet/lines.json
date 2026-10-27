@@ -1,14 +1,65 @@
-{"voice": "am_puck", "speed": 1.12, "lead": 0.25, "tail": 0.1, "gap": 0.18, "lines": [
- ["race", "In 1973, a fourteen-year-old won the All-American Soap Box Derby.", 0.18, "In 1973, a 14-year-old won the All-American Soap Box Derby."],
- ["xray", "Then officials X-rayed his car."],
- ["magnet", "Hidden in the nose was an electromagnet."],
- ["switch", "When he leaned his helmet back against a switch,"],
- ["gate", "it pulled his car toward the steel starting gate."],
- ["yank", "So when the gate dropped, he got a little yank forward."],
- ["title", "He lost the title. The kid in second became the champion.", 0.45],
- ["learned", "You just learned that in twenty seconds.", 0.2, "You just learned that in 20 seconds."],
- ["bio", "Now imagine that was your bio chapter."],
- ["reels", "Unspool turns any document into reels like this."],
- ["cta", "Your first reel is free, at unspool dot c c.", 0.2, "Your first reel is free at unspool.cc"],
- ["end", "", 2.0]
-]}
+{
+"voice": "am_puck",
+"speed": 1.12,
+"lead": 0.25,
+"tail": 0.1,
+"gap": 0.18,
+"lines": [
+[
+"race",
+"In nineteen seventy-three, a fourteen-year-old won the All-American Soap Box Derby.",
+0.18,
+"In 1973, a 14-year-old won the All-American Soap Box Derby."
+],
+[
+"xray",
+"Then officials X-rayed his car."
+],
+[
+"magnet",
+"Hidden in the nose was an electromagnet."
+],
+[
+"switch",
+"When he leaned his helmet back against a switch,"
+],
+[
+"gate",
+"it pulled his car toward the steel starting gate."
+],
+[
+"yank",
+"So when the gate dropped, he got a little yank forward."
+],
+[
+"title",
+"He lost the title. The kid in second became the champion.",
+0.45
+],
+[
+"learned",
+"You just learned that in twenty seconds.",
+0.2,
+"You just learned that in 20 seconds."
+],
+[
+"bio",
+"Now imagine that was your bio chapter."
+],
+[
+"reels",
+"Unspool turns any document into reels like this."
+],
+[
+"cta",
+"Your first reel is free, at unspool dot c c.",
+0.2,
+"Your first reel is free at unspool.cc"
+],
+[
+"end",
+"",
+2.0
+]
+]
+}
