@@ -1,15 +1,9 @@
-{"voice": "am_michael", "speed": 1.06, "lead": 0.3, "tail": 0.1, "gap": 0.2, "lines": [
- ["grid", "In 2004, Blockbuster had over nine thousand stores.", 0.25, "In 2004, Blockbuster had over 9,000 stores."],
- ["one", "Today, it has one.", 0.45],
- ["dallas", "It started in 1985, with a single store in Dallas, Texas."],
- ["grow", "Then it spread across America, one store at a time.", 0.3],
- ["offer", "In 2000, a tiny DVD-by-mail startup offered to sell itself to Blockbuster for fifty million dollars.", 0.25, "In 2000, a tiny DVD-by-mail startup offered to sell itself to Blockbuster for $50 million."],
- ["no", "Blockbuster said no. That startup was Netflix.", 0.35],
- ["stream", "Netflix moved to streaming. Blockbuster kept renting discs.", 0.25],
- ["bankrupt", "In 2010, Blockbuster filed for bankruptcy.", 0.3],
- ["bend", "And today, the last one stands in Bend, Oregon.", 0.5],
- ["learned", "You just learned that in under forty seconds.", 0.2, "You just learned that in under 40 seconds."],
- ["reels", "Unspool turns your notes and textbooks into reels like this.", 0.2],
- ["cta", "Your first reel is free, at unspool dot c c.", 0.2, "Your first reel is free at unspool.cc"],
- ["end", "", 1.8]
+{"voice": "am_michael", "speed": 1.18, "lead": 0.1, "tail": 0, "gap": 0.08, "lines": [
+ ["no", "This is how Blockbuster said no to buying Netflix, for fifty million dollars.", 0.2, "This is how Blockbuster said no to buying Netflix for $50 million."],
+ ["grid", "At its peak, it had nine thousand stores.", 0.1, "At its peak, it had 9,000 stores."],
+ ["stream", "Then Netflix went streaming.", 0.1],
+ ["one", "Today, Blockbuster has one.", 0.2],
+ ["reels", "Learn anything this fast, with Unspool.", 0.1, "Learn anything this fast with Unspool."],
+ ["cta", "First reel free, at unspool dot c c.", 0.1, "First reel free at unspool.cc"],
+ ["end", "", 0.35]
 ]}

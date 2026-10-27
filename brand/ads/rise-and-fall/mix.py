@@ -8,30 +8,29 @@ def add(t0,x,g):
 def tone(f,d,dec=5,h=(1,.5,.25)):
     t=np.arange(int(SR*d))/SR; return sum(a*np.sin(2*np.pi*f*(i+1)*t) for i,a in enumerate(h))*np.exp(-t*dec)
 def noise(d,dec=6): t=np.arange(int(SR*d))/SR; return rng.standard_normal(len(t))*np.exp(-t*dec)
-P=st["learned"]-0.1
-# documentary pulse: soft plucked arpeggio in D minor, 96 bpm, darker after the "no"
-b=60/96; up=[[62,65,69],[58,62,65],[60,64,67],[57,61,64]]; down=[[62,65,69],[58,62,65],[55,58,62],[57,60,64]]
-for i in range(int(P/(b/2))):
-    t0=i*b/2; prog=up if t0<st["no"] else down; ch=prog[(i//8)%4]
+STAMP=st["no"]-0.12+1.62; P=st["reels"]-0.1
+# tense riser into the stamp, then a hard hit
+n=int(SR*STAMP); f=np.linspace(80,240,n); add(0,np.sin(2*np.pi*np.cumsum(f)/SR)*np.linspace(0,1,n)**2,0.08)
+add(0,noise(STAMP,0.3)*np.linspace(0,1,int(SR*STAMP)),0.03)
+add(STAMP,tone(55,1.4,3,(1,.6,.3)),0.6); add(STAMP,noise(0.25,18),0.35); add(STAMP,tone(110,0.2,20,(1,)),0.3)
+# documentary pulse after the hit, 104 bpm D minor
+b=60/104; prog=[[62,65,69],[58,62,65],[55,58,62],[57,60,64]]
+for i in range(int((P-STAMP-0.4)/(b/2))):
+    t0=STAMP+0.4+i*b/2; ch=prog[(i//8)%4]
     add(t0,tone(note(ch[i%3]+12),b*0.9,4,(1,.25)),0.04)
     if i%8==0: add(t0,tone(note(ch[0]-24),b*4,0.8,(1,.5,.2)),0.09)
-    if t0>st["grow"] and i%2==0: kk=np.arange(int(SR*.18))/SR; add(t0,np.sin(2*np.pi*(50+60*np.exp(-kk*30))*kk)*np.exp(-kk*14),0.14)
-    if t0>st["grow"] and i%4==2: add(t0,noise(.08,40),0.03)
-# pops as the grid fills, a low boom for "one", a stamp thud, a falling sweep for bankruptcy
-for k in range(14): add(st["grid"]+k*0.12,tone(900+k*40,0.08,40,(1,)),0.03)
+    if i%2==0: kk=np.arange(int(SR*.18))/SR; add(t0,np.sin(2*np.pi*(50+60*np.exp(-kk*30))*kk)*np.exp(-kk*14),0.14)
+    if i%4==2: add(t0,noise(.08,40),0.03)
+for k in range(12): add(st["grid"]+k*0.1,tone(900+k*40,0.08,40,(1,)),0.03)
 add(st["one"]+0.9,tone(45,1.6,1.5,(1,.5)),0.35)
-add(st["no"]+0.3,tone(80,0.3,12,(1,.6)),0.5); add(st["no"]+0.3,noise(0.15,25),0.2)
-n=int(SR*1.5); f=np.linspace(600,90,n); add(st["bankrupt"]+0.2,np.sin(2*np.pi*np.cumsum(f)/SR)*np.exp(-np.arange(n)/SR*1.5),0.07)
-add(st["bend"]+0.5,tone(note(74),2.0,1.2,(1,.3)),0.07)
 add(P,noise(0.4,6),0.1)
-# brand section: bright and calm
-b2=60/92; prog=[[69,72,76],[65,69,72],[67,71,74],[64,67,71]]
+b2=60/92; pr=[[69,72,76],[65,69,72],[67,71,74],[64,67,71]]
 for i in range(int((DUR-P)/b2)):
-    t0=P+0.3+i*b2; ch=prog[(i//4)%4]
+    t0=P+0.2+i*b2; ch=pr[(i//4)%4]
     for m in ch: add(t0,tone(note(m+12),b2*0.8,4,(1,.2)),0.025)
     add(t0,tone(note(ch[0]-12),b2,2,(1,.3)),0.08)
 for j,m in enumerate([72,76,79,84]): add(st["cta"]+j*0.1,tone(note(m),1.2,2,(1,.3)),0.09)
 v,_=sf.read(f"{D}/voice.wav"); vv=np.zeros(N); vv[:min(N,len(v))]=v[:N]
 env=np.convolve(np.abs(vv),np.ones(3600)/3600,"same"); m=out*(1-0.4*np.minimum(1,env/0.04))+vv*1.15
-m*=np.minimum(1,tt/0.1)*np.minimum(1,(DUR-tt)/0.8); m/=np.abs(m).max()/0.93
+m*=np.minimum(1,tt/0.05)*np.minimum(1,(DUR-tt)/0.4); m/=np.abs(m).max()/0.93
 sf.write(f"{D}/mix.wav",m.astype(np.float32),SR); print("ok")
