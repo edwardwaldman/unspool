@@ -6,7 +6,13 @@ import { ownerNeedsUnlock } from "@/lib/owner-passkey";
 import { getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Owner", robots: { index: false } };
+// Its own home-screen app: "Add to Home Screen" here opens the Face ID door, not the Unspool homepage.
+export const metadata: Metadata = {
+  title: "Owner",
+  robots: { index: false, follow: false },
+  manifest: "/owner.webmanifest",
+  appleWebApp: { capable: true, title: "Unspool Owner", statusBarStyle: "black" },
+};
 
 /** Owner-only: anyone else gets a 404, as if the page did not exist. */
 export default async function OwnerPage() {

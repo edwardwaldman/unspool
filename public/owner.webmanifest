@@ -1,0 +1,16 @@
+{
+  "name": "Unspool Owner",
+  "short_name": "Owner",
+  "description": "The Unspool owner panel, unlocked with Face ID.",
+  "id": "/owner/unlock",
+  "start_url": "/owner/unlock",
+  "scope": "/owner",
+  "display": "standalone",
+  "background_color": "#0f1d18",
+  "theme_color": "#0f1d18",
+  "icons": [
+    { "src": "/android-chrome-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/android-chrome-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
