@@ -1,0 +1,161 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#0a1024}
+#c{position:absolute;inset:0} #ov{position:absolute;inset:0}
+</style></head><body><canvas id="c" width="720" height="1280"></canvas><div id="ov"></div>
+<script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
+<script type="module">
+import * as THREE from "three";
+import { RoomEnvironment } from "./three/RoomEnvironment.js";
+const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins")]);
+const W = 720, H = 1280, clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), mix = (a, b, x) => a + (b - a) * x;
+const ease = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }, v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+const outBack = (x) => { x = clamp(x); const k = 1.7; return 1 + (k + 1) * Math.pow(x - 1, 3) + k * Math.pow(x - 1, 2); };
+const NAVY = "#0a1024", YEL = "#f6c744", BLUE = "#2c4fc4", RED = "#e5383b", LIME = "#d3f05a";
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("c"), antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H, false); renderer.setPixelRatio(1); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(); { const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = 0.45; }
+scene.background = new THREE.Color("#141c3d"); scene.fog = new THREE.Fog("#141c3d", 60, 150);
+const camera = new THREE.PerspectiveCamera(36, W / H, 0.05, 400);
+const M = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, ...o });
+const mesh = (g, m, p, parent) => { const x = new THREE.Mesh(g, m); x.castShadow = x.receiveShadow = true; if (p) x.position.copy(p); (parent || scene).add(x); return x; };
+const grp = (parent, p) => { const g = new THREE.Group(); if (p) g.position.copy(p); (parent || scene).add(g); return g; };
+const tex = (w, h, draw) => { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; };
+
+// the stage: a navy floor with a fine grid
+const gridTex = tex(1024, 1024, (c, w, h) => { c.fillStyle = "#18214a"; c.fillRect(0, 0, w, h); c.strokeStyle = "rgba(140,160,255,0.16)"; c.lineWidth = 2; for (let i = 0; i <= 8; i++) { c.beginPath(); c.moveTo(i * w / 8, 0); c.lineTo(i * w / 8, h); c.stroke(); c.beginPath(); c.moveTo(0, i * h / 8); c.lineTo(w, i * h / 8); c.stroke(); } });
+gridTex.wrapS = gridTex.wrapT = THREE.RepeatWrapping; gridTex.repeat.set(20, 20);
+const floor = mesh(new THREE.PlaneGeometry(160, 160), M("#ffffff", { map: gridTex, roughness: 0.9 })); floor.rotation.x = -Math.PI / 2;
+scene.add(new THREE.HemisphereLight("#c9d4ff", "#141c3d", 0.8));
+const key = new THREE.DirectionalLight("#fff1dc", 2.6); key.position.set(-8, 16, 10); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 120 }); key.shadow.bias = -0.0005; scene.add(key, key.target);
+
+// ---- the store grid: ~900 blocks, one block = 10 stores ----
+const SP = 0.62, stores = [];
+for (let x = -24; x <= 24; x++) for (let z = -24; z <= 24; z++) { const d = Math.hypot(x, z); if (d <= 16.9) stores.push({ x: x * SP, z: z * SP, d, r: Math.abs(Math.sin(x * 12.9898 + z * 78.233) * 43758.5453) % 1 }); }
+stores.sort((a, b) => a.d - b.d);
+const NS = stores.length; // keep the centre block as "the last one"
+const storeGeo = new THREE.BoxGeometry(0.46, 0.34, 0.46);
+const storeTex = tex(64, 64, (c, w, h) => { c.fillStyle = BLUE; c.fillRect(0, 0, w, h); c.fillStyle = YEL; c.fillRect(0, 0, w, 18); c.fillStyle = "#ffe9a8"; c.fillRect(10, 34, 44, 18); });
+const storeMat = new THREE.MeshStandardMaterial({ color: "#ffffff", map: storeTex, roughness: 0.5 });
+const grid = new THREE.InstancedMesh(storeGeo, storeMat, NS); grid.castShadow = grid.receiveShadow = true; scene.add(grid);
+const dm = new THREE.Object3D(), col = new THREE.Color();
+function layGrid(fn) { for (let i = 0; i < NS; i++) { const s = stores[i]; const o = fn(s, i); dm.position.set(s.x, 0.17 * o.k + (o.y || 0), s.z); dm.scale.set(o.k, o.k, o.k); dm.rotation.set(0, 0, 0); dm.updateMatrix(); grid.setMatrixAt(i, dm.matrix); col.set(o.c || "#ffffff"); grid.setColorAt(i, col); } grid.instanceMatrix.needsUpdate = true; grid.instanceColor.needsUpdate = true; }
+
+// ---- Texas (1985): a rough outline slab ----
+const tx = [[-3.2, 2.6], [-1.2, 2.6], [-1.2, 1.2], [1.6, 0.9], [2.4, 0.5], [2.5, -1.2], [1.9, -2.0], [0.7, -2.6], [0.3, -3.6], [-0.6, -3.2], [-1.2, -2.0], [-2.0, -1.0], [-3.0, -0.6], [-3.6, 0.2], [-3.2, 0.7]];
+const txShape = new THREE.Shape(tx.map(([x, z]) => new THREE.Vector2(x, z)));
+const texas = grp(); const txm = mesh(new THREE.ExtrudeGeometry(txShape, { depth: 0.18, bevelEnabled: false }), M("#33427e", { roughness: 0.7 }), v3(0, 0, 0), texas); txm.rotation.x = Math.PI / 2; txm.position.y = 0.18;
+const dallasPos = v3(1.0, 0.18, -0.2);
+const firstStore = mesh(new THREE.BoxGeometry(0.7, 0.5, 0.7), [storeMat, storeMat, storeMat, storeMat, storeMat, storeMat], v3(1.0, 0.43, -0.2), texas);
+const pin = grp(texas, v3(1.0, 0.7, -0.2)); mesh(new THREE.SphereGeometry(0.16, 24, 12), M(YEL, { emissive: YEL, emissiveIntensity: 0.4 }), v3(0, 0.75, 0), pin); mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.75, 8), M("#ddd"), v3(0, 0.37, 0), pin);
+
+// ---- the offer (2000): two pawns, a table, an envelope ----
+const meet = grp();
+mesh(new THREE.CylinderGeometry(1.4, 1.4, 0.08, 48), M("#2a3566"), v3(0, 0.62, 0), meet); mesh(new THREE.CylinderGeometry(0.1, 0.18, 0.6, 16), M("#2a3566"), v3(0, 0.3, 0), meet);
+function pawn(c, x) { const g = grp(meet, v3(x, 0, 0)); mesh(new THREE.CylinderGeometry(0.32, 0.42, 0.18, 32), M(c), v3(0, 0.09, 0), g); mesh(new THREE.CylinderGeometry(0.16, 0.3, 0.95, 32), M(c), v3(0, 0.65, 0), g); mesh(new THREE.SphereGeometry(0.24, 32, 16), M(c), v3(0, 1.3, 0), g); return g; }
+const pY = pawn(YEL, -2.0), pR = pawn(RED, 2.0);
+const envTex = tex(512, 320, (c, w, h) => { c.fillStyle = "#f4efe2"; c.fillRect(0, 0, w, h); c.strokeStyle = "#c9c0aa"; c.lineWidth = 6; c.beginPath(); c.moveTo(0, 0); c.lineTo(w / 2, h * 0.55); c.lineTo(w, 0); c.stroke(); c.fillStyle = "#1c2340"; c.font = "700 92px Unb"; c.textAlign = "center"; c.fillText("$50M", w / 2, h - 50); });
+const stampTex = tex(512, 320, (c, w, h) => { c.clearRect(0, 0, w, h); c.translate(w / 2, h / 2); c.rotate(-0.2); c.strokeStyle = RED; c.lineWidth = 14; c.strokeRect(-210, -62, 420, 124); c.fillStyle = RED; c.font = "700 70px Unb"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("DECLINED", 0, 4); });
+const env = grp(meet); const envM = mesh(new THREE.BoxGeometry(1.3, 0.81, 0.03), [M("#f4efe2"), M("#f4efe2"), M("#f4efe2"), M("#f4efe2"), M("#fff", { map: envTex }), M("#f4efe2")], v3(0, 0, 0), env);
+const stamp = mesh(new THREE.PlaneGeometry(1.3, 0.81), new THREE.MeshBasicMaterial({ map: stampTex, transparent: true, toneMapped: false }), v3(0, 0, 0.02), env); stamp.castShadow = false;
+
+// ---- the race (2002-2010): a VHS stack vs a red streaming bar ----
+const race = grp();
+const vhsTex = tex(256, 64, (c, w, h) => { c.fillStyle = "#151515"; c.fillRect(0, 0, w, h); c.fillStyle = YEL; c.fillRect(20, 14, w - 40, h - 28); c.fillStyle = BLUE; c.fillRect(20, 14, 60, h - 28); });
+const vhsMat = [M("#151515"), M("#151515"), M("#1d1d1d"), M("#1d1d1d"), M("#fff", { map: vhsTex }), M("#151515")];
+const tapes = Array.from({ length: 22 }, (_, i) => mesh(new THREE.BoxGeometry(1.5, 0.22, 0.9), vhsMat, v3(-1.3, 0.11 + i * 0.23, 0), race));
+const redBar = mesh(new THREE.BoxGeometry(1.3, 1, 0.9), M(RED, { roughness: 0.35, emissive: RED, emissiveIntensity: 0.15 }), v3(1.3, 0.5, 0), race);
+
+// ---- Bend: one glowing store ----
+const last = mesh(new THREE.BoxGeometry(0.9, 0.65, 0.9), [storeMat, storeMat, storeMat, storeMat, storeMat, storeMat], v3(0, 0.33, 0));
+const lastGlow = new THREE.PointLight(YEL, 0, 6, 1.5); lastGlow.position.set(0, 1.4, 1.2); scene.add(lastGlow);
+
+const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.12) k = i; return k; };
+const st = (n) => lines.find((l) => l.shot === n).s - 0.12;
+const cam = (p, l, f) => { camera.position.copy(p); camera.lookAt(l); camera.fov = f; camera.updateProjectionMatrix(); camera.updateMatrixWorld(); };
+const proj = (p) => { const v = p.clone().project(camera); return [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H]; };
+const fmt = (n) => Math.round(n).toLocaleString("en-US");
+const ov = document.getElementById("ov");
+// karaoke caption: words light up in proportion to their length across the line
+function caption(t, L) {
+  if (!L.text) return ""; const ws = L.text.split(" "); const tot = ws.reduce((a, w) => a + w.length + 1, 0); const u = clamp((t - L.s) / (L.e - L.s)) * tot; let acc = 0;
+  return ws.map((w) => { const on = u >= acc + 0.5; acc += w.length + 1; return `<span style="color:${on ? "#ffffff" : "rgba(255,255,255,.38)"}">${w}</span>`; }).join(" ");
+}
+const STORY = ["grid", "one", "dallas", "grow", "offer", "no", "stream", "bankrupt", "bend"];
+const YEAR = { grid: "2004", one: "TODAY", dallas: "1985", grow: "1985 – 2004", offer: "2000", no: "2000", stream: "2002 – 2010", bankrupt: "2010", bend: "TODAY" };
+const REELS = ["mito", "r1", "dna", "r2", "leaf", "quiz"];
+
+window.renderAt = (t) => {
+  const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.12), len = L.e - L.s + 0.35;
+  const story = STORY.includes(shot);
+  grid.visible = ["grid", "one", "grow", "bankrupt"].includes(shot); texas.visible = shot === "dallas"; meet.visible = shot === "offer" || shot === "no"; race.visible = shot === "stream"; last.visible = shot === "bend" || (shot === "one" && lt > 1.0); lastGlow.intensity = 0;
+  let counter = null, label = "";
+  if (shot === "grid") { // stores pop in from the centre outwards
+    const n = ease(lt / 1.8) * NS; layGrid((s, k) => ({ k: k < n ? outBack((n - k) / 40) : 0 })); counter = ["9,000+", "stores"]; label = "1 block = 10 stores";
+    const a = 0.5 + lt * 0.06; const d = 80 - lt * 2; cam(v3(Math.sin(a) * d * 0.8, d * 0.6, Math.cos(a) * d * 0.8), v3(0, 0, 0), 36);
+  } else if (shot === "one") { // every block sinks away except the centre one
+    const k = ease(lt / 1.1); layGrid((s, j) => ({ k: j === 0 ? 1 : clamp(1 - (k * 1.6 - s.r * 0.6) * 1.3) })); grid.visible = lt < 1.05;
+    counter = [fmt(mix(9000, 1, k)), Math.round(mix(9000, 1, k)) === 1 ? "store" : "stores"];
+    const a = 0.76 + lt * 0.05; const d = mix(72, 9, ease((lt - 0.5) / 1.0)); cam(v3(Math.sin(a) * d * 0.8, d * 0.6, Math.cos(a) * d * 0.8), v3(0, 0.2, 0), 36);
+    if (lt > 1.0) { lastGlow.intensity = 3; last.position.set(0, 0.33, 0); last.scale.setScalar(0.6); }
+  } else if (shot === "dallas") {
+    const k = ease(lt / 1.2); firstStore.scale.setScalar(outBack((lt - 0.9) / 0.5) || 0.001); pin.position.y = mix(3, 0.7, ease((lt - 1.2) / 0.5)); counter = ["1", "store"];
+    cam(v3(mix(-4, 1.5, k), mix(20, 14, k), mix(14, 17, k)), v3(-0.4, 0, -0.4), 36);
+    const [px, py] = proj(v3(1.0, 1.75, -0.2)); label = ""; ov.dataset.pin = `${px},${py}`;
+  } else if (shot === "grow") { // the map gives way to the grid filling up again
+    const p = clamp(lt / (len - 0.2)); const n = Math.pow(p, 1.6) * NS; layGrid((s, k) => ({ k: k < n ? outBack((n - k) / 30) : 0 })); counter = [fmt(Math.max(1, (n / NS) * 9000)), "stores"]; label = "1 block = 10 stores";
+    const a = 0.1 + lt * 0.08; const d = mix(22, 80, ease(p)); cam(v3(Math.sin(a) * d * 0.8, d * 0.6, Math.cos(a) * d * 0.8), v3(0, 0, 0), 36);
+  } else if (shot === "offer" || shot === "no") {
+    const o = shot === "offer"; const k = o ? ease((lt - 1.0) / 1.6) : 1;
+    // the envelope floats from the red pawn toward the yellow one
+    env.position.set(mix(1.6, -0.7, k), 1.75 + Math.sin(t * 2) * 0.05, 0.1); env.rotation.set(0, mix(0, 0.3, k), Math.sin(t * 1.5) * 0.05);
+    const sp = o ? 0 : outBack((lt - 0.4) / 0.3); stamp.scale.setScalar(Math.max(0.001, mix(2.2, 1, clamp((lt - 0.4) / 0.3)))); stamp.material.opacity = o ? 0 : clamp((lt - 0.4) / 0.15);
+    if (!o) { env.position.x = mix(-0.7, 1.6, ease((lt - 1.4) / 0.8)); pY.rotation.z = 0; }
+    const a = o ? -0.05 + lt * 0.03 : 0.1 + lt * 0.03; cam(v3(Math.sin(a) * 16, 6.5, Math.cos(a) * 16), v3(0, 1.1, 0), 36);
+    for (const [p, nm, c] of [[pY, "BLOCKBUSTER", YEL], [pR, o ? "DVD-BY-MAIL STARTUP" : "NETFLIX", RED]]) { const [x, y] = proj(p.position.clone().add(v3(0, 1.85, 0))); label += `<div style="position:absolute;left:${x}px;top:${y}px;transform:translate(-50%,-100%);font:700 17px Unb;color:${c};letter-spacing:1px;white-space:nowrap;text-shadow:0 2px 8px #000">${nm}</div>`; }
+    counter = ["$50M", "asking price"];
+  } else if (shot === "stream") {
+    const p = ease(lt / (len - 0.2)); const keep = Math.round(mix(22, 4, p)); tapes.forEach((tp, k) => (tp.visible = k < keep)); redBar.scale.y = mix(0.4, 5.2, p); redBar.position.y = redBar.scale.y / 2;
+    cam(v3(3, 7, 22), v3(0, 2.6, 0), 36);
+    for (const [x0, y0, nm, c] of [[-1.3, keep * 0.23 + 0.5, "BLOCKBUSTER", YEL], [1.3, redBar.scale.y + 0.5, "NETFLIX", RED]]) { const [x, y] = proj(v3(x0, y0, 0)); label += `<div style="position:absolute;left:${x}px;top:${y}px;transform:translate(-50%,-100%);font:700 17px Unb;color:${c};white-space:nowrap;text-shadow:0 2px 8px #000">${nm}</div>`; }
+    const yr = Math.round(mix(2002, 2010, p)); counter = [String(yr), ""];
+  } else if (shot === "bankrupt") { // a dark wave rolls over the grid
+    const w = lt * 5; layGrid((s) => { const hit = clamp((w - s.d * SP - s.r * 2) / 2); return { k: 1 - hit * 0.55, y: -hit * 0.1, c: hit > 0 ? "#3a3f55" : "#ffffff" }; });
+    counter = [fmt(mix(9000, 1700, clamp(lt / 2.4))), "stores"]; label = "1 block = 10 stores";
+    const a = 0.9 + lt * 0.05; const d = 78; cam(v3(Math.sin(a) * d * 0.8, d * 0.6, Math.cos(a) * d * 0.8), v3(0, 0, 0), 36);
+  } else if (shot === "bend") {
+    last.position.set(0, 0.33, 0); last.scale.setScalar(1); lastGlow.intensity = 4 + Math.sin(t * 3); counter = ["1", "store left"];
+    const a = 0.6 + lt * 0.12; const d = mix(16, 8, ease(lt / 2.8)); cam(v3(Math.sin(a) * d, mix(8, 3, ease(lt / 2.8)), Math.cos(a) * d), v3(0, 0.35, 0), 36);
+    const [px, py] = proj(v3(0, 1.0, 0)); label = `<div style="position:absolute;left:${px}px;top:${py}px;transform:translate(-50%,-100%);font:700 18px Unb;color:${YEL};white-space:nowrap;text-shadow:0 2px 8px #000">BEND, OREGON</div>`;
+  } else { cam(v3(0, 6, 14), v3(0, 0, 0), 36); grid.visible = false; }
+  key.position.copy(camera.position).add(v3(-8, 16, 10)); key.target.position.set(0, 0, 0);
+  renderer.render(scene, camera);
+
+  // overlay: fixed title, stage band, karaoke caption, footer
+  let h = "";
+  if (story) {
+    h += `<div style="position:absolute;left:0;right:0;top:0;height:470px;background:linear-gradient(${NAVY} 78%,rgba(10,16,36,0))"></div><div style="position:absolute;left:0;right:0;top:860px;bottom:0;background:linear-gradient(rgba(10,16,36,0),${NAVY} 22%)"></div>`;
+    h += `<div style="position:absolute;left:0;right:0;top:220px;text-align:center;font:700 54px/1.15 Ins;color:#fff;letter-spacing:-1px">The rise and fall<br>of <span style="color:${YEL}">Blockbuster</span></div>`;
+    if (counter) h += `<div style="position:absolute;left:34px;top:478px;font:700 30px Unb;color:#fff;text-shadow:0 2px 10px #000">${counter[0]} <span style="font:600 18px Ins;color:#b9c3ea">${counter[1]}</span></div>`;
+    h += `<div style="position:absolute;right:34px;top:484px;font:700 18px Unb;color:#fff;letter-spacing:1px;text-shadow:0 2px 10px #000">${YEAR[shot]} <span style="display:inline-block;width:16px;height:16px;border:2px solid #fff;border-radius:50%;vertical-align:-3px;margin-left:4px"></span></div>`;
+    if (label && !label.startsWith("<")) h += `<div style="position:absolute;left:34px;top:832px;font:italic 600 17px Ins;color:#8d97c4">${label}</div>`; else h += label;
+    if (shot === "dallas" && ov.dataset.pin) { const [x, y] = ov.dataset.pin.split(",").map(Number); const a = clamp((lt - 1.5) / 0.3); h += `<div style="position:absolute;left:${x}px;top:${y}px;transform:translate(-50%,-100%);opacity:${a};font:700 18px Unb;color:${YEL};text-shadow:0 2px 8px #000">DALLAS, TX</div>`; }
+    h += `<div style="position:absolute;left:50px;right:50px;top:900px;text-align:center;font:600 38px/1.28 Ins">${caption(t, L)}</div>`;
+    h += `<div style="position:absolute;left:0;right:0;top:1222px;text-align:center;font:600 16px Ins;letter-spacing:4px;color:#7d87b3">UNSPOOL.CC</div>`;
+  } else {
+    h += `<div style="position:absolute;inset:0;background:${NAVY}"></div><div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(211,240,90,.12),transparent 60%)"></div>`;
+    if (shot === "learned") { const w = ["You just learned", "that in", "under 40 seconds."]; const n = lt < 0.7 ? 1 : lt < 1.2 ? 2 : 3; h += `<div style="position:absolute;left:40px;right:40px;top:470px;text-align:center;font:700 64px/1.1 Unb;color:#fff">${w.slice(0, n).map((s, j) => (j === 2 ? `<span style="color:${LIME}">${s}</span>` : s)).join(" ")}</div>`; }
+    if (shot === "reels") { const k2 = Math.floor(lt / 0.75) % REELS.length; const sw = clamp(((lt % 0.75) - 0.55) / 0.2); const p = outBack(lt / 0.45);
+      h += `<div style="position:absolute;left:0;right:0;top:140px;text-align:center;font:700 40px/1.15 Unb;color:#fff">Your notes<br>→ <span style="color:${LIME}">reels like this</span></div><div style="position:absolute;left:50%;top:320px;width:330px;height:620px;margin-left:-165px;border-radius:40px;background:#000;padding:12px;transform:scale(${p})"><div style="position:relative;width:100%;height:100%;border-radius:30px;overflow:hidden"><img src="${REELS[k2]}.jpg" style="position:absolute;left:0;top:${-sw * 100}%;width:100%;height:100%;object-fit:cover"><img src="${REELS[(k2 + 1) % REELS.length]}.jpg" style="position:absolute;left:0;top:${(1 - sw) * 100}%;width:100%;height:100%;object-fit:cover"></div></div>`; }
+    if (shot === "cta" || shot === "end") { const a = shot === "cta" ? clamp(lt / 0.3) : 1; h += `<img src="lockup-horizontal.svg" style="position:absolute;left:140px;width:440px;top:470px;opacity:${a}"><div style="position:absolute;left:0;right:0;top:590px;text-align:center;font:600 28px Ins;color:#b9c3ea;opacity:${a}">Turn any document into study reels.</div><div style="position:absolute;left:50%;top:660px;transform:translateX(-50%) scale(${0.9 + 0.1 * a});opacity:${a};background:${LIME};color:#0f1d18;font:600 30px Ins;padding:18px 34px;border-radius:40px;white-space:nowrap;box-shadow:0 0 40px rgba(211,240,90,.4)">First reel free · unspool.cc</div>`; }
+    if (shot === "learned" && lt < 0.15) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${1 - lt / 0.15}"></div>`;
+  }
+  if (t < 0.2) h += `<div style="position:absolute;inset:0;background:#000;opacity:${1 - t / 0.2}"></div>`;
+  ov.innerHTML = h;
+};
+await Promise.all(["lockup-horizontal.svg", ...REELS.map((n) => n + ".jpg")].map((s) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = s; })));
+window.renderAt(0); setTimeout(() => (window.ready = true), 400);
+</script></body></html>
