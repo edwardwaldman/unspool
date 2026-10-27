@@ -1,0 +1,11 @@
+{"voice": "am_michael", "speed": 1.16, "lead": 0.2, "tail": 0, "gap": 0.16, "lines": [
+ ["hook", "You can pull an all-nighter, and still blank on the test.", 0.15],
+ ["how", "Here's why.", 0.3],
+ ["temp", "Everything you study lands in short-term storage first.", 0.2],
+ ["save", "Then, while you sleep, your brain saves it for the long term.", 0.15],
+ ["fail", "Skip the sleep, and a lot of it never gets saved.", 0.45],
+ ["quiz", "So study earlier, in short bursts, and quiz yourself.", 0.25],
+ ["pivot", "That's Unspool. Your notes as short reels with quizzes, so you're done before midnight.", 0.25],
+ ["cta", "Try it free, at unspool dot c c.", 0.2, "Try it free at unspool.cc"],
+ ["end", "", 1.3]
+]}
