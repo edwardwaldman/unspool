@@ -11,6 +11,7 @@ frame by frame (`index.html`), the voiceover script (`lines.json` or `tts.py`) a
 2. **Years are said the way people say them.** "nineteen eighty-five", "two thousand four", "twenty ten",
    never "nineteen hundred eighty-five". `vo.py` rewrites four-digit years automatically (`say_years`); any
    other voice script must spell years out the same way.
+   Letter grades are hyphenated ("A-plus", not "A plus"): the voice engine reads a lone "A" as "uh".
 3. **Stay inside the TikTok / Instagram safe zone.** The posted file is the render scaled to 86%, a little
    above centre, over a blurred copy of itself (see the commit that added `brand/social/full-frame/`), so
    nothing sits under the side buttons, search bar or caption. Full-frame originals live in
