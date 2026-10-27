@@ -12,6 +12,8 @@ frame by frame (`index.html`), the voiceover script (`lines.json` or `tts.py`) a
    never "nineteen hundred eighty-five". `vo.py` rewrites four-digit years automatically (`say_years`); any
    other voice script must spell years out the same way.
    Letter grades are hyphenated ("A-plus", not "A plus"): the voice engine reads a lone "A" as "uh".
+   When a word still comes out wrong, give its exact pronunciation in `lines.json` under `"pron"`
+   (IPA, e.g. `"pron": {"hypergamy": "haɪpˈɜːɡəmi"}` for hy-PER-guh-mee); `vo.py` swaps it in.
 3. **Stay inside the TikTok / Instagram safe zone.** The posted file is the render scaled to 86%, a little
    above centre, over a blurred copy of itself (see the commit that added `brand/social/full-frame/`), so
    nothing sits under the side buttons, search bar or caption. Full-frame originals live in

@@ -1,4 +1,4 @@
-# usage: vo.py <dir> ; reads <dir>/lines.json {voice, speed, lead, tail, lines:[[shot,text,gap?],...]}; writes voice.wav + web/tl.json
+# usage: vo.py <dir> ; reads <dir>/lines.json {voice, speed, lead, tail, pron?, lines:[[shot,text,gap?,caption?],...]}; writes voice.wav + web/tl.json
 import json, sys, numpy as np, soundfile as sf
 from kokoro_onnx import Kokoro
 import re
@@ -24,7 +24,13 @@ for row in cfg["lines"]:
     shot, text = row[0], row[1]; gap = row[2] if len(row) > 2 else cfg.get("gap", 0.25)
     if not text:
         out.append({"shot": shot, "s": round(t, 3), "e": round(t + gap, 3), "text": ""}); pcm.append(np.zeros(int(SR * gap), np.float32)); t += gap; continue
-    a, _ = k.create(say_years(text), voice=cfg["voice"], speed=cfg.get("speed", 1.05), lang="en-us")
+    spoken = say_years(text); pron = cfg.get("pron", {})   # pron: {"word": "IPA"} for words the engine gets wrong
+    if any(w.lower() in spoken.lower() for w in pron):
+        ph = k.tokenizer.phonemize(spoken, "en-us")
+        for w, ipa in pron.items(): ph = ph.replace(k.tokenizer.phonemize(w, "en-us").strip(" .,"), ipa)
+        a, _ = k.create(ph, voice=cfg["voice"], speed=cfg.get("speed", 1.05), is_phonemes=True)
+    else:
+        a, _ = k.create(spoken, voice=cfg["voice"], speed=cfg.get("speed", 1.05), lang="en-us")
     a = a.astype(np.float32); nz = np.where(np.abs(a) > 0.01)[0]; a = a[max(0, nz[0] - 500): nz[-1] + 900]
     d = len(a) / SR
     out.append({"shot": shot, "s": round(t, 3), "e": round(t + d, 3), "text": row[3] if len(row) > 3 else text})
