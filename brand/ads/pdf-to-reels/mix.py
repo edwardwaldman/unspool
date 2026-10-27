@@ -37,6 +37,10 @@ for j in range(3): t0=st["features"]+j*seg; add(t0,kick(),0.25); add(t0,tone(not
 # swipe ticks every 0.3s
 k=0
 while st["swipe"]+k*0.5<st["cta"]: add(st["swipe"]+k*0.5+0.3,noise(0.12,25)*np.sin(np.linspace(0,np.pi,int(SR*.12))),0.14); k+=1
+# A+ stamp
+LS=L["swipe"]; AP=st["swipe"]+(LS["e"]-LS["s"])*0.48+0.12
+add(AP,kick(),0.3); add(AP+0.15,tone(70,0.4,10,(1,.5)),0.45); add(AP+0.15,noise(0.15,25),0.25)
+for j,m2 in enumerate([79,83,86]): add(AP+0.2+j*0.06,tone(note(m2),0.6,4,(1,.3)),0.08)
 # CTA: slam + bright chord
 add(st["cta"],kick(),0.35); add(st["cta"],noise(0.3,10),0.15)
 for j,m in enumerate([74,78,81,86]): add(st["cta"]+0.05+j*0.07,tone(note(m),1.4,2,(1,.3)),0.1)
