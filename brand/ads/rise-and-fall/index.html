@@ -67,6 +67,7 @@ const race = grp();
 const vhsTex = tex(256, 64, (c, w, h) => { c.fillStyle = "#151515"; c.fillRect(0, 0, w, h); c.fillStyle = YEL; c.fillRect(20, 14, w - 40, h - 28); c.fillStyle = BLUE; c.fillRect(20, 14, 60, h - 28); });
 const vhsMat = [M("#151515"), M("#151515"), M("#1d1d1d"), M("#1d1d1d"), M("#fff", { map: vhsTex }), M("#151515")];
 const tapes = Array.from({ length: 22 }, (_, i) => mesh(new THREE.BoxGeometry(1.5, 0.22, 0.9), vhsMat, v3(-1.3, 0.11 + i * 0.23, 0), race));
+const offerBox = mesh(new THREE.BoxGeometry(0.7, 0.5, 0.7), M(YEL, { roughness: 0.3, metalness: 0.4 }), v3(-1.3, 0.25, 0), race); offerBox.visible = false;
 const redBar = mesh(new THREE.BoxGeometry(1.3, 1, 0.9), M(RED, { roughness: 0.35, emissive: RED, emissiveIntensity: 0.15 }), v3(1.3, 0.5, 0), race);
 
 // ---- Bend: one glowing store ----
@@ -84,14 +85,14 @@ function caption(t, L) {
   if (!L.text) return ""; const ws = L.text.split(" "); const tot = ws.reduce((a, w) => a + w.length + 1, 0); const u = clamp((t - L.s) / (L.e - L.s)) * tot; let acc = 0;
   return ws.map((w) => { const on = u >= acc + 0.5; acc += w.length + 1; return `<span style="color:${on ? "#ffffff" : "rgba(255,255,255,.38)"}">${w}</span>`; }).join(" ");
 }
-const STORY = ["grid", "one", "dallas", "grow", "offer", "no", "stream", "bankrupt", "bend"];
-const YEAR = { grid: "2004", one: "TODAY", dallas: "1985", grow: "1985 – 2004", offer: "2000", no: "2000", stream: "2002 – 2010", bankrupt: "2010", bend: "TODAY" };
+const STORY = ["worth", "grid", "one", "dallas", "grow", "offer", "no", "stream", "bankrupt", "bend"];
+const YEAR = { worth: "TODAY", grid: "2004", one: "TODAY", dallas: "1985", grow: "1985 – 2004", offer: "2000", no: "2000", stream: "2002 – 2010", bankrupt: "2010", bend: "TODAY" };
 const REELS = ["mito", "r1", "dna", "r2", "leaf", "quiz"];
 
 window.renderAt = (t) => {
   const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.12), len = L.e - L.s + 0.35;
   const story = STORY.includes(shot);
-  grid.visible = ["grid", "one", "grow", "bankrupt"].includes(shot); texas.visible = shot === "dallas"; meet.visible = shot === "offer" || shot === "no"; race.visible = shot === "stream"; last.visible = shot === "bend" || (shot === "one" && lt > 1.0); lastGlow.intensity = 0;
+  grid.visible = ["grid", "one", "grow", "bankrupt"].includes(shot); texas.visible = shot === "dallas"; meet.visible = shot === "offer" || shot === "no"; race.visible = shot === "stream" || shot === "worth"; last.visible = shot === "bend" || (shot === "one" && lt > 1.0); lastGlow.intensity = 0;
   let counter = null, label = "", flash = 0;
   if (shot === "grid") { // stores pop in from the centre outwards
     const n = ease(lt / 1.8) * NS; layGrid((s, k) => ({ k: k < n ? outBack((n - k) / 40) : 0 })); counter = ["9,000+", "stores"]; label = "1 block = 10 stores";
@@ -113,18 +114,23 @@ window.renderAt = (t) => {
     // the envelope floats from the red pawn toward the yellow one
     env.position.set(mix(1.6, -0.7, k), 1.75 + Math.sin(t * 2) * 0.05, 0.1); env.rotation.set(0, mix(0, 0.3, k), Math.sin(t * 1.5) * 0.05);
     // the hook: open tight on the offer, slam DECLINED on "no", then pull back to the two players
-    const ST = 1.62, hit = lt - ST;
+    const ST = (L.e - L.s) + 0.12 - 0.26, hit = lt - ST; // lands on the last word, "no"
     stamp.scale.setScalar(Math.max(0.001, mix(2.6, 1, clamp(hit / 0.18)))); stamp.material.opacity = o ? 0 : clamp(hit / 0.08);
-    if (!o) { env.position.x = mix(-0.7, 1.6, ease((lt - 2.9) / 0.8)); env.rotation.y = mix(0.3, 0, ease((lt - 2.9) / 0.8)); }
-    const pull = ease((lt - 2.2) / 1.3), e0 = env.position.clone();
+    if (!o) { env.position.x = mix(-0.7, 1.6, ease((hit - 0.25) / 0.6)); env.rotation.y = mix(0.3, 0, ease((hit - 0.25) / 0.6)); }
+    const pull = o ? ease((lt - 2.2) / 1.3) : ease((lt - 0.3) / (ST - 0.3)), e0 = v3(-0.7, 1.75, 0.1);
     const shake = hit > 0 ? 0.18 * Math.exp(-hit * 7) : 0;
-    const a = o ? -0.05 + lt * 0.03 : 0.25 - pull * 0.15; const d = o ? 16 : mix(4.4, 16, pull);
-    cam(v3(Math.sin(a) * d + e0.x * (1 - pull) + Math.sin(t * 70) * shake, mix(2.2, 6.5, pull) + Math.cos(t * 55) * shake, Math.cos(a) * d), v3(e0.x * (1 - pull), mix(1.75, 1.1, pull), 0), 36);
+    const a = o ? -0.05 + lt * 0.03 : 0.25 - pull * 0.15; const d = o ? 16 : mix(3.6, 6.8, pull);
+    const ex = o ? 0 : e0.x; cam(v3(ex + Math.sin(a) * d + Math.sin(t * 70) * shake, mix(2.0, 3.4, pull) + Math.cos(t * 55) * shake, Math.cos(a) * d), v3(ex, mix(1.75, 1.45, pull), 0), 36);
     if (!o && hit > 0 && hit < 0.35) flash = 0.55 * (1 - hit / 0.35);
     for (const [p, nm, c] of [[pY, "BLOCKBUSTER", YEL], [pR, o ? "DVD-BY-MAIL STARTUP" : "NETFLIX", RED]]) { const [x, y] = proj(p.position.clone().add(v3(0, 1.85, 0))); label += `<div style="position:absolute;left:${x}px;top:${y}px;transform:translate(-50%,-100%);font:700 17px Unb;color:${c};letter-spacing:1px;white-space:nowrap;text-shadow:0 2px 8px #000">${nm}</div>`; }
     counter = ["$50M", "asking price"]; if (!o) label = label.replace("DVD-BY-MAIL STARTUP", "NETFLIX");
+  } else if (shot === "worth") { // the payoff: $50M next to what Netflix became
+    const p = ease((lt - 0.15) / (len - 0.6)); tapes.forEach((tp) => (tp.visible = false)); offerBox.visible = true; redBar.scale.y = mix(0.4, 8, p); redBar.position.y = redBar.scale.y / 2;
+    cam(v3(mix(2.5, 5, p), mix(3, 6, p), mix(13, 46, p)), v3(0, mix(0.8, 4.4, p), 0), 36);
+    for (const [x0, y0, nm, c] of [[-1.3, 0.95, "$50M OFFER", YEL], [1.3, redBar.scale.y + 0.7, "NETFLIX TODAY", RED]]) { const [x, y0p] = proj(v3(x0, y0, 0)); const y = clamp(y0p, 540, 850); label += `<div style="position:absolute;left:${x}px;top:${y}px;transform:translate(-50%,-100%);font:700 17px Unb;color:${c};white-space:nowrap;text-shadow:0 2px 8px #000">${nm}</div>`; }
+    counter = ["$100s of billions", ""];
   } else if (shot === "stream") {
-    const p = ease(lt / (len - 0.2)); const keep = Math.round(mix(22, 4, p)); tapes.forEach((tp, k) => (tp.visible = k < keep)); redBar.scale.y = mix(0.4, 5.2, p); redBar.position.y = redBar.scale.y / 2;
+    offerBox.visible = false; const p = ease(lt / (len - 0.2)); const keep = Math.round(mix(22, 4, p)); tapes.forEach((tp, k) => (tp.visible = k < keep)); redBar.scale.y = mix(0.4, 5.2, p); redBar.position.y = redBar.scale.y / 2;
     cam(v3(3, 7, 22), v3(0, 2.6, 0), 36);
     for (const [x0, y0, nm, c] of [[-1.3, keep * 0.23 + 0.5, "BLOCKBUSTER", YEL], [1.3, redBar.scale.y + 0.5, "NETFLIX", RED]]) { const [x, y] = proj(v3(x0, y0, 0)); label += `<div style="position:absolute;left:${x}px;top:${y}px;transform:translate(-50%,-100%);font:700 17px Unb;color:${c};white-space:nowrap;text-shadow:0 2px 8px #000">${nm}</div>`; }
     const yr = Math.round(mix(2002, 2010, p)); counter = [String(yr), ""];
@@ -154,8 +160,8 @@ window.renderAt = (t) => {
   } else {
     h += `<div style="position:absolute;inset:0;background:${NAVY}"></div><div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(211,240,90,.12),transparent 60%)"></div>`;
     if (shot === "learned") { const w = ["You just learned", "that in", "under 40 seconds."]; const n = lt < 0.7 ? 1 : lt < 1.2 ? 2 : 3; h += `<div style="position:absolute;left:40px;right:40px;top:470px;text-align:center;font:700 64px/1.1 Unb;color:#fff">${w.slice(0, n).map((s, j) => (j === 2 ? `<span style="color:${LIME}">${s}</span>` : s)).join(" ")}</div>`; }
-    if (shot === "reels") { const k2 = Math.floor(lt / 0.75) % REELS.length; const sw = clamp(((lt % 0.75) - 0.55) / 0.2); const p = outBack(lt / 0.45);
-      h += `<div style="position:absolute;left:0;right:0;top:140px;text-align:center;font:700 40px/1.15 Unb;color:#fff">Learn anything<br><span style="color:${LIME}">this fast</span></div><div style="position:absolute;left:50%;top:320px;width:330px;height:620px;margin-left:-165px;border-radius:40px;background:#000;padding:12px;transform:scale(${p})"><div style="position:relative;width:100%;height:100%;border-radius:30px;overflow:hidden"><img src="${REELS[k2]}.jpg" style="position:absolute;left:0;top:${-sw * 100}%;width:100%;height:100%;object-fit:cover"><img src="${REELS[(k2 + 1) % REELS.length]}.jpg" style="position:absolute;left:0;top:${(1 - sw) * 100}%;width:100%;height:100%;object-fit:cover"></div></div>`; }
+    if (shot === "reels" || shot === "scroll") { const rt = t - st("reels"); const per = shot === "scroll" ? 0.55 : 0.75; const k2 = Math.floor(rt / per) % REELS.length; const sw = clamp(((rt % per) - (per - 0.2)) / 0.2); const p = outBack(rt / 0.45);
+      h += `<div style="position:absolute;left:0;right:0;top:140px;text-align:center;font:700 40px/1.15 Unb;color:#fff">${shot === "scroll" ? `You just<br><span style="color:${LIME}">scroll.</span>` : `Any document<br>→ <span style="color:${LIME}">reels like this</span>`}</div><div style="position:absolute;left:50%;top:320px;width:330px;height:620px;margin-left:-165px;border-radius:40px;background:#000;padding:12px;transform:scale(${p})"><div style="position:relative;width:100%;height:100%;border-radius:30px;overflow:hidden"><img src="${REELS[k2]}.jpg" style="position:absolute;left:0;top:${-sw * 100}%;width:100%;height:100%;object-fit:cover"><img src="${REELS[(k2 + 1) % REELS.length]}.jpg" style="position:absolute;left:0;top:${(1 - sw) * 100}%;width:100%;height:100%;object-fit:cover"></div></div>${shot === "scroll" ? `<div style="position:absolute;left:230px;top:${mix(520, 200, ease(((rt % per) - (per - 0.3)) / 0.25))}px;width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,.35);border:3px solid rgba(255,255,255,.85);opacity:${(rt % per) > per - 0.35 ? 1 : 0}"></div>` : ""}`; }
     if (shot === "cta" || shot === "end") { const a = shot === "cta" ? clamp(lt / 0.3) : 1; h += `<img src="lockup-horizontal.svg" style="position:absolute;left:140px;width:440px;top:470px;opacity:${a}"><div style="position:absolute;left:0;right:0;top:590px;text-align:center;font:600 28px Ins;color:#b9c3ea;opacity:${a}">Turn any document into study reels.</div><div style="position:absolute;left:50%;top:660px;transform:translateX(-50%) scale(${0.9 + 0.1 * a});opacity:${a};background:${LIME};color:#0f1d18;font:600 30px Ins;padding:18px 34px;border-radius:40px;white-space:nowrap;box-shadow:0 0 40px rgba(211,240,90,.4)">First reel free · unspool.cc</div>`; }
     if (shot === "reels" && lt < 0.15) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${1 - lt / 0.15}"></div>`;
   }

@@ -1,9 +1,67 @@
-{"voice": "am_michael", "speed": 1.18, "lead": 0.1, "tail": 0, "gap": 0.08, "lines": [
- ["no", "This is how Blockbuster said no to buying Netflix, for fifty million dollars.", 0.2, "This is how Blockbuster said no to buying Netflix for $50 million."],
- ["grid", "At its peak, it had nine thousand stores.", 0.1, "At its peak, it had 9,000 stores."],
- ["stream", "Then Netflix went streaming.", 0.1],
- ["one", "Today, Blockbuster has one.", 0.2],
- ["reels", "Learn anything this fast, with Unspool.", 0.1, "Learn anything this fast with Unspool."],
- ["cta", "First reel free, at unspool dot c c.", 0.1, "First reel free at unspool.cc"],
- ["end", "", 0.35]
-]}
+{
+"voice": "am_michael",
+"speed": 1.12,
+"lead": 0.1,
+"tail": 0,
+"gap": 0.12,
+"lines": [
+[
+"no",
+"Blockbuster could have bought Netflix for fifty million dollars. It said no.",
+0.25,
+"Blockbuster could have bought Netflix for $50 million. It said no."
+],
+[
+"worth",
+"Today, Netflix is worth hundreds of billions.",
+0.3
+],
+[
+"grid",
+"Back in 2004, Blockbuster had over nine thousand stores.",
+0.15,
+"Back in 2004, Blockbuster had over 9,000 stores."
+],
+[
+"stream",
+"Netflix mailed DVDs, then went all in on streaming.",
+0.15
+],
+[
+"bankrupt",
+"In 2010, Blockbuster went bankrupt.",
+0.25
+],
+[
+"one",
+"Today, just one store is left.",
+0.1
+],
+[
+"bend",
+"It's in Bend, Oregon.",
+0.35
+],
+[
+"reels",
+"Unspool turns any document into reels like this.",
+0.1
+],
+[
+"scroll",
+"You just scroll, and learn.",
+0.15
+],
+[
+"cta",
+"Try it free, at unspool dot c c.",
+0.1,
+"Try it free at unspool.cc"
+],
+[
+"end",
+"",
+0.6
+]
+]
+}

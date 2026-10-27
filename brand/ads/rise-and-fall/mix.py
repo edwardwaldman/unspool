@@ -8,7 +8,7 @@ def add(t0,x,g):
 def tone(f,d,dec=5,h=(1,.5,.25)):
     t=np.arange(int(SR*d))/SR; return sum(a*np.sin(2*np.pi*f*(i+1)*t) for i,a in enumerate(h))*np.exp(-t*dec)
 def noise(d,dec=6): t=np.arange(int(SR*d))/SR; return rng.standard_normal(len(t))*np.exp(-t*dec)
-STAMP=st["no"]-0.12+1.62; P=st["reels"]-0.1
+L0=[l for l in tl["lines"] if l["shot"]=="no"][0]; STAMP=L0["e"]-0.26; P=st["reels"]-0.1
 # tense riser into the stamp, then a hard hit
 n=int(SR*STAMP); f=np.linspace(80,240,n); add(0,np.sin(2*np.pi*np.cumsum(f)/SR)*np.linspace(0,1,n)**2,0.08)
 add(0,noise(STAMP,0.3)*np.linspace(0,1,int(SR*STAMP)),0.03)
@@ -21,6 +21,8 @@ for i in range(int((P-STAMP-0.4)/(b/2))):
     if i%8==0: add(t0,tone(note(ch[0]-24),b*4,0.8,(1,.5,.2)),0.09)
     if i%2==0: kk=np.arange(int(SR*.18))/SR; add(t0,np.sin(2*np.pi*(50+60*np.exp(-kk*30))*kk)*np.exp(-kk*14),0.14)
     if i%4==2: add(t0,noise(.08,40),0.03)
+add(st["worth"],noise(1.2,1.5)*np.sin(np.linspace(0,np.pi,int(SR*1.2))),0.1)
+add(st["bankrupt"]+0.2,np.sin(2*np.pi*np.cumsum(np.linspace(500,90,int(SR*1.5)))/SR)*np.exp(-np.arange(int(SR*1.5))/SR*1.5),0.07)
 for k in range(12): add(st["grid"]+k*0.1,tone(900+k*40,0.08,40,(1,)),0.03)
 add(st["one"]+0.9,tone(45,1.6,1.5,(1,.5)),0.35)
 add(P,noise(0.4,6),0.1)
