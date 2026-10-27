@@ -35,17 +35,19 @@
 [
 "one",
 "Today, just one store is left.",
-0.1
+0.3
 ],
 [
-"bend",
-"It's in Bend, Oregon.",
-0.35
+"learned",
+"You just learned that in twenty seconds.",
+0.15,
+"You just learned that in 20 seconds."
 ],
 [
 "reels",
-"Unspool turns any document into reels like this.",
-0.1
+"Turn any document into reels, with Unspool.",
+0.15,
+"Turn any document into reels with Unspool."
 ],
 [
 "scroll",
