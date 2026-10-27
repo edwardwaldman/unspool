@@ -15,4 +15,8 @@ frame by frame (`index.html`), the voiceover script (`lines.json` or `tts.py`) a
    above centre, over a blurred copy of itself (see the commit that added `brand/social/full-frame/`), so
    nothing sits under the side buttons, search bar or caption. Full-frame originals live in
    `brand/social/full-frame/`.
-4. Every ad ends on unspool.cc, and only states facts that can be checked.
+4. **Show the product with the standard document → reels beat.** Whenever an ad shows a document turning
+   into reels, use `shared/doc-to-reels.js` (the PDF that pops in, pulses a lime ring and splits into three
+   reel cards, first used in rise-and-fall) rather than a new animation. Copy it and its three reel stills
+   (`shared/*.jpg`) next to the ad's `index.html` and call `docToReels(lt)` during the beat.
+5. Every ad ends on unspool.cc, and only states facts that can be checked.
