@@ -9,9 +9,9 @@ def tone(f,d,dec=5,h=(1,.5,.25)):
     t=np.arange(int(SR*d))/SR; return sum(a*np.sin(2*np.pi*f*(i+1)*t) for i,a in enumerate(h))*np.exp(-t*dec)
 def noise(d,dec=6): t=np.arange(int(SR*d))/SR; return rng.standard_normal(len(t))*np.exp(-t*dec)
 def kick(): kk=np.arange(int(SR*.22))/SR; return np.sin(2*np.pi*(50+90*np.exp(-kk*30))*kk)*np.exp(-kk*12)
-IMPACT=0.1+0.55*0.364
+IMPACT=0.15+0.75*0.364
 # hard-driving 140 bpm beat from the impact to the CTA
-b=60/140; prog=[[62,66,69],[59,62,66],[55,59,62],[57,61,64]]
+b=60/124; prog=[[62,66,69],[59,62,66],[55,59,62],[57,61,64]]
 for i in range(int((st["cta"]-IMPACT)/(b/2))):
     t0=IMPACT+i*b/2; ch=prog[(i//8)%4]
     if i%2==0: add(t0,kick(),0.32)
@@ -23,8 +23,8 @@ for i in range(int((st["cta"]-IMPACT)/(b/2))):
 n=int(SR*IMPACT); f=np.linspace(1400,300,n); add(0,np.sin(2*np.pi*np.cumsum(f)/SR)*np.linspace(0.2,1,n),0.05)
 add(IMPACT,tone(48,0.8,5,(1,.6,.3)),0.7); add(IMPACT,noise(0.35,12),0.35)
 # upload zip: rising ticks
-for k in range(12): add(st["upload"]+k*0.045,tone(900+k*90,0.04,60,(1,)),0.06)
-add(st["upload"]+0.55,tone(note(88),0.25,10,(1,)),0.08)
+for k in range(12): add(st["upload"]+k*0.065,tone(900+k*90,0.04,60,(1,)),0.06)
+add(st["upload"]+0.8,tone(note(88),0.25,10,(1,)),0.08)
 # unspool whoosh + riffle
 n=int(SR*1.3); add(st["unspool"],noise(1.3,1.2)*np.sin(np.linspace(0,np.pi,n)),0.2)
 for k in range(24): add(st["unspool"]+k*0.035,noise(0.04,70),0.06)
@@ -36,7 +36,7 @@ seg=(L["features"]["e"]-L["features"]["s"]+0.1)/3
 for j in range(3): t0=st["features"]+j*seg; add(t0,kick(),0.25); add(t0,tone(note(79+j*3),0.3,9,(1,.3)),0.1)
 # swipe ticks every 0.3s
 k=0
-while st["swipe"]+k*0.3<st["cta"]: add(st["swipe"]+k*0.3+0.16,noise(0.12,25)*np.sin(np.linspace(0,np.pi,int(SR*.12))),0.14); k+=1
+while st["swipe"]+k*0.5<st["cta"]: add(st["swipe"]+k*0.5+0.3,noise(0.12,25)*np.sin(np.linspace(0,np.pi,int(SR*.12))),0.14); k+=1
 # CTA: slam + bright chord
 add(st["cta"],kick(),0.35); add(st["cta"],noise(0.3,10),0.15)
 for j,m in enumerate([74,78,81,86]): add(st["cta"]+0.05+j*0.07,tone(note(m),1.4,2,(1,.3)),0.1)

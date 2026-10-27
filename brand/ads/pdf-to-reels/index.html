@@ -82,7 +82,7 @@ const cards = Array.from({ length: N }, (_, i) => {
 const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.12) k = i; return k; };
 const st = (n) => lines.find((l) => l.shot === n).s - 0.12;
 const cam = (p, l, f) => { camera.position.copy(p); camera.lookAt(l); camera.fov = f; camera.updateProjectionMatrix(); };
-const T0 = st("unspool") - 0.05, TEND = st("reels") + 0.35, FLY = 0.85, STAG = (TEND - FLY - T0) / (N - 1);
+const T0 = st("unspool") - 0.05, TEND = st("reels") + 0.35, FLY = 1.1, STAG = (TEND - FLY - T0) / (N - 1);
 const flyU = (t, i) => clamp((t - T0 - i * STAG) / FLY);
 let ringArc = null;
 function chunks(text) { const ws = text.split(" "); const out = []; let cur = []; for (const w of ws) { cur.push(w); if (cur.length >= 3 || /[,.?!]$/.test(w)) { out.push(cur.join(" ")); cur = []; } } if (cur.length) out.push(cur.join(" ")); return out; }
@@ -92,12 +92,12 @@ const ov = document.getElementById("ov");
 window.renderAt = (t) => {
   const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.12);
   // the PDF falls onto the pad, then thins as pages leave
-  const FALL0 = 0.1, FALLD = 0.55, IMPACT = FALL0 + FALLD * 0.364; const fall = clamp((t - FALL0) / FALLD); const hitK = t > IMPACT ? Math.exp(-(t - IMPACT) * 9) : 0; const left = cards.filter((_, k) => flyU(t, k) > 0).length / N;
+  const FALL0 = 0.15, FALLD = 0.75, IMPACT = FALL0 + FALLD * 0.364; const fall = clamp((t - FALL0) / FALLD); const hitK = t > IMPACT ? Math.exp(-(t - IMPACT) * 9) : 0; const left = cards.filter((_, k) => flyU(t, k) > 0).length / N;
   pdf.position.y = mix(6.5, 0.2, bounce(fall)); pdf.rotation.set(mix(0.5, 0, ease(fall)), mix(-0.9, -0.12, ease(fall)), mix(0.3, 0, ease(fall)));
   pdfBody.scale.y = 1 - 0.8 * left; pdfBody.position.y = (PT * pdfBody.scale.y) / 2;
   pdf.visible = shot !== "swipe" && shot !== "cta" && shot !== "end";
   // pad glow + progress ring once it lands
-  const up = ease((t - st("upload")) / 0.55);
+  const up = ease((t - st("upload")) / 0.8);
   padGlow = t > st("upload") ? 0.6 + 0.4 * Math.sin(t * 5) : 0; glow.intensity = padGlow * 6;
   if (ringArc) { scene.remove(ringArc); ringArc.geometry.dispose(); ringArc = null; }
   if (up > 0 && t < T0 + 0.7) { ringArc = new THREE.Mesh(new THREE.TorusGeometry(1.95, 0.05, 8, 120, Math.max(0.01, up * Math.PI * 2)), new THREE.MeshBasicMaterial({ color: LIME, toneMapped: false, transparent: true, opacity: 1 - clamp((t - T0 - 0.3) / 0.4) })); ringArc.rotation.x = -Math.PI / 2; ringArc.rotation.z = Math.PI / 2; ringArc.position.y = 0.2; scene.add(ringArc); }
@@ -147,12 +147,9 @@ window.renderAt = (t) => {
     words.forEach(([ic, tx], j) => { const d = j * seg; if (lt < d) return; const p = slam((lt - d) / 0.16); const left = [40, 300, 120][j], top = 150 + j * 110;
       h += `<div style="position:absolute;left:${left}px;top:${top}px;transform:scale(${p}) rotate(${[-4, 3, -2][j]}deg);transform-origin:center;display:inline-flex;align-items:center;gap:12px;background:${LIME};color:#0f1d18;font:700 36px Ins;padding:16px 28px;border-radius:40px;box-shadow:0 10px 30px rgba(0,0,0,.5)"><span style="font:700 26px Unb">${ic}</span>${tx}</div>`; }); }
   if (shot === "swipe") { // rapid-fire swipes with a running reel counter
-    const order = ["mito", "dna", "ribo", "leaf", "quiz", "r1", "r2", "r3"]; const per = 0.3; const k = Math.floor(lt / per); const sw = clamp(((lt % per) - (per - 0.14)) / 0.14);
+    const order = ["mito", "dna", "ribo", "leaf", "quiz", "r1", "r2", "r3"]; const per = 0.5; const k = Math.floor(lt / per); const sw = clamp(((lt % per) - (per - 0.2)) / 0.2);
     h += `<img src="${order[k % 8]}.jpg" style="position:absolute;left:0;top:${-sw * 100}%;width:720px;height:1280px;object-fit:cover"><img src="${order[(k + 1) % 8]}.jpg" style="position:absolute;left:0;top:${(1 - sw) * 100}%;width:720px;height:1280px;object-fit:cover">`;
-    const n = Math.min(38, 1 + Math.floor(lt / per) * 7);
-    h += `<div style="position:absolute;right:30px;top:150px;background:${LIME};color:#0f1d18;font:700 30px Unb;padding:10px 18px;border-radius:14px;transform:rotate(4deg)">REEL ${n}/38</div>`;
-    const half = (L.e - L.s) * 0.55; const second = lt > half;
-    h += `<div style="position:absolute;left:0;right:0;top:420px;text-align:center;transform:scale(${slam((second ? lt - half : lt) / 0.18)}) rotate(-3deg)"><span style="display:inline-block;background:#0b0f0d;color:#fff;font:700 70px/1.1 Unb;padding:16px 30px;border-radius:22px;box-shadow:0 10px 40px rgba(0,0,0,.6)">${second ? `JUST <span style="color:${LIME}">SWIPE.</span>` : `38 <span style="color:${LIME}">REELS.</span>`}</span></div>`; }
+    h += `<div style="position:absolute;left:0;right:0;top:420px;text-align:center;transform:scale(${slam(lt / 0.18)}) rotate(-3deg)"><span style="display:inline-block;background:#0b0f0d;color:#fff;font:700 70px/1.1 Unb;padding:16px 30px;border-radius:22px;box-shadow:0 10px 40px rgba(0,0,0,.6)">JUST <span style="color:${LIME}">SWIPE.</span></span></div>`; }
   if (shot === "cta" || shot === "end") { const lc = t - st("cta"); const a = clamp(lc / 0.15);
     h += `<div style="position:absolute;inset:0;background:#0b0f0d"></div><div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(211,240,90,.22),transparent 60%)"></div>`;
     h += `<img src="lockup-horizontal.svg" style="position:absolute;left:210px;width:300px;top:400px;opacity:${clamp((lc - 0.5) / 0.3)}">`;
