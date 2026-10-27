@@ -1,0 +1,11 @@
+{"voice": "am_michael", "speed": 1.1, "lead": 0.25, "tail": 0, "gap": 0.18, "lines": [
+ ["hook", "You can highlight every line of the chapter, and still remember none of it.", 0.2],
+ ["how", "But why?", 0.35],
+ ["reread", "When you highlight, your eyes do the work. Your brain barely has to.", 0.25],
+ ["feels", "So the color stays on the page, and the memory doesn't.", 0.3],
+ ["recall", "What actually sticks is pulling the answer out yourself, with nothing to look at.", 0.2],
+ ["quiz", "Every time you quiz yourself, that path gets stronger.", 0.3],
+ ["pivot", "So Unspool turns your notes into reels, and every one ends with a quiz.", 0.25],
+ ["cta", "Try it free, at unspool dot c c.", 0.2, "Try it free at unspool.cc"],
+ ["end", "", 1.3]
+]}
