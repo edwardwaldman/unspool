@@ -7,6 +7,7 @@ html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#0b0f0d}
 <script type="module">
 import * as THREE from "three";
 import { RoomEnvironment } from "./three/RoomEnvironment.js";
+import { docToReels } from "./doc-to-reels.js";
 const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
 await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins")]);
 const W = 720, H = 1280, clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), mix = (a, b, x) => a + (b - a) * x;
@@ -81,7 +82,7 @@ const cards = Array.from({ length: N }, (_, i) => {
 const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.12) k = i; return k; };
 const st = (n) => lines.find((l) => l.shot === n).s - 0.12;
 const cam = (p, l, f) => { camera.position.copy(p); camera.lookAt(l); camera.fov = f; camera.updateProjectionMatrix(); };
-const T0 = st("unspool") - 0.1, TEND = st("reels") + 1.1, FLY = 1.4, STAG = (TEND - FLY - T0) / (N - 1);
+const T0 = st("unspool") - 0.05, TEND = st("reels") + 0.35, FLY = 0.85, STAG = (TEND - FLY - T0) / (N - 1);
 const flyU = (t, i) => clamp((t - T0 - i * STAG) / FLY);
 let ringArc = null;
 function chunks(text) { const ws = text.split(" "); const out = []; let cur = []; for (const w of ws) { cur.push(w); if (cur.length >= 3 || /[,.?!]$/.test(w)) { out.push(cur.join(" ")); cur = []; } } if (cur.length) out.push(cur.join(" ")); return out; }
@@ -91,19 +92,19 @@ const ov = document.getElementById("ov");
 window.renderAt = (t) => {
   const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.12);
   // the PDF falls onto the pad, then thins as pages leave
-  const fall = clamp((t - 0.25) / 0.9); const left = cards.filter((_, k) => flyU(t, k) > 0).length / N;
+  const FALL0 = 0.1, FALLD = 0.55, IMPACT = FALL0 + FALLD * 0.364; const fall = clamp((t - FALL0) / FALLD); const hitK = t > IMPACT ? Math.exp(-(t - IMPACT) * 9) : 0; const left = cards.filter((_, k) => flyU(t, k) > 0).length / N;
   pdf.position.y = mix(6.5, 0.2, bounce(fall)); pdf.rotation.set(mix(0.5, 0, ease(fall)), mix(-0.9, -0.12, ease(fall)), mix(0.3, 0, ease(fall)));
   pdfBody.scale.y = 1 - 0.8 * left; pdfBody.position.y = (PT * pdfBody.scale.y) / 2;
   pdf.visible = shot !== "swipe" && shot !== "cta" && shot !== "end";
   // pad glow + progress ring once it lands
-  const up = clamp((t - st("upload")) / 1.3);
+  const up = ease((t - st("upload")) / 0.55);
   padGlow = t > st("upload") ? 0.6 + 0.4 * Math.sin(t * 5) : 0; glow.intensity = padGlow * 6;
   if (ringArc) { scene.remove(ringArc); ringArc.geometry.dispose(); ringArc = null; }
-  if (up > 0 && t < T0 + 1.2) { ringArc = new THREE.Mesh(new THREE.TorusGeometry(1.95, 0.05, 8, 120, Math.max(0.01, up * Math.PI * 2)), new THREE.MeshBasicMaterial({ color: LIME, toneMapped: false, transparent: true, opacity: 1 - clamp((t - T0 - 0.6) / 0.6) })); ringArc.rotation.x = -Math.PI / 2; ringArc.rotation.z = Math.PI / 2; ringArc.position.y = 0.2; scene.add(ringArc); }
+  if (up > 0 && t < T0 + 0.7) { ringArc = new THREE.Mesh(new THREE.TorusGeometry(1.95, 0.05, 8, 120, Math.max(0.01, up * Math.PI * 2)), new THREE.MeshBasicMaterial({ color: LIME, toneMapped: false, transparent: true, opacity: 1 - clamp((t - T0 - 0.3) / 0.4) })); ringArc.rotation.x = -Math.PI / 2; ringArc.rotation.z = Math.PI / 2; ringArc.position.y = 0.2; scene.add(ringArc); }
   // thread draws itself as the pages fly, then fades a touch
   const tp = clamp((t - T0) / (TEND - T0 - 0.4)); threadGeo.setDrawRange(0, Math.floor(tp * 400) * 8 * 6); thread.visible = tp > 0; threadMat.opacity = shot === "features" ? 0.35 : 0.9;
   // the ring of reels turns, then stops with card 0 facing camera
-  const spin = t < TEND ? -0.9 : mix(-0.9, 0, ease((t - TEND) / (st("features") + 0.3 - TEND)));
+  const spin = t < st("features") ? -0.9 - (t - TEND) * 2.2 * (t > TEND) : mix(-0.9 - (st("features") - TEND) * 2.2, -Math.PI * 4, ease((t - st("features")) / 0.5));
   ring.rotation.y = spin;
   cards.forEach((c, k) => {
     const u = flyU(t, k), e = ease(u);
@@ -117,39 +118,48 @@ window.renderAt = (t) => {
     c.g.position.applyAxisAngle(v3(0, 1, 0), 0);
   });
   // cameras
-  if (shot === "drop") { const o = lt * 0.1; const d = 9.5 - lt * 0.5; cam(v3(Math.sin(0.55 + o) * d, 4.4 - lt * 0.3, Math.cos(0.55 + o) * d), v3(0, 0.4, 0), 40); }
-  else if (shot === "upload") { const k = ease(lt / 1.4); const a0 = 0.55 + 0.3, d0 = 9.5 - 1.5; cam(v3(mix(Math.sin(a0) * d0, 0, k), mix(3.5, 7.2, k), mix(Math.cos(a0) * d0, 8.0, k)), v3(0, 0.3, 0.4), 40); }
-  else if (shot === "unspool" || shot === "reels") { const k = clamp((t - st("unspool")) / (st("features") - st("unspool"))); const ek = ease(k);
-    cam(v3(0, mix(7.2, 6.4, ek), mix(8.0, 14.5, ek)), v3(0, mix(0.3, 6.1, ease(k * 1.25)), mix(0.4, 0, ek)), mix(40, 44, ek)); }
-  else if (shot === "features") { const k = ease(lt / 1.6); const front = v3(0, RING_Y, RING_R); cam(v3(0, mix(6.4, RING_Y, k), mix(14.5, RING_R + 4.0, k)), v3(0, mix(6.1, RING_Y, k), 0), mix(44, 40, k)); }
+  if (shot === "drop") { const o = lt * 0.12; const d = 8.6 - lt * 0.9; cam(v3(Math.sin(0.55 + o) * d, 3.9 - lt * 0.4, Math.cos(0.55 + o) * d), v3(0, 0.4, 0), 40); }
+  else if (shot === "upload") { const k = ease(lt / 0.7); const a0 = 0.55 + 0.29, d0 = 8.6 - 2.2; cam(v3(mix(Math.sin(a0) * d0, 0, k), mix(3.5, 7.2, k), mix(Math.cos(a0) * d0, 8.0, k)), v3(0, 0.3, 0.4), 40); }
+  else if (shot === "unspool" || shot === "reels") { const k = clamp((t - st("unspool")) / (st("reels") + 0.4 - st("unspool"))); const ek = ease(k); const whip = Math.sin(k * Math.PI) * 4.5;
+    cam(v3(whip, mix(7.2, 6.4, ek), mix(8.0, 14.5, ek)), v3(0, mix(0.3, 6.1, ease(k * 1.25)), mix(0.4, 0, ek)), mix(40, 50, Math.sin(k * Math.PI)) ); }
+  else if (shot === "features") { const k = ease(lt / 0.5); const front = v3(0, RING_Y, RING_R); cam(v3(0, mix(6.4, RING_Y, k), mix(14.5, RING_R + 4.0, k)), v3(0, mix(6.1, RING_Y, k), 0), mix(44, 40, k)); }
   else { cam(v3(0, RING_Y, RING_R + 3.6), v3(0, RING_Y, 0), 40); }
+  if (hitK > 0.01) { camera.position.x += Math.sin(t * 90) * 0.35 * hitK; camera.position.y += Math.cos(t * 70) * 0.3 * hitK; }
   key.position.copy(camera.position).add(v3(-5, 12, 6)); key.target.position.set(camera.position.x, 0, camera.position.z - 6); scene.add(key.target);
   renderer.render(scene, camera);
 
   // overlay
   let h = "";
   const cap = capAt(t, L);
-  if (cap && shot !== "swipe" && shot !== "cta") h += `<div style="position:absolute;left:30px;right:30px;top:1010px;text-align:center;font:700 46px/1.1 Ins;color:#fff;text-shadow:0 0 6px #000,0 3px 10px #000,2px 2px 0 #000,-2px -2px 0 #000">${cap.toLowerCase()}</div>`;
-  if (shot === "upload" || (shot === "unspool" && lt < 0.8)) { const a = shot === "upload" ? clamp(lt / 0.25) : 1 - clamp((lt - 0.4) / 0.4); const p = Math.round(up * 100);
-    h += `<div style="position:absolute;left:90px;right:90px;top:160px;opacity:${a};background:rgba(20,28,24,.92);border:2px solid rgba(211,240,90,.5);border-radius:22px;padding:18px 22px;font:600 24px Ins;color:#e9f0e3"><div style="display:flex;align-items:center;gap:14px"><div style="background:#e5483b;color:#fff;font:700 18px Unb;padding:8px 10px;border-radius:8px">PDF</div><div><div>biology-textbook.pdf</div><div style="color:#93a08f;font-size:19px">412 pages · Unspooling… ${p}%</div></div></div><div style="margin-top:14px;height:8px;border-radius:4px;background:#26302a"><div style="height:8px;border-radius:4px;width:${p}%;background:${LIME}"></div></div></div>`; }
-  if (shot === "features") { const chips = [["🔊", "Narrated", 0.15], ["CC", "Captioned", 0.85], ["✓", "Quiz at the end", 1.5]];
-    chips.forEach(([ic, tx, d], j) => { const p = outBack((lt - d) / 0.35); if (p <= 0) return; const left = j === 1 ? 380 : 60, top = 140 + j * 105;
-      h += `<div style="position:absolute;left:${left}px;top:${top}px;transform:scale(${p}) rotate(${j === 1 ? 3 : -3}deg);transform-origin:left center;display:flex;align-items:center;gap:12px;background:${LIME};color:#0f1d18;font:600 30px Ins;padding:14px 24px;border-radius:40px;box-shadow:0 10px 30px rgba(0,0,0,.5)"><span style="font:700 24px Unb">${ic}</span>${tx}</div>`; }); }
-  if (shot === "swipe") { // the card becomes the phone: full-screen reels, swiping up
-    const order = ["mito", "dna", "ribo", "leaf", "quiz"]; const per = (L.e - L.s + 0.5) / order.length; const k = Math.min(order.length - 1, Math.floor(lt / per)); const sw = clamp(((lt % per) - (per - 0.28)) / 0.28);
-    const nx = Math.min(order.length - 1, k + 1);
-    h += `<img src="${order[k]}.jpg" style="position:absolute;left:0;top:${-sw * 100}%;width:720px;height:1280px;object-fit:cover"><img src="${order[nx]}.jpg" style="position:absolute;left:0;top:${(1 - sw) * 100}%;width:720px;height:1280px;object-fit:cover">`;
-    const big = ["400 pages.", "38 reels.", "You just swipe."]; const n = clamp(Math.floor((t - L.s) / ((L.e - L.s) / 3)) + 1, 1, 3);
-    h += `<div style="position:absolute;left:0;right:0;top:60px;text-align:center"><span style="display:inline-block;background:#0b0f0d;color:#fff;font:700 40px/1.2 Unb;padding:14px 26px;border-radius:18px;box-shadow:0 8px 30px rgba(0,0,0,.5)">${big.slice(0, n).map((s, j) => j === 1 ? `<span style="color:${LIME}">${s}</span>` : s).join(" ")}</span></div>`;
-    if (lt < 0.25) h += `<div style="position:absolute;inset:0;background:#0b0f0d;opacity:${1 - lt / 0.25}"></div>`;
-    // the thumb
-    const ty = mix(980, 560, ease(((lt % per) - (per - 0.4)) / 0.35)); const ta = lt % per > per - 0.45 ? 1 : 0;
-    h += `<div style="position:absolute;left:470px;top:${ty}px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.35);border:3px solid rgba(255,255,255,.8);opacity:${ta}"></div>`; }
-  if (shot === "cta" || shot === "end") { const a = shot === "cta" ? clamp(lt / 0.3) : 1;
-    h += `<div style="position:absolute;inset:0;background:#0b0f0d"></div><div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(211,240,90,.16),transparent 60%)"></div>`;
-    h += `<img src="lockup-horizontal.svg" style="position:absolute;left:140px;width:440px;top:470px;opacity:${a}"><div style="position:absolute;left:0;right:0;top:590px;text-align:center;font:600 28px Ins;color:#b9c7b5;opacity:${a}">Drop a PDF. Get reels.</div><div style="position:absolute;left:50%;top:660px;transform:translateX(-50%) scale(${0.9 + 0.1 * a});opacity:${a};background:${LIME};color:#0f1d18;font:600 30px Ins;padding:18px 34px;border-radius:40px;white-space:nowrap;box-shadow:0 0 40px rgba(211,240,90,.4)">First reel free · unspool.cc</div>`; }
-  if (shot !== "cta" && shot !== "end" && shot !== "swipe") h += `<div style="position:absolute;left:28px;top:${shot === "swipe" ? 1210 : 70}px;font:700 22px Unb;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.6)">unspool</div>`;
-  if (t < 0.2) h += `<div style="position:absolute;inset:0;background:#000;opacity:${1 - t / 0.2}"></div>`;
+  const slam = (x) => (x <= 0 ? 0 : x < 1 ? mix(2.2, 1, ease(x)) : 1);   // big-to-normal punch
+  if (cap && !["swipe", "cta", "end", "reels"].includes(shot)) h += `<div style="position:absolute;left:30px;right:30px;top:1010px;text-align:center;font:700 46px/1.1 Ins;color:#fff;text-shadow:0 0 6px #000,0 3px 10px #000,2px 2px 0 #000,-2px -2px 0 #000">${cap.toLowerCase()}</div>`;
+  if (shot === "drop" && t > IMPACT) { const k = (t - IMPACT) / 0.18; // "412 PAGES" slams on impact
+    h += `<div style="position:absolute;left:0;right:0;top:170px;text-align:center;transform:scale(${slam(k)}) rotate(-4deg);font:700 92px/1 Unb;color:#fff;text-shadow:0 6px 0 #000,0 0 30px rgba(211,240,90,.5)">412<br><span style="color:${LIME};font-size:70px">PAGES</span></div>`; }
+  if (shot === "upload" || (shot === "unspool" && lt < 0.35)) { const a = shot === "upload" ? clamp(lt / 0.12) : 1 - clamp(lt / 0.35); const p = Math.round(up * 100);
+    h += `<div style="position:absolute;left:90px;right:90px;top:160px;opacity:${a};transform:scale(${slam(lt / 0.15)});background:rgba(20,28,24,.92);border:2px solid rgba(211,240,90,.5);border-radius:22px;padding:18px 22px;font:600 24px Ins;color:#e9f0e3"><div style="display:flex;align-items:center;gap:14px"><div style="background:#e5483b;color:#fff;font:700 18px Unb;padding:8px 10px;border-radius:8px">PDF</div><div><div>biology-textbook.pdf</div><div style="color:#93a08f;font-size:19px">412 pages · Unspooling… ${p}%</div></div></div><div style="margin-top:14px;height:8px;border-radius:4px;background:#26302a"><div style="height:8px;border-radius:4px;width:${p}%;background:${LIME};box-shadow:0 0 16px ${LIME}"></div></div></div>`; }
+  if (shot === "unspool") { // speed lines + the word slams
+    const a = Math.sin(clamp(lt / (L.e - L.s + 0.6)) * Math.PI);
+    h += `<svg width="720" height="1280" style="position:absolute;inset:0;opacity:${a * 0.8}">${Array.from({ length: 28 }, (_, i) => { const an = i * 0.2244 + t * 0.6, r0 = 260 + (i % 4) * 40 + ((t * 900 + i * 53) % 220); return `<line x1="${360 + Math.cos(an) * r0}" y1="${640 + Math.sin(an) * r0}" x2="${360 + Math.cos(an) * (r0 + 160)}" y2="${640 + Math.sin(an) * (r0 + 160)}" stroke="${i % 3 ? "#ffffff" : LIME}" stroke-width="${i % 2 ? 3 : 5}" stroke-linecap="round" opacity=".7"/>`; }).join("")}</svg>`;
+    h += `<div style="position:absolute;left:0;right:0;top:200px;text-align:center;transform:scale(${slam(lt / 0.2)});font:700 84px Unb;color:${LIME};text-shadow:0 6px 0 #000,0 0 40px rgba(211,240,90,.6)">UNSPOOL</div>`; }
+  if (shot === "reels") { // the standard document -> reels beat over the spinning ring
+    h += `<div style="position:absolute;inset:0;background:rgba(11,15,13,${0.82 * clamp(lt / 0.15)})"></div>` + docToReels(lt, { title: 'Every chapter<br>→ <span style="color:#d3f05a">a reel</span>', docTitle: "Biology" }); }
+  if (shot === "features") { const words = [["🔊", "Narrated"], ["CC", "Captioned"], ["✓", "Quizzed"]]; const seg = (L.e - L.s + 0.1) / 3;
+    words.forEach(([ic, tx], j) => { const d = j * seg; if (lt < d) return; const p = slam((lt - d) / 0.16); const left = [40, 300, 120][j], top = 150 + j * 110;
+      h += `<div style="position:absolute;left:${left}px;top:${top}px;transform:scale(${p}) rotate(${[-4, 3, -2][j]}deg);transform-origin:center;display:inline-flex;align-items:center;gap:12px;background:${LIME};color:#0f1d18;font:700 36px Ins;padding:16px 28px;border-radius:40px;box-shadow:0 10px 30px rgba(0,0,0,.5)"><span style="font:700 26px Unb">${ic}</span>${tx}</div>`; }); }
+  if (shot === "swipe") { // rapid-fire swipes with a running reel counter
+    const order = ["mito", "dna", "ribo", "leaf", "quiz", "r1", "r2", "r3"]; const per = 0.3; const k = Math.floor(lt / per); const sw = clamp(((lt % per) - (per - 0.14)) / 0.14);
+    h += `<img src="${order[k % 8]}.jpg" style="position:absolute;left:0;top:${-sw * 100}%;width:720px;height:1280px;object-fit:cover"><img src="${order[(k + 1) % 8]}.jpg" style="position:absolute;left:0;top:${(1 - sw) * 100}%;width:720px;height:1280px;object-fit:cover">`;
+    const n = Math.min(38, 1 + Math.floor(lt / per) * 7);
+    h += `<div style="position:absolute;right:30px;top:150px;background:${LIME};color:#0f1d18;font:700 30px Unb;padding:10px 18px;border-radius:14px;transform:rotate(4deg)">REEL ${n}/38</div>`;
+    const half = (L.e - L.s) * 0.55; const second = lt > half;
+    h += `<div style="position:absolute;left:0;right:0;top:420px;text-align:center;transform:scale(${slam((second ? lt - half : lt) / 0.18)}) rotate(-3deg)"><span style="display:inline-block;background:#0b0f0d;color:#fff;font:700 70px/1.1 Unb;padding:16px 30px;border-radius:22px;box-shadow:0 10px 40px rgba(0,0,0,.6)">${second ? `JUST <span style="color:${LIME}">SWIPE.</span>` : `38 <span style="color:${LIME}">REELS.</span>`}</span></div>`; }
+  if (shot === "cta" || shot === "end") { const lc = t - st("cta"); const a = clamp(lc / 0.15);
+    h += `<div style="position:absolute;inset:0;background:#0b0f0d"></div><div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(211,240,90,.22),transparent 60%)"></div>`;
+    h += `<img src="lockup-horizontal.svg" style="position:absolute;left:210px;width:300px;top:400px;opacity:${clamp((lc - 0.5) / 0.3)}">`;
+    h += `<div style="position:absolute;left:0;right:0;top:520px;text-align:center;transform:scale(${slam(lc / 0.2)});opacity:${a};font:700 100px/1 Unb;color:#fff;letter-spacing:-2px;text-shadow:0 0 50px rgba(211,240,90,.45)">unspool<span style="color:${LIME}">.cc</span></div>`;
+    h += `<div style="position:absolute;left:50%;top:680px;transform:translateX(-50%) scale(${outBack((lc - 0.6) / 0.35)});background:${LIME};color:#0f1d18;font:600 30px Ins;padding:16px 32px;border-radius:40px;white-space:nowrap;box-shadow:0 0 40px rgba(211,240,90,.4)">First reel free</div>`; }
+  if (!["cta", "end", "swipe", "reels"].includes(shot)) h += `<div style="position:absolute;left:28px;top:70px;font:700 22px Unb;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.6)">unspool</div>`;
+  if (t < 0.08) h += `<div style="position:absolute;inset:0;background:#000;opacity:${1 - t / 0.08}"></div>`;
   ov.innerHTML = h;
 };
 await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins")]);
