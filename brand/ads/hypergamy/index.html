@@ -1,0 +1,70 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#0a1024}
+#ov{position:absolute;inset:0;overflow:hidden}
+</style></head><body><div id="ov"></div>
+<script type="module">
+import { docToReels } from "./doc-to-reels.js";
+const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins")]);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), mix = (a, b, x) => a + (b - a) * x;
+const ease = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const outBack = (x) => { x = clamp(x); const k = 1.7; return 1 + (k + 1) * Math.pow(x - 1, 3) + k * Math.pow(x - 1, 2); };
+const NAVY = "#0a1024", YEL = "#f6c744", LIME = "#d3f05a", RED = "#c8202f", BLUE = "#1fa3dc";
+const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.12) k = i; return k; };
+const st = (n) => lines.find((l) => l.shot === n).s - 0.12;
+const ov = document.getElementById("ov");
+function caption(t, L) {
+  if (!L.text) return ""; const ws = L.text.split(" "); const tot = ws.reduce((a, w) => a + w.length + 1, 0); const u = clamp((t - L.s) / (L.e - L.s)) * tot; let acc = 0;
+  return ws.map((w) => { const on = u >= acc + 0.5; acc += w.length + 1; return `<span style="color:${on ? "#fff" : "rgba(255,255,255,.38)"}">${w}</span>`; }).join(" ");
+}
+// the chart image is 828x979; a "view" is the chart region (x, y, w, h) that fills the card window
+const CW = 828, CH = 979, WIN = { x: 60, y: 330, w: 600, h: 640 };
+const VIEWS = { full: [0, 0, 828, 979], left: [0, 50, 330, 860], right: [470, 50, 358, 860], top: [470, 70, 358, 330] };
+const lerpV = (a, b, k) => a.map((v, i) => mix(v, b[i], k));
+function chart(view, extra = "", dim = 0) {
+  const [vx, vy, vw, vh] = view; const s = Math.min(WIN.w / vw, WIN.h / vh); const ox = WIN.w / 2 - (vx + vw / 2) * s, oy = WIN.h / 2 - (vy + vh / 2) * s;
+  return `<div style="position:absolute;left:${WIN.x}px;top:${WIN.y}px;width:${WIN.w}px;height:${WIN.h}px;border-radius:24px;overflow:hidden;background:#fff;box-shadow:0 24px 60px rgba(0,0,0,.5)"><div style="position:absolute;left:${ox}px;top:${oy}px;width:${CW * s}px;height:${CH * s}px"><img src="chart.png" style="width:100%;height:100%">${typeof extra === "function" ? extra(s) : extra}</div>${dim ? `<div style="position:absolute;inset:0;background:rgba(10,16,36,${dim})"></div>` : ""}</div>`;
+}
+const box = (x, y, w, h, c, a, label, s) => `<div style="position:absolute;left:${x * s}px;top:${y * s}px;width:${w * s}px;height:${h * s}px;border:${Math.max(4, 5 * s)}px solid ${c};border-radius:14px;opacity:${a};box-shadow:0 0 24px ${c}"></div>${label ? `<div style="position:absolute;left:${x * s}px;top:${(y + h) * s + 8}px;opacity:${a};background:${c};color:#fff;font:700 ${Math.max(16, 15 * s)}px Unb;padding:6px 12px;border-radius:10px;white-space:nowrap">${label}</div>` : ""}`;
+
+window.renderAt = (t) => {
+  const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.12), len = L.e - L.s + 0.3;
+  let h = `<div style="position:absolute;inset:0;background:${NAVY}"></div><div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(60,90,200,.25),transparent 65%)"></div>`;
+  const story = ["hook", "define", "claim", "data", "debate"].includes(shot);
+  if (story) {
+    h += `<div style="position:absolute;left:0;right:0;top:150px;text-align:center;font:700 52px/1.12 Unb;color:#fff;letter-spacing:-1px">Hypergamy,<br><span style="color:${YEL}">explained</span></div>`;
+    if (shot === "hook") { const p = outBack(lt / 0.45); h += `<div style="position:absolute;inset:0;transform:scale(${p}) rotate(${mix(-4, 0, ease(lt / 0.6))}deg);transform-origin:50% 55%">${chart(lerpV(VIEWS.full, [40, 30, 748, 900], ease(lt / 2.6)))}</div>`; }
+    if (shot === "define") { const k = outBack(lt / 0.4);
+      h += chart(VIEWS.full, "", 0.72 * clamp(lt / 0.3));
+      h += `<div style="position:absolute;left:90px;right:90px;top:470px;transform:scale(${k});background:#fbfaf6;border-radius:22px;padding:30px 30px;box-shadow:0 20px 60px rgba(0,0,0,.55)"><div style="font:700 40px Unb;color:#14182b">hypergamy</div><div style="font:600 22px Ins;color:#8a8f9c;margin:4px 0 16px">noun · from sociology</div><div style="font:600 32px/1.3 Ins;color:#14182b">partnering <span style="background:${YEL};padding:0 6px;border-radius:6px">up</span>: with someone of higher status or income</div><div style="position:absolute;right:26px;top:22px;font:700 54px Unb;color:${YEL}">↑</div></div>`; }
+    if (shot === "claim") { // left panel, then right panel, then the top few men
+      const half = len * 0.45, k1 = ease(lt / 0.7), k2 = ease((lt - half) / 0.7), k3 = ease((lt - len * 0.72) / 0.6);
+      let v = lerpV(VIEWS.full, VIEWS.left, k1); v = lerpV(v, VIEWS.right, k2); v = lerpV(v, VIEWS.top, k3 * 0.7);
+      const ex = (sc) => (lt < half ? box(20, 95, 300, 760, RED, clamp((lt - 0.4) / 0.3), "MEN → MOST WOMEN", sc) : box(495, 95, 300, 760, BLUE, clamp((lt - half - 0.4) / 0.3), "WOMEN → THE TOP FEW", sc)) + (k3 > 0 ? box(505, 100, 60, 215, YEL, k3, "", sc) : "");
+      h += chart(v, ex, 0);
+    }
+    if (shot === "data") { const k = outBack(lt / 0.4), n = Math.round(80 * ease((lt - 0.3) / 1.0));
+      h += chart(VIEWS.full, "", 0.78);
+      h += `<div style="position:absolute;left:80px;right:80px;top:430px;transform:scale(${k});background:#fbfaf6;border-radius:22px;padding:30px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.55)"><div style="font:700 120px/1 Unb;color:${BLUE}">${n}%</div><div style="font:600 30px/1.3 Ins;color:#14182b;margin-top:12px">of men were rated <b>below average</b> in looks by women</div><div style="font:600 20px Ins;color:#8a8f9c;margin-top:14px">OkCupid user data, 2009</div></div>`; }
+    if (shot === "debate") { const k = outBack(lt / 0.4);
+      h += chart(VIEWS.full, "", 0.35);
+      h += `<div style="position:absolute;left:0;right:0;top:560px;text-align:center;transform:scale(${k}) rotate(-3deg)"><span style="display:inline-block;background:${NAVY};border:3px solid ${YEL};color:#fff;font:700 40px Unb;padding:18px 30px;border-radius:20px;box-shadow:0 14px 40px rgba(0,0,0,.5)">Off the apps: <span style="color:${YEL}">debated</span></span></div>`; }
+    h += `<div style="position:absolute;left:50px;right:50px;top:1010px;text-align:center;font:600 36px/1.28 Ins">${caption(t, L)}</div>`;
+    h += `<div style="position:absolute;left:0;right:0;top:1222px;text-align:center;font:600 16px Ins;letter-spacing:4px;color:#7d87b3">UNSPOOL.CC</div>`;
+  } else {
+    h += `<div style="position:absolute;inset:0;background:#0b0f0d"></div><div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(211,240,90,.13),transparent 60%)"></div>`;
+    if (shot === "learned") { const w = ["You just learned", "that in", "15 seconds."]; const n = lt < 0.7 ? 1 : lt < 1.2 ? 2 : 3;
+      h += `<div style="position:absolute;left:40px;right:40px;top:470px;text-align:center;font:700 64px/1.1 Unb;color:#fff">${w.slice(0, n).map((s, j) => (j === 2 ? `<span style="color:${LIME}">${s}</span>` : s)).join(" ")}</div>`; }
+    if (shot === "reels") h += docToReels(lt, { title: 'Any document<br>→ <span style="color:#d3f05a">reels</span>' });
+    if (shot === "cta" || shot === "end") { const lc = t - st("cta"); const a = clamp(lc / 0.2);
+      h += `<img src="lockup-horizontal.svg" style="position:absolute;left:210px;width:300px;top:400px;opacity:${a}">`;
+      h += `<div style="position:absolute;left:0;right:0;top:520px;text-align:center;transform:scale(${mix(1.3, 1, ease(lc / 0.25))});opacity:${a};font:700 100px/1 Unb;color:#fff;letter-spacing:-2px;text-shadow:0 0 50px rgba(211,240,90,.45)">unspool<span style="color:${LIME}">.cc</span></div>`;
+      h += `<div style="position:absolute;left:50%;top:680px;transform:translateX(-50%) scale(${outBack((lc - 0.5) / 0.35)});background:${LIME};color:#0f1d18;font:600 30px Ins;padding:16px 32px;border-radius:40px;white-space:nowrap">First reel free</div>`; }
+  }
+  if (t < 0.1) h += `<div style="position:absolute;inset:0;background:#000;opacity:${1 - t / 0.1}"></div>`;
+  ov.innerHTML = h;
+};
+await Promise.all(["chart.png", "lockup-horizontal.svg", "mito.jpg", "dna.jpg", "r1.jpg"].map((s) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = s; })));
+window.renderAt(0); setTimeout(() => (window.ready = true), 400);
+</script></body></html>

@@ -1,0 +1,11 @@
+{"voice": "am_michael", "speed": 1.2, "lead": 0.15, "tail": 0, "gap": 0.1, "lines": [
+ ["hook", "This chart is everywhere. It's called hypergamy.", 0.12],
+ ["define", "It means partnering up: higher status or income.", 0.12],
+ ["claim", "The chart says men would date most women, but women aim at the top few men.", 0.12],
+ ["data", "One dating site found women rated most men below average.", 0.1],
+ ["debate", "Off the apps, it's debated.", 0.3],
+ ["learned", "You just learned that in fifteen seconds.", 0.15, "You just learned that in 15 seconds."],
+ ["reels", "Turn any document into reels, with Unspool.", 0.6, "Turn any document into reels with Unspool."],
+ ["cta", "Try it free, at unspool dot c c.", 0.1, "Try it free at unspool.cc"],
+ ["end", "", 1.3]
+]}
