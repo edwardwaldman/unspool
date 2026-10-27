@@ -1,0 +1,11 @@
+{"voice": "am_puck", "speed": 1.12, "lead": 0.2, "tail": 0, "gap": 0.22, "lines": [
+ ["s1", "Spool. My bio final is in eight hours, and I haven't opened the textbook.", 0.2, "Spool. My bio final is in 8 hours and I haven't opened the textbook.", "am_puck"],
+ ["count", "Four hundred and twelve pages.", 0.35, "412 pages.", "am_puck"],
+ ["p1", "Okay. Don't panic. Just drop it in.", 0.3, "", "af_bella"],
+ ["upload", "That's it?", 0.25, "", "am_puck"],
+ ["p2", "Every chapter's now a short reel. Narrated, captioned, with a quiz at the end.", 0.3, "", "af_bella"],
+ ["s2", "Wait. I actually get photosynthesis now.", 0.3, "", "am_puck"],
+ ["p3", "Told you. First reel's free.", 0.2, "", "af_bella"],
+ ["cta", "unspool dot c c.", 0.2, "unspool.cc", "af_bella"],
+ ["end", "", 1.3]
+]}
