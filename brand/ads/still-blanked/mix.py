@@ -10,7 +10,7 @@ def tone(f,d,dec=5,h=(1,.5,.25)):
 def noise(d,dec=6): t=np.arange(int(SR*d))/SR; return rng.standard_normal(len(t))*np.exp(-t*dec)
 # hook: soft room tone + a sad two-note drop when the battery drains
 add(0,np.convolve(rng.standard_normal(int(SR*4.5)),np.ones(200)/200,"same"),0.25)
-add(2.2,tone(note(64),0.5,4,(1,.3)),0.1); add(2.55,tone(note(57),0.9,3,(1,.3)),0.1)
+DR=tl["lines"][0]["e"]-1.25; add(DR,tone(note(64),0.5,4,(1,.3)),0.1); add(DR+0.35,tone(note(57),0.9,3,(1,.3)),0.1)
 # "But how?" whoosh into the head
 n=int(SR*1.0); add(st["how"]+0.3,noise(1.0,1.5)*np.sin(np.linspace(0,np.pi,n)),0.12)
 # science bed: airy pads + soft pulse, 100 bpm

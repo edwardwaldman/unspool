@@ -1,12 +1,62 @@
-{"voice": "am_michael", "speed": 1.1, "lead": 0.25, "tail": 0, "gap": 0.18, "lines": [
- ["hook", "You can study for ten hours, and still blank on the test.", 0.2, "You can study for 10 hours and still blank on the test."],
- ["how", "But how?", 0.35],
- ["reread", "When you reread your notes, your brain goes: I've seen this before.", 0.2, "When you reread your notes, your brain goes: \"I've seen this before.\""],
- ["feels", "That's recognition. It feels like knowing it.", 0.3],
- ["recall", "But a test asks for recall. Pulling the answer out, with nothing in front of you.", 0.2],
- ["path", "And that path is faint, until you practice it.", 0.2],
- ["quiz", "Every time you quiz yourself, it gets easier to find.", 0.3],
- ["pivot", "That's why every Unspool reel ends with a quiz.", 0.2],
- ["cta", "Turn your notes into reels. First one's free, at unspool dot c c.", 0.2, "Turn your notes into reels. First one's free at unspool.cc"],
- ["end", "", 1.2]
-]}
+{
+"voice": "am_michael",
+"speed": 1.1,
+"lead": 0.25,
+"tail": 0,
+"gap": 0.18,
+"lines": [
+[
+"hook",
+"You can reread your notes three times, and still blank on the test.",
+0.2,
+"You can reread your notes 3 times and still blank on the test."
+],
+[
+"how",
+"But how?",
+0.35
+],
+[
+"reread",
+"When you reread your notes, your brain goes: I've seen this before.",
+0.2,
+"When you reread your notes, your brain goes: \"I've seen this before.\""
+],
+[
+"feels",
+"That's recognition. It feels like knowing it.",
+0.3
+],
+[
+"recall",
+"But a test asks for recall. Pulling the answer out, with nothing in front of you.",
+0.2
+],
+[
+"path",
+"And that path is faint, until you practice it.",
+0.2
+],
+[
+"quiz",
+"Every time you quiz yourself, it gets easier to find.",
+0.3
+],
+[
+"pivot",
+"That's why every Unspool reel ends with a quiz.",
+0.2
+],
+[
+"cta",
+"Turn your notes into reels. First one's free, at unspool dot c c.",
+0.2,
+"Turn your notes into reels. First one's free at unspool.cc"
+],
+[
+"end",
+"",
+1.2
+]
+]
+}
