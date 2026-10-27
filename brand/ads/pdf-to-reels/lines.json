@@ -1,0 +1,10 @@
+{"voice": "af_heart", "speed": 1.08, "lead": 0.35, "tail": 0.1, "gap": 0.22, "lines": [
+ ["drop", "This is a four hundred and twelve page bio textbook.", 0.25, "This is a 412-page bio textbook."],
+ ["upload", "Drop it into Unspool,", 0.15],
+ ["unspool", "and watch it unspool.", 0.6],
+ ["reels", "Every chapter becomes a short reel.", 0.3],
+ ["features", "Narrated. Captioned. With a quiz at the end.", 0.35],
+ ["swipe", "Four hundred pages. Thirty-eight reels. You just swipe.", 0.3, "400 pages. 38 reels. You just swipe."],
+ ["cta", "Your first reel is free, at unspool dot c c.", 0.2, "Your first reel is free at unspool.cc"],
+ ["end", "", 1.8]
+]}

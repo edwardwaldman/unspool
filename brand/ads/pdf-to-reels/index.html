@@ -1,0 +1,158 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#0b0f0d}
+#c{position:absolute;inset:0} #ov{position:absolute;inset:0}
+</style></head><body><canvas id="c" width="720" height="1280"></canvas><div id="ov"></div>
+<script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
+<script type="module">
+import * as THREE from "three";
+import { RoomEnvironment } from "./three/RoomEnvironment.js";
+const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins")]);
+const W = 720, H = 1280, clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), mix = (a, b, x) => a + (b - a) * x;
+const ease = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }, v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+const outBack = (x) => { x = clamp(x); const k = 1.7; return 1 + (k + 1) * Math.pow(x - 1, 3) + k * Math.pow(x - 1, 2); };
+const bounce = (x) => { x = clamp(x); const n = 7.5625, d = 2.75; if (x < 1 / d) return n * x * x; if (x < 2 / d) return n * (x -= 1.5 / d) * x + 0.75; if (x < 2.5 / d) return n * (x -= 2.25 / d) * x + 0.9375; return n * (x -= 2.625 / d) * x + 0.984375; };
+const LIME = "#d3f05a";
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("c"), antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H, false); renderer.setPixelRatio(1); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(); { const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = 0.35; }
+const camera = new THREE.PerspectiveCamera(40, W / H, 0.05, 200);
+const M = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6, ...o });
+const mesh = (g, m, p, parent) => { const x = new THREE.Mesh(g, m); x.castShadow = x.receiveShadow = true; if (p) x.position.copy(p); (parent || scene).add(x); return x; };
+const grp = (parent, p) => { const g = new THREE.Group(); if (p) g.position.copy(p); (parent || scene).add(g); return g; };
+const tex = (w, h, draw) => { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; };
+const rrect = (c, x, y, w, h, r) => { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
+
+// dark studio: floor with a faint grid, lime glow from below the pad
+scene.background = new THREE.Color("#0b0f0d"); scene.fog = new THREE.Fog("#0b0f0d", 14, 40);
+const floorTex = tex(1024, 1024, (c, w, h) => { c.fillStyle = "#0f1512"; c.fillRect(0, 0, w, h); c.strokeStyle = "rgba(211,240,90,0.07)"; c.lineWidth = 2; for (let i = 0; i <= 16; i++) { c.beginPath(); c.moveTo(i * w / 16, 0); c.lineTo(i * w / 16, h); c.stroke(); c.beginPath(); c.moveTo(0, i * h / 16); c.lineTo(w, i * h / 16); c.stroke(); } });
+floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping; floorTex.repeat.set(6, 6);
+const floor = mesh(new THREE.PlaneGeometry(120, 120), M("#ffffff", { map: floorTex, roughness: 0.85 })); floor.rotation.x = -Math.PI / 2;
+scene.add(new THREE.HemisphereLight("#e8f2da", "#0b0f0d", 0.5));
+const key = new THREE.DirectionalLight("#fff6e8", 2.4); key.position.set(-5, 12, 6); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 1, far: 40 }); key.shadow.bias = -0.0004; scene.add(key);
+const glow = new THREE.PointLight(LIME, 0, 9, 1.6); glow.position.set(0, 0.8, 0); scene.add(glow);
+
+// the upload pad: a rounded slab, dashed lime border, "Drop a PDF"
+const padShape = new THREE.Shape(); { const w = 4.6, d = 3.6, r = 0.35; padShape.moveTo(-w / 2 + r, -d / 2); padShape.lineTo(w / 2 - r, -d / 2); padShape.quadraticCurveTo(w / 2, -d / 2, w / 2, -d / 2 + r); padShape.lineTo(w / 2, d / 2 - r); padShape.quadraticCurveTo(w / 2, d / 2, w / 2 - r, d / 2); padShape.lineTo(-w / 2 + r, d / 2); padShape.quadraticCurveTo(-w / 2, d / 2, -w / 2, d / 2 - r); padShape.lineTo(-w / 2, -d / 2 + r); padShape.quadraticCurveTo(-w / 2, -d / 2, -w / 2 + r, -d / 2); }
+const pad = mesh(new THREE.ExtrudeGeometry(padShape, { depth: 0.14, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 3 }), M("#17201b", { roughness: 0.45, metalness: 0.2 })); pad.rotation.x = -Math.PI / 2;
+let padGlow = 0;
+const padTex = tex(1150, 900, (c, w, h) => { c.clearRect(0, 0, w, h); c.setLineDash([34, 22]); c.lineWidth = 9; c.strokeStyle = LIME; rrect(c, 30, 30, w - 60, h - 60, 70); c.stroke(); c.setLineDash([]);
+  c.fillStyle = LIME; c.font = "600 64px Ins"; c.textAlign = "center"; c.fillText("Drop a PDF", w / 2, h - 150); c.font = "600 40px Ins"; c.fillStyle = "rgba(211,240,90,0.6)"; c.fillText("textbooks · notes · slides", w / 2, h - 90);
+  c.lineWidth = 12; c.strokeStyle = LIME; c.lineCap = "round"; c.beginPath(); c.moveTo(w / 2, 380); c.lineTo(w / 2, 220); c.moveTo(w / 2 - 60, 280); c.lineTo(w / 2, 220); c.lineTo(w / 2 + 60, 280); c.stroke(); });
+const padTop = mesh(new THREE.PlaneGeometry(4.6, 3.6), new THREE.MeshBasicMaterial({ map: padTex, transparent: true, toneMapped: false }), v3(0, 0.175, 0)); padTop.rotation.x = -Math.PI / 2; padTop.castShadow = false;
+
+// the PDF: a thick book-like block; cover with a red PDF badge, cream page edges
+const coverTex = tex(800, 1040, (c, w, h) => { c.fillStyle = "#f7f5ef"; c.fillRect(0, 0, w, h);
+  c.fillStyle = "#e5483b"; rrect(c, 60, 60, 200, 110, 18); c.fill(); c.fillStyle = "#fff"; c.font = "700 68px Unb"; c.textAlign = "center"; c.fillText("PDF", 160, 140);
+  c.textAlign = "left"; c.fillStyle = "#1a1f1c"; c.font = "700 56px Unb"; c.fillText("Biology", 60, 290); c.font = "600 40px Ins"; c.fillStyle = "#5c6660"; c.fillText("biology-textbook.pdf · 412 pages", 60, 350);
+  for (let i = 0; i < 15; i++) { c.fillStyle = i % 5 === 0 ? "#9aa39d" : "#cfd3cd"; c.fillRect(60, 430 + i * 38, i % 5 === 4 ? 420 : 680, 14); } });
+const pageTex = (n) => tex(400, 520, (c, w, h) => { c.fillStyle = "#fbfaf6"; c.fillRect(0, 0, w, h); c.fillStyle = "#1a1f1c"; c.font = "700 26px Unb"; c.fillText(`Chapter ${n}`, 30, 56);
+  for (let i = 0; i < 18; i++) { c.fillStyle = "#c9cdc6"; c.fillRect(30, 90 + i * 22, (i * 37 + n * 11) % 5 === 0 ? 200 : 340, 9); } c.fillStyle = "#9aa39d"; c.font = "600 18px Ins"; c.fillText(String(n * 17), w / 2 - 10, h - 20); });
+const edgeTex = tex(64, 256, (c, w, h) => { c.fillStyle = "#efe9d9"; c.fillRect(0, 0, w, h); for (let y = 0; y < h; y += 3) { c.fillStyle = y % 6 ? "#e2dbc6" : "#f7f2e4"; c.fillRect(0, y, w, 1); } });
+edgeTex.wrapS = edgeTex.wrapT = THREE.RepeatWrapping;
+const edgeMat = M("#ffffff", { map: edgeTex, roughness: 0.9 });
+const PW = 2.0, PD = 2.6, PT = 0.36;
+const pdf = grp(); const pdfBody = mesh(new THREE.BoxGeometry(PW, PT, PD), [edgeMat, edgeMat, M("#ffffff", { map: coverTex, roughness: 0.7 }), M("#e9e4d6"), edgeMat, edgeMat], v3(0, PT / 2, 0), pdf);
+
+// the lime thread: a rising spiral from the PDF, drawn in as it unspools
+const RING_Y = 7.4, RING_R = 3.7, ROW2 = 2.75;
+const spiral = new THREE.CatmullRomCurve3(Array.from({ length: 80 }, (_, i) => { const u = i / 79; const a = u * Math.PI * 5; const r = 0.25 + 3.2 * Math.pow(u, 0.8); return v3(Math.sin(a) * r, 0.5 + u * (RING_Y + 0.9), Math.cos(a) * r); }));
+const threadGeo = new THREE.TubeGeometry(spiral, 400, 0.035, 8); const threadMat = new THREE.MeshBasicMaterial({ color: LIME, toneMapped: false, transparent: true });
+const thread = mesh(threadGeo, threadMat); thread.castShadow = false;
+
+// the reels: each card is a page on one side and a reel on the other
+const REELS = ["mito", "r1", "dna", "r2", "ribo", "quiz", "leaf", "r3"];
+const loader = new THREE.TextureLoader();
+const reelTex = await Promise.all(REELS.map((n) => new Promise((r) => loader.load(n + ".jpg", (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; r(t); }))));
+const ring = grp(null, v3(0, 0, 0));
+const N = 24, CW = 1.32, CH = 2.35;
+const cardGeo = new THREE.PlaneGeometry(1, 1);
+const rimTex = tex(64, 112, (c, w, h) => { c.fillStyle = "#000"; rrect(c, 0, 0, w, h, 8); c.fill(); });
+const cards = Array.from({ length: N }, (_, i) => {
+  const g = grp(ring); const page = new THREE.Mesh(cardGeo, new THREE.MeshStandardMaterial({ map: pageTex(i + 1), roughness: 0.8 })); page.castShadow = true; g.add(page);
+  const reel = new THREE.Mesh(cardGeo, new THREE.MeshBasicMaterial({ map: reelTex[i % REELS.length], toneMapped: false })); reel.rotation.y = Math.PI; reel.position.z = -0.004; g.add(reel);
+  const r = i % 2, j = Math.floor(i / 2); const ang = (j / 12) * Math.PI * 2 + r * (Math.PI / 12);
+  return { g, page, reel, ang, y: RING_Y - r * ROW2 };
+});
+
+const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.12) k = i; return k; };
+const st = (n) => lines.find((l) => l.shot === n).s - 0.12;
+const cam = (p, l, f) => { camera.position.copy(p); camera.lookAt(l); camera.fov = f; camera.updateProjectionMatrix(); };
+const T0 = st("unspool") - 0.1, TEND = st("reels") + 1.1, FLY = 1.4, STAG = (TEND - FLY - T0) / (N - 1);
+const flyU = (t, i) => clamp((t - T0 - i * STAG) / FLY);
+let ringArc = null;
+function chunks(text) { const ws = text.split(" "); const out = []; let cur = []; for (const w of ws) { cur.push(w); if (cur.length >= 3 || /[,.?!]$/.test(w)) { out.push(cur.join(" ")); cur = []; } } if (cur.length) out.push(cur.join(" ")); return out; }
+function capAt(t, L) { if (!L.text || t < L.s - 0.05 || t > L.e + 0.12) return ""; const cs = chunks(L.text); const tot = cs.reduce((a, c) => a + c.length + 2, 0); let acc = 0; const u = clamp((t - L.s) / (L.e - L.s)) * tot; for (const c of cs) { acc += c.length + 2; if (u < acc) return c; } return cs[cs.length - 1]; }
+const ov = document.getElementById("ov");
+
+window.renderAt = (t) => {
+  const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.12);
+  // the PDF falls onto the pad, then thins as pages leave
+  const fall = clamp((t - 0.25) / 0.9); const left = cards.filter((_, k) => flyU(t, k) > 0).length / N;
+  pdf.position.y = mix(6.5, 0.2, bounce(fall)); pdf.rotation.set(mix(0.5, 0, ease(fall)), mix(-0.9, -0.12, ease(fall)), mix(0.3, 0, ease(fall)));
+  pdfBody.scale.y = 1 - 0.8 * left; pdfBody.position.y = (PT * pdfBody.scale.y) / 2;
+  pdf.visible = shot !== "swipe" && shot !== "cta" && shot !== "end";
+  // pad glow + progress ring once it lands
+  const up = clamp((t - st("upload")) / 1.3);
+  padGlow = t > st("upload") ? 0.6 + 0.4 * Math.sin(t * 5) : 0; glow.intensity = padGlow * 6;
+  if (ringArc) { scene.remove(ringArc); ringArc.geometry.dispose(); ringArc = null; }
+  if (up > 0 && t < T0 + 1.2) { ringArc = new THREE.Mesh(new THREE.TorusGeometry(1.95, 0.05, 8, 120, Math.max(0.01, up * Math.PI * 2)), new THREE.MeshBasicMaterial({ color: LIME, toneMapped: false, transparent: true, opacity: 1 - clamp((t - T0 - 0.6) / 0.6) })); ringArc.rotation.x = -Math.PI / 2; ringArc.rotation.z = Math.PI / 2; ringArc.position.y = 0.2; scene.add(ringArc); }
+  // thread draws itself as the pages fly, then fades a touch
+  const tp = clamp((t - T0) / (TEND - T0 - 0.4)); threadGeo.setDrawRange(0, Math.floor(tp * 400) * 8 * 6); thread.visible = tp > 0; threadMat.opacity = shot === "features" ? 0.35 : 0.9;
+  // the ring of reels turns, then stops with card 0 facing camera
+  const spin = t < TEND ? -0.9 : mix(-0.9, 0, ease((t - TEND) / (st("features") + 0.3 - TEND)));
+  ring.rotation.y = spin;
+  cards.forEach((c, k) => {
+    const u = flyU(t, k), e = ease(u);
+    if (u <= 0) { c.g.visible = false; return; } c.g.visible = true;
+    const a = c.ang - (1 - e) * Math.PI * 2.2, r = RING_R * Math.pow(e, 0.7);
+    // lift straight off the stack first, then sweep up and out
+    const lift = clamp(u / 0.18); const y = mix(0.2 + PT * 0.3 + lift * 0.6, c.y, ease((u - 0.1) / 0.9));
+    c.g.position.set(Math.sin(a) * r, y, Math.cos(a) * r);
+    c.g.rotation.order = "YXZ"; c.g.rotation.x = mix(-Math.PI / 2, 0, ease(u / 0.6)); c.g.rotation.y = a + (u < 0.3 ? 0 : Math.PI * ease((u - 0.3) / 0.6)) - ring.rotation.y * 0;
+    c.g.scale.set(mix(PW * 0.95, CW, ease((u - 0.2) / 0.6)), mix(PD * 0.95, CH, ease((u - 0.2) / 0.6)), 1);
+    c.g.position.applyAxisAngle(v3(0, 1, 0), 0);
+  });
+  // cameras
+  if (shot === "drop") { const o = lt * 0.1; const d = 9.5 - lt * 0.5; cam(v3(Math.sin(0.55 + o) * d, 4.4 - lt * 0.3, Math.cos(0.55 + o) * d), v3(0, 0.4, 0), 40); }
+  else if (shot === "upload") { const k = ease(lt / 1.4); const a0 = 0.55 + 0.3, d0 = 9.5 - 1.5; cam(v3(mix(Math.sin(a0) * d0, 0, k), mix(3.5, 7.2, k), mix(Math.cos(a0) * d0, 8.0, k)), v3(0, 0.3, 0.4), 40); }
+  else if (shot === "unspool" || shot === "reels") { const k = clamp((t - st("unspool")) / (st("features") - st("unspool"))); const ek = ease(k);
+    cam(v3(0, mix(7.2, 6.4, ek), mix(8.0, 14.5, ek)), v3(0, mix(0.3, 6.1, ease(k * 1.25)), mix(0.4, 0, ek)), mix(40, 44, ek)); }
+  else if (shot === "features") { const k = ease(lt / 1.6); const front = v3(0, RING_Y, RING_R); cam(v3(0, mix(6.4, RING_Y, k), mix(14.5, RING_R + 4.0, k)), v3(0, mix(6.1, RING_Y, k), 0), mix(44, 40, k)); }
+  else { cam(v3(0, RING_Y, RING_R + 3.6), v3(0, RING_Y, 0), 40); }
+  key.position.copy(camera.position).add(v3(-5, 12, 6)); key.target.position.set(camera.position.x, 0, camera.position.z - 6); scene.add(key.target);
+  renderer.render(scene, camera);
+
+  // overlay
+  let h = "";
+  const cap = capAt(t, L);
+  if (cap && shot !== "swipe" && shot !== "cta") h += `<div style="position:absolute;left:30px;right:30px;top:1010px;text-align:center;font:700 46px/1.1 Ins;color:#fff;text-shadow:0 0 6px #000,0 3px 10px #000,2px 2px 0 #000,-2px -2px 0 #000">${cap.toLowerCase()}</div>`;
+  if (shot === "upload" || (shot === "unspool" && lt < 0.8)) { const a = shot === "upload" ? clamp(lt / 0.25) : 1 - clamp((lt - 0.4) / 0.4); const p = Math.round(up * 100);
+    h += `<div style="position:absolute;left:90px;right:90px;top:160px;opacity:${a};background:rgba(20,28,24,.92);border:2px solid rgba(211,240,90,.5);border-radius:22px;padding:18px 22px;font:600 24px Ins;color:#e9f0e3"><div style="display:flex;align-items:center;gap:14px"><div style="background:#e5483b;color:#fff;font:700 18px Unb;padding:8px 10px;border-radius:8px">PDF</div><div><div>biology-textbook.pdf</div><div style="color:#93a08f;font-size:19px">412 pages · Unspooling… ${p}%</div></div></div><div style="margin-top:14px;height:8px;border-radius:4px;background:#26302a"><div style="height:8px;border-radius:4px;width:${p}%;background:${LIME}"></div></div></div>`; }
+  if (shot === "features") { const chips = [["🔊", "Narrated", 0.15], ["CC", "Captioned", 0.85], ["✓", "Quiz at the end", 1.5]];
+    chips.forEach(([ic, tx, d], j) => { const p = outBack((lt - d) / 0.35); if (p <= 0) return; const left = j === 1 ? 380 : 60, top = 140 + j * 105;
+      h += `<div style="position:absolute;left:${left}px;top:${top}px;transform:scale(${p}) rotate(${j === 1 ? 3 : -3}deg);transform-origin:left center;display:flex;align-items:center;gap:12px;background:${LIME};color:#0f1d18;font:600 30px Ins;padding:14px 24px;border-radius:40px;box-shadow:0 10px 30px rgba(0,0,0,.5)"><span style="font:700 24px Unb">${ic}</span>${tx}</div>`; }); }
+  if (shot === "swipe") { // the card becomes the phone: full-screen reels, swiping up
+    const order = ["mito", "dna", "ribo", "leaf", "quiz"]; const per = (L.e - L.s + 0.5) / order.length; const k = Math.min(order.length - 1, Math.floor(lt / per)); const sw = clamp(((lt % per) - (per - 0.28)) / 0.28);
+    const nx = Math.min(order.length - 1, k + 1);
+    h += `<img src="${order[k]}.jpg" style="position:absolute;left:0;top:${-sw * 100}%;width:720px;height:1280px;object-fit:cover"><img src="${order[nx]}.jpg" style="position:absolute;left:0;top:${(1 - sw) * 100}%;width:720px;height:1280px;object-fit:cover">`;
+    const big = ["400 pages.", "38 reels.", "You just swipe."]; const n = clamp(Math.floor((t - L.s) / ((L.e - L.s) / 3)) + 1, 1, 3);
+    h += `<div style="position:absolute;left:0;right:0;top:60px;text-align:center"><span style="display:inline-block;background:#0b0f0d;color:#fff;font:700 40px/1.2 Unb;padding:14px 26px;border-radius:18px;box-shadow:0 8px 30px rgba(0,0,0,.5)">${big.slice(0, n).map((s, j) => j === 1 ? `<span style="color:${LIME}">${s}</span>` : s).join(" ")}</span></div>`;
+    if (lt < 0.25) h += `<div style="position:absolute;inset:0;background:#0b0f0d;opacity:${1 - lt / 0.25}"></div>`;
+    // the thumb
+    const ty = mix(980, 560, ease(((lt % per) - (per - 0.4)) / 0.35)); const ta = lt % per > per - 0.45 ? 1 : 0;
+    h += `<div style="position:absolute;left:470px;top:${ty}px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.35);border:3px solid rgba(255,255,255,.8);opacity:${ta}"></div>`; }
+  if (shot === "cta" || shot === "end") { const a = shot === "cta" ? clamp(lt / 0.3) : 1;
+    h += `<div style="position:absolute;inset:0;background:#0b0f0d"></div><div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(211,240,90,.16),transparent 60%)"></div>`;
+    h += `<img src="lockup-horizontal.svg" style="position:absolute;left:140px;width:440px;top:470px;opacity:${a}"><div style="position:absolute;left:0;right:0;top:590px;text-align:center;font:600 28px Ins;color:#b9c7b5;opacity:${a}">Drop a PDF. Get reels.</div><div style="position:absolute;left:50%;top:660px;transform:translateX(-50%) scale(${0.9 + 0.1 * a});opacity:${a};background:${LIME};color:#0f1d18;font:600 30px Ins;padding:18px 34px;border-radius:40px;white-space:nowrap;box-shadow:0 0 40px rgba(211,240,90,.4)">First reel free · unspool.cc</div>`; }
+  if (shot !== "cta" && shot !== "end" && shot !== "swipe") h += `<div style="position:absolute;left:28px;top:${shot === "swipe" ? 1210 : 70}px;font:700 22px Unb;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.6)">unspool</div>`;
+  if (t < 0.2) h += `<div style="position:absolute;inset:0;background:#000;opacity:${1 - t / 0.2}"></div>`;
+  ov.innerHTML = h;
+};
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins")]);
+await Promise.all(["lockup-horizontal.svg", ...REELS.map((n) => n + ".jpg")].map((s) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = s; })));
+window.renderAt(0); setTimeout(() => (window.ready = true), 400);
+</script></body></html>
