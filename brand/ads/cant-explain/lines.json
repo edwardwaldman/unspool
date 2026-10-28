@@ -1,0 +1,10 @@
+{"voice": "am_michael", "speed": 1.12, "lead": 0.25, "tail": 0, "gap": 0.18, "lines": [
+ ["hook", "You can read the whole chapter, and still not be able to explain it.", 0.2],
+ ["how", "But why?", 0.35],
+ ["feels", "Reading makes everything feel clear. Your brain says: got it.", 0.25],
+ ["test", "Then someone says: explain it. And the gaps show up.", 0.35],
+ ["fix", "Answering questions fills them in, one connection at a time.", 0.3],
+ ["pivot", "That's why every Unspool reel explains it simply, then quizzes you.", 0.25],
+ ["cta", "Try it free, at unspool dot c c.", 0.2, "Try it free at unspool.cc"],
+ ["end", "", 1.3]
+]}
