@@ -1,0 +1,73 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#0b0f0d}
+#ov{position:absolute;inset:0;overflow:hidden}
+</style></head><body><div id="ov"></div>
+<script type="module">
+import { docToReels } from "./doc-to-reels.js";
+const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins")]);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), mix = (a, b, x) => a + (b - a) * x;
+const ease = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const outBack = (x) => { x = clamp(x); const k = 1.7; return 1 + (k + 1) * Math.pow(x - 1, 3) + k * Math.pow(x - 1, 2); };
+const LIME = "#d3f05a";
+const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.12) k = i; return k; };
+const st = (n) => lines.find((l) => l.shot === n).s - 0.12;
+const ov = document.getElementById("ov");
+const SNAP = st("snap") + 1.75;   // shutter right after the line
+
+// a handwritten-style notebook page (used on the desk and inside the camera view)
+const page = (w) => `<div style="width:${w}px;height:${w * 1.3}px;background:#fdfcf7;border-radius:${w * 0.02}px;box-shadow:0 ${w * 0.04}px ${w * 0.1}px rgba(0,0,0,.35);position:relative;overflow:hidden;background-image:repeating-linear-gradient(#fdfcf7 0 ${w * 0.072}px,#c9dcf0 ${w * 0.072}px ${w * 0.075}px)">
+  <div style="position:absolute;left:${w * 0.12}px;top:0;bottom:0;width:2px;background:#f0a0a0"></div>
+  <div style="position:absolute;left:${w * 0.16}px;top:${w * 0.05}px;font:700 ${w * 0.075}px Ins;color:#1e3a8a">Photosynthesis</div>
+  ${["6CO₂ + 6H₂O → glucose + O₂", "happens in the chloroplast", "light reactions → ATP + NADPH", "Calvin cycle makes sugar", "chlorophyll absorbs light"].map((tx, i) => `<div style="position:absolute;left:${w * 0.16}px;top:${w * (0.2 + i * 0.15)}px;font:600 ${w * 0.05}px Ins;color:#334155;white-space:nowrap">• ${tx}</div>`).join("")}
+  <div style="position:absolute;right:${w * 0.08}px;bottom:${w * 0.1}px;width:${w * 0.22}px;height:${w * 0.22}px;border-radius:50% 50% 50% 0;background:#3fa34d;transform:rotate(-45deg);opacity:.85"></div></div>`;
+
+window.renderAt = (t) => {
+  const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.12);
+  let h = "";
+  if (t < st("reels")) {
+    // the desk with the page, then the phone camera slides up over it
+    h += `<div style="position:absolute;inset:0;background:#c8925c;background-image:repeating-linear-gradient(95deg,rgba(0,0,0,.05) 0 3px,transparent 3px 26px)"></div>`;
+    h += `<div style="position:absolute;left:110px;top:${mix(330, 300, ease(t / 2))}px;transform:rotate(-3deg)">${page(500)}</div>`;
+    h += `<div style="position:absolute;left:0;right:0;top:110px;text-align:center;font:700 52px/1.12 Unb;color:#14182b;text-shadow:0 2px 0 rgba(255,255,255,.4);transform:scale(${outBack(t / 0.4)})">Snap a page.</div>`;
+    const up = ease((t - 0.35) / 0.6), shot2 = t > SNAP;
+    const pressed = t > SNAP - 0.12 && t < SNAP + 0.08;
+    const blink = t > SNAP && t < SNAP + 0.14;
+    const away = shot2 ? ease((t - SNAP - 0.35) / 0.3) : 0;
+    h += `<div style="position:absolute;left:150px;top:${mix(1300, 300, up) + away * 1200}px;width:420px;height:860px;border-radius:56px;background:#111;padding:14px;box-sizing:border-box;box-shadow:0 30px 80px rgba(0,0,0,.55)">
+      <div style="position:relative;width:100%;height:100%;border-radius:44px;overflow:hidden;background:#000">
+        <div style="position:absolute;left:-10px;top:110px;transform:rotate(-3deg) scale(${mix(1, 1.04, ease((t - 1) / 1))})">${page(410)}</div>
+        ${[[30, 90, "0 0"], [362, 90, "90deg"], [30, 640, "-90deg"], [362, 640, "180deg"]].map(([x, y, r]) => `<div style="position:absolute;left:${x}px;top:${y}px;width:38px;height:38px;border-left:6px solid ${LIME};border-top:6px solid ${LIME};transform:rotate(${r === "0 0" ? "0deg" : r});border-radius:6px 0 0 0"></div>`).join("")}
+        <div style="position:absolute;left:0;right:0;top:24px;text-align:center;font:700 16px Unb;color:#ffd84a;letter-spacing:2px">PHOTO</div>
+        <div style="position:absolute;left:50%;bottom:34px;width:84px;height:84px;margin-left:-42px;border-radius:50%;border:6px solid #fff;box-sizing:border-box;display:flex;align-items:center;justify-content:center"><div style="width:62px;height:62px;border-radius:50%;background:#fff;transform:scale(${pressed ? 0.8 : 1})"></div></div>
+        ${blink ? `<div style="position:absolute;inset:0;background:#000"></div>` : ""}
+        ${shot2 && !blink ? `<div style="position:absolute;left:28px;bottom:42px;width:56px;height:72px;border-radius:8px;border:3px solid #fff;overflow:hidden;transform:scale(${outBack((t - SNAP - 0.14) / 0.25)})"><div style="transform:scale(0.135);transform-origin:0 0">${page(410)}</div></div>` : ""}
+      </div></div>`;
+    if (shot2) h += `<div style="position:absolute;left:0;right:0;top:200px;text-align:center;transform:scale(${outBack((t - SNAP) / 0.25)})"><span style="display:inline-block;background:${LIME};color:#0f1d18;font:700 28px Unb;padding:12px 24px;border-radius:40px">✓ Got it</span></div>`;
+  } else if (shot === "reels") {
+    h += `<div style="position:absolute;inset:0;background:#0b0f0d"></div><div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(211,240,90,.14),transparent 60%)"></div>`;
+    h += docToReels(lt, { title: 'Your page<br>→ <span style="color:#d3f05a">reels</span>', docTitle: "Photosynthesis", badge: "PHOTO" });
+  } else if (shot === "watch") {
+    // the phone, swiping through real reels, with the three features
+    const REELS = ["leaf", "mito", "dna", "quiz"], per = (L.e - L.s + 0.35) / REELS.length, k = Math.min(REELS.length - 1, Math.floor(lt / per)), sw = clamp(((lt % per) - (per - 0.22)) / 0.22), nx = Math.min(REELS.length - 1, k + 1);
+    h += `<div style="position:absolute;inset:0;background:#0b0f0d"></div><div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 55%,rgba(211,240,90,.14),transparent 60%)"></div>`;
+    h += `<div style="position:absolute;left:50%;top:250px;width:380px;height:720px;margin-left:-190px;border-radius:50px;background:#000;padding:12px;box-sizing:border-box;transform:scale(${outBack(lt / 0.4)});box-shadow:0 20px 60px rgba(0,0,0,.6)"><div style="position:relative;width:100%;height:100%;border-radius:40px;overflow:hidden"><img src="${REELS[k]}.jpg" style="position:absolute;left:0;top:${-sw * 100}%;width:100%;height:100%;object-fit:cover"><img src="${REELS[nx]}.jpg" style="position:absolute;left:0;top:${(1 - sw) * 100}%;width:100%;height:100%;object-fit:cover"></div></div>`;
+    [["🔊", "Narrated", 0.0], ["CC", "Captioned", 0.7], ["✓", "Quiz at the end", 1.5]].forEach(([ic, tx, d], j) => { const p = outBack((lt - d) / 0.3); if (p <= 0) return;
+      h += `<div style="position:absolute;left:${[30, 430, 200][j]}px;top:${[330, 560, 900][j]}px;transform:scale(${p}) rotate(${[-4, 4, -2][j]}deg);display:inline-flex;align-items:center;gap:10px;background:${LIME};color:#0f1d18;font:700 28px Ins;padding:12px 22px;border-radius:40px;white-space:nowrap;box-shadow:0 10px 30px rgba(0,0,0,.5)"><span style="font:700 22px Unb">${ic}</span>${tx}</div>`; });
+    h += `<div style="position:absolute;left:0;right:0;top:120px;text-align:center;font:700 44px Unb;color:#fff">Just <span style="color:${LIME}">watch.</span></div>`;
+  } else {
+    const lc = t - st("cta"), a = clamp(lc / 0.2);
+    h += `<div style="position:absolute;inset:0;background:#0b0f0d"></div><div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(211,240,90,.2),transparent 60%)"></div>`;
+    h += `<img src="lockup-horizontal.svg" style="position:absolute;left:210px;width:300px;top:400px;opacity:${clamp((lc - 0.3) / 0.3)}">`;
+    h += `<div style="position:absolute;left:0;right:0;top:520px;text-align:center;transform:scale(${mix(1.3, 1, ease(lc / 0.25))});opacity:${a};font:700 100px/1 Unb;color:#fff;letter-spacing:-2px;text-shadow:0 0 50px rgba(211,240,90,.45)">unspool<span style="color:${LIME}">.cc</span></div>`;
+    h += `<div style="position:absolute;left:50%;top:680px;transform:translateX(-50%) scale(${outBack((lc - 0.5) / 0.35)});background:${LIME};color:#0f1d18;font:600 30px Ins;padding:16px 32px;border-radius:40px;white-space:nowrap">First reel free</div>`;
+  }
+  // simple caption pill
+  if (L.text && shot !== "cta" && shot !== "end" && shot !== "reels") h += `<div style="position:absolute;left:0;right:0;top:${shot === "snap" ? 200 : 1010}px;text-align:center"><span style="display:inline-block;background:rgba(14,18,20,.82);color:#fff;font:600 30px Ins;padding:10px 20px;border-radius:14px">${L.text}</span></div>`;
+  if (t < 0.1) h += `<div style="position:absolute;inset:0;background:#000;opacity:${1 - t / 0.1}"></div>`;
+  ov.innerHTML = h;
+};
+await Promise.all(["lockup-horizontal.svg", "leaf.jpg", "mito.jpg", "dna.jpg", "r1.jpg", "quiz.jpg"].map((s) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = s; })));
+window.renderAt(0); setTimeout(() => (window.ready = true), 400);
+</script></body></html>

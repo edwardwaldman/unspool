@@ -1,0 +1,7 @@
+{"voice": "af_heart", "speed": 1.08, "lead": 0.6, "tail": 0, "gap": 0.25, "lines": [
+ ["snap", "Snap a photo of any page.", 0.6],
+ ["reels", "Unspool turns it into short reels.", 1.1],
+ ["watch", "Narrated, captioned, with a quiz at the end.", 0.35],
+ ["cta", "Try it free, at unspool dot c c.", 0.2, "Try it free at unspool.cc"],
+ ["end", "", 1.3]
+]}

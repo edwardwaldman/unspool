@@ -13,7 +13,7 @@ const outBack = (x) => { x = clamp(x); const k = 1.7; return 1 + (k + 1) * Math.
 export function docToReels(lt, {
   reels = ["mito", "dna", "r1"],                       // left, right, centre card images (jpg, no extension)
   title = 'Any document<br>→ <span style="color:#d3f05a">reels</span>',
-  titleTop = 140, accent = "#d3f05a", docTitle = "Chapter 4",
+  titleTop = 140, accent = "#d3f05a", docTitle = "Chapter 4", badge = "PDF",   // badge: "PDF", "PHOTO", "SLIDES"…
 } = {}) {
   const pop = outBack(lt / 0.4), split = ease((lt - 0.7) / 0.9), docA = 1 - ease((lt - 1.2) / 0.5);
   let h = title ? `<div style="position:absolute;left:0;right:0;top:${titleTop}px;text-align:center;font:700 40px/1.15 Unb;color:#fff">${title}</div>` : "";
@@ -25,7 +25,7 @@ export function docToReels(lt, {
       : `<div style="padding:16px">${[90, 70, 95, 60, 85, 92, 50, 80, 75].map((wd) => `<div style="height:8px;margin:10px 0;border-radius:4px;background:#d5d9e6;width:${wd}%"></div>`).join("")}</div>`;
     h += `<div style="position:absolute;left:${cx - w / 2}px;top:${mix(470, 400, k)}px;width:${w}px;height:${hh}px;transform:rotate(${r * k}deg) scaleX(${Math.abs(Math.cos(flip * Math.PI))});border-radius:22px;overflow:hidden;background:#fff;box-shadow:0 20px 50px rgba(0,0,0,.5);border:6px solid #000">${face}</div>`;
   });
-  if (docA > 0) h += `<div style="position:absolute;left:50%;top:420px;width:270px;height:350px;margin-left:-135px;transform:scale(${pop * mix(1, 0.85, split)}) rotate(${-3 + split * 3}deg);opacity:${docA};background:#fbfaf6;border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.55);padding:26px;box-sizing:border-box"><div style="display:inline-block;background:#e5483b;color:#fff;font:700 18px Unb;padding:6px 10px;border-radius:6px">PDF</div><div style="font:700 22px Unb;color:#1a1f2c;margin:14px 0 6px">${docTitle}</div>${[95, 88, 92, 60, 94, 85, 90, 70, 93, 55].map((wd) => `<div style="height:8px;margin:11px 0;border-radius:4px;background:#cfd3cd;width:${wd}%"></div>`).join("")}</div>`;
+  if (docA > 0) h += `<div style="position:absolute;left:50%;top:420px;width:270px;height:350px;margin-left:-135px;transform:scale(${pop * mix(1, 0.85, split)}) rotate(${-3 + split * 3}deg);opacity:${docA};background:#fbfaf6;border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.55);padding:26px;box-sizing:border-box"><div style="display:inline-block;background:#e5483b;color:#fff;font:700 18px Unb;padding:6px 10px;border-radius:6px">${badge}</div><div style="font:700 22px Unb;color:#1a1f2c;margin:14px 0 6px">${docTitle}</div>${[95, 88, 92, 60, 94, 85, 90, 70, 93, 55].map((wd) => `<div style="height:8px;margin:11px 0;border-radius:4px;background:#cfd3cd;width:${wd}%"></div>`).join("")}</div>`;
   if (split > 0 && split < 1) h += `<div style="position:absolute;left:50%;top:600px;width:${600 * split}px;height:${600 * split}px;margin:${-300 * split}px 0 0 ${-300 * split}px;border-radius:50%;border:4px solid ${accent};opacity:${1 - split}"></div>`;
   return h;
 }
