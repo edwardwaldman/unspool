@@ -1,0 +1,10 @@
+{"voice": "am_michael", "speed": 1.16, "lead": 0.2, "tail": 0, "gap": 0.16, "lines": [
+ ["hook", "You can cram for six hours, and still forget it all by Friday.", 0.15, "You can cram for 6 hours and still forget it all by Friday."],
+ ["how", "Here's why.", 0.3],
+ ["cram", "Cramming loads everything in at once.", 0.15],
+ ["forget", "But without review, it fades fast. Day after day.", 0.4],
+ ["space", "Short reviews, spread over a few days, keep it from fading.", 0.25],
+ ["pivot", "That's Unspool. Your notes as short reels you can review in minutes, with a quiz in every one.", 0.25],
+ ["cta", "Try it free, at unspool dot c c.", 0.2, "Try it free at unspool.cc"],
+ ["end", "", 1.3]
+]}
