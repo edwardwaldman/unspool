@@ -7,6 +7,8 @@ const LINKS = [
   ["/terms", "Terms"],
   ["/privacy", "Privacy"],
   ["/pricing", "Pricing"],
+  ["/learn", "Study topics"],
+  ["/how-to-study-a-textbook-fast", "Study guide"],
   ["mailto:hello@unspool.cc", "Contact"],
 ] as const;
 

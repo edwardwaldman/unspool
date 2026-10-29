@@ -16,6 +16,9 @@ export function MarketingPage({ children }: { children: React.ReactNode }) {
           <Link href="/about" className="hidden hover:text-ink sm:inline">
             How it works
           </Link>
+          <Link href="/learn" className="hidden hover:text-ink sm:inline">
+            Learn
+          </Link>
           <Link href="/library" className="hidden hover:text-ink sm:inline">
             Library
           </Link>
@@ -33,6 +36,10 @@ export function MarketingPage({ children }: { children: React.ReactNode }) {
         <Link href="/privacy" className="hover:text-ink">Privacy</Link>
         <Link href="/terms" className="hover:text-ink">Terms</Link>
         <Link href="/pricing" className="hover:text-ink">Pricing</Link>
+        <Link href="/learn" className="hover:text-ink">Study topics</Link>
+        <Link href="/pdf-to-video" className="hover:text-ink">PDF to video</Link>
+        <Link href="/notes-to-video" className="hover:text-ink">Notes to video</Link>
+        <Link href="/how-to-study-a-textbook-fast" className="hover:text-ink">How to study a textbook</Link>
         <SocialLinks className="ml-auto" />
       </footer>
       <AuthModal />
