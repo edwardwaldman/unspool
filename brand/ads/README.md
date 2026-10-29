@@ -23,3 +23,12 @@ frame by frame (`index.html`), the voiceover script (`lines.json` or `tts.py`) a
    reel cards, first used in rise-and-fall) rather than a new animation. Copy it and its three reel stills
    (`shared/*.jpg`) next to the ad's `index.html` and call `docToReels(lt)` during the beat.
 5. Every ad ends on unspool.cc, and only states facts that can be checked.
+
+## Posting checklist (every ad)
+
+1. Post to **TikTok**, **Instagram Reels** and **YouTube Shorts** (Shorts title = a searchable topic, e.g.
+   "Why you blank on tests | study tips"; Shorts also show up in Google video results).
+2. Caption: one comment-bait question + 3–5 study hashtags (#studytok #studytips #college …), never #fyp/#xyzbca.
+3. Pin your own comment: "try it free at unspool.cc". Reply to every comment in the first hour.
+4. Post 1–2 a day in study season, roughly the same time of day, so results are comparable.
+
