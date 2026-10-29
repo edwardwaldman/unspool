@@ -32,3 +32,9 @@ frame by frame (`index.html`), the voiceover script (`lines.json` or `tts.py`) a
 3. Pin your own comment: "try it free at unspool.cc". Reply to every comment in the first hour.
 4. Post 1–2 a day in study season, roughly the same time of day, so results are comparable.
 
+
+### YouTube Shorts tags (paste into the Tags field; 497 of YouTube's 500 characters)
+
+```
+study tips,studytok,how to study,study hacks,studying,exam tips,finals week,how to study for exams,study tips for students,college study tips,how to remember what you study,active recall,spaced repetition,forgetting curve,retrieval practice,study smarter,study techniques,memory tips,learning tips,study motivation,ai study app,ai study tool,study app,textbook to video,pdf to video,notes to video,study reels,unspool,unspool app,student,college
+```
