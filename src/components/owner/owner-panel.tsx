@@ -35,7 +35,7 @@ type Data = {
   deployment: { name: string; on: boolean; hint: string }[];
   accounts: Account[];
   documents: Doc[];
-  visits: { stats: { visits: number; sawPricing: number; pressedCheckout: number; pressedPct: number }; recent: Visit[] };
+  visits: Record<Segment, { stats: { visits: number; sawPricing: number; pressedCheckout: number; pressedPct: number }; recent: Visit[] }>;
   addresses: Address[];
   beforeSignup: BeforeSignup;
 };
@@ -335,11 +335,31 @@ export function OwnerPanel() {
   );
 }
 
-function WhatPeopleDid({ data, build }: { data: Data["visits"]; build: string }) {
+type Segment = "external" | "tiktok" | "instagram" | "youtube" | "google" | "all";
+const SEGMENT_LABELS: [Segment, string][] = [["external", "Not me"], ["tiktok", "TikTok"], ["instagram", "Instagram"], ["youtube", "YouTube"], ["google", "Google"], ["all", "All"]];
+
+function WhatPeopleDid({ data: bySegment, build }: { data: Data["visits"]; build: string }) {
+  const [seg, setSeg] = useState<Segment>("external");
+  const data = bySegment[seg] ?? bySegment.all;
   return (
     <section className={card}>
       <h2 className="text-[16px] font-semibold">What people did</h2>
-      <p className="mt-1 text-[12.5px] text-muted">Last 90 days, your own visits included (marked OWNER).</p>
+      <p className="mt-1 text-[12.5px] text-muted">
+        Last 90 days. {seg === "all" ? "Your own visits included (marked OWNER)." : "Your own visits left out: signed in as you, or the same browser or network as one that was."}
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Filter visits">
+        {SEGMENT_LABELS.map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setSeg(key)}
+            aria-pressed={seg === key}
+            className={`border px-3 py-1.5 text-[13px] ${seg === key ? "border-thread text-thread" : "border-line text-muted hover:text-ink"}`}
+          >
+            {label} <span className="font-mono text-[11.5px] opacity-70">{bySegment[key]?.stats.visits ?? 0}</span>
+          </button>
+        ))}
+      </div>
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {(
           [

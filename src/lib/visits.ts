@@ -67,6 +67,20 @@ const leadIn = (v: VisitRow) =>
     .map((e) => (e.name === "page" ? `page ${e.detail ?? ""}`.trim() : e.name))
     .join(" → ") || "open";
 
+/** Where a visit came from: the referrer, or a utm_source / ref on the landing URL. */
+const source = (v: VisitRow) => `${v.referrer ?? ""} ${v.landing ?? ""}`.toLowerCase();
+const from = (re: RegExp) => (v: VisitRow, mine: boolean) => !mine && re.test(source(v));
+/** The owner panel's visit filters; every one but "all" leaves out your own visits. */
+export const SEGMENTS = {
+  external: (_v: VisitRow, mine: boolean) => !mine,
+  tiktok: from(/tiktok/),
+  instagram: from(/instagram/),
+  youtube: from(/youtube|youtu\.be/),
+  google: from(/google\./),
+  all: () => true,
+} satisfies Record<string, (v: VisitRow, mine: boolean) => boolean>;
+export type Segment = keyof typeof SEGMENTS;
+
 export async function visitAnalytics() {
   const since = new Date(Date.now() - 90 * 864e5).toISOString();
   const { data } = await adminClient()
@@ -84,8 +98,10 @@ export async function visitAnalytics() {
     if (!f || v.started_at < f) first.set(v.visitor_id, v.started_at);
   }
 
-  const saw = visits.filter(sawPricing).length;
-  const pressed = visits.filter((v) => v.checkout).length;
+  // Your own visits: signed in as you, or the same browser / network as a visit that was.
+  const ownerVisitors = new Set(visits.filter((v) => isOwnerEmail(v.email)).map((v) => v.visitor_id));
+  const ownerIps = new Set(visits.filter((v) => isOwnerEmail(v.email) && v.ip).map((v) => v.ip as string));
+  const isMine = (v: VisitRow) => isOwnerEmail(v.email) || ownerVisitors.has(v.visitor_id) || (!!v.ip && ownerIps.has(v.ip));
 
   // IP ↔ account, from signed-in visits.
   const byIp = new Map<string, { ip: string; country: string | null; emails: Set<string>; lastSeen: string; visits: number }>();
@@ -127,12 +143,17 @@ export async function visitAnalytics() {
 
   return {
     ipsByUser: Object.fromEntries([...ipsByUser].map(([id, ips]) => [id, [...ips].map(([ip, country]) => ({ ip, country }))])),
-    visits: {
-      stats: { visits: visits.length, sawPricing: saw, pressedCheckout: pressed, pressedPct: saw ? Math.round((pressed / saw) * 100) : 0 },
-      recent: visits.slice(0, RECENT).map((v) => ({
+    visits: Object.fromEntries(
+      (Object.keys(SEGMENTS) as Segment[]).map((key) => {
+        const vs = visits.filter((v) => SEGMENTS[key](v, isMine(v)));
+        const saw = vs.filter(sawPricing).length;
+        const pressed = vs.filter((v) => v.checkout).length;
+        return [key, {
+      stats: { visits: vs.length, sawPricing: saw, pressedCheckout: pressed, pressedPct: saw ? Math.round((pressed / saw) * 100) : 0 },
+      recent: vs.slice(0, RECENT).map((v) => ({
         id: v.id,
         email: v.email,
-        owner: isOwnerEmail(v.email),
+        owner: isMine(v),
         ip: v.ip,
         country: v.country,
         returning: (first.get(v.visitor_id) ?? v.started_at) < v.started_at,
@@ -144,7 +165,9 @@ export async function visitAnalytics() {
         device: v.user_agent,
         events: v.events,
       })),
-    },
+        }];
+      }),
+    ) as Record<Segment, { stats: { visits: number; sawPricing: number; pressedCheckout: number; pressedPct: number }; recent: unknown[] }>,
     addresses,
     beforeSignup: {
       visits: anon.length,
