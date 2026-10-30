@@ -40,9 +40,9 @@ function withTimeout<T>(p: PromiseLike<T>): Promise<T> {
   });
 }
 
-function GoogleG() {
+function GoogleG({ size = 16 }: { size?: number }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden>
+    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden>
       <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" />
       <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
       <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z" />
@@ -505,8 +505,9 @@ export function AuthModal() {
               </button>
             </p>
 
-            <button type="button" onClick={google} disabled={busy} className="btn-secondary mt-5 w-full py-2.5 text-[14px]">
-              <GoogleG /> Continue with Google
+            {/* The quickest way in, so the biggest button */}
+            <button type="button" onClick={google} disabled={busy} className="btn-secondary mt-5 min-h-[56px] w-full gap-3 py-3.5 text-[17px] font-semibold">
+              <GoogleG size={22} /> Continue with Google
             </button>
             <div className="label my-3.5 flex items-center gap-3 !text-[10px]">
               <div className="h-px flex-1 bg-line" /> Or with email <div className="h-px flex-1 bg-line" />
@@ -535,6 +536,9 @@ export function AuthModal() {
               />
               {signup ? (
                 <>
+                  {/* Asked for only once they've started a password, so the form starts short. */}
+                  {(password || confirm) && (
+                  <div className="animate-[term-in_.25s_ease-out]">
                   <PasswordField
                     label="Confirm password"
                     value={confirm}
@@ -544,6 +548,8 @@ export function AuthModal() {
                     placeholder="Re-enter your password"
                     autoComplete="new-password"
                   />
+                  </div>
+                  )}
                   {pwErr && (
                     <p className="-mt-1 text-[13px] text-coral" role="alert">
                       {pwErr}
