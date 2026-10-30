@@ -1,0 +1,11 @@
+{"voice": "am_michael", "speed": 1.17, "lead": 0.3, "tail": 0, "gap": 0.2, "lines": [
+ ["hook", "Same passage. Two groups. A week later, one remembered way more.", 0.3],
+ ["setup", "In 2006, researchers had students learn a short passage.", 0.2],
+ ["groupA", "Group one read it four times.", 0.25],
+ ["groupB", "Group two read it once, then tested themselves three times.", 0.3],
+ ["result", "A week later, the rereaders remembered forty percent. The testers? Sixty-one.", 0.35, "A week later: rereaders 40%. Testers 61%."],
+ ["why", "Pulling it out of your head is what makes it stick.", 0.3],
+ ["pivot", "Unspool turns any document into reels, and every reel ends with a quiz.", 0.25],
+ ["cta", "Try it free, at unspool dot c c.", 0.2, "Try it free at unspool.cc"],
+ ["end", "", 1.3]
+]}
