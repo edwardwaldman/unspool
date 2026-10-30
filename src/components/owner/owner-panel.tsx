@@ -335,8 +335,8 @@ export function OwnerPanel() {
   );
 }
 
-type Segment = "external" | "tiktok" | "instagram" | "youtube" | "google" | "all";
-const SEGMENT_LABELS: [Segment, string][] = [["external", "Not me"], ["tiktok", "TikTok"], ["instagram", "Instagram"], ["youtube", "YouTube"], ["google", "Google"], ["all", "All"]];
+type Segment = "external" | "tiktok" | "instagram" | "youtube" | "google" | "adpage" | "all";
+const SEGMENT_LABELS: [Segment, string][] = [["external", "Not me"], ["tiktok", "TikTok"], ["instagram", "Instagram"], ["youtube", "YouTube"], ["google", "Google"], ["adpage", "Ad page"], ["all", "All"]];
 
 function WhatPeopleDid({ data: bySegment, build }: { data: Data["visits"]; build: string }) {
   const [seg, setSeg] = useState<Segment>("external");

@@ -77,6 +77,8 @@ export const SEGMENTS = {
   instagram: from(/instagram/),
   youtube: from(/youtube|youtu\.be/),
   google: from(/google\./),
+  /** Landed on /go, the TikTok and ads landing page. */
+  adpage: (v: VisitRow, mine: boolean) => !mine && /^(https?:\/\/[^/]+)?\/go(\b|\/|\?|$)/.test(v.landing ?? ""),
   all: () => true,
 } satisfies Record<string, (v: VisitRow, mine: boolean) => boolean>;
 export type Segment = keyof typeof SEGMENTS;

@@ -23,6 +23,14 @@ export type TrackName =
 type Event = { t: number; name: TrackName; detail?: string };
 type Visit = { id: string; start: number; landing: string; referrer: string };
 
+/** Where the visit started: the path, plus utm_source when a tagged link was used (e.g. /go?utm_source=tiktok).
+ * Only utm_source is kept: other query strings can carry private codes (password resets, sign-in links). */
+function landingPath() {
+  const src = new URLSearchParams(location.search).get("utm_source");
+  const clean = src?.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40);
+  return clean ? `${location.pathname}?utm_source=${clean}` : location.pathname;
+}
+
 const KEY = "unspool_visit";
 const MAX_BATCH = 40;
 let visit: Visit | null = null;
@@ -38,7 +46,7 @@ function current(): Visit | null {
   } catch {
     // Private mode or blocked storage: a visit per page load is fine.
   }
-  visit = { id: crypto.randomUUID(), start: Date.now(), landing: location.pathname, referrer: document.referrer.slice(0, 300) };
+  visit = { id: crypto.randomUUID(), start: Date.now(), landing: landingPath(), referrer: document.referrer.slice(0, 300) };
   try {
     sessionStorage.setItem(KEY, JSON.stringify(visit));
   } catch {}
