@@ -728,8 +728,29 @@ export function layoutScene(scene: SceneSpec): Slot[] {
 }
 
 /** One object: pops in the first time it appears, then glides (position and size) when a later beat moves it. */
-function Placed({ o, slot, i, accent }: { o: SceneObject; slot: Slot; i: number; accent: string }) {
+/** A camera kick (0..1) that landings and impacts add; the camera rig shakes by it and lets it decay. */
+export const impact = { v: 0 };
+
+/** Seconds an object's arrival takes, by how it enters. */
+const ENTER_LEN: Record<NonNullable<SceneObject["enter"]>, number> = { pop: 0.7, drop: 0.95, slide: 0.75, rise: 0.8, fly: 0.9, grow: 1.0 };
+
+function Placed({ o, slot, i, accent, progress, heroX }: { o: SceneObject; slot: Slot; i: number; accent: string; progress: number; heroX: number }) {
   const ref = useRef<THREE.Group>(null);
+  // The beat's choreography: when (in the line) this object arrives and acts. Scripts without it keep the old
+  // staggered pop-in. Both clocks start when the voiceover reaches the cue, not when the scene mounts.
+  const choreo = o.enter !== undefined;
+  const prog = useRef(progress);
+  const entered = useRef<number | null>(null);
+  const acted = useRef<number | null>(null);
+  const landed = useRef(false);
+  useEffect(() => {
+    prog.current = progress;
+  }, [progress]);
+  // A new beat (the object carries over under the same key): its action can play again. An object already on
+  // screen stays where it is rather than arriving a second time.
+  useEffect(() => {
+    acted.current = null;
+  }, [o]);
   const body = useRef<THREE.Group>(null);
   const shadow = useRef<THREE.Mesh>(null);
   const proxy = useRef<THREE.Mesh>(null);
@@ -741,16 +762,20 @@ function Placed({ o, slot, i, accent }: { o: SceneObject; slot: Slot; i: number;
     const g = ref.current, b = body.current;
     if (!g || !b) return;
     if (t0.current === null) t0.current = s.clock.elapsedTime;
-    // Staggered: each object of a new scene arrives a beat after the one before it.
-    const t = s.clock.elapsedTime, lt = t - t0.current - i * 0.14;
+    const t = s.clock.elapsedTime;
+    if (choreo && entered.current === null && prog.current >= (o.at ?? 0)) entered.current = t;
+    if (choreo && acted.current === null && entered.current !== null && o.action && o.action !== "none" && prog.current >= Math.max(o.action_at ?? 0.5, (o.at ?? 0) + 0.15)) acted.current = t;
+    // Staggered: each object of a new scene arrives a beat after the one before it (or on its cue).
+    const lt = choreo ? (entered.current === null ? -1 : t - entered.current) : t - t0.current - i * 0.14;
     // Critically damped glide (frame-rate independent) when a later beat moves or resizes the object.
     const k = 1 - Math.pow(0.012, dt);
     cur.current.x += (slot.x - cur.current.x) * k;
     cur.current.z += (slot.z - cur.current.z) * k;
     cur.current.size += (slot.size - cur.current.size) * k;
     // Pop in on a spring (one small overshoot, then settle), turning in from a slight angle as it lands.
-    const drop = o.motion === "drop";
-    const appear = drop ? (lt > 0 ? 1 : 0) : popEase(lt / 0.7);
+    const enter = choreo ? o.enter! : o.motion === "drop" ? "drop" : "pop";
+    const drop = enter === "drop";
+    const appear = lt < 0 ? 0 : enter === "pop" ? popEase(lt / 0.7) : enter === "grow" ? popEase(lt / 1.0) : enter === "rise" ? clamp(lt / 0.25) : 1;
     const settle = 1 - clamp(lt / 0.9);
     let y = 0, ry = -cur.current.x * 0.08 + (drop ? 0 : settle * settle * 0.7), rz = 0, sy = 1, sx = 1;
     // Idle life: a slow breathe and sway, phase-shifted per object, so a held shot never looks frozen.
@@ -761,11 +786,78 @@ function Placed({ o, slot, i, accent }: { o: SceneObject; slot: Slot; i: number;
     if (drop) {
       const fall = clamp(lt / 0.55);
       y = 2.4 * (1 - fall) ** 2;
-      // Squash on landing, then spring back.
+      // Squash on landing, then spring back; the camera feels it.
       const land = (lt - 0.55) / 0.4;
+      if (land > 0 && !landed.current) {
+        landed.current = true;
+        impact.v = Math.min(1, impact.v + (slot.focus ? 0.7 : 0.35));
+      }
       if (land > 0 && land < 1) {
         sy = 1 - Math.sin(land * Math.PI) * 0.16 * (1 - land);
         sx = 1 + (1 - sy) * 0.5;
+      }
+    }
+    const side = cur.current.x < heroX - 0.01 ? -1 : cur.current.x > heroX + 0.01 ? 1 : i % 2 ? 1 : -1;
+    if (choreo && lt >= 0) {
+      const u = clamp(lt / ENTER_LEN[enter]), e = 1 - (1 - u) ** 3;
+      if (enter === "slide") {
+        // Skids in from its own side of the frame, leaning into the stop.
+        x += side * 4.2 * (1 - e);
+        rz += side * 0.25 * Math.sin(u * Math.PI) * (1 - u);
+      } else if (enter === "rise") {
+        y += -1.4 * (1 - e);
+      } else if (enter === "fly") {
+        // A thrown arc in from high on its side, tumbling once.
+        x += side * 3.2 * (1 - e);
+        y += Math.sin((1 - u) * Math.PI * 0.5) * 2.6 * (1 - u) + 0.0;
+        ry += (1 - e) * Math.PI * 2;
+      }
+    }
+    // The beat's action, on its cue.
+    if (acted.current !== null) {
+      const la = t - acted.current;
+      switch (o.action) {
+        case "to_hero": {
+          // Walks over to the hero and stops beside it (a hop in each step).
+          const u = 1 - (1 - clamp(la / 0.9)) ** 3;
+          x += (heroX + side * 0.9 - cur.current.x) * u;
+          y += Math.abs(Math.sin(clamp(la / 0.9) * Math.PI * 3)) * 0.12 * (1 - clamp(la / 0.9));
+          break;
+        }
+        case "away": {
+          const u = clamp(la / 0.8) ** 2;
+          x += side * 5 * u;
+          ry += side * u * 0.6;
+          break;
+        }
+        case "jump": {
+          const u = clamp(la / 0.7);
+          y += Math.sin(u * Math.PI) * 1.1;
+          if (u >= 1 && la < 1.0) {
+            sy *= 1 - Math.sin(((la - 0.7) / 0.3) * Math.PI) * 0.14;
+            sx *= 1 + (1 - sy) * 0.5;
+          }
+          break;
+        }
+        case "shake": {
+          const d = Math.max(0, 1 - la / 0.7);
+          rz += Math.sin(la * 45) * 0.16 * d;
+          x += Math.sin(la * 38) * 0.06 * d;
+          if (la < 0.05) impact.v = Math.min(1, impact.v + 0.25);
+          break;
+        }
+        case "flip": {
+          ry += (1 - (1 - clamp(la / 0.7)) ** 3) * Math.PI * 2;
+          y += Math.sin(clamp(la / 0.7) * Math.PI) * 0.5;
+          break;
+        }
+        case "grow": {
+          const u = popEase(la / 0.6);
+          sx *= 1 + 0.35 * u;
+          sy *= 1 + 0.35 * u;
+          if (la < 0.05) impact.v = Math.min(1, impact.v + 0.2);
+          break;
+        }
       }
     }
     if (o.motion === "bob") y = (0.5 - 0.5 * Math.cos(t * 2.4 + i)) * 0.1;
@@ -815,15 +907,16 @@ export const STORY_SHOTS: Record<SceneSpec["camera"], { pos: [number, number, nu
  * The objects of one beat. Keyed by shape (and which one of that shape), not by beat, so an object that is still
  * in the next beat's scene stays mounted and glides to its new place: the story carries on instead of restarting.
  */
-export function StoryObjects({ scene, accent, slots }: { scene: SceneSpec; accent: string; slots: Slot[] }) {
+export function StoryObjects({ scene, accent, slots, progress = 1 }: { scene: SceneSpec; accent: string; slots: Slot[]; progress?: number }) {
   const seen = new Map<string, number>();
+  const heroX = slots.find((s) => s?.focus)?.x ?? 0;
   return (
     <>
       {scene.objects.map((o, i) => {
         const n = seen.get(o.shape) ?? 0;
         seen.set(o.shape, n + 1);
         // Not keyed by colour: recolouring an object to "accent" (the script's way to point at it) must glide, not re-pop.
-        return <Placed key={`${o.shape}-${n}`} o={o} slot={slots[i]} i={i} accent={accent} />;
+        return <Placed key={`${o.shape}-${n}`} o={o} slot={slots[i]} i={i} accent={accent} progress={progress} heroX={heroX} />;
       })}
     </>
   );

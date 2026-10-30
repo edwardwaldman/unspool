@@ -92,6 +92,11 @@ export const SCENE_SHAPES = [
 ] as const;
 export const SCENE_COLORS = ["accent", "cream", "white", "dark", "red", "orange", "yellow", "green", "blue", "purple", "pink", "brown", "gray", "gold"] as const;
 export const SCENE_MOTIONS = ["none", "bob", "spin", "pulse", "drop", "stir", "tilt", "glow"] as const;
+/** How an object arrives, and the one thing it does mid-beat: the beat's choreography, timed to the voiceover. */
+export const SCENE_ENTERS = ["pop", "drop", "slide", "rise", "fly", "grow"] as const;
+export const SCENE_ACTIONS = ["none", "to_hero", "away", "jump", "shake", "flip", "grow"] as const;
+/** The camera's move across the beat. */
+export const CAMERA_MOVES = ["push_in", "pull_out", "orbit", "crane_up", "crane_down", "truck", "whip"] as const;
 export const SceneObjectSchema = z.object({
   shape: z.enum(SCENE_SHAPES),
   color: z.enum(SCENE_COLORS),
@@ -100,13 +105,20 @@ export const SceneObjectSchema = z.object({
   z: z.number().describe("back/front, -2 to 2 (front is closer to the viewer)"),
   size: z.number().describe("0.4 to 2.5; 1 is about knee height"),
   motion: z.enum(SCENE_MOTIONS),
+  enter: z.enum(SCENE_ENTERS).describe("how it arrives this beat; pop if it was already on screen last beat"),
+  at: z.number().describe("0 to 0.8: when in the line it arrives (0 = at once, 0.5 = halfway through the line)"),
+  action: z.enum(SCENE_ACTIONS).describe("one thing it does later in the beat, or none"),
+  action_at: z.number().describe("0.2 to 0.9: when in the line the action happens"),
 });
 export const SceneSchema = z.object({
   camera: z.enum(["front", "close", "low", "top", "orbit"]),
+  move: z.enum(CAMERA_MOVES).describe("the camera's move across the beat"),
   objects: z.array(SceneObjectSchema).describe("1-8 objects; [] to use the visual instead"),
 });
-export type SceneSpec = z.infer<typeof SceneSchema>;
-export type SceneObject = z.infer<typeof SceneObjectSchema>;
+// Scripts written before the choreography fields lack them: the player falls back to its old staging.
+type Choreo = "enter" | "at" | "action" | "action_at";
+export type SceneObject = Omit<z.infer<typeof SceneObjectSchema>, Choreo> & Partial<Pick<z.infer<typeof SceneObjectSchema>, Choreo>>;
+export type SceneSpec = Omit<z.infer<typeof SceneSchema>, "objects" | "move"> & { objects: SceneObject[]; move?: (typeof CAMERA_MOVES)[number] };
 
 export const BeatSchema = z.object({
   say: z.string(),

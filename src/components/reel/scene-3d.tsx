@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import type { HighlightColor, Mood, SceneSpec, Visual } from "@/lib/schema";
-import { STORY_SHOTS, StoryObjects, focusIndex, layoutScene } from "./story-scene";
+import { STORY_SHOTS, StoryObjects, focusIndex, impact, layoutScene } from "./story-scene";
 import { mat, popEase, rbox, rcyl, tone } from "./toy-kit";
 import { ReelIcon } from "./icon";
 import { sentenceCase } from "./text";
@@ -255,7 +255,7 @@ function Arrow({ from, to, color }: { from: [number, number, number]; to: [numbe
 
 // ---------------------------------------------------------------- camera
 
-type Shot = { pos: [number, number, number]; look: [number, number, number]; fov?: number; sway?: number; push?: number; /** 0..1: how far the beat pushes in from the whole cast to its hero (story scenes). */ focus?: number; /** Bleeds off the frame on purpose (a crowd field): skip auto-framing. */ noFit?: boolean };
+type Shot = { pos: [number, number, number]; look: [number, number, number]; fov?: number; sway?: number; push?: number; /** The camera's move across the beat (story scenes), like a shot in a film. */ move?: SceneSpec["move"]; /** 0..1: how far the beat pushes in from the whole cast to its hero (story scenes). */ focus?: number; /** Bleeds off the frame on purpose (a crowd field): skip auto-framing. */ noFit?: boolean };
 
 /**
  * Where the scene may sit on screen, in normalized device coordinates of the 3D stage: clear of the beat's key
@@ -292,12 +292,23 @@ function CameraRig({ shot, progress }: { shot: Shot; progress: number }) {
     const back = clamp(1.05 / aspect, 1, 2.4) * (1 - push * easeOut(prog.current));
     const lk = new THREE.Vector3(...shot.look);
     const f = fit.current;
-    const goal = new THREE.Vector3(shot.pos[0] + Math.sin(t * 0.35) * sway, shot.pos[1] + Math.sin(t * 0.27) * 0.08, shot.pos[2])
-      .sub(lk)
-      .multiplyScalar(back * f.scale)
-      .add(lk)
-      .add(f.off);
+    // The beat's move, driven by how far the line has played: an orbit swings around the cast, a crane rises or
+    // sinks, a truck slides past, a whip snaps in from the side as the beat starts.
+    const p = smooth(prog.current), mv = shot.move;
+    const yaw = mv === "orbit" ? (p - 0.5) * 0.7 : mv === "whip" ? 1.15 * (1 - easeOut(prog.current / 0.14)) : 0;
+    const lift = mv === "crane_up" ? -0.9 + 2.2 * p : mv === "crane_down" ? 1.6 - 2.1 * p : 0;
+    const slide = mv === "truck" ? (p - 0.5) * 2.6 : 0;
+    const rel = new THREE.Vector3(shot.pos[0] + Math.sin(t * 0.35) * sway + slide, shot.pos[1] + Math.sin(t * 0.27) * 0.08 + lift, shot.pos[2]).sub(lk);
+    if (yaw) rel.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+    const goal = rel.multiplyScalar(back * f.scale).add(lk).add(f.off);
     camera.position.lerp(goal, k);
+    // Landings and impacts kick the camera, then it settles (a hand-held jolt, not a wobble).
+    if (impact.v > 0.002) {
+      const a = impact.v * 0.13;
+      camera.position.x += Math.sin(t * 61) * a;
+      camera.position.y += Math.cos(t * 47) * a * 0.8;
+      impact.v *= Math.pow(0.004, dt);
+    }
     look.current.lerp(lk.clone().add(f.off), k);
     camera.lookAt(look.current);
     const fov = shot.fov ?? 34;
@@ -333,8 +344,10 @@ function CameraRig({ shot, progress }: { shot: Shot; progress: number }) {
       y1 = Math.max(y1, corner.y);
     }
     const sw = SAFE.right - SAFE.left, sh = SAFE.top - SAFE.bottom;
-    // How much bigger (or smaller) than the safe area the content is; aim to fill ~90% of it.
-    const need = Math.max((x1 - x0) / sw, (y1 - y0) / sh) / 0.9;
+    // How much bigger (or smaller) than the safe area the content is; aim to fill ~90% of it (a push-in tightens
+    // that over the beat, a pull-out loosens it).
+    const fill = mv === "push_in" ? 0.72 + 0.24 * p : mv === "pull_out" ? 0.96 - 0.26 * p : 0.9;
+    const need = Math.max((x1 - x0) / sw, (y1 - y0) / sh) / fill;
     // Gentler than the dolly itself (so the two never chase each other into a wobble), and a small dead band so
     // breathing, bobbing objects don't make the camera hunt.
     const kk = 1 - Math.pow(0.05, dt);
@@ -633,10 +646,17 @@ function HookScene({ v, progress, accent, color }: { v: Extract<Visual, { type: 
 }
 
 /** A steady per-scene camera angle (about ±15-25°), picked from the cast and its hero so it repeats for the same shot. */
-function angleFor(scene: SceneSpec) {
+function beatHash(scene: SceneSpec) {
   const key = `${scene.objects.map((o) => o.shape).join()}|${focusIndex(scene)}`;
   let h = 0;
   for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
+  return h >>> 0;
+}
+/** Moves for beats whose script predates the choreography fields (no whip: it needs a cut to land on). */
+const DEFAULT_MOVES: NonNullable<SceneSpec["move"]>[] = ["push_in", "orbit", "crane_up", "truck", "pull_out", "crane_down"];
+
+function angleFor(scene: SceneSpec) {
+  const h = beatHash(scene) | 0;
   const side = h & 1 ? 1 : -1;
   return side * (0.26 + ((h >>> 1) % 5) * 0.035);
 }
@@ -652,13 +672,15 @@ function StoryScene({ scene, progress, accent }: { scene: SceneSpec; progress: n
   const yaw = scene.objects.length > 1 && scene.camera !== "top" ? angleFor(scene) : 0;
   const [px, py, pz] = base.pos;
   const pos: [number, number, number] = [px * Math.cos(yaw) + pz * Math.sin(yaw), py, pz * Math.cos(yaw) - px * Math.sin(yaw)];
-  const shot = { ...base, pos, look: [0, Math.min(tall * 0.45, 1.1), 0] as [number, number, number], focus: scene.objects.length > 1 ? 1 : 0, push: 0.05 };
+  // Older scripts have no move: pick one per beat (stable for the beat) so every reel still feels shot, not static.
+  const move = scene.move ?? DEFAULT_MOVES[beatHash(scene) % DEFAULT_MOVES.length];
+  const shot = { ...base, pos, look: [0, Math.min(tall * 0.45, 1.1), 0] as [number, number, number], focus: scene.objects.length > 1 ? 1 : 0, push: 0.05, move };
   return (
     <>
       <CameraRig shot={shot} progress={progress} />
-      <StoryObjects scene={scene} accent={accent} slots={slots} />
+      <StoryObjects scene={scene} accent={accent} slots={slots} progress={progress} />
       {scene.objects.map((o, i) =>
-        o.label ? <Label key={`l${i}-${o.label}`} id={`l${i}`} text={o.label.toUpperCase()} position={[slots[i].x, slots[i].height + 0.12, slots[i].z]} tone={o.color === "accent" ? "accent" : "dark"} line={20} /> : null,
+        o.label && progress >= (o.at ?? 0) ? <Label key={`l${i}-${o.label}`} id={`l${i}`} text={o.label.toUpperCase()} position={[slots[i].x, slots[i].height + 0.12, slots[i].z]} tone={o.color === "accent" ? "accent" : "dark"} line={20} /> : null,
       )}
     </>
   );
