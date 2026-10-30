@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import Link from "next/link";
 import { useState } from "react";
 import type { SpoolDTO } from "@/lib/spool-types";
 import type { UploadState } from "../upload/upload-store";
@@ -84,17 +85,28 @@ export function LoadingReel({
             : `${stage < 3 ? "Usually under a minute. " : ""}Reel ${reelIndex} plays here the moment it's ready.`}
         </p>
         {spool && spool.status === "scripting" && !isError && !spool.id.startsWith("share-") && <StopButton id={spool.id} />}
-        {isError && onRetry && (
+        {isError && (
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            {onRetry && (
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onRetry();
             }}
-            className="mt-5 bg-white px-5 py-2.5 text-[15px] font-semibold text-[#08110e]"
+            className="bg-white px-5 py-2.5 text-[15px] font-semibold text-[#08110e]"
           >
             Retry
           </button>
+            )}
+            {/* A way out: on iPad and phones the reel screen has no top bar. */}
+            <Link href="/studio" onClick={(e) => e.stopPropagation()} className="border border-white/40 px-5 py-2.5 text-[15px] font-semibold text-white hover:border-white">
+              Back to Studio
+            </Link>
+            <Link href="/" onClick={(e) => e.stopPropagation()} className="px-2 py-2.5 text-[15px] font-semibold text-white/70 hover:text-white">
+              Home
+            </Link>
+          </div>
         )}
       </div>
 

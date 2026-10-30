@@ -73,7 +73,7 @@ export function AppShell({
 
   return (
     <div
-      className="flex h-[100dvh] w-full flex-col overflow-hidden bg-paper"
+      className={`flex h-[100dvh] w-full flex-col overflow-hidden bg-paper ${workbench ? "lg:pt-16 ipad:lg:pt-0" : ""}`}
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes("Files")) {
           e.preventDefault();
@@ -92,10 +92,17 @@ export function AppShell({
     >
       {picker.el}
       {/* On phones the reel screens fill the frame (their tabs sit at the very top) and carry their own upgrade
-          prompts, so the banner is desktop-only there. */}
-      <div className={`fixed inset-x-0 z-30 ${barShown || workbench ? "top-0 lg:top-16 ipad:lg:top-0" : "top-0"} ${feed || workbench ? "hidden lg:block" : ""}`}>
-        <FreeBanner signedIn={Boolean(user)} />
-      </div>
+          prompts, so the banner is desktop-only there. On reel screens it sits in the page flow and pushes the reels
+          down; floating over them, it covered their "This doc | All spools" tabs (iPad). */}
+      {feed || workbench ? (
+        <div className="relative z-30 hidden shrink-0 lg:block">
+          <FreeBanner signedIn={Boolean(user)} />
+        </div>
+      ) : (
+        <div className={`fixed inset-x-0 z-30 ${barShown ? "top-0 lg:top-16" : "top-0"}`}>
+          <FreeBanner signedIn={Boolean(user)} />
+        </div>
+      )}
 
       {/* Top bar: slides in once you scroll */}
       <header
@@ -143,7 +150,7 @@ export function AppShell({
 
       {/* Content */}
       <main
-        className={`relative flex min-h-0 min-w-0 flex-1 ${workbench ? "lg:pt-16 ipad:lg:pt-0" : feed ? "items-center justify-center lg:py-5" : "overflow-y-auto"}`}
+        className={`relative flex min-h-0 min-w-0 flex-1 ${workbench ? "" : feed ? "items-center justify-center lg:py-5" : "overflow-y-auto"}`}
         onScroll={(e) => setBarShown(e.currentTarget.scrollTop > 12)}
         onWheel={(e) => {
           if (e.deltaY > 4) setBarShown(true);

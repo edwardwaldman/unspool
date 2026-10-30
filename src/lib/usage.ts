@@ -32,6 +32,20 @@ export async function claimUsage(opts: {
   return data;
 }
 
+/**
+ * Give back the upload a document used when the file itself couldn't be read (nothing was made from it), so a
+ * blurry photo doesn't burn a free account's one document. Capped at 3 refunds a day so unreadable files can't be
+ * sent over and over for free OCR.
+ */
+export async function refundUnreadableUpload(userId: string) {
+  const db = adminClient();
+  const since = new Date(Date.now() - 864e5).toISOString();
+  const { count } = await db.from("documents").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("status", "failed").gte("created_at", since);
+  if ((count ?? 0) > 3) return;
+  const { data } = await db.from("usage_events").select("id").eq("kind", "upload").eq("user_id", userId).order("created_at", { ascending: false }).limit(1);
+  if (data?.[0]) await db.from("usage_events").delete().eq("id", data[0].id);
+}
+
 /** Whether this account has ever uploaded a document (free accounts get one). */
 export async function freeDocumentUsed(userId: string) {
   const { count } = await adminClient().from("usage_events").select("id", { count: "exact", head: true }).eq("kind", "upload").eq("user_id", userId);

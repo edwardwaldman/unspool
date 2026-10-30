@@ -360,7 +360,10 @@ export async function transcribeWithClaude(
           source,
           {
             type: "text",
-            text: "Transcribe all of the readable text in this file, in reading order, verbatim. Keep headings, lists and tables as plain text (use simple line breaks). For handwritten notes, transcribe as faithfully as you can. Describe diagrams in one short bracketed line. Output only the transcription.",
+            text:
+              file.kind === "image"
+                ? "Transcribe all of the readable text in this photo, in reading order, verbatim. Keep headings, lists and tables as plain text (use simple line breaks). For handwritten notes, transcribe as faithfully as you can. If the photo is mostly a diagram, chart or figure, also describe what it shows (its labels, parts and how they connect) in a few plain sentences, so someone could study from it. Output only the transcription."
+                : "Transcribe all of the readable text in this file, in reading order, verbatim. Keep headings, lists and tables as plain text (use simple line breaks). For handwritten notes, transcribe as faithfully as you can. Describe diagrams in one short bracketed line. Output only the transcription.",
           },
         ],
       },

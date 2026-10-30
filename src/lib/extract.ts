@@ -205,8 +205,14 @@ export async function extractDocument(
   }
 
   const capped = capWords(clean(text), limits.maxWords ?? MAX_WORDS);
-  if (capped.words < 40) {
-    throw new ExtractionError("We couldn't find enough readable text in this file.");
+  // A photo is often one handout, diagram or a few lines of notes: a lower bar than a whole file.
+  const isImage = Boolean(IMAGE_TYPES[ext]);
+  if (capped.words < (isImage ? 15 : 40)) {
+    throw new ExtractionError(
+      isImage
+        ? "We couldn't read enough in this photo. Try a closer, well-lit shot of the page, with the text in focus."
+        : "We couldn't find enough readable text in this file.",
+    );
   }
   return {
     text: capped.text,
