@@ -53,37 +53,42 @@ function AdAnimation() {
   );
 }
 
-/** One big way in: snap a page with the camera, or pick a file. Sign-up (if needed) comes after the file. */
-function Actions() {
-  const camera = useRef<HTMLInputElement>(null);
+/** One big + button. Phones offer "Take Photo" alongside files in the same picker. Sign-up (if needed) comes after the file. */
+function PlusUpload() {
   const file = useRef<HTMLInputElement>(null);
   const upload = useUploader();
   const pending = usePendingUpload();
-  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    e.target.value = "";
-    if (f) void upload(f);
-  };
   return (
-    <div className="flex w-full flex-col gap-3">
-      <input ref={camera} type="file" accept="image/*" capture="environment" className="hidden" onChange={onPick} />
-      <input ref={file} type="file" accept={FILE_ACCEPT} className="hidden" onChange={onPick} />
+    <div className="flex flex-col items-center">
+      <input
+        ref={file}
+        type="file"
+        accept={FILE_ACCEPT}
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void upload(f);
+        }}
+      />
       <button
         type="button"
         onClick={() => file.current?.click()}
         disabled={Boolean(pending)}
-        className="w-full bg-thread px-6 py-4 text-[19px] font-semibold text-paper transition-opacity hover:opacity-90 disabled:opacity-60"
+        aria-label="Upload a document"
+        className="group relative flex h-[132px] w-[132px] items-center justify-center rounded-full bg-thread text-paper shadow-[0_0_0_10px_rgba(211,240,90,0.12),0_18px_50px_rgba(211,240,90,0.25)] transition-transform hover:scale-105 active:scale-95 disabled:opacity-60"
       >
-        {pending ? "Opening your reels…" : "Upload a PDF, slides or notes"}
+        {!pending && <span className="absolute inset-0 animate-ping rounded-full bg-thread/30 [animation-duration:2.2s]" aria-hidden />}
+        <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden className={pending ? "animate-spin" : ""}>
+          {pending ? (
+            <circle cx="32" cy="32" r="22" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeDasharray="100 40" />
+          ) : (
+            <path d="M32 10v44M10 32h44" stroke="currentColor" strokeWidth="8" strokeLinecap="round" />
+          )}
+        </svg>
       </button>
-      <button
-        type="button"
-        onClick={() => camera.current?.click()}
-        disabled={Boolean(pending)}
-        className="w-full border border-thread px-6 py-4 text-[18px] font-semibold text-thread transition-colors hover:bg-thread/10 disabled:opacity-60"
-      >
-        📸 Snap a page
-      </button>
+      <div className="mt-4 text-[19px] font-semibold">{pending ? "Opening your reels…" : "Upload"}</div>
+      <div className="mt-1 text-[14px] text-muted">PDF, slides, notes or a photo of a page</div>
     </div>
   );
 }
@@ -98,12 +103,12 @@ export function GoHero() {
           Turn any page into <span className="text-thread">reels.</span>
         </h1>
         <p className="mt-3 text-center text-[16px] leading-[1.45] text-muted">
-          Upload a PDF or snap your notes. Get short reels with a voiceover, captions and a quiz in every one.
+          Tap +, pick a PDF or snap a page. Get short reels with a voiceover, captions and a quiz in every one.
         </p>
         <div className="mt-2 w-full">
           <AdAnimation />
         </div>
-        <Actions />
+        <PlusUpload />
         <ul className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13.5px] text-muted">
           <li>✓ First reel free</li>
           <li>✓ No card needed</li>
