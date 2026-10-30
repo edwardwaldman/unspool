@@ -178,7 +178,10 @@ export function Feed({
   const paywallItem = paywallFor !== null ? items[paywallFor] : null;
 
   return (
-    <div className="relative h-full w-full">
+    // A 9:16 frame, centred: on phones it is the whole screen; on a tablet it stays a vertical video with
+    // every control (tabs, rail, captions, account line) on the video instead of spread across the screen.
+    <div className="flex h-full w-full justify-center bg-black">
+    <div className="relative aspect-[9/16] h-full max-w-full">
       <div
         ref={scroller}
         onScroll={onScroll}
@@ -273,6 +276,7 @@ export function Feed({
       )}
       {active?.spool && active.reel && <ShareSheet open={shareOpen} onClose={() => setShareOpen(false)} spool={active.spool} reel={active.reel} viewer={viewer} />}
       {active?.spool && <SpoolMoreSheet spool={active.spool} reel={active.reel} viewer={viewer} open={moreOpen} onClose={() => setMoreOpen(false)} onDeleted={onDeleted} />}
+    </div>
     </div>
   );
 }
