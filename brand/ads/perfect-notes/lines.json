@@ -1,0 +1,10 @@
+{"voice": "am_michael", "speed": 1.12, "lead": 0.25, "tail": 0, "gap": 0.18, "lines": [
+ ["hook", "You can make perfect notes, and still remember none of it.", 0.2],
+ ["how", "But why?", 0.35],
+ ["feels", "Copying feels like studying. But the words go from the page, to your pen, to the page.", 0.25],
+ ["test", "Your brain copied them. It never had to use them. So they fade.", 0.35],
+ ["fix", "Pulling the answer out yourself is what makes it stick.", 0.3],
+ ["pivot", "That's why every Unspool reel explains it simply, then quizzes you.", 0.25],
+ ["cta", "Try it free, at unspool dot c c.", 0.2, "Try it free at unspool.cc"],
+ ["end", "", 1.3]
+]}
