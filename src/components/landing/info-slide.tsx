@@ -98,15 +98,16 @@ export function BigUpload({ onClick, demoLink = true, wideTags = true, big = fal
           if (f) void upload(f);
         }}
       />
-      <div className={`relative mx-auto w-fit py-24 md:px-40 md:py-16 ${big ? "lg:px-56 lg:py-24" : ""}`}>
+      {/* Side padding only where it fits: on narrower screens the box must not stick out past the viewport (iPad / small laptops could swipe sideways). */}
+      <div className={`relative mx-auto w-fit max-w-full py-24 md:px-16 md:py-16 lg:px-40 ${big ? "xl:px-56 xl:py-24" : ""}`}>
         <Float mobile className="left-0 top-4 -rotate-6 md:top-2" big={big} delay={0}>.pdf</Float>
         <Float mobile className="right-2 top-10 rotate-3 md:right-4 md:top-0" big={big} delay={0.08}>.docx</Float>
         <Float mobile className="bottom-4 right-2 -rotate-3 md:bottom-0 md:right-6" big={big} delay={0.24}>captions on</Float>
         <Float mobile className="bottom-9 left-3 rotate-2 md:bottom-2 md:left-8" big={big} delay={0.16}>.pptx</Float>
         {wideTags && (
           <>
-            <Float big={big} className={`top-1/2 -translate-y-1/2 -rotate-3 ${big ? "-left-24 lg:-left-16" : "-left-24"}`} delay={0.12}>♪ voiceover</Float>
-            <Float big={big} className={`top-[46%] rotate-2 border-thread/60 text-thread ${big ? "-right-40 lg:-right-36" : "-right-40"}`} delay={0.2}>✓ quiz in every reel</Float>
+            <Float big={big} show={big ? "2xl:block" : "lg:block"} className={`top-1/2 -translate-y-1/2 -rotate-3 ${big ? "-left-16" : "-left-24"}`} delay={0.12}>♪ voiceover</Float>
+            <Float big={big} show={big ? "2xl:block" : "lg:block"} className={`top-[46%] rotate-2 border-thread/60 text-thread ${big ? "-right-36" : "-right-40"}`} delay={0.2}>✓ quiz in every reel</Float>
           </>
         )}
         {/* hand-drawn "start here" arrow */}
@@ -145,7 +146,7 @@ export function BigUpload({ onClick, demoLink = true, wideTags = true, big = fal
         <button
           type="button"
           onClick={() => (onClick ? onClick() : studioIfSignedIn && user ? router.push("/studio") : input.current?.click())}
-          className={`relative z-10 mx-auto flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-8 py-6 text-[20px] md:gap-4 md:px-24 md:py-10 md:text-[36px] ${big ? "lg:gap-5 lg:px-32 lg:py-14 lg:text-[50px]" : ""} font-medium text-paper transition-opacity hover:opacity-90`}
+          className={`relative z-10 mx-auto flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-8 py-6 text-[20px] md:gap-4 md:px-24 md:py-10 md:text-[36px] ${big ? "xl:gap-5 xl:px-32 xl:py-14 xl:text-[50px]" : ""} font-medium text-paper transition-opacity hover:opacity-90`}
         >
           <UploadIcon size={big ? 40 : 28} /> Upload a document
         </button>
@@ -160,11 +161,11 @@ export function BigUpload({ onClick, demoLink = true, wideTags = true, big = fal
   );
 }
 
-function Float({ children, className, delay, mobile = false, big = false }: { children: React.ReactNode; className: string; delay: number; mobile?: boolean; big?: boolean }) {
+function Float({ children, className, delay, mobile = false, big = false, show = "md:block" }: { children: React.ReactNode; className: string; delay: number; mobile?: boolean; big?: boolean; /** Breakpoint class that shows a desktop-only tag (it sits outside the box, so it needs room). */ show?: "md:block" | "lg:block" | "2xl:block" }) {
   return (
     <motion.span
       aria-hidden
-      className={`absolute border border-line bg-paper px-2.5 py-1 font-mono text-[12px] text-muted md:block md:px-4 md:py-2 md:text-[17px] ${big ? "lg:px-5 lg:py-2.5 lg:text-[22px]" : ""} ${mobile ? "block" : "hidden"} ${className}`}
+      className={`absolute border border-line bg-paper px-2.5 py-1 font-mono text-[12px] text-muted md:px-4 md:py-2 md:text-[17px] ${big ? "xl:px-5 xl:py-2.5 xl:text-[22px]" : ""} ${mobile ? "block" : `hidden ${show}`} ${className}`}
       initial={{ opacity: 0, y: 8, scale: 0.85 }}
       whileInView={{ opacity: 1, scale: 1, y: [0, -6, 0] }}
       viewport={{ once: true, amount: 0 }}

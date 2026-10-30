@@ -38,6 +38,13 @@ body {
   overscroll-behavior: none;
 }
 
+/* Nothing may make the page pan sideways (iPad Safari lets you swipe to any overflow, even at 100%).
+   clip, unlike hidden, keeps position: sticky working. */
+html,
+body {
+  overflow-x: clip;
+}
+
 @layer components {
 /* Display headlines: family, weight and tracking all come from theme.css. */
 .font-display {
