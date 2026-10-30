@@ -437,7 +437,8 @@ export function AuthModal() {
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-paper/80" onClick={dismiss} />
+      {/* Tapping outside never closes it: a stray tap lost what was typed (and the code step). Only the X closes it. */}
+      <div className="absolute inset-0 bg-paper/80" />
       <div role="dialog" aria-modal aria-label={heading} className="relative max-h-[94dvh] w-full max-w-[440px] overflow-y-auto border border-line border-t-2 border-t-thread bg-surface px-6 pb-6 pt-7 sm:px-9">
         <button type="button" onClick={dismiss} aria-label="Close" className="absolute right-4 top-4 text-muted hover:text-ink">
           <X size={18} strokeWidth={1.5} />
