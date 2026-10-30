@@ -1,0 +1,119 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#111}
+#ov{position:absolute;inset:0;overflow:hidden} video{display:none}
+</style></head><body><div id="ov"></div>
+<script type="module">
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins")]);
+const DUR = 17.5; window.DUR = DUR;
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), mix = (a, b, x) => a + (b - a) * x;
+const ease = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const outBack = (x) => { x = clamp(x); const k = 1.7; return 1 + (k + 1) * Math.pow(x - 1, 3) + k * Math.pow(x - 1, 2); };
+const LIME = "#d3f05a", INK = "#2b3aa8";
+const ov = document.getElementById("ov");
+const noise = (t, s) => Math.sin(t * 1.7 + s) * 0.6 + Math.sin(t * 3.1 + s * 2) * 0.3 + Math.sin(t * 7.3 + s * 3) * 0.1;
+
+// hand-written digits (40x60 box), drawn stroke by stroke
+const DIG = { "0": "M20 4C6 4 4 20 4 30C4 44 8 56 20 56C32 56 36 44 36 30C36 16 32 4 20 4", "1": "M13 13L22 4L22 56", "2": "M6 16C8 5 32 2 34 16C36 28 10 44 5 56L37 56", "3": "M6 11C14 2 34 4 32 18C30 27 19 28 15 28C30 28 38 36 34 47C30 58 10 58 4 50", "4": "M28 56L28 4L4 40L38 40", "5": "M34 4L11 4L8 26C18 20 36 24 34 40C32 56 10 58 4 50", "7": "M4 6L36 6L15 56", "9": "M34 21C34 7 6 6 6 20C6 32 30 34 34 21L31 56", ".": "M19 52L22 54" };
+const DLEN = 190;
+function hand(str, x, y, sc, u, jit) {
+  // u: 0..1 how much of the whole string is written
+  let out = "", cx = x; const n = str.length;
+  [...str].forEach((ch, i) => { const k = clamp(u * n - i); const w = ch === "." ? 18 : 40;
+    if (DIG[ch]) out += `<path d="${DIG[ch]}" transform="translate(${cx},${y + Math.sin(i * 2.3 + jit) * 3}) scale(${sc}) rotate(${Math.sin(i * 1.7 + jit) * 4} 20 30)" fill="none" stroke="${INK}" stroke-width="${4.2 / sc}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${DLEN}" stroke-dashoffset="${DLEN * (1 - k)}"/>`;
+    cx += (w + 6) * sc; });
+  return { svg: out, w: cx - x };
+}
+function score(num, den, u, jit) {
+  const sc = 1.25, a = hand(num, 0, 0, sc, clamp(u / 0.45), jit), b = hand(den, 0, 0, sc, clamp((u - 0.55) / 0.45), jit + 1);
+  const W = Math.max(a.w, b.w) + 60;
+  const line = clamp((u - 0.45) / 0.1), box = clamp((u - 0.92) / 0.3);
+  return `<svg width="${W + 40}" height="250" viewBox="-20 -20 ${W + 40} 250" style="overflow:visible">
+    <g transform="translate(${(W - a.w) / 2},6)">${a.svg}</g>
+    <path d="M14 98 L${W - 14} 96" stroke="${INK}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${W}" stroke-dashoffset="${W * (1 - line)}"/>
+    <g transform="translate(${(W - b.w) / 2},112)">${b.svg}</g>
+    <path d="M-4 -8 L${W + 4} -12 L${W + 8} 200 L-6 204 Z" fill="none" stroke="#2a2d36" stroke-width="3.5" stroke-linejoin="round" stroke-dasharray="${2 * W + 420}" stroke-dashoffset="${(2 * W + 420) * (1 - box)}" opacity=".9"/>
+  </svg>`;
+}
+// one graded quiz page, close-up
+function paper(num, den, u, jit, extra) {
+  const lines = Array.from({ length: 22 }, (_, i) => `<div style="position:absolute;left:70px;top:${820 + i * 44}px;width:${[620, 560, 640, 400, 600, 520][i % 6]}px;height:9px;background:#c9ccd4;border-radius:4px;opacity:.75"></div>`).join("");
+  return `<div style="position:absolute;left:-40px;top:-60px;width:820px;height:1500px;background:#f4f3ef;box-shadow:0 30px 80px rgba(0,0,0,.5)">
+    <div style="position:absolute;left:0;right:0;top:0;height:1500px;background:repeating-linear-gradient(transparent 0 43px,rgba(160,180,210,.0) 43px 44px)"></div>
+    <div style="position:absolute;left:70px;top:150px;font:600 34px Ins;color:#3a3d46">AP Statistics · Unit 3 Quiz</div>
+    <div style="position:absolute;left:70px;top:205px;font:600 24px Ins;color:#6a6e78">Sampling &amp; Experiments</div>
+    <div style="position:absolute;left:330px;top:390px;transform:scale(1.55);transform-origin:0 0">${score(num, den, u, jit)}</div>
+    ${lines}${extra || ""}</div>`;
+}
+const SHOTS = [["29", "30", 0], ["49.75", "50", 1], ["44", "45", 2]];
+const tf = (u) => `<div style="position:absolute;left:90px;top:1030px;font:400 52px Georgia,serif;color:#454850">True or <span style="position:relative">False<svg width="200" height="110" style="position:absolute;left:-30px;top:-18px;overflow:visible"><path d="M100 8C30 4 2 30 10 60C18 92 150 96 186 64C210 40 170 2 90 12" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round" stroke-dasharray="560" stroke-dashoffset="${560 * (1 - u)}"/></svg></span></div>`;
+
+const cap = (html, top = 760) => `<div style="position:absolute;left:60px;right:60px;top:${top}px;text-align:center;font:600 46px/1.18 Ins;color:#fff;letter-spacing:-.3px;-webkit-text-stroke:2.5px #000;paint-order:stroke fill;text-shadow:0 3px 10px rgba(0,0,0,.35)">${html}</div>`;
+
+// stats notes for the camera (colourful, highlighted)
+const notes = (w) => { const s = w / 600; const HL = ["#fff27a", "#ffc4e1", "#b8f0c8", "#bfe3ff"];
+  return `<div style="width:${w}px;height:${w * 1.32}px;background:#fdfcf6;position:relative;overflow:hidden;background-image:repeating-linear-gradient(#fdfcf6 0 ${38 * s}px,#cfe0f2 ${38 * s}px ${40 * s}px)">
+  <div style="position:absolute;left:${56 * s}px;top:0;bottom:0;width:2px;background:#f0a0a0"></div>
+  <div style="position:absolute;left:${76 * s}px;top:${30 * s}px;font:700 ${40 * s}px Ins;color:#1e3a8a">Sampling</div>
+  ${["population = everyone you care about", "sample = the few you actually ask", "parameter → describes population", "statistic → describes the sample", "random sample avoids bias", "stir the pot before you taste!", "SRS: every group equally likely", "bias: undercoverage, nonresponse"].map((tx, i) => `<div style="position:absolute;left:${76 * s}px;top:${(118 + i * 76) * s}px;font:600 ${25 * s}px Ins;color:${["#334155", "#b4235a", "#0f7a4a", "#334155"][i % 4]};white-space:nowrap;padding:0 ${4 * s}px;background:${i % 3 === 1 ? HL[i % 4] : "transparent"}">• ${tx}</div>`).join("")}</div>`; };
+
+const T = { cam: 6.6, snap: 8.05, load: 8.9, reel: 10.1, swipe: 13.55, quiz: 13.9, tap: 15.0, end: 16.1 };
+// the app's quiz screen, on the same topic as the reel
+function quiz(t) { const q = t - T.quiz, tapped = t >= T.tap;
+  const opts = ["Population", "Sample", "Parameter"];
+  return `<div style="position:absolute;inset:0;background:radial-gradient(120% 70% at 50% 40%,#2d4a33,#0f1a13 70%,#070b09)">
+    <div style="position:absolute;left:24px;top:26px;background:#0c0d0c;color:#fff;font:700 15px Unb;padding:6px 10px;letter-spacing:.5px">| AP STATS · UNIT 3</div>
+    <div style="position:absolute;right:26px;top:30px;color:rgba(255,255,255,.8);font:700 15px Unb">unspool</div>
+    <div style="position:absolute;left:56px;right:56px;top:300px;font:700 40px/1.22 Ins;color:#fff">A chef tastes one spoonful to judge the whole pot. The spoonful is the…</div>
+    ${opts.map((o, i) => { const right = i === 1 && tapped; return `<div style="position:absolute;left:56px;right:56px;top:${560 + i * 120}px;height:96px;border:3px solid ${right ? LIME : "rgba(255,255,255,.35)"};background:${right ? "rgba(211,240,90,.18)" : "rgba(0,0,0,.25)"};border-radius:18px;display:flex;align-items:center;padding:0 28px;font:600 34px Ins;color:${right ? LIME : "#fff"};transform:scale(${right ? 1 + 0.06 * Math.max(0, 1 - (t - T.tap) / 0.25) : 1})">${String.fromCharCode(65 + i)}. ${o}${right ? " ✓" : ""}</div>`; }).join("")}
+    ${tapped ? `<div style="position:absolute;left:0;right:0;top:960px;text-align:center;font:700 46px Unb;color:${LIME};transform:scale(${outBack((t - T.tap - 0.1) / 0.35)})">Correct! 🔥</div>` : ""}
+    ${t > T.tap - 0.35 && t < T.tap + 0.5 ? `<div style="position:absolute;left:${430 - 40}px;top:${728 - 40}px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,${0.45 * (1 - clamp((t - T.tap) / 0.5))});transform:scale(${t < T.tap ? mix(1.3, 1, (t - T.tap + 0.35) / 0.35) : 1 + (t - T.tap) * 1.4})"></div>` : ""}
+  </div>`; }
+function rail() { return `<div style="position:absolute;right:20px;top:640px;display:flex;flex-direction:column;align-items:center;gap:34px;color:#fff;font:600 14px Ins;text-shadow:0 1px 3px #000">${["♥<br>12.4K", "💬<br>238", "➤<br>1.1K", "🔖"].map((x) => `<div style="text-align:center;font-size:38px;line-height:1">${x.split("<br>")[0]}<div style="font:600 15px Ins;margin-top:6px">${x.split("<br>")[1] || ""}</div></div>`).join("")}</div>`; }
+
+
+window.renderAt = async (t) => {
+  let h = "";
+  if (t < T.cam) {
+    const k = Math.min(2, Math.floor(t / 2.2)), lt = t - k * 2.2, [num, den, j] = SHOTS[k];
+    const sx = noise(t * 1.3, j) * 14, sy = noise(t * 1.1, j + 5) * 12, rot = -4 + j * 3 + noise(t * 0.8, j + 9) * 1.2;
+    const z = mix(1.0, 1.08, lt / 2.2) * (1 + 0.05 * Math.max(0, 1 - lt / 0.25)), blur = Math.max(0, 5 * (1 - lt / 0.22));
+    h += `<div style="position:absolute;inset:0;background:${["linear-gradient(135deg,#6b4a32,#3d2a1d)", "#e9e6e1", "linear-gradient(135deg,#7a573c,#4a3323)"][k]}"></div>`;
+    if (k !== 1) h += `<div style="position:absolute;left:${k ? 600 : -10}px;top:-20px;width:150px;height:1320px;background:radial-gradient(circle,#fff 9px,transparent 10px) 0 0/48px 48px,#2a2340;transform:rotate(${k ? 4 : -3}deg)"></div>`;
+    h += `<div style="position:absolute;left:0;top:0;width:720px;height:1280px;transform:translate(${sx - (k === 1 ? 60 : 0)}px,${sy - 30}px) rotate(${rot}deg) scale(${z});transform-origin:50% 40%;filter:blur(${blur}px)">${paper(num, den, k === 0 ? 1 : clamp(lt / 0.9), j * 3, k === 1 ? tf(clamp((lt - 0.2) / 0.8)) : "")}</div>`;
+    h += `<div style="position:absolute;inset:0;background:radial-gradient(130% 90% at 50% 40%,transparent 55%,rgba(0,0,0,.35))"></div>`;
+    h += cap(`“MOM my phone is literally SAVING my grades!! 😭”`, 740);
+  } else {
+    if (t < T.load) {
+      // phone camera on the notes
+      const lt = t - T.cam, flash = t > T.snap && t < T.snap + 0.12;
+      h += `<div style="position:absolute;inset:0;background:#000"></div>`;
+      h += `<div style="position:absolute;left:40px;top:150px;width:640px;height:850px;overflow:hidden;background:#222"><div style="position:absolute;left:${-30 + noise(t, 3) * 8}px;top:${-40 + noise(t * 1.2, 7) * 8}px;transform:rotate(${-3 + noise(t, 1)}deg) scale(${mix(1.0, 1.06, lt / 1.4)})">${notes(700)}</div></div>`;
+      h += `<div style="position:absolute;left:0;right:0;top:1060px;text-align:center"><div style="display:inline-block;width:110px;height:110px;border-radius:50%;border:7px solid #fff;box-sizing:border-box;padding:6px"><div style="width:100%;height:100%;border-radius:50%;background:#fff;transform:scale(${t > T.snap - 0.12 && t < T.snap + 0.1 ? 0.82 : 1})"></div></div></div>`;
+      h += `<div style="position:absolute;left:0;right:0;top:1190px;text-align:center;font:600 22px Ins;color:#ffd84a;letter-spacing:2px">PHOTO</div>`;
+      if (flash) h += `<div style="position:absolute;inset:0;background:#fff;opacity:.85"></div>`;
+      if (t > T.snap + 0.12) { const k = outBack((t - T.snap - 0.12) / 0.3); h += `<div style="position:absolute;left:52px;top:1080px;width:72px;height:94px;border:3px solid #fff;overflow:hidden;transform:scale(${k})"><div style="transform:scale(.103);transform-origin:0 0">${notes(700)}</div></div>`; }
+    } else if (t < T.reel) {
+      // unspooling
+      const lt = t - T.load, stage = Math.min(3, Math.floor(lt / 0.32));
+      h += `<div style="position:absolute;inset:0;background:radial-gradient(120% 70% at 50% 40%,#25412e,#0b120e 75%)"></div>`;
+      h += `<div style="position:absolute;left:48px;top:250px;font:600 26px Ins;color:rgba(255,255,255,.7)">IMG_2041.jpg</div><div style="position:absolute;left:48px;top:300px;font:700 58px/1.02 Unb;color:#fff">Unspooling<br>your doc.</div>`;
+      h += `<div style="position:absolute;left:48px;right:48px;top:500px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px">${["Read", "Plan", "Write", "Voice"].map((s, i) => `<div><div style="height:6px;background:${i < stage ? "#fff" : i === stage ? LIME : "rgba(255,255,255,.18)"}"></div><div style="margin-top:12px;font:600 24px Ins;color:${i === stage ? LIME : i < stage ? "#fff" : "rgba(255,255,255,.45)"}">${s}</div></div>`).join("")}</div>`;
+    } else if (t < T.quiz) {
+      // the real reel, playing
+      // frames of a real Unspool reel (public/demo/reel-1.mp4), from 0.4s
+      const f = Math.min(117, Math.max(1, Math.round((t - T.reel) * 30) + 1));
+      const sw = clamp((t - T.swipe) / 0.35), y = -ease(sw) * 1280;
+      h += `<img src="rf/f${String(f).padStart(3, "0")}.jpg" style="position:absolute;left:0;top:${y}px;width:720px;height:1280px">`;
+      h += `<div style="position:absolute;left:0;top:${y}px;width:720px;height:1280px">${rail()}<div style="position:absolute;left:28px;bottom:150px;color:#fff;font:600 26px Ins;text-shadow:0 1px 3px #000">unspool · <span style="opacity:.8">Sampling: a chef never eats the whole pot</span></div></div>`;
+      if (sw > 0) h += `<div style="position:absolute;left:0;top:${y + 1280}px;width:720px;height:1280px">${quiz(T.quiz)}</div>`;
+    } else h += quiz(t);
+    // the format's second caption
+    h += cap("How I study:", t >= T.load && t < T.reel ? 640 : t >= T.reel ? 160 : 600);
+    if (t > T.end) { const k = outBack((t - T.end) / 0.35); h += `<div style="position:absolute;left:0;right:0;top:1090px;text-align:center;transform:scale(${k})"><span style="display:inline-block;background:#fff;color:#0b0f0d;font:700 40px Unb;padding:14px 28px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.4)">app: unspool.cc</span></div>`; }
+  }
+  ov.innerHTML = h;
+  await Promise.all([...ov.querySelectorAll("img")].map((i) => (i.complete ? 0 : new Promise((r) => (i.onload = i.onerror = r)))));
+};
+await window.renderAt(0); setTimeout(() => (window.ready = true), 400);
+</script></body></html>

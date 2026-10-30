@@ -1,0 +1,1 @@
+Real reel frames: ffmpeg -ss 0.4 -t 3.9 -i public/demo/reel-1.mp4 -vf fps=30 -q:v 3 rf/f%03d.jpg
