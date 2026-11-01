@@ -1,0 +1,80 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#f7f8fb}
+#ov{position:absolute;inset:0;overflow:hidden}
+</style></head><body><div id="ov"></div>
+<script type="module">
+import { docToReels } from "./doc-to-reels.js";
+const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins")]);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), mix = (a, b, x) => a + (b - a) * x;
+const ease = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const outBack = (x) => { x = clamp(x); const k = 1.7; return 1 + (k + 1) * Math.pow(x - 1, 3) + k * Math.pow(x - 1, 2); };
+const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.12) k = i; return k; };
+const st = (n) => lines.find((l) => l.shot === n).s - 0.12, since = (t, n) => t - st(n), after = (t, n) => t >= st(n);
+const NAVY = "#0d2a5c", BLUE = "#2f7de1", PALE = "#d6e7fc", RED = "#e5484d", GREEN = "#1f9d55";
+const ov = document.getElementById("ov");
+const A = (x, y, inner, extra = "") => `<div style="position:absolute;left:${x}px;top:${y}px;${extra}">${inner}</div>`;
+const pop = (k) => `transform:scale(${outBack(k)});opacity:${clamp(k * 3)}`;
+const pill = (txt, k = 1) => A(0, 230, `<div style="width:720px;text-align:center;opacity:${clamp(k * 3)}"><span style="display:inline-block;background:${PALE};color:${NAVY};font:700 17px Unb;letter-spacing:.5px;padding:8px 18px;border-radius:20px">${txt}</span></div>`);
+const person = (c, s = 1) => `<svg width="${34 * s}" height="${36 * s}" viewBox="0 0 34 36"><circle cx="17" cy="10" r="8" fill="${c}"/><path d="M2 36C2 22 32 22 32 36Z" fill="${c}"/></svg>`;
+const college = (c = NAVY, s = 1) => `<svg width="${44 * s}" height="${40 * s}" viewBox="0 0 44 40"><path d="M22 2L42 12H2Z" fill="${c}"/><rect x="5" y="14" width="34" height="3" fill="${c}"/>${[8, 16, 24, 32].map((x) => `<rect x="${x}" y="19" width="4" height="14" fill="${c}"/>`).join("")}<rect x="3" y="34" width="38" height="4" fill="${c}"/></svg>`;
+// one-word captions, like the reference
+function word(t, L) { if (!L.text) return ""; const ws = L.text.split(" "); const tot = ws.reduce((a, w) => a + w.length + 1, 0); const u = clamp((t - L.s) / (L.e - L.s)) * tot; let acc = 0, cur = 0; ws.forEach((w, i) => { if (u >= acc) cur = i; acc += w.length + 1; }); return ws[cur].replace(/[.,?!]/g, "").toUpperCase(); }
+
+// the score ladder: 1..5, the 5 club at the top, colleges on the right, you somewhere in the middle
+function ladder(t, youScore, k, credit) {
+  const y = (s) => 960 - (s - 1) * 150;
+  let h = A(70, 400, `<div style="width:2px;height:600px;background:#d8dde6"></div>`);
+  for (let s = 1; s <= 5; s++) h += A(30, y(s) - 14, `<div style="font:700 26px Unb;color:${s === 5 ? "#fff" : "#9aa3b2"};${s === 5 ? `background:${BLUE};padding:2px 10px;border-radius:8px;margin-left:-8px` : ""}">${s}</div>`);
+  h += A(110, y(5) - 70, `<div style="width:300px;height:120px;background:#e9f2fd;border:3px solid ${NAVY};border-radius:16px;position:relative;${pop(k)}"><span style="position:absolute;left:14px;top:-16px;background:#fff;border:2px solid ${NAVY};border-radius:12px;padding:2px 10px;font:700 15px Unb;color:${NAVY}">5 CLUB</span><div style="display:flex;gap:10px;justify-content:center;padding-top:34px">${person(NAVY, 1.4).repeat(4)}</div></div>`);
+  h += A(110, y(5) + 52, `<div style="width:300px;height:${y(1) - y(5) - 20}px;background:#eceff4;border-radius:0 0 16px 16px;opacity:.7"></div>`);
+  const yy = y(youScore);
+  h += A(225, yy - 30, `<div style="text-align:center">${person(youScore >= 5 ? BLUE : "#8b97ab", 1.6)}<div style="font:700 17px Unb;color:${youScore >= 5 ? BLUE : "#8b97ab"};margin-top:2px">YOU · ${Math.round(youScore)}</div></div>`);
+  ["#0d2a5c", "#7a1f2b", "#1d4f8f", "#a33a1d", "#1f5c3a"].forEach((c, j) => { h += A(560, 420 + j * 110, `<div style="${pop(k - 0.1 * j)}">${college(c, 1.4)}</div>`); });
+  if (credit > 0) { h += `<svg style="position:absolute;left:0;top:0" width="720" height="1280">${[0, 1, 2, 3, 4].map((j) => `<path d="M410 ${y(5) - 10} C480 ${y(5) - 10} 500 ${450 + j * 110} 556 ${450 + j * 110}" stroke="${BLUE}" stroke-width="2.5" fill="none" stroke-dasharray="300" stroke-dashoffset="${300 * (1 - clamp(credit - j * 0.08))}"/>`).join("")}</svg>`;
+    h += A(430, 330, `<div style="${pop(credit - 0.4)};background:${GREEN};color:#fff;font:700 18px Unb;padding:8px 14px;border-radius:12px">COLLEGE CREDIT ✓</div>`); }
+  return h; }
+const loopCard = (title, col, bg, mult, k, inner = "") => `<div style="width:290px;height:560px;background:${bg};border:3px solid ${col}33;border-radius:20px;padding:22px;box-sizing:border-box;${pop(k)}"><div style="font:700 22px Unb;color:${col}">${title}</div>${inner || `<svg width="246" height="300" viewBox="0 0 246 300"><circle cx="123" cy="150" r="80" fill="none" stroke="${col}" stroke-width="7" stroke-dasharray="420 100"/><text x="123" y="164" text-anchor="middle" font-family="Unb" font-size="40" fill="${col}">×${mult}</text></svg><div style="font:600 20px Ins;color:${col};text-align:center">reread · the night before</div>`}</div>`;
+
+window.renderAt = (t) => {
+  const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.12);
+  let h = "";
+  h += A(28, 26, `<div style="display:flex;align-items:center;gap:8px;font:700 22px Unb;color:${NAVY}"><svg width="22" height="24" viewBox="0 0 22 24"><rect x="1" y="1" width="20" height="4" rx="2" fill="${NAVY}"/><rect x="1" y="19" width="20" height="4" rx="2" fill="${NAVY}"/><rect x="5" y="5" width="12" height="14" fill="#c7e34a"/></svg>unspool</div>`);
+  if (["hook", "credit", "you", "method"].includes(shot)) {
+    h += A(0, 110, `<div style="width:720px;text-align:center;font:700 40px/1.15 Unb;color:${NAVY};letter-spacing:-1px">THE HABIT BEHIND<br><span style="background:#bcd8fb;padding:0 10px">A 5 ON THE AP EXAM</span></div>`);
+    const you = shot === "method" ? mix(3, 5, ease((lt - 0.2) / 1.0)) : 3;
+    h += ladder(t, you, since(t, "hook") / 0.4, after(t, "credit") ? since(t, "credit") / 0.9 : 0);
+    if (shot === "you") h += A(200, 560, `<div style="${pop(lt / 0.3)};font:700 40px Unb;color:${BLUE}">?</div>`) + `<svg style="position:absolute;left:0;top:0" width="720" height="1280"><path d="M250 620 L250 430" stroke="${BLUE}" stroke-width="3" stroke-dasharray="10 8" opacity="${clamp(lt / 0.4)}"/></svg>`;
+    if (shot === "method" && lt > 1.0) h += A(420, 420, `<div style="${pop((lt - 1.0) / 0.3)};background:${GREEN};color:#fff;font:700 26px Unb;padding:8px 16px;border-radius:14px">+2</div>`);
+  }
+  if (shot === "s1") { h += pill("STEP 1 · TURN THE UNIT INTO REELS");
+    h += A(40, 300, `<div style="width:640px;height:720px;border-radius:30px;background:radial-gradient(120% 80% at 50% 40%,#1f3a2a,#0b120e);box-shadow:0 20px 50px rgba(13,42,92,.25)"></div>`);
+    h += `<div style="position:absolute;left:0;top:120px;width:720px;height:1280px">${docToReels(lt, { title: "", docTitle: "AP Bio · Unit 3" })}</div>`; }
+  if (shot === "most" || shot === "hard") { h += pill("THE HARD PART");
+    h += A(55, 320, loopCard("MOST PEOPLE", RED, "#fdeeee", 1, since(t, "most") / 0.35));
+    if (shot === "hard") { const g = ease((lt - 0.4) / 1.2);
+      h += A(375, 320, loopCard("WHAT WORKS", GREEN, "#e8f6ee", 0, lt / 0.35, `<div style="display:flex;align-items:flex-end;gap:12px;height:380px;padding-top:20px">${[0.25, 0.45, 0.7, 0.95].map((v, j) => `<div style="flex:1;height:${v * 340 * clamp(g * 4 - j)}px;background:${GREEN};border-radius:8px 8px 0 0;opacity:${0.5 + j * 0.15}"></div>`).join("")}</div><div style="font:700 26px Unb;color:${GREEN};text-align:center;margin-top:12px">REPS</div>`)); } }
+  if (shot === "s2" || shot === "reps") { h += pill("STEP 2 · QUIZ EVERY REEL");
+    const reps = shot === "s2" ? (lt > 3.6 ? 1 : 0) : lt < 0.9 ? 1 : lt < 1.7 ? 20 : 80;
+    const tap = shot === "s2" ? lt > 3.2 : Math.floor(lt * 3) % 2 === 0;
+    h += A(60, 320, `<div style="width:600px;background:#fff;border-radius:22px;box-shadow:0 16px 40px rgba(13,42,92,.15);padding:28px;box-sizing:border-box;${shot === "s2" ? pop(lt / 0.35) : ""}"><div style="display:flex;justify-content:space-between;font:600 18px Ins;color:#8b97ab"><span>AP Bio · Unit 3 · reel 4</span><span>quiz</span></div><div style="font:700 30px/1.3 Ins;color:${NAVY};margin-top:14px">Where does the Calvin cycle happen?</div>${["Thylakoid", "Stroma", "Nucleus"].map((o, x) => { const r = x === 1 && tap; return `<div style="margin-top:14px;padding:16px 18px;border-radius:14px;border:2px solid ${r ? GREEN : "#d8dde6"};background:${r ? "#e8f6ee" : "#fff"};font:600 26px Ins;color:${r ? GREEN : NAVY}">${String.fromCharCode(65 + x)}. ${o}${r ? " ✓" : ""}</div>`; }).join("")}</div>`);
+    h += A(60, 870, `<span style="display:inline-block;border:3px solid ${NAVY};color:${NAVY};font:700 22px Unb;padding:10px 18px;border-radius:14px">15 MIN / DAY</span>`);
+    if (reps) h += A(430, 866, `<span style="display:inline-block;background:${NAVY};color:#fff;font:700 24px Unb;padding:12px 22px;border-radius:14px;transform:scale(${shot === "reps" ? 1 + 0.12 * Math.max(0, 1 - ((lt % 0.8) / 0.25)) : 1})">REPS ${reps}</span>`); }
+  if (shot === "s3") { h += pill("STEP 3 · A FEW REELS A DAY");
+    const n = Math.floor(clamp(lt / 3.4) * 27);
+    h += A(60, 320, `<div style="width:600px;background:#fff;border-radius:22px;box-shadow:0 16px 40px rgba(13,42,92,.15);padding:26px;box-sizing:border-box"><div style="font:700 24px Unb;color:${NAVY}">May</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-top:16px">${Array.from({ length: 28 }, (_, d) => d === 27 ? `<div style="height:62px;border-radius:10px;background:${NAVY};color:#fff;font:700 13px Unb;display:flex;align-items:center;justify-content:center">EXAM</div>` : `<div style="height:62px;border-radius:10px;background:${d < n ? "#e8f6ee" : "#f1f3f7"};color:${GREEN};font:700 26px Ins;display:flex;align-items:center;justify-content:center">${d < n ? "✓" : ""}</div>`).join("")}</div></div>`); }
+  if (shot === "cta" || shot === "end") { const lc = since(t, "cta");
+    h += A(0, 380, `<div style="width:720px;text-align:center;font:600 40px Ins;color:${NAVY};opacity:${clamp(lc / 0.3)}">Comment</div>`);
+    h += A(0, 430, `<div style="width:720px;text-align:center;font:700 240px/1 Unb;color:${NAVY};transform:scale(${outBack(lc / 0.4)})">5</div>`);
+    h += A(230, 690, `<div style="width:260px;height:8px;border-radius:4px;background:${BLUE};transform:scaleX(${ease((lc - 0.3) / 0.4)})"></div>`);
+    h += A(0, 730, `<div style="width:720px;text-align:center;font:600 30px Ins;color:${NAVY};opacity:${clamp((lc - 0.4) / 0.3)}">if you’re taking an AP this year</div>`);
+    h += A(0, 830, `<div style="width:720px;text-align:center;transform:scale(${outBack((lc - 2.4) / 0.35)})"><span style="display:inline-block;background:${NAVY};color:#fff;font:700 40px Unb;padding:14px 30px;border-radius:40px">unspool.cc</span><div style="margin-top:12px;font:600 24px Ins;color:#5f6b80">try it free</div></div>`);
+    for (let c = 0; c < 26; c++) { const u = clamp((lc - 0.1) / 1.6); if (u <= 0 || u >= 1) continue; const a = c * 2.4; h += A(360 + Math.cos(a) * 340 * u, 520 + Math.sin(a) * 260 * u + 240 * u * u, `<div style="width:12px;height:7px;background:${[BLUE, RED, "#f2c14e", GREEN][c % 4]};transform:rotate(${c * 40 + lc * 300}deg);opacity:${1 - u}"></div>`); } }
+  const w = word(t, L); if (w && !["cta", "end"].includes(shot)) h += A(0, 1090, `<div style="width:720px;text-align:center"><span style="display:inline-block;background:#bcd8fb;color:${NAVY};font:700 40px Unb;padding:6px 18px;border-radius:12px;box-shadow:0 4px 0 ${NAVY}22">${w}</span></div>`);
+  if (t < 0.08) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${1 - t / 0.08}"></div>`;
+  ov.innerHTML = h;
+};
+await Promise.all(["mito.jpg", "dna.jpg", "r1.jpg"].map((s) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = s; })));
+window.renderAt(0); setTimeout(() => (window.ready = true), 400);
+</script></body></html>

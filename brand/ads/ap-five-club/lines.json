@@ -1,0 +1,14 @@
+{"voice": "am_michael", "speed": 1.15, "lead": 0.25, "tail": 0, "gap": 0.12, "lines": [
+ ["hook", "This is the habit behind a five on the AP exam.", 0.25],
+ ["credit", "And at a lot of colleges, a five is college credit, before you even get there.", 0.3],
+ ["you", "Right now, you're probably sitting at a three.", 0.3],
+ ["s1", "Step one. Turn the unit into reels.", 0.25],
+ ["most", "Most people reread the unit once, the night before.", 0.25],
+ ["hard", "What actually works is the hardest part. Reps.", 0.3],
+ ["s2", "Step two. Every reel ends with a quiz. You pull the answer out of your own head.", 0.2],
+ ["reps", "One rep. Then twenty. Then eighty.", 0.3],
+ ["s3", "Step three. A few reels a day, every day, until the exam.", 0.3],
+ ["method", "That's the method.", 0.4],
+ ["cta", "Comment five if you're taking an AP this year. And try it free at unspool dot c c.", 0.2, "Comment 5 if you're taking an AP this year. Try it free at unspool.cc."],
+ ["end", "", 1.4]
+]}
