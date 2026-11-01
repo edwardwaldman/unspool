@@ -1,0 +1,98 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#141516}
+#ov{position:absolute;inset:0;overflow:hidden}
+.G{color:#4fd47a}.R{color:#ff5a52}.Y{color:#ffc93c}.L{color:#d3f05a}
+</style></head><body><div id="ov"></div>
+<script type="module">
+import { docToReels } from "./doc-to-reels.js";
+const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins")]);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), mix = (a, b, x) => a + (b - a) * x;
+const ease = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const outBack = (x) => { x = clamp(x); const k = 1.7; return 1 + (k + 1) * Math.pow(x - 1, 3) + k * Math.pow(x - 1, 2); };
+const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.12) k = i; return k; };
+const st = (n) => lines.find((l) => l.shot === n).s - 0.12;
+const since = (t, n) => t - st(n), after = (t, n) => t >= st(n);
+const ov = document.getElementById("ov");
+const A = (x, y, inner, extra = "") => `<div style="position:absolute;left:${x}px;top:${y}px;${extra}">${inner}</div>`;
+const pop = (k) => `transform:scale(${outBack(k)});opacity:${clamp(k * 3)}`;
+const HEAD = { hook: 'If you think you’re<br>just <span class="Y">bad at studying</span>', q: 'What did <span class="G">1 hour</span> do<br>that <span class="R">6 hours</span> didn’t?', not: 'It’s not <span class="R">talent.</span><br>It’s not <span class="R">time.</span>', reread: 'The <span class="R">6 hours</span> did this:', bar: 'Familiar ≠ <span class="R">remembered</span>', closed: 'The <span class="G">1 hour</span> did this:', recall: 'Pull it out → it <span class="G">sticks</span>', asks: 'That’s what the<br><span class="Y">test</span> asks for', chance: 'You still have<br><span class="Y">the chance.</span>', most: 'What most people<br>do <span class="R">instead:</span>', hl: 'What most people<br>do <span class="R">instead:</span>', mom: 'What most people<br>do <span class="R">instead:</span>', gpt: 'What most people<br>do <span class="R">instead:</span>', passive: 'All of it is just<br><span class="R">more reading.</span>', quiz: 'Every reel ends<br>with a <span class="L">quiz</span>', why: 'Miss one? It tells<br>you <span class="L">why.</span>' };
+const headline = (html, k) => `<div style="position:absolute;left:40px;right:40px;top:120px;text-align:center;font:700 46px/1.15 Ins;color:#fff;letter-spacing:-.5px;transform:translateY(${(1 - ease(k)) * 16}px);opacity:${clamp(k * 2)}">${html}</div>`;
+
+// a student card, like a profile
+const person = (col) => `<svg width="96" height="80" viewBox="0 0 96 80"><circle cx="48" cy="26" r="20" fill="${col}"/><path d="M8 80 C8 52 88 52 88 80Z" fill="${col}"/></svg>`;
+function student(label, time, score, stamp, k, dim = 1) {
+  return `<div style="width:230px;height:300px;background:#f4f3ef;border-radius:18px;box-shadow:0 18px 40px rgba(0,0,0,.45);text-align:center;position:relative;${pop(k)};filter:brightness(${dim})">
+    <div style="padding-top:22px">${person("#6f87b8")}</div>
+    <div style="font:700 19px Ins;color:#e0782f;margin-top:4px">${label}</div>
+    <div style="font:600 15px Ins;color:#8a8d94;margin-top:12px;letter-spacing:1px">STUDY TIME</div>
+    <div style="font:700 44px Unb;color:#1c1f26;margin-top:2px">${time}</div>
+    ${score ? `<div style="position:absolute;left:0;right:0;bottom:-34px;text-align:center"><span style="display:inline-block;transform:rotate(-6deg) scale(${outBack(stamp)});opacity:${clamp(stamp * 3)};border:4px solid ${score[1]};color:${score[1]};background:#fff;font:700 40px Unb;padding:4px 18px;border-radius:10px">${score[0]}</span></div>` : ""}
+  </div>`; }
+const testIcon = (k) => `<div style="${pop(k)};text-align:center"><svg width="120" height="140" viewBox="0 0 120 140"><rect x="10" y="6" width="100" height="128" rx="10" fill="#f4f3ef"/>${[34, 54, 74, 94].map((y) => `<rect x="26" y="${y}" width="${y % 40 ? 68 : 52}" height="8" rx="4" fill="#bfc3cb"/>`).join("")}<text x="60" y="26" text-anchor="middle" font-family="Unb" font-size="16" fill="#e0782f">TEST</text></svg></div>`;
+const card = (inner, w = 560, extra = "") => `<div style="width:${w}px;background:#f4f3ef;border-radius:18px;box-shadow:0 18px 40px rgba(0,0,0,.45);padding:28px;box-sizing:border-box;color:#1c1f26;font:600 24px Ins;${extra}">${inner}</div>`;
+const textLines = (n, w = 440, col = "#c3c6cd", hl) => Array.from({ length: n }, (_, i) => `<div style="height:12px;border-radius:6px;margin:14px 0;width:${[w, w - 60, w - 20, w - 110, w - 40][i % 5]}px;background:${hl && hl(i) ? hl(i) : col}"></div>`).join("");
+
+window.renderAt = (t) => {
+  const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.12), len = L.e - L.s + 0.3;
+  let h = `<div style="position:absolute;inset:0;background:radial-gradient(90% 60% at 50% 45%,#1f2124,#111213)"></div>`;
+  // the two students, from "two" to "not"
+  if (["two", "six", "one", "test", "q", "not"].includes(shot)) {
+    const k0 = since(t, "two"), tested = after(t, "test");
+    if (tested) { h += A(300, 260, testIcon(since(t, "test") / 0.35)); h += `<svg style="position:absolute;left:0;top:0" width="720" height="1280"><path d="M360 400 C360 440 215 440 215 470 M360 400 C360 440 505 440 505 470" stroke="#5c6068" stroke-width="3" fill="none" stroke-dasharray="400" stroke-dashoffset="${400 * (1 - clamp(since(t, "test") / 0.4))}"/></svg>`; }
+    const sA = tested ? [["61", "#ff5a52"]][0] : null, sB = tested ? ["94", "#3fbf6a"] : null;
+    const tA = after(t, "six") ? "6 hrs" : "?", tB = after(t, "one") ? "1 hr" : "?";
+    const y = tested ? 480 : 420;
+    h += A(100, y, student("STUDENT A", tA, sA, since(t, "test") - 0.6, k0 / 0.35, shot === "six" || !after(t, "one") ? 1 : 1));
+    h += A(390, y, student("STUDENT B", tB, sB, since(t, "test") - 1.0, (k0 - 0.12) / 0.35));
+    if (shot === "not") ["TALENT", "TIME"].forEach((w, j) => { h += A(j ? 400 : 110, 960, `<div style="${pop((lt - j * 1.0) / 0.3)};font:700 30px Unb;color:#ff5a52;border:3px solid #ff5a52;border-radius:12px;padding:8px 18px">✗ ${w}</div>`); });
+  }
+  if (shot === "hook") { h += A(230, 520, card(`<div style="font:600 18px Ins;color:#8a8d94;letter-spacing:1px">BIO TEST</div><div style="font:700 92px Unb;color:#ff5a52;margin-top:6px">61</div><div style="font:600 20px Ins;color:#8a8d94">after 6 hours of studying</div>`, 260, `text-align:center;${pop(lt / 0.35)}`)); }
+  if (shot === "reread") { // a chapter, reread three times
+    const n = Math.min(3, Math.floor(lt / 1.2) + 1);
+    h += A(150, 380, card(`<div style="font:700 26px Ins">Chapter 6</div>${textLines(9, 360)}`, 420, `transform:rotate(${Math.sin(lt * 6) * 1.5}deg)`));
+    h += A(200, 920, `<div style="display:flex;gap:14px">${[1, 2, 3].map((x) => `<span style="font:700 26px Unb;color:${x <= n ? "#ffc93c" : "#3a3d42"};border:3px solid currentColor;border-radius:10px;padding:6px 14px">READ ${x}</span>`).join("")}</div>`);
+    if (lt > 3.2) h += A(230, 1020, `<div style="${pop((lt - 3.2) / 0.3)};font:700 30px Ins;color:#4fd47a">✓ felt familiar</div>`); }
+  if (shot === "bar") { const g = ease(lt / 0.9), r = ease((lt - 0.9) / 0.8);
+    [[150, 0.9 * g, "#4fd47a", "felt<br>familiar"], [420, 0.3 * r, "#ff5a52", "actually<br>remembered"]].forEach(([x, v, c, lab]) => {
+      h += A(x, 950 - 500 * v, `<div style="width:150px;height:${500 * v}px;background:${c};border-radius:14px 14px 0 0"></div>`);
+      h += A(x - 20, 960, `<div style="width:190px;text-align:center;font:700 26px/1.2 Ins;color:${c}">${lab}</div>`); });
+    h += `<div style="position:absolute;left:110px;right:110px;top:950px;height:3px;background:#3a3d42"></div>`; }
+  if (shot === "closed") { const n = Math.min(4, Math.floor(lt / 0.9));
+    h += A(110, 420, `<svg width="200" height="150" viewBox="0 0 200 150"><rect x="20" y="20" width="160" height="110" rx="10" fill="#4a6fb3"/><rect x="30" y="28" width="140" height="94" rx="6" fill="#5b80c4"/><rect x="96" y="20" width="8" height="110" fill="#2f4c85"/><text x="100" y="146" text-anchor="middle" font-family="Ins" font-size="18" fill="#8a8d94">closed</text></svg>`, pop(lt / 0.3));
+    for (let x = 0; x < n; x++) h += A(360 + (x % 2) * 130, 400 + Math.floor(x / 2) * 190, card(`<div style="font:700 44px Unb;color:#e0782f;text-align:center">Q${x + 1}</div><div style="text-align:center;color:#3fbf6a;font:700 26px Ins">✓</div>`, 110, `padding:16px;${pop((lt - x * 0.9) / 0.3)}`)); }
+  if (shot === "recall") { const pull = ease((lt - 0.4) / 1.2);
+    h += A(210, 400, `<svg width="300" height="380" viewBox="0 0 300 380"><path d="M150 20 C70 20 40 80 40 140 C40 190 60 215 80 230 L80 300 L210 300 L210 260 C240 260 255 240 255 215 L262 190 L250 175 C258 150 260 130 255 110 C245 50 200 20 150 20Z" fill="none" stroke="#6f87b8" stroke-width="6"/></svg>`);
+    const y = mix(530, 300, pull); h += `<div style="position:absolute;left:356px;top:${y + 50}px;width:5px;height:${Math.max(0, 530 - y)}px;background:linear-gradient(#4fd47a,transparent)"></div>`;
+    h += A(250, y, `<div style="width:220px;text-align:center"><span style="display:inline-block;background:#4fd47a;color:#0e1a12;font:700 26px Unb;padding:8px 16px;border-radius:12px;transform:scale(${mix(0.6, 1, pull)})">the answer</span></div>`);
+    if (lt > 2.0) h += A(0, 880, `<div style="width:720px;text-align:center;${pop((lt - 2.0) / 0.3)};font:700 28px Ins;color:#8a8d94">memory strength <span class="G">▲▲▲</span></div>`); }
+  if (shot === "asks") h += A(130, 400, card(`<div style="font:700 22px Ins;color:#e0782f;letter-spacing:1px">BIO TEST · Q4</div><div style="font:700 32px/1.3 Ins;margin-top:14px">Explain what happens in the Calvin cycle.</div><div style="margin-top:22px;height:160px;border:2px dashed #c3c6cd;border-radius:12px"></div><div style="margin-top:14px;font:600 20px Ins;color:#8a8d94">(no notes allowed)</div>`, 460, pop(lt / 0.35)));
+  if (shot === "chance") { h += A(170, 400, card(`<div style="display:flex;justify-content:space-between;align-items:center"><span style="font:700 22px Ins;color:#8a8d94;letter-spacing:1px">BIO TEST</span><span style="background:#ff5a52;color:#fff;font:700 16px Unb;padding:5px 10px;border-radius:8px">FRIDAY</span></div><div style="font:700 96px Unb;margin-top:10px">4 <span style="font:700 30px Ins;color:#8a8d94">days left</span></div>`, 380, pop(lt / 0.35)));
+    if (lt > 1.6) h += A(0, 760, `<div style="width:720px;text-align:center;${pop((lt - 1.6) / 0.35)}"><span style="display:inline-block;background:#ffc93c;color:#1c1f26;font:700 34px Unb;padding:12px 26px;border-radius:14px">still time</span></div>`); }
+  if (["most", "hl", "mom", "gpt", "passive"].includes(shot)) {
+    const dim = shot === "passive" ? 0.45 : 1;
+    if (after(t, "hl")) h += A(70, 380, card(`<div style="font:700 22px Ins">Chapter 6</div>${textLines(7, 300, "#c3c6cd", () => "#ffe14d")}`, 340, `transform:rotate(-5deg) scale(${outBack(since(t, "hl") / 0.3)});filter:brightness(${dim})`));
+    if (after(t, "mom")) h += A(330, 560, `<div style="width:330px;background:#f4f3ef;border-radius:18px;padding:16px 20px;box-sizing:border-box;box-shadow:0 18px 40px rgba(0,0,0,.45);transform:rotate(4deg) scale(${outBack(since(t, "mom") / 0.3)});filter:brightness(${dim})"><div style="font:700 18px Ins;color:#8a8d94;text-align:center">Mom</div><div style="margin-top:8px;background:#e6e6ea;border-radius:16px;padding:12px 16px;font:600 22px/1.3 Ins;color:#1c1f26">you’ve got this honey ❤️ just read it one more time</div></div>`);
+    if (after(t, "gpt")) h += A(110, 780, card(`<div style="font:700 18px Ins;color:#8a8d94">AI chat</div><div style="font:600 20px Ins;margin-top:6px">Here’s a summary of Chapter 6:</div>${textLines(6, 430)}`, 500, `transform:rotate(-2deg) scale(${outBack(since(t, "gpt") / 0.3)});filter:brightness(${dim})`));
+    if (shot === "passive") h += A(0, 1100, `<div style="width:720px;text-align:center;${pop(lt / 0.3)};font:700 34px Unb;color:#ff5a52">still just reading</div>`); }
+  if (shot === "reels") h += docToReels(lt, { title: 'Your chapter<br>→ <span style="color:#d3f05a">reels</span>', docTitle: "Chapter 6" });
+  if (shot === "quiz" || shot === "why") { const wrong = shot === "why" && lt > 0.5;
+    h += A(150, 360, `<div style="width:420px;height:760px;border-radius:50px;background:#000;padding:12px;box-sizing:border-box;${shot === "quiz" ? pop(lt / 0.35) : ""}"><div style="width:100%;height:100%;border-radius:40px;overflow:hidden;background:radial-gradient(120% 70% at 50% 40%,#2d4a33,#0f1a13 70%);position:relative;color:#fff">
+      <div style="position:absolute;left:30px;right:30px;top:120px;font:700 30px/1.25 Ins">Where does the Calvin cycle happen?</div>
+      ${["Thylakoid", "Stroma", "Nucleus"].map((o, x) => { const bad = wrong && x === 0, good = (wrong && lt > 0.9 && x === 1) || (shot === "quiz" && lt > 2.4 && x === 1); return `<div style="position:absolute;left:30px;right:30px;top:${300 + x * 92}px;height:74px;border-radius:16px;border:3px solid ${bad ? "#ff5a52" : good ? "#d3f05a" : "rgba(255,255,255,.3)"};background:${bad ? "rgba(255,90,82,.15)" : good ? "rgba(211,240,90,.15)" : "transparent"};display:flex;align-items:center;padding:0 20px;font:600 26px Ins;color:${bad ? "#ff8a84" : good ? "#d3f05a" : "#fff"}">${String.fromCharCode(65 + x)}. ${o}${bad ? " ✗" : good ? " ✓" : ""}</div>`; }).join("")}
+      ${wrong && lt > 1.1 ? `<div style="position:absolute;left:30px;right:30px;top:590px;background:rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;font:600 21px/1.35 Ins;transform:scale(${outBack((lt - 1.1) / 0.3)})"><span style="color:#d3f05a">Why:</span> the Calvin cycle runs in the stroma, using the ATP the light reactions made.</div>` : ""}
+    </div></div>`); }
+  if (shot === "cta" || shot === "end") { const lc = since(t, "cta"), a = clamp(lc / 0.25);
+    h += `<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(211,240,90,.16),transparent 60%);opacity:${a}"></div>`;
+    h += `<img src="lockup-horizontal.svg" style="position:absolute;left:210px;width:300px;top:420px;opacity:${a}">`;
+    h += `<div style="position:absolute;left:0;right:0;top:540px;text-align:center;opacity:${clamp((lc - 0.2) / 0.3)};font:700 40px Ins;color:#d3f05a">Try yours now at</div>`;
+    h += `<div style="position:absolute;left:0;right:0;top:600px;text-align:center;transform:scale(${mix(1.25, 1, ease((lc - 0.3) / 0.3))});opacity:${clamp((lc - 0.3) / 0.25)};font:700 84px Unb;color:#fff;letter-spacing:-2px">unspool.cc</div>`;
+    h += `<div style="position:absolute;left:0;right:0;top:740px;text-align:center;opacity:${clamp((lc - 1.2) / 0.3)};font:700 40px/1.2 Ins;color:#fff">Your first reel<br>is <span class="Y">free.</span></div>`; }
+  const hd = HEAD[shot]; if (hd) h += headline(hd, (HEAD[lines[i - 1]?.shot] === hd ? 1 : lt / 0.3));
+  if (t < 0.08) h += `<div style="position:absolute;inset:0;background:#000;opacity:${1 - t / 0.08}"></div>`;
+  ov.innerHTML = h;
+};
+await Promise.all(["lockup-horizontal.svg", "mito.jpg", "dna.jpg", "r1.jpg"].map((s) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = s; })));
+window.renderAt(0); setTimeout(() => (window.ready = true), 400);
+</script></body></html>
