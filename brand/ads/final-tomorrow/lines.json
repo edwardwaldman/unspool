@@ -1,0 +1,16 @@
+{"voice": "am_puck", "speed": 1.12, "lead": 0.2, "tail": 0, "gap": 0.22, "lines": [
+ ["y1", "Spool. My final is tomorrow.", 0.3, "Spool, my final is tomorrow.", "am_puck"],
+ ["s1", "How ready are you?", 0.25, "", "af_bella"],
+ ["y2", "I've read zero chapters.", 0.3, "", "am_puck"],
+ ["s2", "Okay. Give me your notes.", 0.3, "", "af_bella"],
+ ["step1", "Step one. Snap them, or drop in the PDF.", 0.25, "", "af_bella"],
+ ["y3", "All sixty-four pages?!", 0.3, "All 64 pages?!", "am_puck"],
+ ["step2", "Step two. Every idea becomes a short reel. Narrated, with captions.", 0.25, "", "af_bella"],
+ ["step3", "Step three. Every reel ends with a quiz, so you know it stuck.", 0.3, "", "af_bella"],
+ ["y4", "So I just... scroll?", 0.25, "", "am_puck"],
+ ["s3", "Yes.", 0.4, "", "af_bella"],
+ ["y5", "Wait. I actually get photosynthesis now.", 0.3, "", "am_puck"],
+ ["s4", "Easiest studying you'll do all year.", 0.3, "", "af_bella"],
+ ["cta", "", 3.2],
+ ["end", "", 0.6]
+]}
