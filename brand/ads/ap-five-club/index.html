@@ -20,7 +20,9 @@ const pill = (txt, k = 1) => A(0, 230, `<div style="width:720px;text-align:cente
 const person = (c, s = 1) => `<svg width="${34 * s}" height="${36 * s}" viewBox="0 0 34 36"><circle cx="17" cy="10" r="8" fill="${c}"/><path d="M2 36C2 22 32 22 32 36Z" fill="${c}"/></svg>`;
 const college = (c = NAVY, s = 1) => `<svg width="${44 * s}" height="${40 * s}" viewBox="0 0 44 40"><path d="M22 2L42 12H2Z" fill="${c}"/><rect x="5" y="14" width="34" height="3" fill="${c}"/>${[8, 16, 24, 32].map((x) => `<rect x="${x}" y="19" width="4" height="14" fill="${c}"/>`).join("")}<rect x="3" y="34" width="38" height="4" fill="${c}"/></svg>`;
 // one-word captions, like the reference
-function word(t, L) { if (!L.text) return ""; const ws = L.text.split(" "); const tot = ws.reduce((a, w) => a + w.length + 1, 0); const u = clamp((t - L.s) / (L.e - L.s)) * tot; let acc = 0, cur = 0; ws.forEach((w, i) => { if (u >= acc) cur = i; acc += w.length + 1; }); return ws[cur].replace(/[.,?!]/g, "").toUpperCase(); }
+function word(t, L) { if (!L.text) return ["", 1]; const ws = L.text.split(" "); const tot = ws.reduce((a, w) => a + w.length + 1, 0), dur = L.e - L.s; const u = clamp((t - L.s) / dur) * tot; let acc = 0, cur = 0, start = 0; ws.forEach((w, i) => { if (u >= acc) { cur = i; start = acc; } acc += w.length + 1; }); return [ws[cur].replace(/[.,?!]/g, "").toUpperCase(), (u - start) / tot * dur]; }
+// moments that hit: the camera shakes for a beat
+const HITS = () => [[st("credit") + 0.9, 1], [st("most") + 0.1, 0.8], [st("hard") + 0.3, 1], [st("reps") + 0.0, 0.6], [st("reps") + 0.8, 0.8], [st("reps") + 1.5, 1], [st("method") + 1.0, 1.2], [st("cta") + 0.1, 1]];
 
 // the score ladder: 1..5, the 5 club at the top, colleges on the right, you somewhere in the middle
 function ladder(t, youScore, k, credit) {
@@ -32,7 +34,7 @@ function ladder(t, youScore, k, credit) {
   const yy = y(youScore);
   h += A(225, yy - 30, `<div style="text-align:center">${person(youScore >= 5 ? BLUE : "#8b97ab", 1.6)}<div style="font:700 17px Unb;color:${youScore >= 5 ? BLUE : "#8b97ab"};margin-top:2px">YOU · ${Math.round(youScore)}</div></div>`);
   ["#0d2a5c", "#7a1f2b", "#1d4f8f", "#a33a1d", "#1f5c3a"].forEach((c, j) => { h += A(560, 420 + j * 110, `<div style="${pop(k - 0.1 * j)}">${college(c, 1.4)}</div>`); });
-  if (credit > 0) { h += `<svg style="position:absolute;left:0;top:0" width="720" height="1280">${[0, 1, 2, 3, 4].map((j) => `<path d="M410 ${y(5) - 10} C480 ${y(5) - 10} 500 ${450 + j * 110} 556 ${450 + j * 110}" stroke="${BLUE}" stroke-width="2.5" fill="none" stroke-dasharray="300" stroke-dashoffset="${300 * (1 - clamp(credit - j * 0.08))}"/>`).join("")}</svg>`;
+  if (credit > 0) { h += `<svg style="position:absolute;left:0;top:0" width="720" height="1280">${[0, 1, 2, 3, 4].map((j) => `<path d="M410 ${y(5) - 10} C480 ${y(5) - 10} 500 ${450 + j * 110} 556 ${450 + j * 110}" stroke="${BLUE}" stroke-width="2.5" fill="none" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${1 - clamp(credit * 1.4 - j * 0.12)}"/>`).join("")}</svg>`;
     h += A(430, 330, `<div style="${pop(credit - 0.4)};background:${GREEN};color:#fff;font:700 18px Unb;padding:8px 14px;border-radius:12px">COLLEGE CREDIT ✓</div>`); }
   return h; }
 const loopCard = (title, col, bg, mult, k, inner = "") => `<div style="width:290px;height:560px;background:${bg};border:3px solid ${col}33;border-radius:20px;padding:22px;box-sizing:border-box;${pop(k)}"><div style="font:700 22px Unb;color:${col}">${title}</div>${inner || `<svg width="246" height="300" viewBox="0 0 246 300"><circle cx="123" cy="150" r="80" fill="none" stroke="${col}" stroke-width="7" stroke-dasharray="420 100"/><text x="123" y="164" text-anchor="middle" font-family="Unb" font-size="40" fill="${col}">×${mult}</text></svg><div style="font:600 20px Ins;color:${col};text-align:center">reread · the night before</div>`}</div>`;
@@ -44,7 +46,7 @@ window.renderAt = (t) => {
   if (["hook", "credit", "you", "method"].includes(shot)) {
     h += A(0, 110, `<div style="width:720px;text-align:center;font:700 40px/1.15 Unb;color:${NAVY};letter-spacing:-1px">THE HABIT BEHIND<br><span style="background:#bcd8fb;padding:0 10px">A 5 ON THE AP EXAM</span></div>`);
     const you = shot === "method" ? mix(3, 5, ease((lt - 0.2) / 1.0)) : 3;
-    h += ladder(t, you, since(t, "hook") / 0.4, after(t, "credit") ? since(t, "credit") / 0.9 : 0);
+    h += ladder(t, you, since(t, "hook") / 0.4, after(t, "credit") ? since(t, "credit") / 0.6 : 0);
     if (shot === "you") h += A(200, 560, `<div style="${pop(lt / 0.3)};font:700 40px Unb;color:${BLUE}">?</div>`) + `<svg style="position:absolute;left:0;top:0" width="720" height="1280"><path d="M250 620 L250 430" stroke="${BLUE}" stroke-width="3" stroke-dasharray="10 8" opacity="${clamp(lt / 0.4)}"/></svg>`;
     if (shot === "method" && lt > 1.0) h += A(420, 420, `<div style="${pop((lt - 1.0) / 0.3)};background:${GREEN};color:#fff;font:700 26px Unb;padding:8px 16px;border-radius:14px">+2</div>`);
   }
@@ -71,9 +73,17 @@ window.renderAt = (t) => {
     h += A(0, 730, `<div style="width:720px;text-align:center;font:600 30px Ins;color:${NAVY};opacity:${clamp((lc - 0.4) / 0.3)}">if you’re taking an AP this year</div>`);
     h += A(0, 830, `<div style="width:720px;text-align:center;transform:scale(${outBack((lc - 2.4) / 0.35)})"><span style="display:inline-block;background:${NAVY};color:#fff;font:700 40px Unb;padding:14px 30px;border-radius:40px">unspool.cc</span><div style="margin-top:12px;font:600 24px Ins;color:#5f6b80">try it free</div></div>`);
     for (let c = 0; c < 26; c++) { const u = clamp((lc - 0.1) / 1.6); if (u <= 0 || u >= 1) continue; const a = c * 2.4; h += A(360 + Math.cos(a) * 340 * u, 520 + Math.sin(a) * 260 * u + 240 * u * u, `<div style="width:12px;height:7px;background:${[BLUE, RED, "#f2c14e", GREEN][c % 4]};transform:rotate(${c * 40 + lc * 300}deg);opacity:${1 - u}"></div>`); } }
-  const w = word(t, L); if (w && !["cta", "end"].includes(shot)) h += A(0, 1090, `<div style="width:720px;text-align:center"><span style="display:inline-block;background:#bcd8fb;color:${NAVY};font:700 40px Unb;padding:6px 18px;border-radius:12px;box-shadow:0 4px 0 ${NAVY}22">${w}</span></div>`);
-  if (t < 0.08) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${1 - t / 0.08}"></div>`;
-  ov.innerHTML = h;
+  // the whole stage: a zoom punch on every new shot, a slow push, and a shake on the hits
+  const punch = 1 + 0.07 * Math.max(0, 1 - lt / 0.22) ** 2, push = 1 + 0.025 * clamp(lt / 3);
+  let sh = 0; for (const [ht, a] of HITS()) { const d = t - ht; if (d > 0 && d < 0.35) sh = Math.max(sh, a * (1 - d / 0.35)); }
+  const sx = Math.sin(t * 73) * 9 * sh, sy = Math.cos(t * 59) * 7 * sh;
+  let out = `<div style="position:absolute;inset:0;transform:translate(${sx}px,${sy}px) scale(${punch * push});transform-origin:50% 45%">${h}</div>`;
+  // urgency: AP exams are in May
+  if (!["cta", "end"].includes(shot)) out += A(498, 22, `<span style="display:inline-flex;align-items:center;gap:8px;background:${RED};color:#fff;font:700 15px Unb;padding:7px 12px;border-radius:10px;opacity:${0.75 + 0.25 * Math.abs(Math.sin(t * 3.2))}"><span style="width:8px;height:8px;border-radius:50%;background:#fff"></span>AP EXAMS · MAY</span>`);
+  const [w, wl] = word(t, L); if (w && !["cta", "end"].includes(shot)) { const big = w.length <= 6 && /^[A-Z0-9]/.test(w);
+    out += A(0, 1080, `<div style="width:720px;text-align:center"><span style="display:inline-block;background:${big && /STEP|REPS|FIVE|5|HARD|EVERY|METHOD/.test(w) ? NAVY : "#bcd8fb"};color:${big && /STEP|REPS|FIVE|5|HARD|EVERY|METHOD/.test(w) ? "#fff" : NAVY};font:700 46px Unb;padding:8px 20px;border-radius:14px;box-shadow:0 5px 0 ${NAVY}33;transform:scale(${1 + 0.28 * Math.max(0, 1 - wl / 0.12)}) rotate(${(w.length % 3 - 1) * 1.5}deg)">${w}</span></div>`); }
+  if (t < 0.06) out += `<div style="position:absolute;inset:0;background:#fff;opacity:${1 - t / 0.06}"></div>`;
+  ov.innerHTML = out;
 };
 await Promise.all(["mito.jpg", "dna.jpg", "r1.jpg"].map((s) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = s; })));
 window.renderAt(0); setTimeout(() => (window.ready = true), 400);
