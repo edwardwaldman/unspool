@@ -72,7 +72,7 @@ const MIME: Record<string, string> = {
  * Create the document, hand its id to `onCreated` (so the caller can route into the feed immediately),
  * then upload the file and kick off generation.
  */
-export async function startUpload(file: File, onCreated: (documentId: string) => void): Promise<{ error?: string; code?: string }> {
+export async function startUpload(file: File, onCreated: (documentId: string) => void, opts: { testOne?: boolean } = {}): Promise<{ error?: string; code?: string }> {
   const invalid = validateFile(file);
   if (invalid) return { error: invalid };
   pending = { phase: "creating", fileName: file.name };
@@ -83,7 +83,7 @@ export async function startUpload(file: File, onCreated: (documentId: string) =>
     res = await fetch("/api/uploads", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fileName: file.name, size: file.size, type: file.type }),
+      body: JSON.stringify({ fileName: file.name, size: file.size, type: file.type, ...(opts.testOne ? { testOne: true } : {}) }),
     });
   } catch {
     pending = null;

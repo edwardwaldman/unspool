@@ -31,6 +31,8 @@ export type DocumentRow = {
   priority: boolean;
   long_reels: boolean;
   watermark: boolean;
+  /** Owner test mode: only the reels funded so far are made, one more each time the owner asks. */
+  test_mode?: boolean;
   extracted_text: string | null;
   created_at: string;
   updated_at: string;
@@ -60,4 +62,4 @@ export type ReelRow = {
 
 /** Columns safe to load for listing (excludes the large extracted_text). */
 export const DOCUMENT_COLUMNS =
-  "id,user_id,anon_token,ip_hash,file_name,file_path,file_type,file_size,page_count,word_count,truncated,title,reel_count,doc_type,sensitive,status,error,unlocked,credit_reels,free_unlocked_at,priority,long_reels,watermark,created_at,updated_at";
+  "id,user_id,anon_token,ip_hash,file_name,file_path,file_type,file_size,page_count,word_count,truncated,title,reel_count,doc_type,sensitive,status,error,unlocked,credit_reels,free_unlocked_at,priority,long_reels,watermark,test_mode,created_at,updated_at";

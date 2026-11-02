@@ -83,8 +83,8 @@ export async function processDocument(documentId: string) {
     .update({ status: "extracting", error: null })
     .eq("id", documentId)
     .in("status", ["uploaded", "failed"])
-    .select("id,user_id,ip_hash,file_name,file_path,unlocked")
-    .maybeSingle<Pick<DocumentRow, "id" | "user_id" | "ip_hash" | "file_name" | "file_path" | "unlocked">>();
+    .select("id,user_id,ip_hash,file_name,file_path,unlocked,test_mode")
+    .maybeSingle<Pick<DocumentRow, "id" | "user_id" | "ip_hash" | "file_name" | "file_path" | "unlocked" | "test_mode">>();
   if (!doc) return; // already being processed
 
   try {
@@ -148,7 +148,9 @@ export async function processDocument(documentId: string) {
 
     // Pay for it: one credit per planned reel on paid tiers (as many as are left), reel 1 on free.
     // Reels past what was paid for stay locked and are never generated until unlocked.
-    const funded = doc.unlocked ? plan.reels.length : await fundPlannedDocument(documentId, ent, plan.reels.length);
+    // Owner test mode: reel 1 only (no credits spent); "Make next reel" in the owner panel funds one more at a time.
+    const funded = doc.test_mode ? 1 : doc.unlocked ? plan.reels.length : await fundPlannedDocument(documentId, ent, plan.reels.length);
+    if (doc.test_mode) await db.from("documents").update({ credit_reels: 1, unlocked: false }).eq("id", documentId);
     if (doc.unlocked) await db.from("documents").update({ credit_reels: funded }).eq("id", documentId);
     if (funded === 0) {
       await db.from("documents").update({ status: "ready" }).eq("id", documentId);

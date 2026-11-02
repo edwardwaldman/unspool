@@ -57,7 +57,10 @@ export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?
     .order("index");
   const rows = (data ?? []) as ReelLite[];
   // Free accounts: reel 1, then one more every hour (the drip). Only playable reels get scripts and audio.
-  const { playable, nextFreeAt } = freeReelLimit(doc, viewer, { reelRows: rows.length });
+  const limit = freeReelLimit(doc, viewer, { reelRows: rows.length });
+  // Owner test mode: only the reels made so far are playable; the rest wait for "Make next reel".
+  const playable = doc.test_mode ? Math.min(limit.playable, doc.credit_reels ?? 1) : limit.playable;
+  const nextFreeAt = limit.nextFreeAt;
 
   if (opts.heal) await healIfStuck(doc, rows, playable);
 

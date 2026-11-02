@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 /** Create a document row and a signed upload URL; the browser uploads straight to Supabase Storage. */
 export async function POST(req: Request) {
   if (!supabaseConfigured) return notConfigured();
-  const body = (await req.json().catch(() => null)) as { fileName?: string; size?: number; type?: string } | null;
+  const body = (await req.json().catch(() => null)) as { fileName?: string; size?: number; type?: string; testOne?: boolean } | null;
   const fileName = body?.fileName?.trim().slice(0, 200);
   const size = Number(body?.size ?? 0);
   if (!fileName || !isAccepted(fileName)) {
@@ -75,6 +75,8 @@ export async function POST(req: Request) {
       file_type: ext,
       file_size: size,
       status: "uploading",
+      // Owner test mode: make reel 1 only, then one at a time on request (owner panel).
+      ...(body?.testOne === true && viewer.isOwner ? { test_mode: true } : {}),
     })
     .select("id")
     .single();

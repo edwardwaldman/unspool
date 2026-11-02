@@ -1,6 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { FILE_ACCEPT } from "../upload/use-uploader";
+import { startUpload } from "../upload/upload-store";
 import { toast } from "../ui/toast";
 
 type Ip = { ip: string; country: string | null };
@@ -198,6 +201,8 @@ export function OwnerPanel() {
           ))}
         </div>
       </section>
+
+      <TestReels card={card} />
 
       <section className={card}>
         <h2 className="text-[16px] font-semibold">Deployment status</h2>
@@ -512,6 +517,95 @@ function FoldedTrail({ events }: { events: TrailEvent[] }) {
 }
 
 /** Deployment status: send one test email to check Resend works. */
+type TestDoc = { id: string; name: string; status: string; total: number; made: number; making: boolean; allowed: number; createdAt: string };
+
+/**
+ * Owner test mode: upload a document that makes reel 1 only, then make one more reel at a time, to check reel
+ * quality without generating (or paying for) whole documents.
+ */
+function TestReels({ card }: { card: string }) {
+  const router = useRouter();
+  const input = useRef<HTMLInputElement>(null);
+  const [docs, setDocs] = useState<TestDoc[] | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const load = useCallback(async () => {
+    const res = await fetch("/api/owner/test-reels", { cache: "no-store" }).catch(() => null);
+    if (res?.ok) setDocs(((await res.json()) as { docs: TestDoc[] }).docs);
+  }, []);
+  useEffect(() => {
+    let live = true;
+    fetch("/api/owner/test-reels", { cache: "no-store" })
+      .then((r) => (r.ok ? (r.json() as Promise<{ docs: TestDoc[] }>) : null))
+      .then((b) => live && b && setDocs(b.docs))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
+  // While a reel is being made, keep the list fresh.
+  const making = docs?.some((d) => d.making || d.status !== "ready");
+  useEffect(() => {
+    if (!making) return;
+    const id = window.setInterval(() => void load(), 6000);
+    return () => window.clearInterval(id);
+  }, [making, load]);
+
+  return (
+    <section className={card} data-testid="test-reels">
+      <h2 className="text-[16px] font-semibold">Test reels, one at a time</h2>
+      <p className="mt-1 text-[13px] text-muted">Upload a document to make only reel 1, then make the next reel when you&apos;re ready. Nothing is charged.</p>
+      <input
+        ref={input}
+        type="file"
+        accept={FILE_ACCEPT}
+        className="hidden"
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f) return;
+          setBusy("upload");
+          const r = await startUpload(f, (id) => router.push(`/s/${id}`), { testOne: true });
+          setBusy(null);
+          if (r.error && r.error !== "Upload failed." && r.error !== "start failed") toast(r.error, 4000);
+        }}
+      />
+      <button type="button" onClick={() => input.current?.click()} disabled={busy !== null} className="btn-primary mt-3 flex w-full items-center justify-center gap-2 py-3 text-[15px]">
+        <span className="text-[20px] leading-none">+</span> {busy === "upload" ? "Uploading…" : "Upload a test document (reel 1 only)"}
+      </button>
+      {docs && docs.length > 0 && (
+        <ul className="mt-4 divide-y divide-line border-y border-line">
+          {docs.map((d) => (
+            <li key={d.id} className="flex items-center gap-3 py-2.5 text-[13.5px]">
+              <a href={`/s/${d.id}`} className="min-w-0 flex-1 truncate hover:text-thread">
+                {d.name}
+                <span className="block text-[12px] text-muted">
+                  {d.status !== "ready" && d.status !== "scripting" ? d.status : d.making ? `making reel ${d.allowed}…` : `${d.made} of ${d.total || "?"} made`}
+                </span>
+              </a>
+              <button
+                type="button"
+                disabled={busy !== null || d.making || !d.total || d.allowed >= d.total}
+                onClick={async () => {
+                  setBusy(d.id);
+                  const res = await fetch("/api/owner/test-reels", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ documentId: d.id }) }).catch(() => null);
+                  const b = res ? ((await res.json().catch(() => ({}))) as { error?: string }) : null;
+                  setBusy(null);
+                  if (!res?.ok) toast(b?.error ?? "Couldn't start the next reel", 3500);
+                  else toast("Making the next reel");
+                  void load();
+                }}
+                className="btn-secondary shrink-0 px-3 py-1.5 text-[13px] disabled:opacity-50"
+              >
+                {busy === d.id ? "Starting…" : d.allowed >= d.total && d.total ? "All made" : "Make next reel"}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function TestEmail() {
   const [to, setTo] = useState("");
   const [busy, setBusy] = useState(false);
