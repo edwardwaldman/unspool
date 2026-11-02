@@ -224,7 +224,8 @@ export async function generateReel(reelId: string) {
 
     // A free account's first reel (the watermark marks a free document): short and dense, so it is ready fast.
     const quick = reel.index === 1 && !edit && Boolean(doc.watermark) && !doc.long_reels;
-    const script = await writeReelScript({ fileName: doc.file_name, text: doc.extracted_text, plan, index: reel.index, long: doc.long_reels, edit, quick });
+    // Reel 1 is the one being waited on: always the standard length (long reels start from reel 2), so it's quick.
+    const script = await writeReelScript({ fileName: doc.file_name, text: doc.extracted_text, plan, index: reel.index, long: doc.long_reels && reel.index !== 1, edit, quick });
 
     // Then the rest of the reels that are paid for (none on free: the drip generates on demand).
     if (reel.index === 1 && !edit) await queueRemainingReels(reel.document_id);

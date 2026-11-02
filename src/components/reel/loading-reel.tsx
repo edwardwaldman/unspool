@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { SpoolDTO } from "@/lib/spool-types";
 import type { UploadState } from "../upload/upload-store";
 import { reelAccent, reelVars } from "./accent";
+import { MakingOf } from "./making-of";
 import { ParticleField } from "./particle-field";
 
 const STAGES = ["Upload", "Read", "Plan", "Write"] as const;
@@ -110,8 +111,10 @@ export function LoadingReel({
         )}
       </div>
 
+      {/* Something to watch while it's made: the document turning into reels */}
+      {!isError && <div className="relative z-10"><MakingOf spool={spool} stage={stage} fileName={name} /></div>}
       {!isError && (
-        <div className="relative z-10 mt-9 grid grid-cols-4 gap-1.5">
+        <div className="relative z-10 mt-6 grid grid-cols-4 gap-1.5">
           {STAGES.map((s, i) => (
             <div key={s}>
               <div className="h-[3px] overflow-hidden bg-white/15">
@@ -134,7 +137,7 @@ export function LoadingReel({
         </div>
       )}
 
-      <div className="relative z-10 mt-auto">
+      <div className="relative z-10 mt-auto pt-5">
         {reels.length > 0 ? (
           <>
             <div className="mb-3 flex items-baseline justify-between">
@@ -156,7 +159,8 @@ export function LoadingReel({
               ))}
             </div>
             <div className="space-y-1">
-              {reels.map((r, i) => (
+              {/* The first few, so the animation keeps the room; the bar above shows them all */}
+              {reels.slice(0, 5).map((r, i) => (
                 <motion.div
                   key={r.id}
                   initial={{ opacity: 0 }}
@@ -171,6 +175,7 @@ export function LoadingReel({
                   </span>
                 </motion.div>
               ))}
+              {reels.length > 5 && <div className="pt-1 text-[12px] text-white/50">+ {reels.length - 5} more</div>}
             </div>
           </>
         ) : (

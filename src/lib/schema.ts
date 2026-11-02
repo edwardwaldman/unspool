@@ -196,28 +196,24 @@ export type HighlightColor = z.infer<typeof ColorSchema>;
 export type Stat = z.infer<typeof StatSchema>;
 
 /** Post-validation sanity rules that JSON schema can't express. Returns a list of problems. */
+/**
+ * Problems worth rewriting the whole script for (each rewrite costs the user 20-40 s of waiting). Anything that
+ * can be fixed in place (too many or too few list items, the opening visual type) is fixed by normalizeReelScript
+ * instead of sending the script back.
+ */
 export function reelScriptProblems(s: ReelScript): string[] {
   const problems: string[] = [];
-  if (s.beats.length < 4) problems.push("needs at least 4 beats (hook + body)");
-  if (!["hook", "emoji", "equation", "swatch", "specimen", "compare", "stat", "bigword"].includes(s.beats[0]?.visual.type ?? "")) problems.push("first beat must use the hook, emoji, equation, swatch, specimen, compare, stat or bigword visual");
-  if (s.quiz.options.length < 2 || s.quiz.options.length > 4) problems.push("quiz needs 2–4 options");
-  if (s.quiz.answer < 0 || s.quiz.answer >= s.quiz.options.length) problems.push("quiz.answer out of range");
-  for (const [i, b] of s.beats.entries()) {
-    if (!b.say.trim()) problems.push(`beat ${i} has empty say`);
-    if (b.visual.type === "flow" && (b.visual.steps.length < 2 || b.visual.steps.length > 4))
-      problems.push(`beat ${i} flow needs 2–4 steps`);
-    if (b.visual.type === "list" && (b.visual.items.length < 2 || b.visual.items.length > 5))
-      problems.push(`beat ${i} list needs 2–5 items`);
-    if (b.visual.type === "icons" && (b.visual.items.length < 1 || b.visual.items.length > 3))
-      problems.push(`beat ${i} icons needs 1–3 items`);
-  }
+  const spoken = s.beats.filter((b) => b.say.trim());
+  if (spoken.length < 3) problems.push("needs at least 3 beats with something said (hook + body)");
+  if (s.quiz.options.length < 2) problems.push("quiz needs 2–4 options");
+  if (s.quiz.answer < 0 || s.quiz.answer >= Math.min(4, s.quiz.options.length)) problems.push("quiz.answer out of range");
   return problems;
 }
 
 /** Clamp anything slightly out of range instead of failing the whole reel. */
 export function normalizeReelScript(s: ReelScript): ReelScript {
   let lastMove: string | undefined;
-  const beats = s.beats.map((raw, i) => {
+  const beats = s.beats.filter((b) => b.say.trim()).map((raw, i) => {
     // Keep the camera move and setting (they were being dropped here); fill a move the writer skipped, never the
     // same one twice in a row.
     const given = raw.scene?.move && (CAMERA_MOVES as readonly string[]).includes(raw.scene.move) ? raw.scene.move : undefined;
@@ -242,9 +238,11 @@ export function normalizeReelScript(s: ReelScript): ReelScript {
     const mood = raw.mood && (MOODS as readonly string[]).includes(raw.mood) ? raw.mood : undefined;
     const b = { ...raw, scene, mood, image_prompt: (raw.image_prompt ?? "").trim().slice(0, 400) };
     const v = b.visual;
-    if (v.type === "flow") return { ...b, visual: { ...v, steps: v.steps.slice(0, 4) } };
-    if (v.type === "list") return { ...b, visual: { ...v, items: v.items.slice(0, 5) } };
-    if (v.type === "icons") return { ...b, visual: { ...v, items: v.items.slice(0, 3) } };
+    // Too few items to be a flow or list: one big word instead (fixed here rather than rewriting the script).
+    const word = (w: string, sub = "") => ({ ...b, visual: { type: "bigword" as const, word: w.slice(0, 24) || "KEY IDEA", sub: sub.slice(0, 60), color: "primary" as const } });
+    if (v.type === "flow") return v.steps.length < 2 ? word(v.steps[0]?.title ?? "", v.steps[0]?.sub) : { ...b, visual: { ...v, steps: v.steps.slice(0, 4) } };
+    if (v.type === "list") return v.items.length < 2 ? word(v.title, v.items[0]?.label) : { ...b, visual: { ...v, items: v.items.slice(0, 5) } };
+    if (v.type === "icons") return v.items.length < 1 ? word("KEY IDEA") : { ...b, visual: { ...v, items: v.items.slice(0, 3) } };
     if (v.type === "crowd") return { ...b, visual: { ...v, ratio: Math.min(0.9, Math.max(0.02, v.ratio)) } };
     if (v.type === "graph") return { ...b, visual: normalizeGraph(v) };
     if (v.type === "swatch") {
@@ -274,6 +272,7 @@ export function normalizeReelScript(s: ReelScript): ReelScript {
   return {
     ...s,
     beats,
+    quiz: { ...s.quiz, options: s.quiz.options.slice(0, 4) },
     stats: s.stats.slice(0, 3).map((st) => ({ ...st, at_beat: Math.max(0, Math.min(beats.length - 1, st.at_beat)) })),
   };
 }
