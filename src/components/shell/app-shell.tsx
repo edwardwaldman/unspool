@@ -99,7 +99,8 @@ export function AppShell({
           <FreeBanner signedIn={Boolean(user)} />
         </div>
       ) : (
-        <div className={`fixed inset-x-0 z-30 ${barShown ? "top-0 lg:top-16" : "top-0"}`}>
+        // In the page flow here too: floating, it covered the top of the page (the Library's header).
+        <div className="relative z-30 shrink-0">
           <FreeBanner signedIn={Boolean(user)} />
         </div>
       )}

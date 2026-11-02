@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { fileLabel } from "../reel/accent";
+import { fileLabel, reelAccent } from "../reel/accent";
 import { MarkedText } from "../ui/marked-text";
-import { TrashIcon } from "../ui/icons";
+import { PlayIcon, TrashIcon } from "../ui/icons";
 import { toast } from "../ui/toast";
 
 export type LibraryItem = {
@@ -66,26 +66,50 @@ export function LibraryGrid({ initial }: { initial: LibraryItem[] }) {
           {editing ? "Done" : "Edit"}
         </button>
       </div>
-      <div className="grid grid-cols-3 gap-px bg-line sm:grid-cols-4">
-        {items.map((it) => {
+      {/* Reel-cover cards: two across on phones, more on wider screens. No grid background, so a short list
+          never leaves an empty slab beside it. */}
+      <div className="grid grid-cols-2 gap-3 px-4 pb-8 sm:grid-cols-3 lg:grid-cols-4">
+        {items.map((it, n) => {
           const failed = it.status === "failed";
+          const busy = ["uploading", "uploaded", "extracting", "planning", "scripting"].includes(it.status);
+          const accent = reelAccent(hash(it.id) % 9 + 1);
+          const total = Math.max(1, it.total ?? 0);
           return (
-            <div key={it.id} className="relative bg-paper">
-              <Link href={`/s/${it.id}`} className="relative block aspect-[9/16] overflow-hidden bg-paper">
-                <div className="relative line-clamp-6 p-2.5 font-hook text-[12.5px] font-extrabold leading-[1.12] tracking-[-0.01em] text-ink">
+            <div key={it.id} className="relative">
+              <Link
+                href={`/s/${it.id}`}
+                className="group relative block aspect-[9/14] overflow-hidden rounded-[14px] border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,.35)] transition-transform active:scale-[0.98]"
+                style={{ background: `radial-gradient(120% 70% at 30% 18%, color-mix(in srgb, ${accent} 55%, #0b0f0d) 0%, color-mix(in srgb, ${accent} 18%, #0b0f0d) 55%, #080b0a 100%)` }}
+                data-testid="library-card"
+              >
+                {/* Top: the file type and, while it's being made or if it failed, a status pill */}
+                <div className="flex items-center justify-between p-2.5">
+                  <span className="rounded-[4px] bg-black/45 px-1.5 py-[2px] font-mono text-[9.5px] font-bold uppercase tracking-[0.06em] text-white/90">{fileLabel(it.fileType)}</span>
+                  {(busy || failed) && (
+                    <span className={`flex items-center gap-1 rounded-full px-2 py-[2px] text-[10.5px] font-semibold ${failed ? "bg-coral/90 text-[#1a0905]" : "bg-thread text-paper"}`}>
+                      {!failed && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-paper" />}
+                      {failed ? "Failed" : "Making"}
+                    </span>
+                  )}
+                </div>
+                {/* The reel's hook, big, like a cover */}
+                <div className="line-clamp-5 px-3 pt-1 font-display text-[16px] leading-[1.12] text-white [text-shadow:0_2px_10px_rgba(0,0,0,.35)] sm:text-[17px]">
                   {it.headline ? <MarkedText text={it.headline} /> : it.hook ?? it.name}
                 </div>
-                <div className="absolute inset-x-0 bottom-0 bg-paper/85 p-2">
-                  <div className="mb-1.5 flex gap-px">
-                    {Array.from({ length: Math.max(1, it.total ?? 0) }, (_, i) => (
-                      <div key={i} className="h-[2px] flex-1" style={{ background: i < it.readyCount ? "var(--thread)" : "var(--border)" }} />
+                {!busy && !failed && (
+                  <span className="absolute left-1/2 top-[58%] flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 pl-0.5 text-white opacity-90 backdrop-blur-sm transition-transform group-hover:scale-110">
+                    <PlayIcon size={16} />
+                  </span>
+                )}
+                {/* Bottom: name, how many reels are ready, and the reel progress */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/60 to-transparent px-3 pb-2.5 pt-8">
+                  <div className="truncate text-[12.5px] font-semibold text-white">{it.name}</div>
+                  <div className={`mt-0.5 font-mono text-[10.5px] ${failed ? "text-coral" : "text-white/65"}`}>{statusLabel(it)}</div>
+                  <div className="mt-1.5 flex gap-[3px]">
+                    {Array.from({ length: total }, (_, i) => (
+                      <div key={i} className="h-[3px] flex-1 rounded-full" style={{ background: i < it.readyCount ? "var(--thread)" : "rgba(255,255,255,.18)" }} />
                     ))}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="border border-line px-1 font-mono text-[8px] text-muted">{fileLabel(it.fileType)}</span>
-                    <span className="truncate text-[11px]">{it.name}</span>
-                  </div>
-                  <div className={`mt-0.5 font-mono text-[10px] ${failed ? "text-coral" : "text-muted"}`}>{statusLabel(it)}</div>
                 </div>
               </Link>
               {editing && (
@@ -93,15 +117,23 @@ export function LibraryGrid({ initial }: { initial: LibraryItem[] }) {
                   type="button"
                   aria-label={`Delete ${it.name}`}
                   onClick={() => remove(it.id)}
-                  className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center border border-coral bg-paper text-coral"
+                  className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full border border-coral bg-paper text-coral"
                 >
                   <TrashIcon size={15} />
                 </button>
               )}
+              <span className="sr-only">{n + 1}</span>
             </div>
           );
         })}
       </div>
     </div>
   );
+}
+
+/** A small stable number from an id (a card's colour stays the same between visits). */
+function hash(id: string) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return Math.abs(h);
 }
