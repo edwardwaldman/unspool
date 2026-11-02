@@ -7,7 +7,7 @@ import { ProBadge } from "../studio/reel-style-panel";
 import { GridIcon, TrashIcon, VolumeIcon } from "../ui/icons";
 import { Sheet } from "../ui/sheet";
 import { toast } from "../ui/toast";
-import { DownloadReelButton } from "./download-button";
+import { DOWNLOADS_ON, DownloadReelButton } from "./download-button";
 import { setPrefs, usePrefs } from "./prefs";
 
 export function MoreSheet({
@@ -68,7 +68,7 @@ export function MoreSheet({
           </Link>
         ))}
       {/* The reel on screen as a video file (its owner, when it's playable) */}
-      {editReelId && (
+      {DOWNLOADS_ON && editReelId && (
         <div className="border-b border-line py-3.5">
           <DownloadReelButton reelId={editReelId} />
         </div>

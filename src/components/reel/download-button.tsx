@@ -3,6 +3,9 @@
 import { Download, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+/** Off until the recorder service is deployed (worker/README.md); then flip to true to show the button. */
+export const DOWNLOADS_ON = false;
+
 type State = { status: "none" | "rendering" | "ready" | "failed"; url?: string; error?: string };
 
 /** Save the browser a file from a signed URL (the link itself carries the file name). */
