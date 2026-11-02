@@ -34,6 +34,30 @@ function friendlyError(err: unknown): string {
   return "Something went wrong while unspooling. Tap retry.";
 }
 
+/**
+ * A hiccup worth trying again (a storage or network timeout, a 5xx, the model being overloaded), as opposed to a
+ * real failure (the document can't be read, the model declined it).
+ */
+function transient(err: unknown): boolean {
+  if (err instanceof ExtractionError) return false;
+  const e = err as { status?: number; statusCode?: number | string; message?: string; name?: string };
+  const status = Number(e?.status ?? e?.statusCode);
+  if (status === 408 || status === 429 || status >= 500) return true;
+  return /timeout|timed out|gateway|ECONNRESET|ETIMEDOUT|EAI_AGAIN|fetch failed|socket hang up|network|overloaded|rate limit|temporarily/i.test(`${e?.name ?? ""} ${e?.message ?? String(err)}`);
+}
+
+/** Run `fn`, retrying transient failures with a short backoff (1 s, then 3 s). */
+async function withRetry<T>(fn: () => Promise<T>, tries = 3): Promise<T> {
+  for (let i = 0; ; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (i >= tries - 1 || !transient(err)) throw err;
+      await new Promise((r) => setTimeout(r, i === 0 ? 1000 : 3000));
+    }
+  }
+}
+
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
   const out: R[] = new Array(items.length);
   let next = 0;
@@ -67,8 +91,12 @@ export async function processDocument(documentId: string) {
     // The owner's tier sets the page limit, and is frozen onto the document at plan time.
     const ent = await ownerEntitlement(doc);
     const plan_ = PLANS[ent.tier];
-    const { data: file, error: dlErr } = await db.storage.from("documents").download(doc.file_path!);
-    if (dlErr || !file) throw new ExtractionError("We couldn't read the uploaded file. Try uploading it again.");
+    const file = await withRetry(async () => {
+      const { data, error } = await db.storage.from("documents").download(doc.file_path!);
+      if (error) throw error;
+      return data;
+    }).catch(() => null);
+    if (!file) throw new ExtractionError("We couldn't read the uploaded file. Try uploading it again.");
     const extracted = await extractDocument(Buffer.from(await file.arrayBuffer()), doc.file_name, {
       maxPages: plan_.maxPages,
       maxWords: maxWordsFor(ent.tier),
@@ -85,7 +113,7 @@ export async function processDocument(documentId: string) {
       })
       .eq("id", documentId);
 
-    const plan = await planSpool(doc.file_name, extracted.text);
+    const plan = await withRetry(() => planSpool(doc.file_name, extracted.text), 2);
 
     const { data: reels, error: insErr } = await db
       .from("reels")
@@ -238,10 +266,11 @@ export async function generateReel(reelId: string) {
         return [seg.key, { duration: estimateDuration(seg.speech), words: estimateWordFractions(seg.speech) }] as const;
       }
       const path = `${reel.document_id}/${reel.index}/${seg.key}-${edit ? `e${Date.now()}` : reel.attempts + 1}.mp3`;
-      const { error } = await db.storage
-        .from("audio")
-        .upload(path, tts.audio, { contentType: "audio/mpeg", upsert: true });
-      if (error) throw error;
+      // Storage sometimes times out (a 504): retry the upload rather than failing the whole reel.
+      await withRetry(async () => {
+        const { error } = await db.storage.from("audio").upload(path, tts.audio, { contentType: "audio/mpeg", upsert: true });
+        if (error) throw error;
+      });
       clips.set(seg.key, tts.audio);
       return [seg.key, { path, duration: tts.duration, words: tts.words, exact: tts.exact }] as const;
     });
@@ -282,6 +311,13 @@ export async function generateReel(reelId: string) {
       // The edit's credit comes back.
       const { error: refundErr } = await db.rpc("refund_edit_credit", { p_reel_id: reelId });
       if (refundErr) console.error("[pipeline] refund_edit_credit failed", reelId, refundErr);
+      return;
+    }
+    // A temporary hiccup (storage timeout, network, overloaded model): put the reel back in the queue and try again
+    // straight away, so the user keeps seeing it being made instead of "That didn't work".
+    if (transient(err) && reel.attempts + 1 < LIMITS.maxReelAttempts) {
+      await db.from("reels").update({ status: "pending", error: null, error_detail: errorDetail(err) }).eq("id", reelId).eq("status", "generating");
+      await dispatch({ name: "reel", reelId }).catch((e) => console.error("[pipeline] re-queue failed", e));
       return;
     }
     await db.from("reels").update({ status: "failed", error: friendlyError(err), error_detail: errorDetail(err) }).eq("id", reelId);
