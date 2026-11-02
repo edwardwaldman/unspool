@@ -177,6 +177,60 @@ function Shape({ o, color }: { o: SceneObject; color: string }) {
     }
     case "crowd":
       return <Crowd color={c} />;
+    case "bee": {
+      // A round, fuzzy bee: striped body, head, see-through wings (body colour is the accent or yellow).
+      const body = o.color === "cream" || o.color === "white" ? "#f2c230" : c;
+      return (
+        <group position={[0, 0.42, 0]}>
+          <P g={sphere(0.3)} m={mat(body, "cloth")} s={[1.25, 1, 1]} />
+          {[-0.12, 0.12].map((x) => <P key={x} g={torus(0.285, 0.055, Math.PI * 2, 10, 32)} m={mat(INK, "matte")} p={[x, 0, 0]} r={[0, Math.PI / 2, 0]} s={[1, 0.98, 0.98]} />)}
+          <group position={[0.42, 0.04, 0]}>
+            <P g={sphere(0.18)} m={mat(INK, "matte")} />
+            {[-1, 1].map((z) => <P key={z} g={sphere(0.045)} m={mat("#ffffff", "glow")} p={[0.12, 0.05, z * 0.09]} />)}
+            {[-1, 1].map((z) => <P key={z} g={cyl(0.012, 0.22)} m={mat(INK)} p={[0.06, 0.24, z * 0.07]} r={[z * 0.3, 0, -0.4]} />)}
+          </group>
+          {[-1, 1].map((z) => <P key={z} g={sphere(0.22, 20, 12)} m={mat("#e8f4ff", "glass")} p={[0, 0.3, z * 0.2]} s={[1, 0.25, 0.6]} r={[z * 0.5, 0, 0.3]} />)}
+          <P g={cone(0.06, 0.16, 12)} m={mat(INK)} p={[-0.44, 0, 0]} r={[0, 0, Math.PI / 2]} />
+        </group>
+      );
+    }
+    case "flower": {
+      const petal = o.color === "cream" ? "#ff8fb3" : c;
+      return (
+        <group>
+          <P g={cyl(0.03, 0.7)} m={mat(LEAF, "matte")} p={[0, 0.35, 0]} />
+          <P g={sphere(0.12, 16, 10)} m={mat(LEAF, "matte")} p={[0.1, 0.32, 0]} s={[1.4, 0.35, 0.8]} r={[0, 0, 0.5]} />
+          <group position={[0, 0.78, 0]} rotation={[0.5, 0, 0]}>
+            {Array.from({ length: 7 }, (_, k) => { const a = (k / 7) * Math.PI * 2; return <P key={k} g={sphere(0.13, 16, 10)} m={mat(petal)} p={[Math.cos(a) * 0.16, Math.sin(a) * 0.16, 0]} s={[1, 0.62, 0.35]} r={[0, 0, a]} />; })}
+            <P g={sphere(0.1)} m={mat("#f2c230")} p={[0, 0, 0.04]} s={[1, 1, 0.6]} />
+          </group>
+        </group>
+      );
+    }
+    case "fish": {
+      return (
+        <group position={[0, 0.45, 0]}>
+          <P g={sphere(0.3)} m={mat(c)} s={[1.35, 0.85, 0.55]} />
+          <P g={cone(0.22, 0.3, 4)} m={mat(tone(c, -0.08))} p={[-0.5, 0, 0]} r={[0, 0, Math.PI / 2]} s={[1, 1, 0.35]} />
+          <P g={cone(0.12, 0.2, 4)} m={mat(tone(c, -0.08))} p={[0, 0.27, 0]} s={[1.4, 1, 0.3]} />
+          {[-1, 1].map((z) => <P key={z} g={sphere(0.05)} m={mat("#ffffff", "glow")} p={[0.27, 0.06, z * 0.14]} />)}
+          {[-1, 1].map((z) => <P key={z} g={sphere(0.025)} m={mat(INK)} p={[0.3, 0.06, z * 0.17]} />)}
+        </group>
+      );
+    }
+    case "bird": {
+      return (
+        <group position={[0, 0.5, 0]}>
+          <P g={sphere(0.28)} m={mat(c)} s={[1.15, 0.95, 0.85]} />
+          <P g={sphere(0.18)} m={mat(tone(c, 0.05))} p={[0.26, 0.2, 0]} />
+          <P g={cone(0.06, 0.16, 12)} m={mat("#f2a33a")} p={[0.44, 0.18, 0]} r={[0, 0, -Math.PI / 2]} />
+          {[-1, 1].map((z) => <P key={z} g={sphere(0.035)} m={mat(INK)} p={[0.36, 0.26, z * 0.1]} />)}
+          {[-1, 1].map((z) => <P key={z} g={sphere(0.2, 16, 10)} m={mat(tone(c, -0.1))} p={[-0.02, 0.05, z * 0.22]} s={[1.2, 0.5, 0.25]} r={[0, 0, -0.3]} />)}
+          <P g={cone(0.1, 0.25, 4)} m={mat(tone(c, -0.1))} p={[-0.36, 0.04, 0]} r={[0, 0, Math.PI / 2 + 0.3]} s={[1, 1, 0.3]} />
+          {[-1, 1].map((z) => <P key={z} g={cyl(0.015, 0.22)} m={mat("#f2a33a")} p={[0.02, -0.32, z * 0.08]} />)}
+        </group>
+      );
+    }
     case "bowl":
       return <Bowl color={c} />;
     case "pot":
@@ -587,11 +641,13 @@ const HEIGHT: Partial<Record<SceneObject["shape"], number>> = {
   person: 1.1, crowd: 0.45, bowl: 0.6, pot: 0.85, spoon: 1.2, building: 1.6, flag: 1.3, tree: 1.24, mountain: 1, scale: 1.1, chart: 1.2, coins: 0.45, coin: 0.72,
   book: 0.28, cube: 0.72, dice: 0.72, crate: 0.74, ball: 0.8, cylinder: 0.9, house: 1.02, clock: 1.0, bottle: 0.9, flask: 0.88, heart: 1.0, star: 1.0, arrow: 0.7,
   magnifier: 1.1, target: 1.1, lock: 0.9, key: 0.95, cell: 1.0, molecule: 0.95, cloud: 0.85, sun: 1.25, planet: 1.0,
+  bee: 0.8, flower: 0.95, fish: 0.75, bird: 0.85,
 };
 /** Footprint width at size 1 (what a row of objects is packed by). */
 const WIDTH: Partial<Record<SceneObject["shape"], number>> = {
   crowd: 2.1, bowl: 1.7, pot: 1.9, spoon: 0.9, mountain: 1.9, scale: 1.4, chart: 1.1, house: 1.0, flag: 0.85, person: 0.6, building: 0.68, bottle: 0.5, flask: 0.75,
   key: 0.7, coin: 0.75, coins: 0.7, arrow: 1.0, clock: 0.95, target: 1.05, book: 1.0, planet: 1.45, cloud: 1.15, sun: 1.3, cube: 0.8, dice: 0.85, crate: 0.8, cylinder: 0.75, cone: 0.8,
+  bee: 1.1, flower: 0.6, fish: 1.2, bird: 1.0,
 };
 export const shapeHeight = (o: SceneObject) => (HEIGHT[o.shape] ?? 1) * o.size;
 

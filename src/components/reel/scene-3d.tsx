@@ -804,12 +804,86 @@ function Studio({ accent, mood }: { accent: string; mood?: Mood }) {
   );
 }
 
+// ---------------------------------------------------------------- settings (where the story takes place)
+
+type SettingName = NonNullable<SceneSpec["setting"]>;
+const SETTING_LOOK: Record<SettingName, { sky: string; ground: string; fog: [number, number]; wall?: string }> = {
+  meadow: { sky: "#9fd3ee", ground: "#79b85a", fog: [14, 34] },
+  forest: { sky: "#a9d1bd", ground: "#4d8443", fog: [10, 26] },
+  kitchen: { sky: "#f0e2c6", ground: "#e2d3b8", fog: [16, 40], wall: "#efe0c2" },
+  classroom: { sky: "#e8dfcb", ground: "#b98a5a", fog: [16, 40], wall: "#e6dcc6" },
+  city: { sky: "#a8c6e6", ground: "#8a929a", fog: [14, 36] },
+  ocean: { sky: "#8fd0f0", ground: "#e8d29b", fog: [16, 40] },
+  lab: { sky: "#e3edf1", ground: "#cdd7db", fog: [16, 40], wall: "#e8eff2" },
+  space: { sky: "#0b1030", ground: "#5d6272", fog: [30, 80] },
+  desert: { sky: "#f4c88c", ground: "#e0b26a", fog: [14, 38] },
+  night: { sky: "#18204a", ground: "#2c3b2e", fog: [12, 34] },
+};
+/** A small seeded random, so a setting looks the same every time it plays. */
+const rand = (i: number) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+function Tree({ p, s = 1, c = "#5fb36b" }: { p: [number, number, number]; s?: number; c?: string }) {
+  return (
+    <group position={p} scale={s}>
+      <mesh position={[0, 0.35, 0]} castShadow><cylinderGeometry args={[0.07, 0.1, 0.7, 8]} /><meshStandardMaterial color="#7a5232" roughness={0.9} /></mesh>
+      <mesh position={[0, 1.0, 0]} castShadow><icosahedronGeometry args={[0.5, 1]} /><meshStandardMaterial color={c} roughness={0.85} flatShading /></mesh>
+      <mesh position={[0.25, 0.8, 0.1]} castShadow><icosahedronGeometry args={[0.33, 1]} /><meshStandardMaterial color={c} roughness={0.85} flatShading /></mesh>
+    </group>
+  );
+}
+/** The world around the story: sky, ground, and a backdrop that sets the scene. Outside the framed content. */
+function Setting({ name }: { name: SettingName }) {
+  const look = SETTING_LOOK[name];
+  const water = useRef<THREE.Mesh>(null);
+  useFrame((st) => {
+    if (water.current) water.current.position.y = -0.02 + Math.sin(st.clock.elapsedTime * 1.2) * 0.03;
+  });
+  const back: React.ReactNode[] = [];
+  const N = 14;
+  for (let i = 0; i < N; i++) {
+    const x = -13 + (26 * i) / (N - 1) + (rand(i) - 0.5) * 1.6, z = -7 - rand(i + 50) * 6, sc = 0.7 + rand(i + 9) * 0.9;
+    if (Math.abs(x) < 2.6 && z > -8) continue;
+    if (name === "meadow" || name === "forest") back.push(<Tree key={i} p={[x, 0, z]} s={sc * (name === "forest" ? 2.2 : 1.6)} c={["#5fb36b", "#4a9a55", "#73c26a"][i % 3]} />);
+    if (name === "city") back.push(<mesh key={i} position={[x, (2 + rand(i) * 5) / 2, z]} castShadow><boxGeometry args={[1.4, 2 + rand(i) * 5, 1.4]} /><meshStandardMaterial color={["#8fa3bd", "#a7b6c9", "#7d90a9"][i % 3]} roughness={0.8} /></mesh>);
+    if (name === "desert" && i % 3 === 0) back.push(<group key={i} position={[x, 0, z]} scale={sc * 1.4}><mesh position={[0, 0.6, 0]} castShadow><capsuleGeometry args={[0.16, 0.9, 6, 12]} /><meshStandardMaterial color="#4f9a55" roughness={0.8} /></mesh><mesh position={[0.25, 0.75, 0]} rotation={[0, 0, -0.8]}><capsuleGeometry args={[0.09, 0.3, 6, 10]} /><meshStandardMaterial color="#4f9a55" /></mesh></group>);
+    if (name === "lab" && i % 2 === 0) back.push(<group key={i} position={[x, 0, -6.5]}><mesh position={[0, 0.5, 0]} castShadow><boxGeometry args={[1.6, 1, 0.8]} /><meshStandardMaterial color="#f4f6f7" roughness={0.6} /></mesh><mesh position={[0, 1.2, 0]}><sphereGeometry args={[0.2, 16, 12]} /><meshStandardMaterial color={["#7fd1c9", "#c99bff", "#ffd36b"][i % 3]} transparent opacity={0.8} /></mesh></group>);
+  }
+  if (name === "meadow" || name === "desert") [-9, 0, 9].forEach((x, i) => back.push(<mesh key={`h${i}`} position={[x, -2.2, -16]} scale={[9, 4, 4]}><sphereGeometry args={[1, 24, 16]} /><meshStandardMaterial color={name === "meadow" ? ["#8cc96a", "#7dbd5e", "#95d073"][i] : ["#e8bd78", "#dcae66", "#efc788"][i]} roughness={1} /></mesh>));
+  if (name === "meadow") for (let i = 0; i < 26; i++) { const x = (rand(i + 90) - 0.5) * 14, z = -1.5 - rand(i + 40) * 5; if (Math.abs(x) < 3) continue; back.push(<mesh key={`f${i}`} position={[x, 0.12, z]}><sphereGeometry args={[0.07, 8, 6]} /><meshStandardMaterial color={["#ff8fb3", "#fff2a8", "#ffffff", "#c99bff"][i % 4]} /></mesh>); }
+  if (name === "space" || name === "night") for (let i = 0; i < 70; i++) back.push(<mesh key={`s${i}`} position={[(rand(i) - 0.5) * 40, 3 + rand(i + 7) * 14, -18 - rand(i + 3) * 6]}><sphereGeometry args={[0.05 + rand(i + 1) * 0.05, 6, 4]} /><meshBasicMaterial color="#ffffff" /></mesh>);
+  if (name === "space") back.push(<mesh key="pl" position={[7, 8, -20]}><sphereGeometry args={[3, 32, 20]} /><meshStandardMaterial color="#c58b5a" roughness={0.9} /></mesh>);
+  if (name === "night") back.push(<mesh key="moon" position={[-6, 9, -20]}><sphereGeometry args={[1.4, 32, 20]} /><meshBasicMaterial color="#fff6d8" /></mesh>);
+  if (name === "ocean") back.push(<mesh key="sea" ref={water} position={[0, -0.02, -14]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[80, 20]} /><meshStandardMaterial color="#3f8fc4" roughness={0.25} metalness={0.1} /></mesh>);
+  if (look.wall) back.push(<mesh key="wall" position={[0, 4, -7.5]} receiveShadow><planeGeometry args={[60, 12]} /><meshStandardMaterial color={look.wall} roughness={0.95} /></mesh>);
+  if (name === "classroom") back.push(<group key="board" position={[0, 2.6, -7.4]}><mesh><boxGeometry args={[7, 2.6, 0.1]} /><meshStandardMaterial color="#8a6a45" /></mesh><mesh position={[0, 0, 0.06]}><planeGeometry args={[6.6, 2.2]} /><meshStandardMaterial color="#2f4a3a" roughness={1} /></mesh></group>);
+  if (name === "kitchen") back.push(<group key="counter" position={[0, 0, -6.6]}><mesh position={[0, 0.55, 0]} castShadow><boxGeometry args={[30, 1.1, 1.2]} /><meshStandardMaterial color="#c99a68" roughness={0.7} /></mesh><mesh position={[0, 1.14, 0]}><boxGeometry args={[30, 0.08, 1.3]} /><meshStandardMaterial color="#f4f1ea" roughness={0.4} /></mesh><mesh position={[3, 3.2, -0.8]}><planeGeometry args={[2.8, 1.8]} /><meshBasicMaterial color="#bfe3ff" /></mesh></group>);
+  return (
+    <>
+      <color attach="background" args={[look.sky]} />
+      <fog attach="fog" args={[look.sky, look.fog[0], look.fog[1]]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.005, 0]} receiveShadow renderOrder={-2}>
+        <circleGeometry args={[60, 48]} />
+        <meshStandardMaterial color={look.ground} roughness={0.95} />
+      </mesh>
+      {back}
+    </>
+  );
+}
+
 export default function Scene3D({ visual, progress, accent, colors, beatKey, scene, mood, onLost }: Scene3DProps) {
   const story = Boolean(scene?.objects?.length);
   const lostRef = useRef(onLost);
   useEffect(() => {
     lostRef.current = onLost;
   }, [onLost]);
+  // Unmounting disposes the renderer, which fires "webglcontextlost" too: only a loss while still mounted is a
+  // real GPU failure. (Counting the unmount one is what turned reels flat for good after swiping away and back.)
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const content = useRef<THREE.Group>(null);
   const term = story ? keyTerm(visual).replace(/[*#^~]/g, "").trim() : "";
   const pins = useRef(new Map<string, Pin>());
@@ -853,11 +927,15 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
         onCreated={({ gl }) => {
           gl.domElement.addEventListener("webglcontextlost", (e) => {
             e.preventDefault();
-            lostRef.current?.();
+            setTimeout(() => {
+              if (mounted.current) lostRef.current?.();
+            }, 0);
           }, { once: true });
         }}>
         <PinCtx.Provider value={api}>
           <Studio accent={accent} mood={mood} />
+          {/* The story's world, outside the framed content so the camera keeps framing the objects */}
+          {story && scene?.setting && SETTING_LOOK[scene.setting] && <Setting name={scene.setting} />}
           <ContentCtx.Provider value={content}>
             <group ref={content}>
               {story ? (

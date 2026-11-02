@@ -54,6 +54,7 @@ function useSceneColors() {
  */
 export function ReelMedia({
   active,
+  onScreen = false,
   playing,
   muted,
   pulse,
@@ -65,6 +66,8 @@ export function ReelMedia({
 }: {
   index: number;
   active: boolean;
+  /** The reel is the one on screen, even if a sheet over it has paused it. */
+  onScreen?: boolean;
   playing: boolean;
   muted: boolean;
   /** Changes per beat; sends a ripple through the backdrop. */
@@ -78,8 +81,10 @@ export function ReelMedia({
 }) {
   const reduce = useReducedMotion();
   const [probe, sceneColors] = useSceneColors();
-  // The GPU dropped the scene's context (driver reset, too many contexts, backgrounded tab): flat graphics.
-  const [glLost, setGlLost] = useState(false);
+  // The GPU dropped the scene's context (driver reset, too many contexts, backgrounded tab): rebuild it once, then
+  // fall back to the flat graphics if it drops again.
+  const [lost, setLost] = useState(0);
+  const glLost = lost > 1;
   if (videoUrl && videoRef) return <ReelVideo src={videoUrl} videoRef={videoRef} muted={muted} />;
   // The playing reel's beats are real 3D scenes (as in the demo reels); off-screen reels and devices without
   // WebGL (or with reduced motion) keep the flat graphics.
@@ -88,7 +93,10 @@ export function ReelMedia({
   // Graphs, equations and emoji props are full-frame flat diagrams: never inside the 3D scene.
   const diagram = Boolean(visual && DIAGRAM_TYPES.has(visual.type));
   const mood = stage?.mood ?? (diagram ? "calm" : undefined);
-  const in3d = Boolean(!diagram && active && !glLost && !reduce && sceneColors && visual && (story || (SCENE_TYPES.has(visual.type) && !(visual.type === "hook" && /soup|cooking-pot/.test(visual.icon)))) && hasWebGL());
+  const can3d = Boolean(!diagram && !glLost && !reduce && sceneColors && visual && (story || (SCENE_TYPES.has(visual.type) && !(visual.type === "hook" && /soup|cooking-pot/.test(visual.icon)))));
+  // The reel on screen keeps its 3D scene even while a pop-up or sheet covers it (and it isn't "active"), so it
+  // never swaps to the flat version under the pop-up.
+  const in3d = can3d && (active || onScreen) && hasWebGL();
   return (
     <>
       <div ref={probe} aria-hidden className="hidden" />
@@ -110,7 +118,7 @@ export function ReelMedia({
       {in3d && stage && sceneColors ? (
         <div className="absolute inset-x-0 z-[5]" style={{ top: stageBox.top, bottom: stageBox.bottom }}>
           {/* @ts-expect-error quiz/outro never reach here (SCENE_TYPES) */}
-          <Scene3D visual={stage.visual} progress={stage.progress} accent={sceneColors.accent} colors={sceneColors.colors} beatKey={stageKey} scene={stage.scene} mood={stage.mood} onLost={() => setGlLost(true)} />
+          <Scene3D key={lost} visual={stage.visual} progress={stage.progress} accent={sceneColors.accent} colors={sceneColors.colors} beatKey={stageKey} scene={stage.scene} mood={stage.mood} onLost={() => setLost((n) => n + 1)} />
         </div>
       ) : (
         <>

@@ -50,6 +50,7 @@ export function ReelView({
   onShare,
   preview = false,
   overlay,
+  onScreen = false,
 }: {
   spool: SpoolDTO;
   reel: ReelDTO;
@@ -63,6 +64,8 @@ export function ReelView({
   overlay?: React.ReactNode;
   /** Silent looping background (landing page). */
   preview?: boolean;
+  /** The reel on screen (a sheet over it may have paused it). */
+  onScreen?: boolean;
 }) {
   const script = reel.script!;
   const video = reel.videoUrl && reel.video ? { url: reel.videoUrl, timeline: reel.video } : undefined;
@@ -158,6 +161,7 @@ export function ReelView({
       <ReelMedia
         index={reel.index}
         active={active}
+        onScreen={onScreen || active}
         playing={pb.playing}
         muted={muted || preview}
         pulse={pb.seg}

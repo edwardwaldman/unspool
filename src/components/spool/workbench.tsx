@@ -727,6 +727,7 @@ export function Workbench({
                   item={it}
                   upload={i === 0 ? upload ?? null : null}
                   active={i === cur && !paywall && !moreOpen && !shareOpen}
+                  onScreen={i === cur}
                   total={reels.length || MAX_REELS}
                   bottomInset={0}
                   onRetry={() => onRetry?.(it.spool)}

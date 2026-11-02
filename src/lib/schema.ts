@@ -89,7 +89,10 @@ export const SCENE_SHAPES = [
   "person", "crowd", "bowl", "pot", "spoon", "cube", "ball", "cylinder", "cone", "crate", "book", "coin", "coins", "card",
   "phone", "clock", "scale", "flag", "tree", "house", "building", "bottle", "flask", "heart", "star", "arrow", "magnifier",
   "target", "dice", "lock", "key", "lightbulb", "cell", "molecule", "mountain", "cloud", "sun", "planet", "chart",
+  "bee", "flower", "fish", "bird",
 ] as const;
+/** Where a reel's story takes place: the world drawn around and behind its objects. */
+export const SCENE_SETTINGS = ["meadow", "forest", "kitchen", "classroom", "city", "ocean", "lab", "space", "desert", "night"] as const;
 export const SCENE_COLORS = ["accent", "cream", "white", "dark", "red", "orange", "yellow", "green", "blue", "purple", "pink", "brown", "gray", "gold"] as const;
 export const SCENE_MOTIONS = ["none", "bob", "spin", "pulse", "drop", "stir", "tilt", "glow"] as const;
 /** How an object arrives, and the one thing it does mid-beat: the beat's choreography, timed to the voiceover. */
@@ -113,12 +116,13 @@ export const SceneObjectSchema = z.object({
 export const SceneSchema = z.object({
   camera: z.enum(["front", "close", "low", "top", "orbit"]),
   move: z.enum(CAMERA_MOVES).describe("the camera's move across the beat"),
+  setting: z.enum(SCENE_SETTINGS).describe("where the story takes place; keep the same setting across the reel unless the story moves"),
   objects: z.array(SceneObjectSchema).describe("1-8 objects; [] to use the visual instead"),
 });
 // Scripts written before the choreography fields lack them: the player falls back to its old staging.
 type Choreo = "enter" | "at" | "action" | "action_at";
 export type SceneObject = Omit<z.infer<typeof SceneObjectSchema>, Choreo> & Partial<Pick<z.infer<typeof SceneObjectSchema>, Choreo>>;
-export type SceneSpec = Omit<z.infer<typeof SceneSchema>, "objects" | "move"> & { objects: SceneObject[]; move?: (typeof CAMERA_MOVES)[number] };
+export type SceneSpec = Omit<z.infer<typeof SceneSchema>, "objects" | "move" | "setting"> & { objects: SceneObject[]; move?: (typeof CAMERA_MOVES)[number]; setting?: (typeof SCENE_SETTINGS)[number] };
 
 export const BeatSchema = z.object({
   say: z.string(),
