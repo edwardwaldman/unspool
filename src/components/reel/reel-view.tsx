@@ -51,6 +51,7 @@ export function ReelView({
   preview = false,
   overlay,
   onScreen = false,
+  record = false,
 }: {
   spool: SpoolDTO;
   reel: ReelDTO;
@@ -66,12 +67,14 @@ export function ReelView({
   preview?: boolean;
   /** The reel on screen (a sheet over it may have paused it). */
   onScreen?: boolean;
+  /** Recording to a video file: the reel alone (chip, scene, captions, quiz), none of the app's buttons. */
+  record?: boolean;
 }) {
   const script = reel.script!;
   const video = reel.videoUrl && reel.video ? { url: reel.videoUrl, timeline: reel.video } : undefined;
   // The comments button opens the reel as text; the reel pauses while it's open.
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const pb = usePlayback({ script, audio: reel.audio, active, hold: summaryOpen, onEnded, silent: preview, video });
+  const pb = usePlayback({ script, audio: reel.audio, active, hold: summaryOpen, onEnded, silent: preview, video, record });
   const prefs = usePrefs();
   const fraction = pb.duration > 0 ? pb.t / pb.duration : 0;
   const kind = pb.segment.kind;
@@ -107,7 +110,7 @@ export function ReelView({
   }, []);
 
   // The soft music bed plays under the reel on screen while it plays with sound (rendered videos carry their own).
-  const wantMusic = active && !preview && pb.playing && !muted && !pb.videoMode && prefs.music !== false;
+  const wantMusic = active && !preview && !record && pb.playing && !muted && !pb.videoMode && prefs.music !== false;
   useEffect(() => {
     setMusic(reel.id, wantMusic);
   }, [reel.id, wantMusic]);
@@ -197,7 +200,7 @@ export function ReelView({
       </AnimatePresence>
 
       {/* Top: the document chip, as in the demo ("| AP STATS · UNIT 3"), and the wordmark */}
-      {!preview && (
+      {!preview && !record && (
         <div className="pointer-events-none absolute inset-x-0 z-10 flex items-start justify-between px-3.5" style={{ top: top + 14 }}>
           <span className="max-w-[70%] truncate rounded-[3px] bg-black/80 px-2 py-[3px] font-hook text-[10.5px] font-extrabold uppercase tracking-[0.04em] text-white" data-testid="reel-chip">
             {chipText(spool.title ?? spool.fileName, reel.index)}
@@ -211,8 +214,20 @@ export function ReelView({
       {/* Bottom shade so the account row reads on any frame (the demo's gradient, no flat band) */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] h-[34%] bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
+      {/* Recording: the chip and a small watermark, nothing that only makes sense in the app */}
+      {record && (
+        <div className="pointer-events-none absolute inset-x-0 z-10 flex items-start justify-between px-3.5" style={{ top: top + 14 }}>
+          <span className="max-w-[64%] truncate rounded-[3px] bg-black/80 px-2 py-[3px] font-hook text-[10.5px] font-extrabold uppercase tracking-[0.04em] text-white">
+            {chipText(spool.title ?? spool.fileName, reel.index)}
+          </span>
+          <span className="rounded-[3px] bg-black/60 px-2 py-[3px] font-hook text-[10.5px] font-extrabold tracking-[0.02em] text-white" data-testid="record-watermark">
+            unspool<span className="text-thread">.cc</span>
+          </span>
+        </div>
+      )}
+
       {/* Progress: a hairline along the very bottom */}
-      {!preview && (
+      {!preview && !record && (
         <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[25] h-[2px] bg-white/25">
           <div className="h-full bg-white" style={{ width: `${Math.min(100, pb.progress * 100)}%` }} />
         </div>
@@ -233,6 +248,7 @@ export function ReelView({
       )}
 
       {/* Right rail, as in the demo: like, summary, share, save, more, and the audio square */}
+      {!record && (<>
       <div className="absolute right-2 z-20 origin-bottom-right ipad:right-5 ipad:scale-[1.6]" style={{ bottom: bottom + 96 }}>
         <ActionRail reelId={reel.id} title={script.title} muted={muted || preview} onToggleMute={toggleMute} onReplay={pb.replay} onMore={onMore} onShare={onShare} onComments={() => setSummaryOpen(true)} />
       </div>
@@ -254,6 +270,7 @@ export function ReelView({
       >
         <VolumeIcon size={18} muted={muted || preview} />
       </button>
+      </>)}
 
       <Sheet open={summaryOpen} onClose={() => setSummaryOpen(false)} label="Reel summary">
         <ReelSummary script={script} index={reel.index} sensitive={spool.sensitive} />
@@ -261,7 +278,7 @@ export function ReelView({
 
       {/* Paused */}
       <AnimatePresence>
-        {!pb.playing && active && !pb.ended && (
+        {!pb.playing && active && !pb.ended && !record && (
           <motion.div
             initial={{ opacity: 0, scale: 1.25 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -277,7 +294,7 @@ export function ReelView({
           </motion.div>
         )}
       </AnimatePresence>
-      {active && !preview && prefs.autoMuted && prefs.muted && (
+      {active && !preview && !record && prefs.autoMuted && prefs.muted && (
         <button
           type="button"
           onClick={(e) => {
@@ -291,7 +308,7 @@ export function ReelView({
           <VolumeIcon size={17} muted strokeWidth={2} /> Tap for sound
         </button>
       )}
-      {!preview && (
+      {!preview && !record && (
         <>
           {active && <BeatPop seg={pb.seg} />}
           {heart.layer}

@@ -44,3 +44,8 @@ next-env.d.ts
 
 # fontconfig cache marker (written when ffmpeg scans the font dir locally)
 /assets/fonts/.uuid
+
+# render worker build output and installs
+/worker/node_modules
+/worker/dist
+/worker/package-lock.json

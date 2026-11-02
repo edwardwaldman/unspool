@@ -10,12 +10,16 @@ const FLUSH_MS = 15_000;
 /** Mounted once in the root layout: page views, idle, close, and the periodic flush. */
 export function VisitTracker() {
   const path = usePathname();
+  // The download recorder's page is a machine, not a visitor.
+  const recorder = path.startsWith("/record/");
   useEffect(() => {
+    if (recorder) return;
     track("page", path);
     if (path === "/s/demo") track("watch_demo");
-  }, [path]);
+  }, [path, recorder]);
 
   useEffect(() => {
+    if (recorder) return;
     let idle: ReturnType<typeof setTimeout> | undefined;
     let wasIdle = false;
     const touched = () => {
@@ -42,6 +46,6 @@ export function VisitTracker() {
       document.removeEventListener("visibilitychange", hidden);
       window.removeEventListener("pagehide", closed);
     };
-  }, []);
+  }, [recorder]);
   return null;
 }

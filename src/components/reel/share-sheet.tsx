@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { ReelDTO, SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { openAuth } from "../auth/auth-store";
 import { ShareIcon } from "../ui/icons";
+import { DownloadReelButton } from "./download-button";
 import { Sheet } from "../ui/sheet";
 import { toast } from "../ui/toast";
 
@@ -180,6 +181,12 @@ export function ShareSheet({
             <div className="shimmer h-[42px] w-full" aria-label="Making a link" />
           )}
         </div>
+        {/* Download it as a video file (your own, playable reels) */}
+        {!demo && !passOn && viewer?.signedIn && !reel.locked && (
+          <div className="mt-4 border-t border-line pt-4">
+            <DownloadReelButton reelId={reel.id} />
+          </div>
+        )}
         {demo ? (
           <p className="mt-4 text-[12.5px] text-muted">This is the sample spool. Upload your own document to share your reels.</p>
         ) : (

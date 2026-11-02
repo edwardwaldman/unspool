@@ -7,6 +7,7 @@ import { ProBadge } from "../studio/reel-style-panel";
 import { GridIcon, TrashIcon, VolumeIcon } from "../ui/icons";
 import { Sheet } from "../ui/sheet";
 import { toast } from "../ui/toast";
+import { DownloadReelButton } from "./download-button";
 import { setPrefs, usePrefs } from "./prefs";
 
 export function MoreSheet({
@@ -66,6 +67,12 @@ export function MoreSheet({
             <ProBadge />
           </Link>
         ))}
+      {/* The reel on screen as a video file (its owner, when it's playable) */}
+      {editReelId && (
+        <div className="border-b border-line py-3.5">
+          <DownloadReelButton reelId={editReelId} />
+        </div>
+      )}
       <Link href="/studio" className={row} onClick={onClose}>
         <Crown size={19} strokeWidth={1.5} /> <span className="flex-1">Reel style</span>
         {canEdit ? <span className="font-mono text-[12px] text-muted">Change the look</span> : <ProBadge />}

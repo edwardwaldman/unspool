@@ -3,6 +3,7 @@
 //
 //   POST /render   Authorization: Bearer $RENDER_SECRET   body: {"job": RenderJob}
 //     200 video/mp4 (the MP4 bytes) | 400 bad job | 401 | 429 busy | 500 render failed
+//   POST /record   the exact-copy download recorder (see record.ts and startRecording below)
 //   GET  /healthz  200 "ok"
 //
 // The app uses it when RENDER_URL is set (e.g. https://render.example.com/render).
@@ -10,6 +11,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import http from "node:http";
 import { renderVideo } from "../src/lib/video/render";
+import { recordReel, uploadSigned, type RecordJob } from "./record";
 import type { RenderJob } from "../src/lib/video/types";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -102,6 +104,7 @@ function isJob(v: unknown): v is RenderJob {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", "http://worker");
   if (req.method === "GET" && url.pathname === "/healthz") return send(res, 200, "ok");
+  if (req.method === "POST" && url.pathname === "/record") return startRecording(req, res);
   if (req.method !== "POST" || (url.pathname !== "/render" && url.pathname !== "/")) return send(res, 404, "not found");
   if (!authorized(req.headers.authorization)) return send(res, 401, "unauthorized");
   if (busy >= MAX_CONCURRENT) return send(res, 429, "busy");
@@ -130,6 +133,46 @@ const server = http.createServer(async (req, res) => {
     busy--;
   }
 });
+
+// ---------------------------------------------------------------- /record: the exact-copy download recorder
+//
+//   POST /record   Authorization: Bearer $RENDER_SECRET   body: {"url","upload","done","music"?}
+//     202 accepted (records in the background, uploads the MP4, then POSTs {ok} to `done`) | 400 | 401 | 429 busy
+
+let recording = 0;
+const MAX_RECORDINGS = Math.max(1, Number(process.env.MAX_RECORDINGS ?? 1));
+// The app's own origin (the record page, the callback). Uploads go to Supabase Storage.
+const APP_ORIGINS = (process.env.APP_ORIGINS ?? "https://unspool.cc,https://www.unspool.cc").split(",").map((s) => s.trim()).filter(Boolean);
+const httpsUrl = (u: unknown) => typeof u === "string" && /^https:\/\//i.test(u);
+const fromApp = (u: unknown) => typeof u === "string" && APP_ORIGINS.some((o) => u.startsWith(`${o}/`));
+
+async function startRecording(req: http.IncomingMessage, res: http.ServerResponse) {
+  if (!authorized(req.headers.authorization)) return send(res, 401, "unauthorized");
+  if (recording >= MAX_RECORDINGS) return send(res, 429, "busy");
+  let job: RecordJob;
+  try {
+    job = JSON.parse(await readBody(req)) as RecordJob;
+  } catch {
+    return send(res, 400, "invalid JSON");
+  }
+  // Only ever open the app's own pages and call it back; only upload to an https storage URL.
+  if (!fromApp(job.url) || !fromApp(job.done) || !httpsUrl(job.upload) || (job.music && !fromApp(job.music))) return send(res, 400, "invalid job");
+  recording++;
+  send(res, 202, "recording");
+  const started = Date.now();
+  const report = (body: object) => fetch(job.done, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(20_000) }).catch((e) => console.error("[record] callback failed", e));
+  try {
+    const mp4 = await recordReel(job, process.env.FFMPEG_PATH ?? "ffmpeg");
+    await uploadSigned(job.upload, mp4);
+    console.log(`[record] ${mp4.length} bytes in ${Date.now() - started}ms`);
+    await report({ ok: true });
+  } catch (err) {
+    console.error("[record] failed", err);
+    await report({ ok: false, error: err instanceof Error ? err.message.slice(0, 280) : "recording failed" });
+  } finally {
+    recording--;
+  }
+}
 
 server.requestTimeout = TIMEOUT_MS + 30_000;
 server.listen(PORT, () => console.log(`[worker] listening on :${PORT}`));

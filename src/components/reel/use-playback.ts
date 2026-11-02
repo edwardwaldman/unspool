@@ -9,6 +9,18 @@ import { estimateDuration, estimateWordFractions } from "@/lib/timing";
 import { getPrefs, rateOf, setPrefs, usePrefs } from "./prefs";
 
 export const QUIZ_WAIT_MS = 7000;
+/** Recording: how long the quiz question shows before the right answer is picked. */
+const RECORD_QUIZ_MS = 2200;
+
+declare global {
+  interface Window {
+    /** Recording only: when each segment started (performance.now ms), for the recorder's audio track. */
+    __reelMarks?: { seg: number; key: string; at: number }[];
+  }
+}
+function recordMark(seg: number, key: string) {
+  (window.__reelMarks ??= []).push({ seg, key, at: performance.now() });
+}
 
 export type QuizState = { selected: number | null; revealed: boolean; waiting: boolean };
 
@@ -120,8 +132,14 @@ export function usePlayback(opts: {
   video?: { url: string; timeline: VideoTimeline };
   /** Pause where it is (a sheet is open over the reel) without restarting it, unlike `active`. */
   hold?: boolean;
+  /**
+   * Recording to a video file (the download recorder): no sound in the page, the clock runs on the clip lengths
+   * the voiceover really has, the quiz answers itself (correctly) after a beat, and where each segment starts is
+   * written to `window.__reelMarks` so the recorder can lay the voiceover under the frames.
+   */
+  record?: boolean;
 }): Playback {
-  const { script, active, silent, hold } = opts;
+  const { script, active, silent, hold, record } = opts;
   const audio = silent ? undefined : opts.audio;
   const prefs = usePrefs();
   const segments = useMemo(() => buildSegments(script), [script]);
@@ -198,7 +216,7 @@ export function usePlayback(opts: {
   useEffect(() => {
     engine.current = freshEngine([...initialDurations]);
     const els = segments.map((s, i) => {
-      const url = videoMode ? undefined : audio?.[s.key]?.url;
+      const url = videoMode || record ? undefined : audio?.[s.key]?.url;
       if (!url) return null;
       const el = new Audio();
       el.preload = "auto";
@@ -225,7 +243,7 @@ export function usePlayback(opts: {
         el.load();
       });
     };
-  }, [segments, audio, initialDurations, videoMode]);
+  }, [segments, audio, initialDurations, videoMode, record]);
 
   /** A phone refused to start sound without a tap: stop the clock at the start and wait for one. */
   const block = useCallback(() => {
@@ -310,7 +328,7 @@ export function usePlayback(opts: {
         });
         return;
       }
-      if (!silent && p.deviceVoice && !p.muted && canSpeak()) {
+      if (!silent && !record && p.deviceVoice && !p.muted && canSpeak()) {
         const u = new SpeechSynthesisUtterance(segments[i].speech);
         u.rate = 1.08 * rateOf(p);
         u.onend = () => {
@@ -325,7 +343,7 @@ export function usePlayback(opts: {
         window.speechSynthesis.speak(u);
       }
     },
-    [segments, silent, vt, block],
+    [segments, silent, record, vt, block],
   );
 
   const startSeg = useCallback(
@@ -335,10 +353,11 @@ export function usePlayback(opts: {
       e.seg = i;
       e.t = 0;
       e.speechDone = false;
+      if (record) recordMark(i, segments[i].key);
       if (e.playing) playClip(i);
       render();
     },
-    [playClip, render, stopAll],
+    [playClip, render, stopAll, record, segments],
   );
 
   const finishSeg = useCallback(() => {
@@ -391,7 +410,12 @@ export function usePlayback(opts: {
       e.last = now;
       if (!e.playing || e.ended) return;
       if (e.quiz.waiting) {
-        if (now - e.waitingSince > QUIZ_WAIT_MS) {
+        if (record && now - e.waitingSince > RECORD_QUIZ_MS) {
+          // On camera: a beat to read the question, then the right answer gets picked.
+          e.quiz = { selected: script.quiz.answer, revealed: true, waiting: false };
+          const explain = segments.findIndex((s) => s.kind === "explain");
+          startSeg(explain >= 0 ? explain : Math.min(segments.length - 1, e.seg + 1));
+        } else if (now - e.waitingSince > QUIZ_WAIT_MS) {
           e.quiz = { selected: null, revealed: true, waiting: false };
           const explain = segments.findIndex((s) => s.kind === "explain");
           startSeg(explain >= 0 ? explain : Math.min(segments.length - 1, e.seg + 1));
@@ -447,13 +471,14 @@ export function usePlayback(opts: {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [active, finishSeg, initialDurations, render, segments, startSeg, vt]);
+  }, [active, finishSeg, initialDurations, render, segments, startSeg, vt, record, script.quiz.answer]);
 
   // Start from the top whenever the reel snaps into view; stop when it leaves.
   useEffect(() => {
     const e = engine.current;
     if (active) {
       Object.assign(e, freshEngine(e.durations), { playing: true });
+      if (record) recordMark(0, segments[0].key);
       playClip(0);
     } else {
       stopAll();
@@ -464,7 +489,7 @@ export function usePlayback(opts: {
       cancelAnimationFrame(raf);
       stopAll();
     };
-  }, [active, playClip, render, stopAll]);
+  }, [active, playClip, render, stopAll, record, segments]);
 
   // Live mute / speed changes.
   useEffect(() => {
