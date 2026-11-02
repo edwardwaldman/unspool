@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { useId, useMemo } from "react";
 import { compileExpr } from "@/lib/expr";
 import type { GraphVisual, Mood, Visual } from "@/lib/schema";
+import { CompareVisual, SpecimenVisual, SwatchVisual } from "./design-visuals";
 
 // Full-frame "explainer" visuals (as in hand-made study reels): plotted graphs on a dark grid panel,
 // a big equation header, and a big emoji prop. Drawn flat over the whole stage, never in the 3D scene.
@@ -15,11 +16,13 @@ const ORANGE = "#ff9b2f";
 const CURVE: Record<string, string> = { cyan: "#25d8ff", pink: "#ff5fb0", yellow: YELLOW, green: "#4dff9a" };
 
 /** Per-beat background: hot pink for hooks, deep navy with teal/magenta glows by default, red-orange for warnings, green for wins. */
+// Moods tint a dark stage rather than flooding it: a glow of colour behind the subject, the edges staying deep, so
+// captions stay readable and the reel's own colours (a swatch, a scene) are what stands out.
 export const MOOD_BG: Record<Mood, string> = {
-  hot: "radial-gradient(90% 60% at 50% 38%, #ff4f9a 0%, #e83d82 40%, #b8285f 100%)",
+  hot: "radial-gradient(80% 55% at 50% 40%, rgba(255,79,154,.55) 0%, rgba(184,40,95,.28) 45%, transparent 80%), linear-gradient(#12070d, #0a0509)",
   calm: "radial-gradient(60% 40% at 22% 30%, rgba(18,110,130,.55) 0%, transparent 70%), radial-gradient(60% 40% at 80% 72%, rgba(150,30,90,.38) 0%, transparent 70%), linear-gradient(#05070d, #070a14)",
-  warn: "radial-gradient(90% 60% at 50% 38%, #ff6a3d 0%, #d63a2a 45%, #7a1612 100%)",
-  win: "radial-gradient(90% 60% at 50% 38%, #3fdc8a 0%, #1f9e62 45%, #0b4a2f 100%)",
+  warn: "radial-gradient(80% 55% at 50% 40%, rgba(255,106,61,.5) 0%, rgba(160,40,24,.28) 45%, transparent 80%), linear-gradient(#130807, #0b0505)",
+  win: "radial-gradient(80% 55% at 50% 40%, rgba(63,220,138,.45) 0%, rgba(20,110,70,.25) 45%, transparent 80%), linear-gradient(#06110b, #040a07)",
 };
 
 const bold = "font-hook font-extrabold tracking-[-0.01em]";
@@ -244,7 +247,19 @@ export function EmojiProp({ v, progress }: { v: Extract<Visual, { type: "emoji" 
 export function DiagramStage({ visual, progress }: { visual: Visual; progress: number }) {
   return (
     <div className="flex h-full w-full items-center justify-center overflow-hidden [container-type:inline-size]">
-      {visual.type === "graph" ? <GraphPanel v={visual} progress={progress} /> : visual.type === "equation" ? <EquationHeader v={visual} progress={progress} /> : visual.type === "emoji" ? <EmojiProp v={visual} progress={progress} /> : null}
+      {visual.type === "graph" ? (
+        <GraphPanel v={visual} progress={progress} />
+      ) : visual.type === "equation" ? (
+        <EquationHeader v={visual} progress={progress} />
+      ) : visual.type === "emoji" ? (
+        <EmojiProp v={visual} progress={progress} />
+      ) : visual.type === "swatch" ? (
+        <SwatchVisual v={visual} />
+      ) : visual.type === "compare" ? (
+        <CompareVisual v={visual} progress={progress} />
+      ) : visual.type === "specimen" ? (
+        <SpecimenVisual v={visual} progress={progress} />
+      ) : null}
     </div>
   );
 }

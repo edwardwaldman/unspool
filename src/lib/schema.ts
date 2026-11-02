@@ -73,6 +73,24 @@ export const VisualSchema = z.discriminatedUnion("type", [
     ask: z.string().describe('short yellow question/punchline, e.g. "where? why?", or ""'),
   }),
   z.object({
+    type: z.literal("swatch"),
+    title: z.string().describe('short line above the colours, e.g. "9 colours · 1 kit"; or ""'),
+    colors: z.array(z.object({ hex: z.string().describe('"#d3f05a"'), name: z.string().describe("1-2 words"), note: z.string().describe('its job in 2-5 words, e.g. "the background"; or ""') })).describe("1-9 real colours from the document, in its order"),
+    focus: z.number().int().describe("index of the colour this beat is about (shown big), or -1 to show them all evenly"),
+  }),
+  z.object({
+    type: z.literal("compare"),
+    bad: z.object({ title: z.string().describe('e.g. "WITH GLOWS"'), points: z.array(z.string()).describe("1-3 short points") }),
+    good: z.object({ title: z.string().describe('e.g. "FLAT"'), points: z.array(z.string()).describe("1-3 short points") }),
+  }),
+  z.object({
+    type: z.literal("specimen"),
+    label: z.string().describe('what it is, e.g. "HEADLINES" or "THE QUOTE"'),
+    text: z.string().describe("the sample itself, 1-8 words (a font sample, a famous line, a key phrase)"),
+    style: z.enum(["display", "serif", "sans", "mono", "handwritten"]),
+    note: z.string().describe('one short line under it, or ""'),
+  }),
+  z.object({
     type: z.literal("emoji"),
     emoji: z.string().describe("ONE emoji"),
     title: z.string().describe('big line above the prop, e.g. "sin(∞) = ?"; or ""'),
@@ -172,7 +190,7 @@ export type VisualType = Visual["type"] | "quiz" | "outro";
 export type Beat = Omit<z.infer<typeof BeatSchema>, "image_prompt" | "scene" | "mood"> & { image_prompt?: string; scene?: SceneSpec; mood?: Mood };
 export type GraphVisual = Extract<Visual, { type: "graph" }>;
 /** Full-frame diagram visuals: drawn flat over the whole stage, never inside the 3D scene. */
-export const DIAGRAM_TYPES = new Set<string>(["graph", "equation", "emoji"]);
+export const DIAGRAM_TYPES = new Set<string>(["graph", "equation", "emoji", "swatch", "compare", "specimen"]);
 export type ReelScript = Omit<z.infer<typeof ReelScriptSchema>, "beats"> & { beats: Beat[] };
 export type HighlightColor = z.infer<typeof ColorSchema>;
 export type Stat = z.infer<typeof StatSchema>;
@@ -181,7 +199,7 @@ export type Stat = z.infer<typeof StatSchema>;
 export function reelScriptProblems(s: ReelScript): string[] {
   const problems: string[] = [];
   if (s.beats.length < 4) problems.push("needs at least 4 beats (hook + body)");
-  if (!["hook", "emoji", "equation"].includes(s.beats[0]?.visual.type ?? "")) problems.push("first beat must use the hook, emoji or equation visual");
+  if (!["hook", "emoji", "equation", "swatch", "specimen", "compare", "stat", "bigword"].includes(s.beats[0]?.visual.type ?? "")) problems.push("first beat must use the hook, emoji, equation, swatch, specimen, compare, stat or bigword visual");
   if (s.quiz.options.length < 2 || s.quiz.options.length > 4) problems.push("quiz needs 2–4 options");
   if (s.quiz.answer < 0 || s.quiz.answer >= s.quiz.options.length) problems.push("quiz.answer out of range");
   for (const [i, b] of s.beats.entries()) {
@@ -198,10 +216,20 @@ export function reelScriptProblems(s: ReelScript): string[] {
 
 /** Clamp anything slightly out of range instead of failing the whole reel. */
 export function normalizeReelScript(s: ReelScript): ReelScript {
-  const beats = s.beats.map((raw) => {
+  let lastMove: string | undefined;
+  const beats = s.beats.map((raw, i) => {
+    // Keep the camera move and setting (they were being dropped here); fill a move the writer skipped, never the
+    // same one twice in a row.
+    const given = raw.scene?.move && (CAMERA_MOVES as readonly string[]).includes(raw.scene.move) ? raw.scene.move : undefined;
+    const fallback = (["push_in", "orbit", "crane_up", "truck", "pull_out", "crane_down"] as const).filter((m) => m !== lastMove)[i % 5];
+    const move = raw.scene?.objects?.length ? (given ?? (i === 0 ? "whip" : fallback)) : given;
+    lastMove = move;
+    const setting = raw.scene?.setting && (SCENE_SETTINGS as readonly string[]).includes(raw.scene.setting) ? raw.scene.setting : undefined;
     const scene = raw.scene
       ? {
           camera: raw.scene.camera,
+          ...(move ? { move } : {}),
+          ...(setting ? { setting } : {}),
           objects: raw.scene.objects.slice(0, 8).map((o) => ({
             ...o,
             label: o.label.trim().slice(0, 28),
@@ -219,10 +247,30 @@ export function normalizeReelScript(s: ReelScript): ReelScript {
     if (v.type === "icons") return { ...b, visual: { ...v, items: v.items.slice(0, 3) } };
     if (v.type === "crowd") return { ...b, visual: { ...v, ratio: Math.min(0.9, Math.max(0.02, v.ratio)) } };
     if (v.type === "graph") return { ...b, visual: normalizeGraph(v) };
+    if (v.type === "swatch") {
+      const colors = v.colors
+        .map((c) => ({ ...c, hex: (/^#?([0-9a-f]{6})$/i.exec(c.hex.trim())?.[1] ?? "").toLowerCase(), name: c.name.slice(0, 18), note: c.note.slice(0, 32) }))
+        .filter((c) => c.hex)
+        .map((c) => ({ ...c, hex: `#${c.hex}` }))
+        .slice(0, 9);
+      // No usable colours: a big word instead of an empty stage.
+      if (!colors.length) return { ...b, visual: { type: "bigword" as const, word: v.title.slice(0, 24) || "COLOUR", sub: "", color: "primary" as const } };
+      return { ...b, visual: { ...v, title: v.title.slice(0, 40), colors, focus: v.focus >= 0 && v.focus < colors.length ? v.focus : -1 } };
+    }
+    if (v.type === "compare") {
+      const side = (s: { title: string; points: string[] }) => ({ title: s.title.slice(0, 24), points: s.points.slice(0, 3).map((p) => p.slice(0, 40)) });
+      return { ...b, visual: { ...v, bad: side(v.bad), good: side(v.good) } };
+    }
+    if (v.type === "specimen") return { ...b, visual: { ...v, label: v.label.slice(0, 24), text: v.text.slice(0, 60), note: v.note.slice(0, 60) } };
     if (v.type === "emoji") return { ...b, visual: { ...v, emoji: [...(v.emoji.trim() || "💡")].slice(0, 4).join(""), title: v.title.slice(0, 40), caption: v.caption.slice(0, 40) } };
     if (v.type === "equation") return { ...b, visual: { ...v, label: v.label.slice(0, 24), expr: v.expr.slice(0, 40), note: v.note.slice(0, 80), ask: v.ask.slice(0, 40) } };
     return b;
   });
+  // Mood colours mean something: never two non-calm beats in a row (the payoff, the last beat, keeps its own).
+  for (let i = 1; i < beats.length - 1; i++) {
+    const m = beats[i].mood, prev = beats[i - 1].mood;
+    if (m && m !== "calm" && prev && prev !== "calm") beats[i] = { ...beats[i], mood: "calm" };
+  }
   return {
     ...s,
     beats,

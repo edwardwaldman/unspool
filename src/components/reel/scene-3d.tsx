@@ -295,9 +295,9 @@ function CameraRig({ shot, progress }: { shot: Shot; progress: number }) {
     // The beat's move, driven by how far the line has played: an orbit swings around the cast, a crane rises or
     // sinks, a truck slides past, a whip snaps in from the side as the beat starts.
     const p = smooth(prog.current), mv = shot.move;
-    const yaw = mv === "orbit" ? (p - 0.5) * 0.7 : mv === "whip" ? 1.15 * (1 - easeOut(prog.current / 0.14)) : 0;
+    const yaw = mv === "orbit" ? (p - 0.5) * 1.0 : mv === "whip" ? 1.15 * (1 - easeOut(prog.current / 0.14)) : 0;
     const lift = mv === "crane_up" ? -0.9 + 2.2 * p : mv === "crane_down" ? 1.6 - 2.1 * p : 0;
-    const slide = mv === "truck" ? (p - 0.5) * 2.6 : 0;
+    const slide = mv === "truck" ? (p - 0.5) * 3.6 : 0;
     const rel = new THREE.Vector3(shot.pos[0] + Math.sin(t * 0.35) * sway + slide, shot.pos[1] + Math.sin(t * 0.27) * 0.08 + lift, shot.pos[2]).sub(lk);
     if (yaw) rel.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
     const goal = rel.multiplyScalar(back * f.scale).add(lk).add(f.off);
@@ -674,7 +674,7 @@ function StoryScene({ scene, progress, accent }: { scene: SceneSpec; progress: n
   const pos: [number, number, number] = [px * Math.cos(yaw) + pz * Math.sin(yaw), py, pz * Math.cos(yaw) - px * Math.sin(yaw)];
   // Older scripts have no move: pick one per beat (stable for the beat) so every reel still feels shot, not static.
   const move = scene.move ?? DEFAULT_MOVES[beatHash(scene) % DEFAULT_MOVES.length];
-  const shot = { ...base, pos, look: [0, Math.min(tall * 0.45, 1.1), 0] as [number, number, number], focus: scene.objects.length > 1 ? 1 : 0, push: 0.05, move };
+  const shot = { ...base, pos, look: [0, Math.min(tall * 0.45, 1.1), 0] as [number, number, number], focus: scene.objects.length > 1 ? 0.55 : 0, push: 0.05, move };
   return (
     <>
       <CameraRig shot={shot} progress={progress} />
@@ -955,10 +955,11 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
       {term && (
         <div key={beatKey} className="pointer-events-none absolute inset-x-4 top-2 text-center" data-testid="scene-term">
           <span
-            className="inline-block animate-[term-in_.35s_cubic-bezier(.3,1.5,.5,1)] font-hook font-extrabold leading-[1.05] tracking-[-0.02em]"
+            className="relative inline-block animate-[term-in_.35s_cubic-bezier(.3,1.5,.5,1)] font-hook font-extrabold leading-[1.05] tracking-[-0.02em]"
             style={{ color: accent, fontSize: `min(40px, ${(170 / Math.max(6, term.length)).toFixed(1)}cqw)`, textShadow: "0 2px 12px rgba(0,0,0,.5)" }}
           >
             {sentence(term)}
+            <span aria-hidden className="absolute -bottom-[0.12em] left-0 h-[0.12em] w-full origin-left animate-[term-swipe_.6s_cubic-bezier(.2,.9,.2,1)_both] rounded-full" style={{ background: accent, opacity: 0.85 }} />
           </span>
         </div>
       )}

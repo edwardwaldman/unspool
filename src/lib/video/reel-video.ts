@@ -66,6 +66,12 @@ function cardTitle(v: Visual): string {
       return v.expr;
     case "emoji":
       return v.title || v.caption;
+    case "swatch":
+      return v.title || v.colors.map((c) => c.name).join(" / ");
+    case "compare":
+      return `${v.bad.title} vs ${v.good.title}`;
+    case "specimen":
+      return v.text;
   }
 }
 

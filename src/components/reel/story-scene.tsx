@@ -752,7 +752,7 @@ export function layoutScene(scene: SceneSpec): Slot[] {
   if (!n) return slots;
   const h = focusIndex(scene);
   const hero = objs[h];
-  const heroSize = n === 1 ? 1.9 : Math.max(1.25, Math.min(1.8, (hero.size || 1) * 1.3));
+  const heroSize = n === 1 ? 1.9 : Math.max(1.5, Math.min(2.0, (hero.size || 1) * 1.35));
   const heroW = (WIDTH[hero.shape] ?? 0.9) * heroSize;
   slots[h] = { x: 0, z: 0.35, size: heroSize, height: (HEIGHT[hero.shape] ?? 1) * heroSize, focus: true };
   // The cast, split by which side of the hero the writer placed them, nearest first on each side.
@@ -766,7 +766,7 @@ export function layoutScene(scene: SceneSpec): Slot[] {
   // Keep the shot balanced: one side never holds two more than the other.
   while (left.length > right.length + 1) right.push(left.pop()!);
   while (right.length > left.length + 1) left.push(right.pop()!);
-  const gap = 0.45;
+  const gap = 0.3;
   for (const [dir, list] of [[-1, left], [1, right]] as const) {
     let edge = heroW / 2 + gap;
     list.forEach(({ o, i }, j) => {

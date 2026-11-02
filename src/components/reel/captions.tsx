@@ -12,22 +12,36 @@ import type { ReelStyle } from "@/lib/reel-style";
  */
 /** The default (spotlight) look, as in hand-made study reels: bold white, every marked key word yellow. */
 const KEY_YELLOW = "#ffd84d";
+/** Words a caption chunk should never end on. */
+const WEAK = new Set(["a", "an", "the", "and", "or", "but", "of", "to", "in", "on", "at", "for", "with", "by", "from", "is", "are", "was", "were", "be", "as", "that", "your", "its", "it's", "their", "this", "these", "into", "than", "so", "if", "when", "while", "not", "no"]);
 
 export function Captions({ text, words, fraction, variant = "spotlight" }: { text: string; words: number[]; fraction: number; variant?: ReelStyle["captions"] }) {
   const list = useMemo(() => markupWords(text), [text]);
+  // Phrase-sized chunks: break at punctuation, or when a chunk gets long, but never right after a little joining
+  // word ("Surface is for cards and" read as a broken thought): that word starts the next chunk instead.
   const chunks = useMemo(() => {
     const out: number[][] = [];
     let cur: number[] = [];
+    const weak = (k: number) => WEAK.has(list[k].text.toLowerCase().replace(/[^a-z']/g, ""));
     list.forEach((w, i) => {
       cur.push(i);
       const chars = cur.reduce((n, k) => n + list[k].text.length + 1, 0);
-      const breakHere = /[.!?,;:—]$/.test(w.text) || cur.length >= 5 || chars >= 24;
-      if (breakHere) {
+      if (/[.!?,;:—]$/.test(w.text)) {
         out.push(cur);
         cur = [];
+      } else if (cur.length >= 5 || chars >= 26) {
+        // Carry trailing joining words over to the next chunk.
+        const carry: number[] = [];
+        while (cur.length > 2 && weak(cur[cur.length - 1])) carry.unshift(cur.pop()!);
+        out.push(cur);
+        cur = carry;
       }
     });
-    if (cur.length) out.push(cur);
+    if (cur.length) {
+      // A one-word tail joins the chunk before it rather than flashing up alone.
+      if (cur.length === 1 && out.length && out[out.length - 1].length <= 4 && !/[.!?]$/.test(list[out[out.length - 1].at(-1)!].text)) out[out.length - 1].push(...cur);
+      else out.push(cur);
+    }
     return out;
   }, [list]);
 
@@ -38,7 +52,7 @@ export function Captions({ text, words, fraction, variant = "spotlight" }: { tex
   return (
     <p
       className={`text-center font-hook leading-[1.3] tracking-[-0.015em] text-white ${variant === "clean" ? "font-bold" : "font-extrabold"}`}
-      style={{ textShadow: variant === "clean" ? "0 1px 3px rgba(0,0,0,.7)" : variant === "spotlight" ? "0 2px 0 rgba(0,0,0,.55), 0 3px 10px rgba(0,0,0,.6)" : "0 2px 0 rgba(0,0,0,.6)", fontSize: variant === "spotlight" ? "min(32px, 7.8cqw, 4.2cqh)" : "min(30px, 7.2cqw, 3.9cqh)" }}
+      style={{ textShadow: variant === "clean" ? "0 1px 3px rgba(0,0,0,.7)" : variant === "spotlight" ? "0 0 2px rgba(0,0,0,.9), 0 2px 0 rgba(0,0,0,.7), 0 3px 14px rgba(0,0,0,.75)" : "0 2px 0 rgba(0,0,0,.6)", fontSize: variant === "spotlight" ? "min(32px, 7.8cqw, 4.2cqh)" : "min(30px, 7.2cqw, 3.9cqh)" }}
       aria-live="off"
     >
       {chunk.map((i) => {

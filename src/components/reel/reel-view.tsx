@@ -18,6 +18,7 @@ import { BeatPop, useDoubleTapHeart } from "./gimmicks";
 import { QuizCard } from "./visuals";
 import { Sheet } from "../ui/sheet";
 import { MarkedText } from "../ui/marked-text";
+import { chime, thud, whoosh } from "./sfx";
 
 export type ReelChrome = {
   /** Extra bottom inset (keeps overlays clear of the phone's home indicator). */
@@ -115,6 +116,17 @@ export function ReelView({
     setMusic(reel.id, wantMusic);
   }, [reel.id, wantMusic]);
   useEffect(() => () => setMusic(reel.id, false), [reel.id]);
+
+  // Sound effects: a whoosh as each new beat lands, a chime or thud when the quiz is answered.
+  const sfxOn = active && !preview && !record && !muted && !pb.videoMode;
+  useEffect(() => {
+    if (sfxOn && pb.playing && pb.seg > 0) whoosh();
+  }, [pb.seg]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!sfxOn || !pb.quiz.revealed || pb.quiz.selected === null) return;
+    if (pb.quiz.selected === script.quiz.answer) chime();
+    else thud();
+  }, [pb.quiz.revealed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // M mutes / unmutes the reel that's playing.
   useEffect(() => {
@@ -234,8 +246,10 @@ export function ReelView({
       )}
 
       {/* Quiz: an overlay card inside the frame */}
+      {/* The quiz is the moment: the scene dims behind it and the card sits centre stage */}
+      {isQuiz && <div aria-hidden className="pointer-events-none absolute inset-0 z-[15] bg-black/40" />}
       {isQuiz && (
-        <div className="absolute left-3 z-20 flex items-end" style={{ right: GUTTER, top: below + 4, bottom: bottom + 20 }}>
+        <div className="absolute left-3 z-20 flex items-center" style={{ right: GUTTER, top: below + 4, bottom: bottom + 20 }}>
           <QuizCard quiz={script.quiz} state={pb.quiz} waitLeft={pb.quizWaitLeft} onAnswer={pb.answer} />
         </div>
       )}
@@ -278,7 +292,8 @@ export function ReelView({
 
       {/* Paused */}
       <AnimatePresence>
-        {!pb.playing && active && !pb.ended && !record && (
+        {/* Only once it has really been paused (or a phone is waiting for a tap): never over the first frame while it starts. */}
+        {!pb.playing && active && !pb.ended && !record && (pb.blocked || pb.elapsed > 0.05) && (
           <motion.div
             initial={{ opacity: 0, scale: 1.25 }}
             animate={{ opacity: 1, scale: 1 }}

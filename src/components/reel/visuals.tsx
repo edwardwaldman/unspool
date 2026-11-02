@@ -296,8 +296,8 @@ function FitBox({ children }: { children: React.ReactNode }) {
     return () => ro.disconnect();
   }, []);
   return (
-    <div ref={outer} className="flex h-full w-full items-end">
-      <div ref={inner} className="w-full origin-bottom" style={{ transform: scale < 1 ? `scale(${scale})` : undefined }}>
+    <div ref={outer} className="flex h-full w-full items-center">
+      <div ref={inner} className="w-full origin-center" style={{ transform: scale < 1 ? `scale(${scale})` : undefined }}>
         {children}
       </div>
     </div>
@@ -372,7 +372,7 @@ export function QuizCard({
               <span className="relative text-[14px] font-black tabular-nums" style={{ color: urgent ? "var(--coral)" : "#fff" }}>{secs}</span>
             </motion.span>
           ) : state.revealed ? (
-            <motion.span initial={{ opacity: 0, scale: 0.4, rotate: 8 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 380, damping: 12 }} className="text-[15px] font-black" style={{ color: verdictColor }}>
+            <motion.span initial={{ opacity: 0, scale: 0.4, rotate: 8 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 380, damping: 12 }} className="text-[22px] font-black leading-none" style={{ color: verdictColor, textShadow: "0 2px 12px rgba(0,0,0,.5)" }}>
               {verdict}
             </motion.span>
           ) : null}
@@ -528,6 +528,9 @@ function StageInner({ visual, script, progress, last, pulse = 0 }: StageProps) {
     case "graph":
     case "equation":
     case "emoji":
+    case "swatch":
+    case "compare":
+    case "specimen":
       return <DiagramStage visual={visual} progress={progress} />;
     case "quiz":
       return null;

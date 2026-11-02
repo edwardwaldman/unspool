@@ -226,10 +226,21 @@ Rules:
 // ---------------------------------------------------------------------------
 
 const SCRIPT_GUIDE = `Reel format:
-- ~30–60 seconds when spoken. Made of beats; a beat = one or two spoken sentences + one visual.
-- beats[0] is the HOOK beat (visual.type "hook", or "emoji"/"equation" for a math/science hook like "sin(∞) = ?" with a 📳): the scroll-stopping opener, using the planned hook (you may tighten it). Its tag is a short ALL-CAPS label like "GUARANTEED QUESTION", "COMMON TRAP", "READ THIS CLAUSE", "MONEY ON THE LINE".
-- Then 6–10 BODY beats that explain the concept with stories, analogies, concrete examples and memory hacks. Cover every detail of this reel's section: definitions, numbers, dates, rules, exceptions.
+- ~30–45 seconds when spoken. Made of beats; a beat = one or two spoken sentences + one visual.
+- FIRST choose the reel's STYLE from the topic, and stick to it:
+  · STORY: physical, scientific, historical or everyday things the 3D kit can genuinely show (cells, animals, planets, a chef's soup, money, people, buildings). Most beats are 3D scenes.
+  · MOTION: design, colours, fonts, writing, language, grammar, law, policies, rules, code, finance terms, definitions, abstract ideas. Most beats are flat motion graphics (swatch, compare, specimen, list, flow, split, stat, bigword, icons) with "objects": []; at most 2 beats use a 3D scene, and only where a shape truly is the thing.
+  Never dress a MOTION topic in unrelated 3D props (a soup pot for a colour palette, cubes labelled with terms).
+- beats[0] is the HOOK beat (visual.type "hook", or "emoji"/"equation" for a math/science hook like "sin(∞) = ?" with a 📳; in a MOTION reel open on the subject itself: a swatch, specimen, compare, stat or bigword): the scroll-stopping opener, using the planned hook (you may tighten it). Its tag is a short ALL-CAPS label like "GUARANTEED QUESTION", "COMMON TRAP", "READ THIS CLAUSE", "MONEY ON THE LINE".
+- Then 5–8 BODY beats that explain the concept with stories, analogies, concrete examples and memory hacks. Cover every detail of this reel's section: definitions, numbers, dates, rules, exceptions.
 - The quiz and outro are separate fields (don't add them as beats).
+- Build to a PAYOFF: the last body beat is the punchline the hook promised (mood "win", the boldest visual of the reel), not one more fact.
+
+Writing for the screen:
+- Never read a list of more than 3 items aloud. Show the list (list, swatch, icons) and say the point ("Nine colours, each with one job.").
+- Never speak codes, hex values, URLs, IDs or long numbers. Say what they mean ("a deep green-black") and put the exact value in the visual (a swatch shows #0f1d18).
+- On-screen words must make sense on their own: no bare numbers ("1") or shorthand ("8 SUPPORT"). Write "ONLY 1 SHOUTS", "8 BACK-UP COLOURS".
+- One idea per beat, one or two short sentences. Every beat must change what's on screen.
 - quiz: one multiple-choice question (3 options, at most 4) that checks the key idea; "answer" is the 0-based index of the correct option; "explain" starts with the correct answer in *highlight* then one short sentence why, e.g. "*Parameter.* It describes the whole population." For work docs, frame as a practical "what would you do" check.
 - outro.say: tease the next reel, e.g. "Next: four sampling methods. Keep scrolling." For the final reel, wrap up instead ("That's the whole doc. Scroll back to review any reel.") and set next_title to "THAT'S A WRAP".
 
@@ -253,6 +264,9 @@ Visuals — choose the one that best shows each beat; vary them across the reel 
   - highlight {show, x, y, label}: a red circle that pops on the key point with a red caption ("f → ±∞ only at x = 4"); show=false if none. zoom {show, x_range, y_range, label}: zooms into a region late in the beat ("near x = 4"); show=false if none (copy the main ranges).
   - title: the function's name as on a whiteboard ("y = sin(u)", "f(x)", "Supply & demand").
   Only plot what the document states or implies; numbers in the graph must match it.
+- swatch {title, colors:[{hex,name,note}], focus}: real colours, dealt onto the screen; focus = the index of the one this beat is about (shown huge), or -1 for all of them. Use for any colour, palette, paint, flag or design topic. Only real hex values from the document.
+- compare {bad:{title,points}, good:{title,points}}: a "don't vs do" / before-and-after card pair; the bad side is crossed out, then the good side pops in. For rules, mistakes, style guides, myths.
+- specimen {label, text, style: display|serif|sans|mono|handwritten, note}: a big sample that types itself on: a font, a quote, a key phrase, a word in another language, a line of code (mono).
 - emoji {emoji, title, caption, motion: vibrate|bounce|spin|pulse}: ONE big emoji as a prop for a metaphor beat (📳 vibrating phone for "it oscillates forever", 🏃 for approaching, 💸 for cost), optional big title above ("sin(∞) = ?") and a short yellow caption under it ("no limit"). This is the ONLY place emoji are allowed.
 For math, physics, chemistry, economics or statistics documents, use an accurate graph or equation visual for the ONE or TWO beats where the exact function or formula matters (give only those beats "scene": {"camera":"front","objects":[]}); never more than two such flat beats per reel. Every other beat still gets a 3D scene from the reel's story, even in math: a limit = a ball rolling down a ramp toward a flag it never quite touches; a derivative = a skateboarder's speed at one instant; a sum = blocks stacking up. A strong math reel: 3D hook → 3D story beats → one graph with the key point highlighted → 3D payoff → equation summary.
 color is one of primary | warn | yellow | cyan, with the same meanings as the markup (primary is the default; warn only for risks). Labels and titles are short (1–4 words), usually ALL CAPS. "icon" is a name from the allowed list (line icons, no emoji). Never put emoji in any text except the emoji visual's "emoji" field.
@@ -276,16 +290,16 @@ Other fields:
   9. Every object must LOOK LIKE the thing it stands for. Never use a shape as a stand-in for something else and label it (no ball labelled "BUMBLE BEE", no crate labelled "CARPENTER BEE", no cube labelled "ATOM"): the kit has bee, flower, fish, bird, tree, person, cell, molecule, planet and more; use them for what they are. A metaphor is fine only when the shape really is the metaphor's object (a pot for "the whole population" in a soup story). If the kit has nothing that genuinely looks like what the beat is about, DON'T force a scene: give that beat "objects": [] and a strong flat visual instead (bigword, split, list, flow, stat, icons), which reads better than the wrong object.
   10. "setting": where the story takes place, drawn as a world around the objects: "meadow" (outdoors, nature, plants, insects, animals), "forest", "kitchen" (cooking, chemistry-as-cooking, everyday stories), "classroom" (school, tests, people), "city" (economics, society, history of places), "ocean" (water, sea life, ships, trade), "lab" (science, experiments, cells, molecules), "space" (physics, astronomy, scale), "desert" (survival, heat, scarcity), "night" (sleep, time, mystery). Pick the one the story would really happen in, and keep it for the whole reel unless the story travels.
   The quiz and outro have no scene. A beat with objects must have 2-4 of them; "objects": [] is allowed on graph/equation beats and on beats where no shape in the kit honestly fits (rule 9). Aim for at least half the beats as 3D scenes when the kit fits the topic.
-- "mood" (on every beat): the background colour: "hot" (hot pink, for the hook and big surprises), "calm" (deep navy with soft glows — the default for explanations, graphs and equations), "warn" (red-orange, traps and mistakes), "win" (green, the correct answer / payoff).
+- "mood" (on every beat): the background tint. "calm" (deep navy) for nearly every beat. "hot" only on the hook (and at most one big surprise), "warn" only on a beat about a real mistake or danger, "win" only on the payoff. Never two non-calm moods in a row.
 - "image_prompt" (on every beat): the scene for an illustration shown behind that beat in the video, 8–20 words. Concrete and visual: objects, people, places or a simple visual metaphor for what the beat says (e.g. "a chef tasting one spoon of soup beside a huge steaming pot"). Never ask for words, letters, numbers, charts, logos, UI or real named people in the image, and don't describe an art style (the style is added automatically).
 - "stats": 0–3 numbers from the document shown in a live monospace stat line, counting up when they're mentioned: {label (1–2 lowercase words), value (number), prefix (e.g. "$" or ""), suffix (e.g. "%", " days" or ""), at_beat (index of the beat where it's first mentioned)}. Only real numbers from the document; use [] if the reel has none.`;
 
 /** Reel 1 is every new user's free first reel: the one that decides whether they keep going. */
 const FIRST_REEL = `THIS IS REEL 1: the viewer's free first reel, their first impression of Unspool. Make it the most fun, most visual reel of the set:
-- EVERY beat (except the quiz and outro) is a 3D scene with 3-4 objects. No graph or equation beats in this reel; save diagrams for later reels.
+- For a STORY topic, every beat (except the quiz and outro) is a 3D scene with 3-4 objects. For a MOTION topic, every beat is a striking flat visual (swatch, compare, specimen, flow, list, stat, bigword) and none use unrelated 3D props.
 - Dense and fast: every beat is ONE short, punchy sentence that teaches something concrete. No filler, no "let's dive in".
-- Variety: use at least 6 different shapes across the reel; every beat brings in or swaps at least one object, while 1-2 main objects carry the story.
-- Open big: the hook beat drops the hero in (enter "drop" at 0, motion "drop", camera "low", move "whip" or "crane_up", mood "hot").
+- Variety: in a STORY reel use at least 6 different shapes across the reel; in a MOTION reel never use the same visual type twice in a row.
+- Open big: the first frame must already show the subject. In a STORY reel the hook drops the hero in (enter "drop" at 0, motion "drop", camera "low", move "whip" or "crane_up", mood "hot").
 - Something new happens on screen in every beat (an object drops in, spins, glows, swaps places or becomes the accent), with at least one surprising twist mid-reel.
 - Vary the camera every beat or two ("close", "low", "front", "top").
 `;
@@ -327,7 +341,7 @@ Covers: ${reel.section}
 ${next ? `The next reel is "${next.title}".` : "This is the final reel."}
 ${index === 1 ? FIRST_REEL : ""}
 
-${input.long ? SCRIPT_GUIDE.replace("~30–60 seconds", "~45–90 seconds").replace("6–10 BODY beats", "8–14 BODY beats") : input.quick ? SCRIPT_GUIDE.replace("~30–60 seconds", "~25–35 seconds (keep it SHORT)").replace("6–10 BODY beats", "4–6 BODY beats, each ONE short punchy sentence,") : SCRIPT_GUIDE}
+${input.long ? SCRIPT_GUIDE.replace("~30–45 seconds", "~45–75 seconds").replace("5–8 BODY beats", "7–11 BODY beats") : input.quick ? SCRIPT_GUIDE.replace("~30–45 seconds", "~25–35 seconds (keep it SHORT)").replace("5–8 BODY beats", "4–6 BODY beats, each ONE short punchy sentence,") : SCRIPT_GUIDE}
 
 Set "index" to ${index} and "title" to "${reel.title}".${input.edit ? editBrief(input.edit) : ""}`;
 
