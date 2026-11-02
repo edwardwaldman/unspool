@@ -17,13 +17,15 @@ b=60/126; prog=[[57,60,64],[53,57,60],[60,64,67],[55,59,62]]
 steps=[st["s1"],st["s2"],st["s3"],st["method"]]
 for i in range(int(DUR/(b/4))):
     t0=i*b/4; ch=prog[(i//32)%4]
-    if any(s-b<=t0<s for s in steps): continue
+    if any(s-b<=t0<s for s in steps) or t0<st["hook"]: continue
     if t0>P+1.2: continue
     if i%4==0: add(t0,kick(),0.42)
     if i%8==4: add(t0,noise(.14,24),0.16)
     add(t0,noise(.02,140),0.03 if i%2 else 0.05)
     if i%2==0: add(t0,tone(note(ch[0]-24),b/2*0.9,6,(1,.6,.2)),0.12)
     if i%4==2: add(t0,tone(note(ch[(i//4)%3]+12),b/2,9,(1,.3)),0.04)
+for j in range(6): add(0.02+j*0.44,boom(),0.28); add(0.02+j*0.44,noise(0.15,22),0.22); add(0.02+j*0.44,tone(note(40-j),0.4,5,(1,.6)),0.12)   # cold-open slams
+add(st["hook"]-0.9,riser(0.9),0.14); add(st["hook"],boom(),0.35)
 for s in steps: add(s-1.2,riser(1.2),0.12); add(s,boom(),0.35); add(s,noise(0.4,9),0.15)
 for k,s in enumerate(["hook","credit","you","most","hard","reps","cta"]): add(st[s],noise(0.25,14)*np.linspace(1,0,int(SR*.25)),0.12)   # whoosh on every new shot
 hits=[st["credit"]+0.9,st["most"]+0.1,st["hard"]+0.3,st["reps"],st["reps"]+0.8,st["reps"]+1.5,st["method"]+1.0,P+0.1]
