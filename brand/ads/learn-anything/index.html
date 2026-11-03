@@ -1,0 +1,69 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#f7f8fb}
+#ov{position:absolute;inset:0;overflow:hidden}
+</style></head><body><div id="ov"></div>
+<script type="module">
+import { docToReels } from "./doc-to-reels.js";
+import { A, clamp, mix, ease, pop, pill, logo, headline, tap, phone, goScreen, researchScreen, quizScreen, feedScreen, coldOpen, captionWord, endCard, stage, NAVY } from "./kit.js";
+const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins")]);
+const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.12) k = i; return k; };
+const st = (n) => lines.find((l) => l.shot === n).s - 0.12, since = (t, n) => t - st(n), len = (n) => { const i = lines.findIndex((l) => l.shot === n); return lines[i + 1].s - lines[i].s; };
+const ov = document.getElementById("ov");
+// doomscrolling, slammed on in red
+const NEG = ["3 hours scrolling.", "Same 5 videos.", "Learned nothing.", "Brain rot."];
+const PROMPT = "How do planes stay in the air?";
+const MORE = [["How do black holes form?", 24, 212], ["How does the stock market work?", 290, 272], ["Why is the sky blue?", 30, 950], ["What caused World War I?", 340, 1000]];
+const HITS = () => [[st("hook") + 0.05, 1], [st("type") + 2.6, 0.8], [st("reels") + 0.75, 1], [st("quiz") + 1.6, 0.8], [st("cta") + 0.1, 1.1]];
+
+window.renderAt = (t) => {
+  if (t < st("hook")) { const k = clamp((t - (st("hook") - 0.2)) / 0.2);
+    ov.innerHTML = coldOpen(t, NEG) + (k > 0 ? `<div style="position:absolute;inset:0;background:#f7f8fb;opacity:${k}"></div>` : ""); return; }
+  const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.12);
+  let h = logo();
+  if (shot === "hook") {
+    h += headline("WHAT IF YOUR FEED", "TAUGHT YOU SOMETHING?", lt / 0.25);
+    h += phone(360, 300, 0.9, feedScreen(lt, ["forces", "lift", "stall"], 0.8), pop(lt / 0.4));
+  }
+  if (shot === "type") {
+    // zoom onto the box, type the question, tap go
+    const z = ease(lt / 0.45), s = mix(0.9, 1.65, z), y = mix(300, 600 - 463 * 1.65, z);
+    const n = Math.floor(clamp((lt - 0.9) / 1.6) * PROMPT.length), go = clamp((lt - 2.55) / 0.4);
+    h += phone(360, y, s, goScreen({ typed: PROMPT.slice(0, n), caret: lt < 2.55 && Math.floor(t * 4) % 2 === 0, go, focus: z }));
+    h += tap(360 - 196 * s + (16 + 312) * s, y + (16 + 447) * s, (lt - 2.5) / 0.6);
+    h += pill("TYPE ANY QUESTION", lt / 0.3, 960);
+  }
+  if (shot === "search") {
+    h += pill("IT LOOKS IT UP FOR YOU", lt / 0.3);
+    h += phone(360, 300, 0.9, researchScreen(lt * 1.1, PROMPT), pop(lt / 0.3));
+  }
+  if (shot === "reels") {
+    h += pill("ONE IDEA PER REEL", lt / 0.3);
+    h += A(40, 300, `<div style="width:640px;height:720px;border-radius:30px;background:radial-gradient(120% 80% at 50% 40%,#1f3a2a,#0b120e);box-shadow:0 20px 50px rgba(13,42,92,.25)"></div>`);
+    h += `<div style="position:absolute;left:0;top:120px;width:720px;height:1280px">${docToReels(lt, { title: "", reels: ["forces", "stall", "lift"], docTitle: "How planes fly", badge: "WEB" })}</div>`;
+  }
+  if (shot === "learn") {
+    h += pill("LEARN IT LIKE YOU SCROLL", lt / 0.3);
+    h += phone(360, 300, 0.9, feedScreen(lt, ["forces", "lift", "stall"], len("learn") / 3));
+  }
+  if (shot === "quiz") {
+    h += pill("A QUIZ SO IT STICKS", lt / 0.3);
+    h += phone(360, 300, 0.9, quizScreen(lt, "lift", "What pushes a plane up?", ["The engines", "Air pushed down by the wings", "Hot air"], 1), pop(lt / 0.3));
+  }
+  if (shot === "curious") {
+    // anything you're curious about: the box cycles through questions, and they pile up around the phone
+    const q = Math.min(MORE.length - 1, Math.floor(lt / (len("curious") * 0.8 / MORE.length)));
+    h += phone(360, 336, 0.76, goScreen({ typed: MORE[q][0], go: 0.3 }));
+    MORE.forEach(([txt, x, y], j) => { const k = (lt - j * len("curious") * 0.8 / MORE.length) / 0.3; if (k <= 0) return;
+      h += A(x, y, `<div style="${pop(k)};rotate:${[-4, 3, 3, -3][j]}deg;background:#fff;border:3px solid ${NAVY};border-radius:18px;padding:10px 16px;font:700 22px Ins;color:${NAVY};box-shadow:0 8px 20px rgba(13,42,92,.18);white-space:nowrap">${txt}</div>`); });
+    h += pill("ANYTHING YOU'RE CURIOUS ABOUT", lt / 0.3, 140);
+  }
+  if (shot === "cta" || shot === "end") h += endCard(since(t, "cta"), `<span style="font-size:50px;line-height:1.12">Scroll something<br>that makes you<br><span style="background:#bcd8fb;padding:0 10px">smarter.</span></span>`, "type any question", 2.4);
+  let out = stage(t, lt, h, HITS());
+  if (!["cta", "end"].includes(shot)) out += captionWord(t, L, /^(FEED|ANY|QUESTION|PLANES|REELS|IDEA|QUIZ|STICKS|SCROLL|STALL|LIFTS)$/);
+  ov.innerHTML = out;
+};
+await Promise.all(["forces.jpg", "lift.jpg", "stall.jpg"].map((s) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = s; })));
+window.renderAt(0); setTimeout(() => (window.ready = true), 400);
+</script></body></html>

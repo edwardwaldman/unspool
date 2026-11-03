@@ -1,0 +1,11 @@
+{"voice": "am_michael", "speed": 1.2, "lead": 2.3, "tail": 0, "gap": 0.08, "lines": [
+ ["hook", "What if your feed actually taught you something?", 0.15],
+ ["type", "Type any question. Like, how do planes stay in the air?", 0.2],
+ ["search", "Unspool looks it up, and writes the explanation.", 0.15],
+ ["reels", "Then turns it into short reels. One idea each.", 0.45],
+ ["learn", "The four forces. How a wing lifts. Why planes stall.", 0.15],
+ ["quiz", "And a quiz, so it actually sticks.", 0.5],
+ ["curious", "Black holes. The stock market. Why the sky is blue. Type it in, and scroll.", 0.15],
+ ["cta", "Scroll something that makes you smarter. Try it free, at unspool dot c c.", 0.15, "Scroll something that makes you smarter. Try it free at unspool.cc"],
+ ["end", "", 1.4]
+]}

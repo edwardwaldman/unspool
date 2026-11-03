@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;width:540px;height:960px;overflow:hidden;background:radial-gradient(90% 70% at 50% 40%,#2c4250,#18232c);font-family:'DejaVu Sans',sans-serif;font-weight:700}
+.t{position:absolute;top:84px;width:540px;text-align:center;color:#d3f05a;font-size:44px;letter-spacing:1px}
+.cap{position:absolute;top:650px;width:540px;text-align:center;color:#fff;font-size:38px;line-height:1.22;text-shadow:0 3px 6px #0008}
+.cap b{color:#d3f05a}
+.f{position:absolute;bottom:30px;left:0;color:#fff;font-size:30px} .bar{position:absolute;bottom:0;left:0;width:540px;height:6px;background:#ffffff33}.bar i{display:block;height:6px;background:#fff}
+.tag{position:absolute;font-size:24px;border-radius:10px;padding:6px 12px;color:#1b2a12;background:#d3f05a}
+</style></head><body><div id="s"></div><script>
+const P = new URLSearchParams(location.search).get("s");
+const plane = (x, y, s = 1, rot = 0) => `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})"><path d="M-110 0 C-100 -14 80 -16 110 -4 C116 0 110 6 100 8 L-100 10 Z" fill="#e9eef2"/><path d="M-20 -2 L-60 -70 L-40 -70 L20 -4 Z M-20 6 L-55 60 L-35 60 L20 8 Z" fill="#c7d0d8"/><path d="M-100 0 L-118 -36 L-104 -36 L-84 -2 Z" fill="#c7d0d8"/><circle cx="96" cy="-2" r="4" fill="#4aa3df"/></g>`;
+const arrow = (x1, y1, x2, y2, c) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="9" stroke-linecap="round"/><circle cx="${x2}" cy="${y2}" r="1"/>` + (() => { const a = Math.atan2(y2 - y1, x2 - x1), L = 24; return `<path d="M${x2 + Math.cos(a) * 6} ${y2 + Math.sin(a) * 6} L${x2 - Math.cos(a - 0.5) * L} ${y2 - Math.sin(a - 0.5) * L} L${x2 - Math.cos(a + 0.5) * L} ${y2 - Math.sin(a + 0.5) * L} Z" fill="${c}"/>`; })();
+const wing = (rot) => `<g transform="translate(270 380) rotate(${rot})"><path d="M-150 0 C-150 -40 -60 -58 40 -40 C110 -28 160 -6 170 4 C110 6 0 22 -100 20 C-140 18 -150 10 -150 0 Z" fill="#e9eef2"/></g>`;
+const S = {
+  forces: { t: "THE FOUR FORCES", svg: plane(270, 380, 1.2) + arrow(270, 330, 270, 200, "#d3f05a") + arrow(270, 430, 270, 560, "#ff8b6c") + arrow(410, 382, 500, 382, "#4aa3df") + arrow(130, 382, 40, 382, "#e59cff"),
+    tags: [["LIFT", 300, 190], ["WEIGHT", 300, 530], ["THRUST", 400, 300], ["DRAG", 30, 300]], cap: "<b>Lift</b>, <b>weight</b>, <b>thrust</b><br>and <b>drag</b>.", n: "1 of 6", p: 0.17 },
+  lift: { t: "LIFT", svg: wing(7) + [0, 1, 2, 3].map((i) => `<path d="M40 ${300 + i * 36} C 200 ${300 + i * 36}, 330 ${330 + i * 36}, 520 ${430 + i * 50}" stroke="#9db8ff" stroke-width="4" fill="none" opacity=".7"/>`).join("") + arrow(270, 330, 270, 190, "#d3f05a") + arrow(450, 470, 480, 560, "#9db8ff"),
+    tags: [["LIFT", 300, 180], ["AIR PUSHED DOWN", 260, 570]], cap: "The wing pushes air <b>down</b>.<br>The air pushes it <b>up</b>.", n: "2 of 6", p: 0.34 },
+  stall: { t: "THE STALL", svg: wing(24) + [0, 1, 2, 3, 4].map((i) => { const x = 210 + i * 52, y = 268 + i * 26 - i * i * 1.5; return `<path d="M${x} ${y} q 13 -30 26 0 t 26 0" stroke="#ff8b6c" stroke-width="5" fill="none" opacity=".85"/>`; }).join("") + arrow(290, 340, 290, 300, "#d3f05a88"),
+    tags: [["TOO STEEP", 30, 440], ["AIR BREAKS AWAY", 270, 190]], cap: "Tilt too far and the air<br>breaks away. <b>Stall.</b>", n: "4 of 6", p: 0.67 },
+}[P];
+document.getElementById("s").innerHTML = `<div class="t">${S.t}</div><svg style="position:absolute;left:0;top:0" width="540" height="960">${S.svg}</svg>${S.tags.map(([l, x, y]) => `<div class="tag" style="left:${x}px;top:${y}px">${l}</div>`).join("")}<div class="cap">${S.cap}</div><div class="f">unspool · Reel ${S.n}</div><div class="bar"><i style="width:${S.p * 100}%"></i></div>`;
+</script></body></html>
