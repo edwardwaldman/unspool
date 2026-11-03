@@ -130,3 +130,45 @@ export async function startUpload(file: File, onCreated: (documentId: string) =>
   emit();
   return {};
 }
+
+// A typed topic travels as a small text "file" named <topic>.prompt, so it can wait through sign-up
+// (and Google's redirect) exactly like a picked file. The server researches it instead of reading it.
+const PROMPT_EXT = "prompt";
+
+export function promptFile(text: string): File {
+  const clean = text.replace(/\s+/g, " ").trim();
+  return new File([clean], `${clean.slice(0, 60).replace(/[\\/.]/g, " ").trim() || "Topic"}.${PROMPT_EXT}`, { type: "text/plain" });
+}
+
+export const isPromptFile = (file: File) => extensionOf(file.name) === PROMPT_EXT;
+export const displayName = (file: File) => (isPromptFile(file) ? file.name.slice(0, -PROMPT_EXT.length - 1) : file.name);
+
+/** Start reels from a typed topic: one request creates the document and starts the research. */
+export async function startPrompt(text: string, onCreated: (documentId: string) => void, opts: { testOne?: boolean } = {}): Promise<{ error?: string; code?: string }> {
+  const prompt = text.replace(/\s+/g, " ").trim();
+  if (prompt.length < 3) return { error: "Type a topic to study." };
+  pending = { phase: "creating", fileName: prompt.slice(0, 60) };
+  emit();
+  let res: Response;
+  try {
+    res = await fetch("/api/uploads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: prompt.slice(0, 500), ...(opts.testOne ? { testOne: true } : {}) }),
+    });
+  } catch {
+    pending = null;
+    emit();
+    return { error: "You're offline. Check your connection and try again." };
+  }
+  const body = (await res.json().catch(() => ({}))) as { documentId?: string; error?: string; code?: string };
+  pending = null;
+  if (!res.ok || !body.documentId) {
+    emit();
+    return { error: body.error ?? "Couldn't start. Try again.", code: body.code };
+  }
+  uploads.set(body.documentId, { phase: "done", fileName: prompt.slice(0, 60) });
+  emit();
+  onCreated(body.documentId);
+  return {};
+}

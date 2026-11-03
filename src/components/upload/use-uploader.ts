@@ -7,7 +7,7 @@ import { openAuth } from "../auth/auth-store";
 import { getSessionUser, useSessionUser } from "../auth/use-session";
 import { toast } from "../ui/toast";
 import { RESUME_PARAM, takeStashedFile } from "./file-stash";
-import { holdFile, startUpload, validateFile } from "./upload-store";
+import { holdFile, isPromptFile, startPrompt, startUpload, validateFile } from "./upload-store";
 
 /**
  * Upload a file and jump straight into its feed. The file always comes first: uploading needs a (free)
@@ -18,7 +18,8 @@ export function useUploader() {
   const router = useRouter();
   return useCallback(
     async (file: File) => {
-      const invalid = validateFile(file);
+      const typed = isPromptFile(file);
+      const invalid = typed ? null : validateFile(file);
       if (invalid) return toast(invalid, 4000);
 
       const gate = () => {
@@ -32,10 +33,11 @@ export function useUploader() {
       };
       const run = async () => {
         track("upload_started", file.name.split(".").pop());
-        const result = await startUpload(file, (id) => {
+        const opened = (id: string) => {
           track("upload_done");
           router.push(`/s/${id}`);
-        });
+        };
+        const result = typed ? await startPrompt(await file.text(), opened) : await startUpload(file, opened);
         if (result.code === "auth") gate();
         else if (result.error && (result.code === "limit" || result.code === "free_used")) {
           toast(result.error, 4500);

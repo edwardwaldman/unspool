@@ -77,7 +77,7 @@ export function MakingOf({ spool, stage, fileName }: { spool: SpoolDTO | null; s
   const reduce = useReducedMotion();
   const reels = spool?.reels ?? [];
   const writing = reels.find((r) => r.status === "generating") ?? reels.find((r) => r.status !== "ready" && !r.locked);
-  const ext = (spool?.fileType || fileName.split(".").pop() || "").slice(0, 4);
+  const ext = spool?.fileType === "prompt" ? "WEB" : (spool?.fileType || fileName.split(".").pop() || "").slice(0, 4);
   const typedTitle = useTyped(writing ? clean(writing.title) : "", 30);
   const typedHook = useTyped(writing && typedTitle.length >= clean(writing.title).length ? clean(writing.hook) : "", 42);
   const planned = reels.length || (stage >= 2 ? 6 : 0);

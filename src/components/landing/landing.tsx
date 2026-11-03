@@ -8,6 +8,7 @@ import { usePendingUpload } from "../upload/upload-store";
 import { useRouter } from "next/navigation";
 import { useSessionUser } from "../auth/use-session";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
+import { PromptBox } from "../go/go-hero";
 import { motion, useSpring, useTransform } from "motion/react";
 import { SiteFooter } from "../shell/site-footer";
 import { DocToReel } from "./doc-to-reel";
@@ -96,6 +97,7 @@ function UploadButton({ toStudio }: { toStudio: boolean }) {
         </span>
         Watch a demo
       </Link>
+      <PromptBox className="mt-3 max-w-[420px] min-[900px]:max-w-[520px]" />
     </>
   );
 }

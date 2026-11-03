@@ -1,4 +1,4 @@
-import { writeReelScript, planSpool } from "./claude";
+import { researchTopic, writeReelScript, planSpool } from "./claude";
 import { LIMITS } from "./config";
 import { fundPlannedDocument, ownerEntitlement, refundReel } from "./credits";
 import { PLANS, maxWordsFor } from "./plans";
@@ -76,7 +76,21 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
 // Stage 1: extract + plan
 // ---------------------------------------------------------------------------
 
+/** A typed prompt is stored as `<id>/prompt.txt`: its reels come from web research, not from the file. */
+export const PROMPT_FILE = "prompt.txt";
+const isPromptDocument = (path: string | null) => Boolean(path?.endsWith(`/${PROMPT_FILE}`));
+
+async function researchedNotes(request: string) {
+  const notes = await withRetry(() => researchTopic(request.trim()), 2);
+  if (!notes || notes.split(/\s+/).length < 150) {
+    throw new ExtractionError("We couldn't find enough to study on that. Try naming the topic, class or chapter.");
+  }
+  const text = `Topic requested: ${request.trim()}\n\n${notes}`;
+  return { text, pageCount: null, wordCount: text.split(/\s+/).filter(Boolean).length, truncated: false, method: "text" as const };
+}
+
 export async function processDocument(documentId: string) {
+  const processStart = Date.now();
   const db = adminClient();
   const { data: doc } = await db
     .from("documents")
@@ -97,10 +111,13 @@ export async function processDocument(documentId: string) {
       return data;
     }).catch(() => null);
     if (!file) throw new ExtractionError("We couldn't read the uploaded file. Try uploading it again.");
-    const extracted = await extractDocument(Buffer.from(await file.arrayBuffer()), doc.file_name, {
-      maxPages: plan_.maxPages,
-      maxWords: maxWordsFor(ent.tier),
-    });
+    const fromPrompt = isPromptDocument(doc.file_path);
+    const extracted = fromPrompt
+      ? await researchedNotes(await file.text())
+      : await extractDocument(Buffer.from(await file.arrayBuffer()), doc.file_name, {
+          maxPages: plan_.maxPages,
+          maxWords: maxWordsFor(ent.tier),
+        });
 
     await db
       .from("documents")
@@ -159,8 +176,10 @@ export async function processDocument(documentId: string) {
 
     // Reel 1 first, right here in this job (no second invocation to spin up: the first reel is what the user is
     // waiting on); it queues the rest once its script is written (so they reuse the warm prompt cache).
+    // Research can take a minute; if it did, give reel 1 its own job so it gets a full time budget.
     const first = reels.find((r) => r.index === 1);
-    if (first) await generateReel(first.id);
+    if (first && Date.now() - processStart > 60_000) await dispatch({ name: "reel", reelId: first.id });
+    else if (first) await generateReel(first.id);
   } catch (err) {
     console.error("[pipeline] processDocument failed", documentId, err);
     await db.from("documents").update({ status: "failed", error: friendlyError(err), error_detail: errorDetail(err) }).eq("id", documentId);

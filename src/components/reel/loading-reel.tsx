@@ -35,7 +35,7 @@ export function stageLine(spool: SpoolDTO | null, upload: UploadState | null) {
   const total = spool?.totalReels || reels.length;
   const n = (v: number | null | undefined, unit: string) => (v ? `${v.toLocaleString("en-US")} ${unit}` : null);
   if (stage === 0) return upload?.phase === "creating" ? "Preparing your upload" : "Uploading your file";
-  if (stage === 1) return "Reading your document";
+  if (stage === 1) return spool?.fileType === "prompt" ? "Researching your topic on the web" : "Reading your document";
   if (stage === 2) {
     const size = n(spool?.pageCount, spool?.pageCount === 1 ? "page" : "pages") ?? n(spool?.wordCount, "words");
     return size ? `Planning your reels from ${size}` : "Planning your reels";

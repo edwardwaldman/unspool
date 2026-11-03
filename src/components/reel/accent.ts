@@ -43,6 +43,7 @@ export function mutedColor(el?: Element | null) {
 
 export function fileLabel(ext: string) {
   const e = ext.toLowerCase();
+  if (e === "prompt") return "TOPIC";
   if (e === "docx") return "DOC";
   if (e === "pptx") return "PPT";
   if (["png", "jpg", "jpeg", "webp"].includes(e)) return "IMG";
