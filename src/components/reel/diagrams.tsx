@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { useId, useMemo } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { compileExpr } from "@/lib/expr";
 import type { GraphVisual, Mood, Visual } from "@/lib/schema";
 import { CompareVisual, SpecimenVisual, SwatchVisual } from "./design-visuals";
@@ -244,9 +244,40 @@ export function EmojiProp({ v, progress }: { v: Extract<Visual, { type: "emoji" 
   );
 }
 
+/**
+ * Scales its content down (never up) to fit the box's height, so a tall visual (a big swatch and its row of
+ * chips, two compare cards on a short phone) is shrunk to fit instead of being cut off at the top and bottom.
+ */
+function FitHeight({ children }: { children: React.ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
+  const inner = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const b = box.current, i = inner.current;
+    if (!b || !i) return;
+    const fit = () => {
+      const room = b.clientHeight - 8, h = i.scrollHeight;
+      setScale(h > room && h > 0 ? Math.max(0.5, room / h) : 1);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(b);
+    ro.observe(i);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={box} className="flex h-full w-full items-center justify-center overflow-hidden">
+      <div ref={inner} className="flex w-full origin-center justify-center" style={{ transform: scale < 1 ? `scale(${scale})` : undefined }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function DiagramStage({ visual, progress }: { visual: Visual; progress: number }) {
   return (
     <div className="flex h-full w-full items-center justify-center overflow-hidden [container-type:inline-size]">
+      <FitHeight>
       {visual.type === "graph" ? (
         <GraphPanel v={visual} progress={progress} />
       ) : visual.type === "equation" ? (
@@ -260,6 +291,7 @@ export function DiagramStage({ visual, progress }: { visual: Visual; progress: n
       ) : visual.type === "specimen" ? (
         <SpecimenVisual v={visual} progress={progress} />
       ) : null}
+      </FitHeight>
     </div>
   );
 }

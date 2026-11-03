@@ -40,7 +40,7 @@ export function SwatchVisual({ v }: { v: Extract<Visual, { type: "swatch" }> }) 
             animate={{ clipPath: "inset(0% 0 0 0)", scale: 1 }}
             transition={{ duration: 0.55, ease: [0.2, 0.9, 0.2, 1] }}
             className="relative w-full"
-            style={{ aspectRatio: "1 / 0.95", background: hero.hex, boxShadow: "0 24px 60px rgba(0,0,0,.45), inset 0 0 0 2px rgba(255,255,255,.14)", borderRadius: 18 }}
+            style={{ aspectRatio: "1 / 0.78", background: hero.hex, boxShadow: "0 24px 60px rgba(0,0,0,.45), inset 0 0 0 2px rgba(255,255,255,.14)", borderRadius: 18 }}
           >
             <div className="absolute inset-x-[6cqw] bottom-[6cqw]" style={{ color: ink(hero.hex) }}>
               <motion.div initial={reduce ? false : { y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.35, ...SPRING }} className="font-display leading-none" style={{ fontSize: "min(54px, 13cqw)" }}>
