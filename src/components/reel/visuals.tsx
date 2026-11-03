@@ -489,12 +489,28 @@ export function VisualStage(props: StageProps) {
   useEffect(() => {
     const b = box.current, c = content.current;
     if (!b || !c) return;
-    // Fit the graphic to the space it has (up to 125%), so it fills the frame but never spills onto the captions or title.
-    const measure = () => setFit(Math.min(1.25, (b.clientHeight - 16) / Math.max(1, c.offsetHeight), (b.clientWidth - 16) / Math.max(1, c.offsetWidth)));
-    const ro = new ResizeObserver(measure);
+    // Fit the graphic to the space it has, so it fills the frame but never spills onto the captions or title.
+    // Text graphics (a split, an icon row, a list) fill the width at 100%, so they could never grow and sat small with
+    // empty space above and below: lay them out narrower and scale them back up (up to 150%) instead.
+    let raf = 0;
+    const measure = () => {
+      const W = b.clientWidth - 16, H = b.clientHeight - 16;
+      if (W <= 0 || H <= 0) return;
+      // Never narrower than 270px, or labels start breaking mid-phrase and icon rows overflow.
+      let k = Math.min(1.5, Math.max(1, W / 270));
+      for (let pass = 0; pass < 3; pass++) {
+        c.style.width = `${Math.max(Math.min(W, 270), W / k)}px`;
+        const h = c.scrollHeight, w = Math.max(c.offsetWidth, c.scrollWidth);
+        const next = Math.min(k, H / Math.max(1, h), W / Math.max(1, w));
+        if (next >= k - 0.01) break;
+        k = Math.max(0.55, next);
+      }
+      setFit(k);
+    };
+    const ro = new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(measure); });
     ro.observe(b);
     ro.observe(c);
-    return () => ro.disconnect();
+    return () => { ro.disconnect(); cancelAnimationFrame(raf); };
   }, []);
   const inner = <StageInner {...props} />;
   if (props.visual.type === "quiz" || props.visual.type === "hook" || DIAGRAM_TYPES.has(props.visual.type)) return inner;

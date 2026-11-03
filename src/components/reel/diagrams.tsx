@@ -19,7 +19,8 @@ const CURVE: Record<string, string> = { cyan: "#25d8ff", pink: "#ff5fb0", yellow
 // Moods tint a dark stage rather than flooding it: a glow of colour behind the subject, the edges staying deep, so
 // captions stay readable and the reel's own colours (a swatch, a scene) are what stands out.
 export const MOOD_BG: Record<Mood, string> = {
-  hot: "radial-gradient(80% 55% at 50% 40%, rgba(255,79,154,.55) 0%, rgba(184,40,95,.28) 45%, transparent 80%), linear-gradient(#12070d, #0a0509)",
+  // The hook glows in the reel's own colour, brighter than calm (a fixed magenta clashed with every green reel).
+  hot: "radial-gradient(80% 55% at 50% 40%, color-mix(in srgb, var(--thread) 42%, transparent) 0%, color-mix(in srgb, var(--thread) 16%, transparent) 45%, transparent 80%), linear-gradient(#0a0f0d, #060908)",
   // Tinted with the reel's own accent (each part of a series has its own colour), not a fixed magenta glow.
   calm: "radial-gradient(60% 40% at 22% 30%, color-mix(in srgb, var(--thread) 26%, transparent) 0%, transparent 70%), radial-gradient(60% 40% at 80% 72%, color-mix(in srgb, var(--thread) 14%, transparent) 0%, transparent 70%), linear-gradient(#05080a, #070b0c)",
   warn: "radial-gradient(80% 55% at 50% 40%, rgba(255,106,61,.5) 0%, rgba(160,40,24,.28) 45%, transparent 80%), linear-gradient(#130807, #0b0505)",

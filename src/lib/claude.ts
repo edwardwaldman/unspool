@@ -48,7 +48,7 @@ House style for everything you write:
 - Spoken, not written. Short punchy sentences. Plain words. Talk to one person ("you").
 - Every reel opens with a real hook: a curiosity gap, a warning, a surprising fact, or a relatable story/analogy. Never "In this reel we will…", never "Welcome back", never "Let's dive in".
 - Explain with concrete stories, analogies and examples. Add memory hacks where they genuinely help ("Parameter goes with Population, Statistic goes with Sample").
-- Stay 100% faithful to the document. Never invent facts, numbers, names, dates or rules. Analogies and examples are fine as long as they don't add claims about the subject. If the document doesn't say it, don't state it as fact.
+- Stay 100% faithful to the document. Never invent facts, numbers, names, dates or rules, and never invent a "before" or a quote the document doesn't give (if it doesn't say what the old version was, don't name one). Analogies and examples are fine as long as they don't add claims about the subject. If the document doesn't say it, don't state it as fact.
 - Across all the reels, cover every important detail: definitions, numbers, dates, rules, exceptions, deadlines, amounts, obligations.
 - Adapt to the document type:
   - study material → test tips, common traps ("mix these up and you lose points"), memory hacks, likely exam questions.
@@ -201,7 +201,7 @@ export async function planSpool(fileName: string, text: string): Promise<Plan> {
 Rules:
 - Decide how many reels this document needs: roughly one reel per distinct key idea, between ${MIN_REELS} and ${MAX_REELS}. A short memo or one-pager is about 3–5 reels, a typical chapter or set of notes about 6–10, a long report or contract about 12–15. Never pad with filler reels to reach a number, and never cram two big ideas into one reel.
 - Reels are numbered index 1..N in the document's logical order. Together they must cover the WHOLE document (not just highlights), with no overlap between reels.
-- "title": 2–5 words, ALL CAPS, names the concept (e.g. "POPULATION vs SAMPLE", "THE DEPOSIT CLAUSE").
+- "title": 2–5 words, ALL CAPS, names the concept (e.g. "POPULATION vs SAMPLE", "THE DEPOSIT CLAUSE"). It must read as a natural name a person would say, never words lifted out of a sentence ("THE PROMPT BOX", not "THE OR TYPE PROMPT BOX").
 - "hook": one scroll-stopping spoken sentence (max ~16 words) that opens that reel. It is shown as a free preview, so make each one irresistible and specific to the content.
 - "section": a precise note of which part of the document this reel covers (headings, page numbers, key terms), so a writer can find it. Not shown to users.
 - "title" at the top level: a short friendly name for the whole document (max 6 words).
@@ -244,8 +244,8 @@ Writing for the screen:
 - One idea per beat, one or two short sentences. Every beat must change what's on screen.
 - The visual SHOWS the thing; the voice EXPLAINS it. Don't make the visual just repeat the spoken words (if the line says "Unbounded is for headlines", show the font, not the word "Unbounded" again).
 - On-screen labels and tags: 3 words at most.
-- quiz: one multiple-choice question (3 options, at most 4) that checks the key idea; "answer" is the 0-based index of the correct option; "explain" starts with the correct answer in *highlight* then one short sentence why, e.g. "*Parameter.* It describes the whole population." For work docs, frame as a practical "what would you do" check.
-- outro.say: tease the next reel, e.g. "Next: four sampling methods. Keep scrolling." For the final reel, wrap up instead ("That's the whole doc. Scroll back to review any reel.") and set next_title to "THAT'S A WRAP".
+- quiz: one multiple-choice question (3 options, at most 4) that checks the key idea. Every wrong option is a plausible mistake someone could really make, never a joke or a throwaway ("Nothing at all", "The boring thing"); "answer" is the 0-based index of the correct option; "explain" starts with the correct answer in *highlight* then one short sentence why, e.g. "*Parameter.* It describes the whole population." For work docs, frame as a practical "what would you do" check.
+- outro.say: tease the next reel in natural words, e.g. "Up next, four sampling methods. Keep scrolling." (say what the next reel is about; don't read its title out if it doesn't sound like speech). For the final reel, wrap up instead ("That's the whole doc. Scroll back to review any reel.") and set next_title to "THAT'S A WRAP".
 
 Highlight markup inside "say", "headline", "explain" and quiz text (words get colored and pop on screen as they're spoken):
 - *word* → key term (the main accent) · #word# → warning (traps, mistakes, risks, penalties) · ^word^ → highlight (a number or phrase to remember) · ~word~ → the correct / safe choice
@@ -270,7 +270,7 @@ Visuals — choose the one that best shows each beat; vary them across the reel 
 - swatch {title, colors:[{hex,name,note}], focus}: real colours, dealt onto the screen; focus = the index of the one this beat is about (shown huge), or -1 for all of them. Use for any colour, palette, paint, flag or design topic. Only real hex values from the document.
 - compare {bad:{title,points}, good:{title,points}}: a "don't vs do" / before-and-after card pair; the bad side is crossed out, then the good side pops in. For rules, mistakes, style guides, myths.
 - typeset {title, items:[{name, role, style}]}: 1-3 fonts side by side, each drawn in its own look ("Aa" + its name) with its job. For any beat about fonts or type.
-- specimen {label, text, style: display|serif|sans|mono|handwritten, note}: a big sample that types itself on: a font, a quote, a key phrase, a word in another language, a line of code (mono).
+- specimen {label, text, style: display|serif|sans|mono|handwritten, note}: a big sample that types itself on: a font, a real quote, a word in another language, a line of code (mono). Not for a slogan or a plain phrase (use bigword).
 - emoji {emoji, title, caption, motion: vibrate|bounce|spin|pulse}: ONE big emoji as a prop for a metaphor beat (📳 vibrating phone for "it oscillates forever", 🏃 for approaching, 💸 for cost), optional big title above ("sin(∞) = ?") and a short yellow caption under it ("no limit"). This is the ONLY place emoji are allowed.
 For math, physics, chemistry, economics or statistics documents, use an accurate graph or equation visual for the ONE or TWO beats where the exact function or formula matters (give only those beats "scene": {"camera":"front","objects":[]}); never more than two such flat beats per reel. Every other beat still gets a 3D scene from the reel's story, even in math: a limit = a ball rolling down a ramp toward a flag it never quite touches; a derivative = a skateboarder's speed at one instant; a sum = blocks stacking up. A strong math reel: 3D hook → 3D story beats → one graph with the key point highlighted → 3D payoff → equation summary.
 color is one of primary | warn | yellow | cyan, with the same meanings as the markup (primary is the default; warn only for risks). Labels and titles are short (1–4 words), usually ALL CAPS. "icon" is a name from the allowed list (line icons, no emoji). Never put emoji in any text except the emoji visual's "emoji" field.

@@ -288,6 +288,8 @@ export function normalizeReelScript(s: ReelScript): ReelScript {
     ...s,
     beats,
     quiz: { ...s.quiz, options: s.quiz.options.slice(0, 4) },
+    // "Next:" was shown as a caption on its own; "Up next," reads as one spoken line.
+    outro: { ...s.outro, say: s.outro.say.replace(/^\s*next\s*:\s*/i, "Up next, ") },
     stats: s.stats.slice(0, 3).map((st) => ({ ...st, at_beat: Math.max(0, Math.min(beats.length - 1, st.at_beat)) })),
   };
 }

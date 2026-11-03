@@ -95,7 +95,9 @@ export function ReelMedia({
   const colours = Boolean(visual && (visual.type === "list" || visual.type === "icons") && visual.items.some((it) => it.color));
   const diagram = Boolean(visual && (DIAGRAM_TYPES.has(visual.type) || colours));
   const mood = stage?.mood ?? (diagram ? "calm" : undefined);
-  const can3d = Boolean(!diagram && !glLost && !reduce && sceneColors && visual && (story || (SCENE_TYPES.has(visual.type) && !(visual.type === "hook" && /soup|cooking-pot/.test(visual.icon)))));
+  // Only beats the writer made into a real 3D scene (with objects) go 3D. A text visual (bigword, split, list,
+  // icons) with no objects is drawn flat: in 3D it became small labelled pedestals floating in empty space.
+  const can3d = Boolean(!diagram && !glLost && !reduce && sceneColors && visual && story && SCENE_TYPES.has(visual.type));
   // The reel on screen keeps its 3D scene even while a pop-up or sheet covers it (and it isn't "active"), so it
   // never swaps to the flat version under the pop-up.
   const in3d = can3d && (active || onScreen) && hasWebGL();
