@@ -23,6 +23,10 @@ frame by frame (`index.html`), the voiceover script (`lines.json` or `tts.py`) a
    reel cards, first used in rise-and-fall) rather than a new animation. Copy it and its three reel stills
    (`shared/*.jpg`) next to the ad's `index.html` and call `docToReels(lt)` during the beat.
 5. Every ad ends on unspool.cc, and only states facts that can be checked.
+6. **Every ad has a person in it.** Use Maya, the recurring student (`shared/maya-*.png` cut-outs, or the 3D toy in
+   `life-of-a-textbook/world.js`), or another real character, never only phones, cards and text.
+7. **Open on a real hook, not a list.** A question, a confession or a story line ("Test tomorrow. Zero notes. Here's
+   what I did.", "This is the laziest way to actually understand your homework."), never a run of red negatives.
 
 ## Posting checklist (every ad)
 
