@@ -6,6 +6,7 @@ import type { ReelScript } from "@/lib/schema";
 import type { SegmentAudioDTO } from "@/lib/spool-types";
 import type { VideoTimeline } from "@/lib/video/types";
 import { estimateDuration, estimateWordFractions } from "@/lib/timing";
+import { returnAudio, takeAudio, unlockAudio } from "./audio-pool";
 import { getPrefs, rateOf, setPrefs, usePrefs } from "./prefs";
 
 export const QUIZ_WAIT_MS = 7000;
@@ -215,15 +216,18 @@ export function usePlayback(opts: {
   // Preload every clip as soon as the reel is mounted (the feed mounts neighbours too).
   useEffect(() => {
     engine.current = freshEngine([...initialDurations]);
+    // Listeners come off when the reel lets its (pooled, reused) elements go.
+    const off = new AbortController();
     const els = segments.map((s, i) => {
       const url = videoMode || record ? undefined : audio?.[s.key]?.url;
       if (!url) return null;
-      const el = new Audio();
+      // Borrowed from the page-wide pool the first tap unlocked, so this reel can play with sound on its own.
+      const el = takeAudio();
       el.preload = "auto";
       el.src = url;
       el.addEventListener("loadedmetadata", () => {
         if (Number.isFinite(el.duration) && el.duration > 0) engine.current.durations[i] = el.duration;
-      });
+      }, { signal: off.signal });
       // A clip that can't load (expired signed URL, deleted file, network): drop it, and the segment plays on
       // the silent clock instead of sitting at 0:00 forever waiting for audio that never comes.
       el.addEventListener("error", () => {
@@ -231,17 +235,13 @@ export function usePlayback(opts: {
           els[i] = null;
           if (engine.current.seg === i) engine.current.t = 0;
         }
-      });
+      }, { signal: off.signal });
       return el;
     });
     audios.current = els;
     return () => {
-      els.forEach((el) => {
-        if (!el) return;
-        el.pause();
-        el.removeAttribute("src");
-        el.load();
-      });
+      off.abort();
+      els.forEach((el) => el && returnAudio(el));
     };
   }, [segments, audio, initialDurations, videoMode, record]);
 
@@ -510,6 +510,7 @@ export function usePlayback(opts: {
 
   const toggle = useCallback(() => {
     const e = engine.current;
+    unlockAudio();
     unlock();
     if (e.blocked) {
       // The first tap on a phone: start with sound, right here inside the gesture.
@@ -558,6 +559,7 @@ export function usePlayback(opts: {
   /** From a tap (unmute): unlock the clips and carry on from where the current one is, with the new mute state. */
   const resume = useCallback(() => {
     const e = engine.current;
+    unlockAudio();
     unlock();
     if (e.blocked) return toggle();
     if (!e.playing || e.ended || e.quiz.waiting) return;

@@ -86,7 +86,8 @@ export function ActionRail({
       <RailButton label="More" onClick={onMore}>
         <MoreHorizontal size={24} strokeWidth={1.8} />
       </RailButton>
-      <span className="h-7 w-7 rounded-[7px] border-2 border-white bg-thread" aria-hidden />
+      {/* The "now playing" disc, spinning slowly like a record */}
+      <span className="h-9 w-9 animate-[spin_7s_linear_infinite] rounded-full border-2 border-white/70 shadow-[0_2px_10px_rgba(0,0,0,.45)]" style={{ background: "radial-gradient(circle, #0b0f0d 0 18%, var(--thread) 19% 38%, #1d2621 39% 62%, #2c3a33 63% 100%)" }} aria-hidden />
     </div>
   );
 }

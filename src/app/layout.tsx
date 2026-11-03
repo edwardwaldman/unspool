@@ -51,6 +51,8 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-touch-icon-180.png", sizes: "180x180" }],
   },
   manifest: "/site.webmanifest",
+  // Added to the Home Screen, it opens full screen like an app (no Safari bars over the reels).
+  appleWebApp: { capable: true, statusBarStyle: "black", title: "Unspool" },
 };
 
 export const viewport: Viewport = {

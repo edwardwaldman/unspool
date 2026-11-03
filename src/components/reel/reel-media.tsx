@@ -91,7 +91,9 @@ export function ReelMedia({
   const visual = stage?.visual;
   const story = Boolean(stage?.scene?.objects?.length);
   // Graphs, equations and emoji props are full-frame flat diagrams: never inside the 3D scene.
-  const diagram = Boolean(visual && DIAGRAM_TYPES.has(visual.type));
+  // Lists and icon rows of colours are drawn flat with real colour chips (the 3D versions can only show icons).
+  const colours = Boolean(visual && (visual.type === "list" || visual.type === "icons") && visual.items.some((it) => it.color));
+  const diagram = Boolean(visual && (DIAGRAM_TYPES.has(visual.type) || colours));
   const mood = stage?.mood ?? (diagram ? "calm" : undefined);
   const can3d = Boolean(!diagram && !glLost && !reduce && sceneColors && visual && (story || (SCENE_TYPES.has(visual.type) && !(visual.type === "hook" && /soup|cooking-pot/.test(visual.icon)))));
   // The reel on screen keeps its 3D scene even while a pop-up or sheet covers it (and it isn't "active"), so it
@@ -109,6 +111,20 @@ export function ReelMedia({
             "radial-gradient(120% 70% at 50% 42%, color-mix(in srgb, var(--thread) 30%, #20343c) 0%, color-mix(in srgb, var(--thread) 10%, #111b20) 48%, #070b0d 100%)",
         }}
       />
+      {/* A quick wipe in the reel's colour as each new beat lands, instead of a hard cut */}
+      <AnimatePresence>
+        {active && !reduce && (
+          <motion.div
+            key={`wipe-${stageKey}`}
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 z-[7] w-[60%]"
+            style={{ background: "linear-gradient(90deg, transparent, color-mix(in srgb, var(--thread) 22%, transparent), transparent)" }}
+            initial={{ left: "-60%" }}
+            animate={{ left: "110%" }}
+            transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+          />
+        )}
+      </AnimatePresence>
       {/* The beat's mood (hot pink hook, calm navy, warning red, win green) cross-fades over the accent backdrop. */}
       <AnimatePresence>
         {mood && (

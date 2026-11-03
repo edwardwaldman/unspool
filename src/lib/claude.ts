@@ -229,18 +229,21 @@ const SCRIPT_GUIDE = `Reel format:
 - ~30–45 seconds when spoken. Made of beats; a beat = one or two spoken sentences + one visual.
 - FIRST choose the reel's STYLE from the topic, and stick to it:
   · STORY: physical, scientific, historical or everyday things the 3D kit can genuinely show (cells, animals, planets, a chef's soup, money, people, buildings). Most beats are 3D scenes.
-  · MOTION: design, colours, fonts, writing, language, grammar, law, policies, rules, code, finance terms, definitions, abstract ideas. Most beats are flat motion graphics (swatch, compare, specimen, list, flow, split, stat, bigword, icons) with "objects": []; at most 2 beats use a 3D scene, and only where a shape truly is the thing.
+  · MOTION: design, colours, fonts, writing, language, grammar, law, policies, rules, code, finance terms, definitions, abstract ideas. Every beat is a flat motion graphic (swatch, typeset, compare, specimen, list, flow, split, stat, bigword, icons) with "objects": []. No 3D scenes in a MOTION reel.
+  · In any reel: a beat about colours ALWAYS uses swatch (or a list/icons whose items carry their real "color"); a beat about fonts ALWAYS uses typeset (or specimen for one font). Never show a colour or a font as an icon or a 3D prop.
   Never dress a MOTION topic in unrelated 3D props (a soup pot for a colour palette, cubes labelled with terms).
-- beats[0] is the HOOK beat (visual.type "hook", or "emoji"/"equation" for a math/science hook like "sin(∞) = ?" with a 📳; in a MOTION reel open on the subject itself: a swatch, specimen, compare, stat or bigword): the scroll-stopping opener, using the planned hook (you may tighten it). Its tag is a short ALL-CAPS label like "GUARANTEED QUESTION", "COMMON TRAP", "READ THIS CLAUSE", "MONEY ON THE LINE".
+- beats[0] is the HOOK beat (visual.type "hook", or "emoji"/"equation" for a math/science hook like "sin(∞) = ?" with a 📳; in a MOTION reel open on the subject itself: a swatch, typeset, specimen, compare, stat or bigword): the scroll-stopping opener, using the planned hook (you may tighten it). Its tag is a short ALL-CAPS label like "GUARANTEED QUESTION", "COMMON TRAP", "READ THIS CLAUSE", "MONEY ON THE LINE".
 - Then 5–8 BODY beats that explain the concept with stories, analogies, concrete examples and memory hacks. Cover every detail of this reel's section: definitions, numbers, dates, rules, exceptions.
 - The quiz and outro are separate fields (don't add them as beats).
-- Build to a PAYOFF: the last body beat is the punchline the hook promised (mood "win", the boldest visual of the reel), not one more fact.
+- Build to a PAYOFF: the last body beat is the punchline the hook promised (mood "win", the boldest visual of the reel), not one more fact. When the reel covers several items (colours, fonts, steps, rules), the payoff is a cheat sheet of all of them on one screen (a swatch with focus -1, a typeset, or a list) that someone would screenshot.
 
 Writing for the screen:
 - Never read a list of more than 3 items aloud. Show the list (list, swatch, icons) and say the point ("Nine colours, each with one job.").
 - Never speak codes, hex values, URLs, IDs or long numbers. Say what they mean ("a deep green-black") and put the exact value in the visual (a swatch shows #0f1d18).
 - On-screen words must make sense on their own: no bare numbers ("1") or shorthand ("8 SUPPORT"). Write "ONLY 1 SHOUTS", "8 BACK-UP COLOURS".
 - One idea per beat, one or two short sentences. Every beat must change what's on screen.
+- The visual SHOWS the thing; the voice EXPLAINS it. Don't make the visual just repeat the spoken words (if the line says "Unbounded is for headlines", show the font, not the word "Unbounded" again).
+- On-screen labels and tags: 3 words at most.
 - quiz: one multiple-choice question (3 options, at most 4) that checks the key idea; "answer" is the 0-based index of the correct option; "explain" starts with the correct answer in *highlight* then one short sentence why, e.g. "*Parameter.* It describes the whole population." For work docs, frame as a practical "what would you do" check.
 - outro.say: tease the next reel, e.g. "Next: four sampling methods. Keep scrolling." For the final reel, wrap up instead ("That's the whole doc. Scroll back to review any reel.") and set next_title to "THAT'S A WRAP".
 
@@ -253,8 +256,8 @@ Visuals — choose the one that best shows each beat; vary them across the reel 
 - bigword {word, sub, color}: one or two HUGE words + a small subtitle. For a key term or a punchline.
 - split {mode:"vs"|"to", left:{icon,title,sub}, right:{icon,title,sub}}: A vs B comparison, or A → B change.
 - flow {steps:[{icon,title,sub}]}: 2–4 steps of a process, in order.
-- list {title, items:[{icon,label}]}: 3–5 items revealed one by one.
-- icons {items:[{icon,label}], arrow}: 1–3 icons with short labels; arrow=true shows a left-to-right arrow between them.
+- list {title, items:[{icon,label,color}]}: 3–5 items revealed one by one. color = the item's real hex when the item is a colour (it shows as a colour chip), else "".
+- icons {items:[{icon,label,color}], arrow}: 1–3 icons with short labels; arrow=true shows a left-to-right arrow between them. color = the real hex for a colour item (shown as a big chip), else "".
 - crowd {total_label, highlight_label, ratio}: a field of glowing dots (the whole group) with a highlighted subset (ratio 0.02–0.9). Great for population vs sample, "who this applies to", percentages.
 - stat {value, label, color}: one big number with a label, e.g. value "$2,500" label "LATE PENALTY", value "30 DAYS" label "NOTICE REQUIRED". Only use numbers that appear in the document.
 - equation {label, expr, note, ask}: a big equation header. label = small pink tag ("PART D", "KEY RULE", "THE FORMULA"); expr = the equation itself, short and exact ("sin(f(x))", "lim x→4⁻ f(x) = −∞", "MR = MC", "p̂ = x / n"; unicode math ∞ ± → ≤ ≥ √ π ² is fine); note = one short supporting line ("no limit due to INFINITE OSCILLATION"); ask = a short yellow question or punchline ("where? why?"). Use "" for parts you don't need.
@@ -266,6 +269,7 @@ Visuals — choose the one that best shows each beat; vary them across the reel 
   Only plot what the document states or implies; numbers in the graph must match it.
 - swatch {title, colors:[{hex,name,note}], focus}: real colours, dealt onto the screen; focus = the index of the one this beat is about (shown huge), or -1 for all of them. Use for any colour, palette, paint, flag or design topic. Only real hex values from the document.
 - compare {bad:{title,points}, good:{title,points}}: a "don't vs do" / before-and-after card pair; the bad side is crossed out, then the good side pops in. For rules, mistakes, style guides, myths.
+- typeset {title, items:[{name, role, style}]}: 1-3 fonts side by side, each drawn in its own look ("Aa" + its name) with its job. For any beat about fonts or type.
 - specimen {label, text, style: display|serif|sans|mono|handwritten, note}: a big sample that types itself on: a font, a quote, a key phrase, a word in another language, a line of code (mono).
 - emoji {emoji, title, caption, motion: vibrate|bounce|spin|pulse}: ONE big emoji as a prop for a metaphor beat (📳 vibrating phone for "it oscillates forever", 🏃 for approaching, 💸 for cost), optional big title above ("sin(∞) = ?") and a short yellow caption under it ("no limit"). This is the ONLY place emoji are allowed.
 For math, physics, chemistry, economics or statistics documents, use an accurate graph or equation visual for the ONE or TWO beats where the exact function or formula matters (give only those beats "scene": {"camera":"front","objects":[]}); never more than two such flat beats per reel. Every other beat still gets a 3D scene from the reel's story, even in math: a limit = a ball rolling down a ramp toward a flag it never quite touches; a derivative = a skateboarder's speed at one instant; a sum = blocks stacking up. A strong math reel: 3D hook → 3D story beats → one graph with the key point highlighted → 3D payoff → equation summary.

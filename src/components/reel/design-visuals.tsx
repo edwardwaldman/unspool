@@ -7,7 +7,6 @@ import type { Visual } from "@/lib/schema";
 // stand-in: real colour swatches, a before/after comparison, and a type or quote specimen. Each animates in on
 // its own (dealt, slammed, typed) so the beat moves even with nothing else on screen.
 
-const clamp = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const SPRING = { type: "spring" as const, stiffness: 320, damping: 20 };
 
 /** Readable text on a colour: dark on light swatches, white on dark ones. */
@@ -133,23 +132,63 @@ const FAMILY: Record<Extract<Visual, { type: "specimen" }>["style"], string> = {
 
 export function SpecimenVisual({ v, progress }: { v: Extract<Visual, { type: "specimen" }>; progress: number }) {
   const reduce = useReducedMotion();
-  // The sample types itself on over the first half of the line, with a blinking caret.
-  const shown = reduce ? v.text.length : Math.ceil(v.text.length * clamp(progress / 0.45));
-  const typing = shown < v.text.length;
+  // Readable on the very first frame: every letter is there, faint, and they light up left to right in under half
+  // a second (an empty first frame with just a caret looked broken).
+  const per = Math.min(0.03, 0.4 / Math.max(1, v.text.length));
   return (
     <div className="flex w-full flex-col items-center px-[7cqw] text-center" data-testid="specimen">
-      <motion.span initial={reduce ? false : { scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={SPRING} className="font-hook font-extrabold uppercase tracking-[0.12em]" style={{ background: "var(--thread)", color: "#0b0f0d", padding: "0.35em 0.8em", fontSize: "min(14px, 3.6cqw)" }}>
+      <motion.span initial={reduce ? false : { scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={SPRING} className="max-w-full text-balance text-center font-hook font-extrabold uppercase leading-tight tracking-[0.1em]" style={{ background: "var(--thread)", color: "#0b0f0d", padding: "0.35em 0.8em", fontSize: "min(14px, 3.6cqw)" }}>
         {v.label}
       </motion.span>
       <div className="mt-[6cqw] leading-[1.05] text-white" style={{ fontFamily: FAMILY[v.style], fontSize: v.text.length > 24 ? "min(40px, 10cqw)" : "min(60px, 15cqw)", fontWeight: v.style === "display" ? 800 : 600, textShadow: "0 4px 18px rgba(0,0,0,.4)" }}>
-        {v.text.slice(0, shown)}
-        <span aria-hidden className="ml-[0.05em] inline-block w-[0.06em] translate-y-[0.1em] bg-[var(--thread)]" style={{ height: "0.9em", opacity: typing || Math.floor(progress * 8) % 2 ? 1 : 0 }} />
+        {[...v.text].map((ch, i) => (
+          <motion.span key={i} initial={reduce ? false : { opacity: 0.18 }} animate={{ opacity: 1 }} transition={{ delay: i * per, duration: 0.12 }}>
+            {ch}
+          </motion.span>
+        ))}
+        <span aria-hidden className="ml-[0.05em] inline-block w-[0.06em] translate-y-[0.1em] bg-[var(--thread)]" style={{ height: "0.9em", opacity: Math.floor(progress * 8) % 2 ? 1 : 0.2 }} />
       </div>
       {v.note && (
         <motion.div initial={false} animate={progress > 0.5 ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }} className="mt-[5cqw] font-hook font-bold text-white/80" style={{ fontSize: "min(18px, 4.6cqw)" }}>
           {v.note}
         </motion.div>
       )}
+    </div>
+  );
+}
+
+/** Fonts shown in their own look, side by side: a big "Aa", the name set in it, and its job. */
+export function TypesetVisual({ v }: { v: Extract<Visual, { type: "typeset" }> }) {
+  const reduce = useReducedMotion();
+  return (
+    <div className="flex w-full flex-col items-stretch gap-[3.5cqw] px-[6cqw]" data-testid="typeset">
+      {v.title && (
+        <div className="mb-[1cqw] text-center font-display leading-[1.05] text-white" style={{ fontSize: "min(32px, 8cqw)" }}>
+          {v.title}
+        </div>
+      )}
+      {v.items.map((it, i) => (
+        <motion.div
+          key={i}
+          initial={reduce ? false : { x: i % 2 ? 40 : -40, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ ...SPRING, delay: 0.1 + i * 0.25 }}
+          className="flex items-center gap-[4cqw] p-[4cqw]"
+          style={{ background: "rgba(10,14,12,.72)", border: "1.5px solid rgba(255,255,255,.14)", borderRadius: 16 }}
+        >
+          <span className="shrink-0 leading-none text-[var(--thread)]" style={{ fontFamily: FAMILY[it.style], fontSize: "min(56px, 14cqw)", fontWeight: it.style === "display" ? 800 : 600 }}>
+            Aa
+          </span>
+          <span className="min-w-0">
+            <span className="block leading-tight text-white" style={{ fontFamily: FAMILY[it.style], fontSize: "min(26px, 6.5cqw)", fontWeight: it.style === "display" ? 800 : 600 }}>
+              {it.name}
+            </span>
+            <span className="mt-[1cqw] block font-hook font-bold text-white/75" style={{ fontSize: "min(17px, 4.4cqw)" }}>
+              {it.role}
+            </span>
+          </span>
+        </motion.div>
+      ))}
     </div>
   );
 }

@@ -185,8 +185,12 @@ function ListVisual({ v, progress }: { v: Extract<Visual, { type: "list" }>; pro
           transition={{ duration: 0.4, ease }}
           className="flex items-center gap-3.5 px-1 py-2"
         >
-          <Tile name={it.icon} size={20} box={40} on={i === shown - 1} />
-          <span className="text-[18px] font-semibold leading-tight tracking-[-0.01em] text-white">{sentence(it.label)}</span>
+          {it.color ? (
+            <span className="h-[44px] w-[44px] shrink-0 rounded-[10px]" style={{ background: it.color, boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,.16)" }} />
+          ) : (
+            <Tile name={it.icon} size={20} box={44} on={i === shown - 1} />
+          )}
+          <span className="text-[21px] font-semibold leading-tight tracking-[-0.01em] text-white">{sentence(it.label)}</span>
         </motion.div>
       ))}
     </div>
@@ -206,12 +210,16 @@ function IconsVisual({ v }: { v: Extract<Visual, { type: "icons" }> }) {
             </motion.div>
           )}
           <div className="flex flex-col items-center text-center">
-            <Tile name={it.icon} size={many ? 34 : 44} box={many ? 76 : 96} on={i === v.items.length - 1} delay={i * 0.45} />
+            {it.color ? (
+              <motion.span initial={{ scale: 0.4, opacity: 0, rotate: -8 }} animate={{ scale: 1, opacity: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 300, damping: 18, delay: i * 0.45 }} className="block rounded-[16px]" style={{ width: many ? 84 : 104, height: many ? 84 : 104, background: it.color, boxShadow: "0 12px 28px rgba(0,0,0,.4), inset 0 0 0 2px rgba(255,255,255,.14)" }} />
+            ) : (
+              <Tile name={it.icon} size={many ? 34 : 44} box={many ? 76 : 96} on={i === v.items.length - 1} delay={i * 0.45} />
+            )}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: i * 0.45 + 0.2 }}
-              className="mt-3 max-w-[120px] text-[14px] font-semibold leading-tight text-white"
+              className="mt-3 max-w-[130px] text-[18px] font-semibold leading-tight text-white"
             >
               {sentence(it.label)}
             </motion.div>
@@ -531,6 +539,7 @@ function StageInner({ visual, script, progress, last, pulse = 0 }: StageProps) {
     case "swatch":
     case "compare":
     case "specimen":
+    case "typeset":
       return <DiagramStage visual={visual} progress={progress} />;
     case "quiz":
       return null;

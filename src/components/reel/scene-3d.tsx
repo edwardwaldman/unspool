@@ -978,7 +978,7 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
             {/* The demo's chip: a near-black rounded tag in bold wide-tracked caps, a hairline red leader, a red dot */}
             <div className="flex flex-col items-center" style={{ transform: `translate(-50%, calc(-100% + 3px))` }}>
               <span
-                className="max-w-[36cqw] origin-bottom animate-[term-in_.32s_cubic-bezier(.3,1.5,.5,1)_both] truncate whitespace-nowrap rounded-[4px] px-[7px] pb-[3px] pt-[4px] font-hook text-[10.5px] font-extrabold uppercase leading-none tracking-[0.07em] antialiased"
+                className="line-clamp-2 max-w-[52cqw] origin-bottom animate-[term-in_.32s_cubic-bezier(.3,1.5,.5,1)_both] text-balance rounded-[4px] px-[7px] pb-[3px] pt-[4px] text-center font-hook text-[11px] font-extrabold uppercase leading-[1.15] tracking-[0.06em] antialiased"
                 style={{ background: "rgba(12,13,12,.92)", color: p.tone === "accent" ? accent : "#fff", boxShadow: "0 3px 10px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.06)" }}
               >
                 {p.text}

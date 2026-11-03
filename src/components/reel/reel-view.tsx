@@ -301,8 +301,8 @@ export function ReelView({
             className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
           >
             <div className="flex flex-col items-center gap-3">
-              <div className="flex h-[72px] w-[72px] items-center justify-center border border-white/20 bg-paper/85 pl-1 text-white" data-testid="paused">
-                <PlayIcon size={34} />
+              <div className="flex h-[76px] w-[76px] items-center justify-center rounded-full bg-black/30 pl-1.5 text-white/90 backdrop-blur-[2px]" data-testid="paused">
+                <PlayIcon size={36} />
               </div>
               {pb.blocked && <span className="bg-black/60 px-3 py-1.5 text-[14px] font-semibold text-white">Tap to play with sound</span>}
             </div>

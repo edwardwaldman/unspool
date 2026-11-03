@@ -1,6 +1,5 @@
 "use client";
 
-import { Music2 } from "lucide-react";
 import { useState } from "react";
 import { sentenceCase } from "./text";
 
@@ -44,7 +43,7 @@ export function CaptionBlock({ title, hook, docName, summary, sensitive }: { tit
           e.stopPropagation();
           setOpen((o) => !o);
         }}
-        className={`mt-2 block w-full text-left text-[14px] leading-snug ${open ? "" : "line-clamp-2"}`}
+        className={`mt-1.5 block w-full text-left text-[14px] leading-snug ${open ? "" : "line-clamp-1"}`}
         data-testid="reel-caption"
       >
         {open ? (
@@ -58,9 +57,7 @@ export function CaptionBlock({ title, hook, docName, summary, sensitive }: { tit
           </>
         )}
       </button>
-      <div className="mt-2 flex items-center gap-1.5 text-[12.5px] text-white/90">
-        <Music2 size={13} strokeWidth={2} aria-hidden /> <span className="truncate">unspool · Original audio</span>
-      </div>
+
     </div>
   );
 }

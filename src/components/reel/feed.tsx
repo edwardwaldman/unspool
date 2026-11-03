@@ -16,6 +16,7 @@ import { freeAtFor } from "../ui/use-countdown";
 import { UnlockSheet } from "./drip-gate";
 import { ReelView } from "./reel-view";
 import { ShareSheet } from "./share-sheet";
+import { HomeScreenTip } from "./home-screen-tip";
 
 export type FeedItem = { key: string; spool: SpoolDTO | null; reel: ReelDTO | null };
 
@@ -203,7 +204,7 @@ export function Feed({
               onScreen={isActive}
               total={total(it.spool)}
               bottomInset={bottomInset}
-              topInset={40}
+              topInset={30}
               onRetry={() => onRetry?.(it.spool)}
               onUnlock={() => {
                 dismissedPaywall.current.delete(it.reel!.id);
@@ -225,8 +226,8 @@ export function Feed({
       </div>
 
       {/* Top tabs: This doc | All spools */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-center pt-5" style={{ textShadow: "0 1px 0 rgba(0,0,0,.55)" }}>
-        <div className="pointer-events-auto flex items-center gap-5 text-[15.5px] font-semibold">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-center pt-3" style={{ textShadow: "0 1px 0 rgba(0,0,0,.55)" }}>
+        <div className="pointer-events-auto flex items-center gap-5 text-[15px] font-semibold">
           {docHref ? (
             <Link href={docHref} className={tab === "doc" ? "text-white" : "text-white/60"}>
               This doc
@@ -239,10 +240,12 @@ export function Feed({
             All spools
           </Link>
         </div>
-        <Link href="/library" aria-label="Library" className="pointer-events-auto absolute right-4 top-5 text-white">
+        <Link href="/library" aria-label="Library" className="pointer-events-auto absolute right-4 top-3 text-white">
           <FilterIcon size={20} />
         </Link>
       </div>
+
+      <HomeScreenTip />
 
       {/* Desktop up/down buttons, like TikTok web */}
       <div className="absolute -right-[68px] top-1/2 z-30 hidden -translate-y-1/2 flex-col gap-3 lg:flex">

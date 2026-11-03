@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { compileExpr } from "@/lib/expr";
 import type { GraphVisual, Mood, Visual } from "@/lib/schema";
-import { CompareVisual, SpecimenVisual, SwatchVisual } from "./design-visuals";
+import { CompareVisual, SpecimenVisual, SwatchVisual, TypesetVisual } from "./design-visuals";
 
 // Full-frame "explainer" visuals (as in hand-made study reels): plotted graphs on a dark grid panel,
 // a big equation header, and a big emoji prop. Drawn flat over the whole stage, never in the 3D scene.
@@ -20,7 +20,8 @@ const CURVE: Record<string, string> = { cyan: "#25d8ff", pink: "#ff5fb0", yellow
 // captions stay readable and the reel's own colours (a swatch, a scene) are what stands out.
 export const MOOD_BG: Record<Mood, string> = {
   hot: "radial-gradient(80% 55% at 50% 40%, rgba(255,79,154,.55) 0%, rgba(184,40,95,.28) 45%, transparent 80%), linear-gradient(#12070d, #0a0509)",
-  calm: "radial-gradient(60% 40% at 22% 30%, rgba(18,110,130,.55) 0%, transparent 70%), radial-gradient(60% 40% at 80% 72%, rgba(150,30,90,.38) 0%, transparent 70%), linear-gradient(#05070d, #070a14)",
+  // Tinted with the reel's own accent (each part of a series has its own colour), not a fixed magenta glow.
+  calm: "radial-gradient(60% 40% at 22% 30%, color-mix(in srgb, var(--thread) 26%, transparent) 0%, transparent 70%), radial-gradient(60% 40% at 80% 72%, color-mix(in srgb, var(--thread) 14%, transparent) 0%, transparent 70%), linear-gradient(#05080a, #070b0c)",
   warn: "radial-gradient(80% 55% at 50% 40%, rgba(255,106,61,.5) 0%, rgba(160,40,24,.28) 45%, transparent 80%), linear-gradient(#130807, #0b0505)",
   win: "radial-gradient(80% 55% at 50% 40%, rgba(63,220,138,.45) 0%, rgba(20,110,70,.25) 45%, transparent 80%), linear-gradient(#06110b, #040a07)",
 };
@@ -290,6 +291,8 @@ export function DiagramStage({ visual, progress }: { visual: Visual; progress: n
         <CompareVisual v={visual} progress={progress} />
       ) : visual.type === "specimen" ? (
         <SpecimenVisual v={visual} progress={progress} />
+      ) : visual.type === "typeset" ? (
+        <TypesetVisual v={visual} />
       ) : null}
       </FitHeight>
     </div>

@@ -72,6 +72,8 @@ function cardTitle(v: Visual): string {
       return `${v.bad.title} vs ${v.good.title}`;
     case "specimen":
       return v.text;
+    case "typeset":
+      return v.title || v.items.map((i) => i.name).join(" / ");
   }
 }
 

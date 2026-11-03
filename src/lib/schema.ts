@@ -24,6 +24,7 @@ const Step = z.object({
 const ListItem = z.object({
   icon: IconSchema,
   label: z.string(),
+  color: z.string().describe("the item's real hex colour when the item IS a colour (shown as a colour chip instead of the icon), else an empty string"),
 });
 
 export const CURVE_COLORS = ["cyan", "pink", "yellow", "green"] as const;
@@ -82,6 +83,11 @@ export const VisualSchema = z.discriminatedUnion("type", [
     type: z.literal("compare"),
     bad: z.object({ title: z.string().describe('e.g. "WITH GLOWS"'), points: z.array(z.string()).describe("1-3 short points") }),
     good: z.object({ title: z.string().describe('e.g. "FLAT"'), points: z.array(z.string()).describe("1-3 short points") }),
+  }),
+  z.object({
+    type: z.literal("typeset"),
+    title: z.string().describe('short line above, e.g. "3 fonts, 3 jobs"; or ""'),
+    items: z.array(z.object({ name: z.string().describe("the font's name"), role: z.string().describe('its job in 2-5 words, e.g. "the wordmark only"'), style: z.enum(["display", "serif", "sans", "mono", "handwritten"]).describe("the closest look") })).describe("1-3 fonts, each shown in its own style"),
   }),
   z.object({
     type: z.literal("specimen"),
@@ -190,7 +196,7 @@ export type VisualType = Visual["type"] | "quiz" | "outro";
 export type Beat = Omit<z.infer<typeof BeatSchema>, "image_prompt" | "scene" | "mood"> & { image_prompt?: string; scene?: SceneSpec; mood?: Mood };
 export type GraphVisual = Extract<Visual, { type: "graph" }>;
 /** Full-frame diagram visuals: drawn flat over the whole stage, never inside the 3D scene. */
-export const DIAGRAM_TYPES = new Set<string>(["graph", "equation", "emoji", "swatch", "compare", "specimen"]);
+export const DIAGRAM_TYPES = new Set<string>(["graph", "equation", "emoji", "swatch", "compare", "specimen", "typeset"]);
 export type ReelScript = Omit<z.infer<typeof ReelScriptSchema>, "beats"> & { beats: Beat[] };
 export type HighlightColor = z.infer<typeof ColorSchema>;
 export type Stat = z.infer<typeof StatSchema>;
@@ -240,6 +246,11 @@ export function normalizeReelScript(s: ReelScript): ReelScript {
     const v = b.visual;
     // Too few items to be a flow or list: one big word instead (fixed here rather than rewriting the script).
     const word = (w: string, sub = "") => ({ ...b, visual: { type: "bigword" as const, word: w.slice(0, 24) || "KEY IDEA", sub: sub.slice(0, 60), color: "primary" as const } });
+    if (v.type === "list" || v.type === "icons") {
+      // Colour items: keep a valid hex only.
+      const items = v.items.map((it) => ({ ...it, color: /^#?[0-9a-f]{6}$/i.test((it.color ?? "").trim()) ? `#${(it.color ?? "").trim().replace(/^#/, "").toLowerCase()}` : "" }));
+      Object.assign(v, { items });
+    }
     if (v.type === "flow") return v.steps.length < 2 ? word(v.steps[0]?.title ?? "", v.steps[0]?.sub) : { ...b, visual: { ...v, steps: v.steps.slice(0, 4) } };
     if (v.type === "list") return v.items.length < 2 ? word(v.title, v.items[0]?.label) : { ...b, visual: { ...v, items: v.items.slice(0, 5) } };
     if (v.type === "icons") return v.items.length < 1 ? word("KEY IDEA") : { ...b, visual: { ...v, items: v.items.slice(0, 3) } };
@@ -259,7 +270,11 @@ export function normalizeReelScript(s: ReelScript): ReelScript {
       const side = (s: { title: string; points: string[] }) => ({ title: s.title.slice(0, 24), points: s.points.slice(0, 3).map((p) => p.slice(0, 40)) });
       return { ...b, visual: { ...v, bad: side(v.bad), good: side(v.good) } };
     }
-    if (v.type === "specimen") return { ...b, visual: { ...v, label: v.label.slice(0, 24), text: v.text.slice(0, 60), note: v.note.slice(0, 60) } };
+    if (v.type === "specimen") return { ...b, visual: { ...v, label: v.label.slice(0, 40), text: v.text.slice(0, 60), note: v.note.slice(0, 60) } };
+    if (v.type === "typeset") {
+      const items = v.items.slice(0, 3).map((it) => ({ ...it, name: it.name.slice(0, 24), role: it.role.slice(0, 40) }));
+      return items.length ? { ...b, visual: { ...v, title: v.title.slice(0, 40), items } } : word(v.title || "FONTS");
+    }
     if (v.type === "emoji") return { ...b, visual: { ...v, emoji: [...(v.emoji.trim() || "💡")].slice(0, 4).join(""), title: v.title.slice(0, 40), caption: v.caption.slice(0, 40) } };
     if (v.type === "equation") return { ...b, visual: { ...v, label: v.label.slice(0, 24), expr: v.expr.slice(0, 40), note: v.note.slice(0, 80), ask: v.ask.slice(0, 40) } };
     return b;

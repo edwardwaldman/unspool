@@ -20,7 +20,7 @@ const reel1: ReelScript = {
     },
     {
       say: "She tastes *one spoonful.* That's statistics in one sentence.",
-      visual: { type: "icons", items: [{ icon: "soup", label: "THE POT" }, { icon: "utensils", label: "ONE SPOONFUL" }], arrow: true },
+      visual: { type: "icons", items: [{ icon: "soup", label: "THE POT", color: "" }, { icon: "utensils", label: "ONE SPOONFUL", color: "" }], arrow: true },
     },
     {
       say: "The whole pot is the *population.* Everyone or everything you want to know about.",
@@ -84,7 +84,7 @@ const reel2: ReelScript = {
     },
     {
       say: "Memory hack: *P*arameter goes with *P*opulation. *S*tatistic goes with *S*ample.",
-      visual: { type: "list", title: "MATCH THE LETTERS", items: [{ icon: "users", label: "Parameter → Population" }, { icon: "user", label: "Statistic → Sample" }] },
+      visual: { type: "list", title: "MATCH THE LETTERS", items: [{ icon: "users", label: "Parameter → Population", color: "" }, { icon: "user", label: "Statistic → Sample", color: "" }] },
     },
   ],
   quiz: {
@@ -109,11 +109,11 @@ const reel3: ReelScript = {
     },
     {
       say: "Here they are.",
-      visual: { type: "list", title: "SAMPLING METHODS", items: [{ icon: "dice", label: "Simple random (S R S)" }, { icon: "layers", label: "Stratified" }, { icon: "house", label: "Cluster" }, { icon: "ruler", label: "Systematic" }] },
+      visual: { type: "list", title: "SAMPLING METHODS", items: [{ icon: "dice", label: "Simple random (S R S)", color: "" }, { icon: "layers", label: "Stratified", color: "" }, { icon: "house", label: "Cluster", color: "" }, { icon: "ruler", label: "Systematic", color: "" }] },
     },
     {
       say: "*Simple random:* every group of that size has an equal chance. Names in a hat.",
-      visual: { type: "icons", items: [{ icon: "shuffle", label: "ALL NAMES" }, { icon: "dice", label: "RANDOM DRAW" }], arrow: true },
+      visual: { type: "icons", items: [{ icon: "shuffle", label: "ALL NAMES", color: "" }, { icon: "dice", label: "RANDOM DRAW", color: "" }], arrow: true },
     },
     {
       say: "*Stratified:* split into similar groups first, like grades, then sample from #every# group.",
