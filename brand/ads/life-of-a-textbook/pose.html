@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:transparent}</style></head><body><canvas id="c" width="600" height="900"></canvas>
+<script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
+<script type="module">
+import { THREE, v3, toy, phone, tex } from "./world.js";
+import { RoomEnvironment } from "./three/RoomEnvironment.js";
+const r = new THREE.WebGLRenderer({ canvas: document.getElementById("c"), antialias: true, alpha: true, preserveDrawingBuffer: true });
+r.setSize(600, 900, false); r.setClearColor(0x000000, 0); r.toneMapping = THREE.ACESFilmicToneMapping; r.outputColorSpace = THREE.SRGBColorSpace;
+const s = new THREE.Scene(); s.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture; s.environmentIntensity = 0.6;
+s.add(new THREE.HemisphereLight("#fff6ea", "#8a7a62", 1.1)); const d = new THREE.DirectionalLight("#fff1d6", 2.6); d.position.set(-4, 8, 7); s.add(d);
+const cam = new THREE.PerspectiveCamera(30, 600 / 900, 0.1, 50); cam.position.set(0, 1.7, 9.2); cam.lookAt(0, 1.45, 0);
+const P = toy({ skin: "#c98f68", hair: "#2b1d16", top: "#7c4ad6", pants: "#3d5a9e", style: "pony" }); s.add(P.g);
+const scr = tex(280, 590, (c, w, h) => { c.fillStyle = "#0f1d18"; c.fillRect(0, 0, w, h); c.fillStyle = "#d3f05a"; c.beginPath(); c.arc(w / 2, 220, 70, 0, 7); c.fill(); });
+const ph = phone(null, scr); P.g.add(ph); ph.scale.setScalar(0.55); ph.visible = false;
+window.pose = (name) => { P.pose(name === "lookup" || name === "point" ? "stand" : name, 0.3); P.g.rotation.set(0, 0, 0); P.mouth.rotation.z = Math.PI; ph.visible = false;
+  if (name === "facepalm") { P.g.rotation.y = 0.25; P.mouth.rotation.z = 0; }
+  if (name === "phone") { ph.visible = true; ph.position.set(0.28, 1.65, 0.62); ph.rotation.set(-0.45, 0.1, 0); P.g.rotation.y = -0.25; }
+  if (name === "cheer") { P.g.rotation.y = 0.15; }
+  if (name === "lookup") { P.head.rotation.set(-0.45, 0.2, 0); P.arms[1].a.rotation.set(-2.6, 0, 0.3); P.g.rotation.y = 0.3; P.mouth.rotation.z = 0; }
+  r.render(s, cam); };
+window.pose("cheer"); window.ready = true;
+</script></body></html>

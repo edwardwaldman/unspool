@@ -15,13 +15,13 @@ def riser(d): t=np.arange(int(SR*d))/SR; return rng.standard_normal(len(t))*(t/d
 def click(): return noise(0.025,160)+tone(2400,0.025,200,(1,))
 P=st["cta"]
 # the cold open: five slams
-for j in range(5): add(0.02+j*0.44,boom(),0.28); add(0.02+j*0.44,noise(0.15,22),0.22); add(0.02+j*0.44,tone(note(40-j),0.4,5,(1,.6)),0.12)
-add(st["hook"]-0.9,riser(0.9),0.14); add(st["hook"],boom(),0.35)
+add(st["hook"],boom(),0.2); add(st["hook"]+0.02,noise(0.15,22),0.1)                       # the opening hit
+for j,d in enumerate((0.15,0.75) if AD=="adT" else (1.2,)): add(st["hook"]+d,kick(),0.3); add(st["hook"]+d,noise(0.12,25),0.12)   # tags slam on
 # 124 bpm under everything after the hook, out after the CTA lands
 b=60/124; prog=[[57,60,64],[53,57,60],[60,64,67],[55,59,62]]
 for i in range(int(DUR/(b/4))):
     t0=i*b/4; ch=prog[(i//32)%4]
-    if t0<st["hook"] or t0>P+1.2: continue
+    if t0<st["hook"]+0.3 or t0>P+1.2: continue
     if i%4==0: add(t0,kick(),0.38)
     if i%8==4: add(t0,noise(.14,24),0.14)
     add(t0,noise(.02,140),0.03 if i%2 else 0.05)
@@ -34,8 +34,9 @@ for j in range(4): add(st["search"]+0.3+j*0.28,tone(note(76+j*3),0.15,14,(1,.3))
 for j,m in enumerate([76,83]): add(st["quiz"]+1.55+j*0.08,tone(note(m),0.5,6,(1,.3)),0.1)  # right answer
 if AD=="adT":
     PROMPT="AP Bio: cells and DNA"
-    for c in range(len(PROMPT)): add(st["type"]+0.4+c*1.5/len(PROMPT),click(),0.12)    # typing
-    add(st["type"]+2.05,click(),0.3); add(st["type"]+2.05,kick(),0.3)                   # tap go
+    TL2=[l for l in tl["lines"] if l["shot"]=="search"][0]["s"]-[l for l in tl["lines"] if l["shot"]=="type"][0]["s"]
+    for c in range(len(PROMPT)): add(st["type"]+0.5+c*(TL2-1.3)/len(PROMPT),click(),0.12)    # typing
+    add(st["type"]+TL2-0.55,click(),0.3); add(st["type"]+TL2-0.55,kick(),0.3)                   # tap go
 else:
     add(st["highlight"]+0.1,noise(1.0,2)*np.linspace(0,1,int(SR*1.0)),0.05)            # the highlight sweep
     add(st["highlight"]+1.5,click(),0.3); add(st["highlight"]+1.8,tone(note(88),0.3,10,(1,.3)),0.08)  # copy, copied

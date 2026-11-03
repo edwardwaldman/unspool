@@ -11,10 +11,12 @@ await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600
 const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.12) k = i; return k; };
 const st = (n) => lines.find((l) => l.shot === n).s - 0.12, since = (t, n) => t - st(n);
 const ov = document.getElementById("ov");
+const maya = (n, x, y, k, extra = "") => A(x, y, `<img src="maya-${n}.png" style="width:${600 * k}px;height:${900 * k}px;${extra}">`);
+
 const NEG = ["Due tomorrow.", "12 questions.", "Missed the lecture.", "40 tabs open.", "Still on Q1."];
 const Q = ["What do mitochondria do in a cell?", "How does DNA become mRNA?", "What does cellular respiration make?"];
 const TEXT = `Bio Homework 4. Answer each question in full sentences. ${Q.map((q, i) => `${i + 1}. ${q}`).join(" ")}`;
-const HITS = () => [[st("hook") + 0.05, 1], [st("highlight") + 1.75, 0.7], [st("paste") + 1.65, 0.8], [st("reels") + 0.75, 1], [st("write") + 0.9, 1], [st("cta") + 0.1, 1.1]];
+const HITS = () => [[st("hook") + 1.2, 0.8], [st("highlight") + 1.75, 0.7], [st("paste") + 1.65, 0.8], [st("reels") + 0.75, 1], [st("write") + 0.9, 1], [st("cta") + 0.1, 1.1]];
 
 // The assignment, as it looks in a school doc: title, instructions, three questions.
 // sel: 0..1 how much is highlighted; checks: 0..1 the green ticks of "you get it" landing.
@@ -32,13 +34,14 @@ function assignment(x, y, w, k, { sel = 0, checks = 0, copy = 0, copied = 0 } = 
 }
 
 window.renderAt = (t) => {
-  if (t < st("hook")) { const k = clamp((t - (st("hook") - 0.2)) / 0.2);
-    ov.innerHTML = coldOpen(t, NEG) + (k > 0 ? `<div style="position:absolute;inset:0;background:#f7f8fb;opacity:${k}"></div>` : ""); return; }
   const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.12);
   let h = logo();
   if (shot === "hook") {
-    h += headline("HOMEWORK YOU<br>DON'T GET?", "COPY IT IN", lt / 0.25);
-    h += assignment(60, 420, 600, `${pop(lt / 0.4)};transform-origin:50% 0;rotate:-2deg`);
+    // stressed Maya next to the homework, then the promise
+    h += headline("THE LAZIEST WAY TO", "UNDERSTAND HOMEWORK", lt / 0.25);
+    h += assignment(300, 430, 400, `${pop((lt - 0.15) / 0.4)};transform-origin:50% 0;rotate:3deg`);
+    h += maya("facepalm", -60, 380, 0.72, `${pop(lt / 0.35)};transform-origin:50% 100%`);
+    if (lt > 1.2) h += A(330, 360, `<div style="${pop((lt - 1.2) / 0.3)};rotate:-6deg;background:#e5484d;color:#fff;font:700 24px Unb;padding:8px 14px;border-radius:12px">DUE TOMORROW</div>`);
   }
   if (shot === "highlight") {
     h += pill("1 · HIGHLIGHT IT, COPY IT", lt / 0.3);
@@ -71,9 +74,10 @@ window.renderAt = (t) => {
   if (shot === "write") {
     h += pill("NOW YOU GET IT", lt / 0.3);
     h += assignment(40, 400, 640, pop(lt / 0.35), { checks: clamp((lt - 0.4) / 0.9) });
+    h += maya("cheer", -40, 600, 0.5, pop((lt - 0.6) / 0.35));
     h += A(420, 800, `<div style="${pop((lt - 1.3) / 0.3)};rotate:-8deg;border:5px solid ${GREEN};color:${GREEN};font:700 34px Unb;padding:8px 18px;border-radius:14px;background:#ffffffcc">GOT IT</div>`);
   }
-  if (shot === "cta" || shot === "end") h += endCard(since(t, "cta"), "Copy. Paste.<br>Get it.", "homework into study reels", 1.2);
+  if (shot === "cta" || shot === "end") { h += endCard(since(t, "cta"), "Copy. Paste.<br>Get it.", "homework into study reels", 1.2); h += maya("phone", 470, 790, 0.38, pop((since(t, "cta") - 0.8) / 0.35)); }
   let out = stage(t, lt, h, HITS());
   if (!["cta", "end"].includes(shot)) out += captionWord(t, L, /^(HOMEWORK|COPY|PASTE|GO|EVERY|REELS|QUIZ|UNDERSTAND|UNSPOOL)$/);
   ov.innerHTML = out;
