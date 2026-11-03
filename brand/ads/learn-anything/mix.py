@@ -15,13 +15,16 @@ def riser(d): t=np.arange(int(SR*d))/SR; return rng.standard_normal(len(t))*(t/d
 def click(): return noise(0.025,160)+tone(2400,0.025,200,(1,))
 P=st["cta"]
 # the cold open: five slams
-for j in range(4): add(0.02+j*0.44,boom(),0.28); add(0.02+j*0.44,noise(0.15,22),0.22); add(0.02+j*0.44,tone(note(40-j),0.4,5,(1,.6)),0.12)
-add(st["hook"]-0.9,riser(0.9),0.14); add(st["hook"],boom(),0.35)
+H=st["q"]
+# the opening question: a jet passing overhead, a soft pad under the words
+t1=np.arange(int(SR*3.2))/SR; add(0.0,np.convolve(rng.standard_normal(len(t1)),np.ones(60)/60,"same")*np.sin(np.pi*t1/3.2)**2,0.5)
+for m in (57,64,69): add(0.05,tone(note(m),3.0,0.8,(1,.3)),0.03)
+add(st["dunno"]-0.6,riser(0.6),0.12); add(st["dunno"]+1.25,noise(0.25,14),0.12); add(st["dunno"]+0.1,boom(),0.25)
 # 124 bpm under everything after the hook, out after the CTA lands
 b=60/124; prog=[[57,60,64],[53,57,60],[60,64,67],[55,59,62]]
 for i in range(int(DUR/(b/4))):
     t0=i*b/4; ch=prog[(i//32)%4]
-    if t0<st["hook"] or t0>P+1.2: continue
+    if t0<st["dunno"] or t0>P+1.2: continue
     if i%4==0: add(t0,kick(),0.38)
     if i%8==4: add(t0,noise(.14,24),0.14)
     add(t0,noise(.02,140),0.03 if i%2 else 0.05)
@@ -33,9 +36,8 @@ add(st["reels"]+0.7,boom(),0.3); add(st["reels"]+0.7,noise(0.4,9),0.12)         
 for j in range(4): add(st["search"]+0.3+j*0.28,tone(note(76+j*3),0.15,14,(1,.3)),0.06)  # sources landing
 for j,m in enumerate([76,83]): add(st["quiz"]+1.55+j*0.08,tone(note(m),0.5,6,(1,.3)),0.1)  # right answer
 if AD=="adV":
-    PROMPT="How do planes stay in the air?"
-    for c in range(len(PROMPT)): add(st["type"]+0.9+c*1.6/len(PROMPT),click(),0.12)    # typing
-    add(st["type"]+2.6,click(),0.3); add(st["type"]+2.6,kick(),0.3)                    # tap go
+    Ld=[l for l in tl["lines"] if l["shot"]=="dunno"][0]; nd=[l for l in tl["lines"] if l["shot"]=="search"][0]["s"]-Ld["s"]
+    add(st["dunno"]+nd-0.3,click(),0.3); add(st["dunno"]+nd-0.3,kick(),0.3)            # tap go
     L=[l for l in tl["lines"] if l["shot"]=="curious"][0]; n=L["e"]-L["s"]
     for j in range(4): add(st["curious"]+j*n*0.8/4,tone(note(79+j*3),0.3,8,(1,.3)),0.08) # each question pops on
     for j in range(2): add(st["learn"]+(j+1)*(st["quiz"]-st["learn"])/3,noise(0.2,14),0.08)  # swipes
