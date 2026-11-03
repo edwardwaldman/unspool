@@ -116,7 +116,7 @@ export function PromptBox({ className = "mt-6" }: { className?: string }) {
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          maxLength={500}
+          maxLength={4000}
           enterKeyHint="go"
           aria-label="Type a topic to study"
           placeholder="e.g. Photosynthesis, AP Bio"

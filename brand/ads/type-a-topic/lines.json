@@ -1,0 +1,10 @@
+{"voice": "am_michael", "speed": 1.2, "lead": 2.75, "tail": 0, "gap": 0.08, "lines": [
+ ["hook", "No notes? Just type what your test is on.", 0.15],
+ ["type", "Like, cells and D N A, for AP Bio.", 0.15, "Like, cells and DNA, for AP Bio."],
+ ["search", "Unspool searches the web, and writes the notes for you.", 0.12],
+ ["reels", "Then it turns them into short reels.", 0.5],
+ ["quiz", "A voiceover, captions, and a quiz in every one.", 0.12],
+ ["scroll", "So studying feels like scrolling.", 0.15],
+ ["cta", "Type in your next test, at unspool dot c c. Your first reel is free.", 0.15, "Type in your next test at unspool.cc. Your first reel is free."],
+ ["end", "", 1.4]
+]}

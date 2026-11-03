@@ -1,0 +1,83 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#f7f8fb}
+#ov{position:absolute;inset:0;overflow:hidden}
+</style></head><body><div id="ov"></div>
+<script type="module">
+import { docToReels } from "./doc-to-reels.js";
+import { A, clamp, mix, ease, outBack, pop, pill, logo, headline, tap, phone, goScreen, researchScreen, quizScreen, coldOpen, captionWord, endCard, stage, NAVY, BLUE, RED, GREEN } from "./kit.js";
+const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins")]);
+const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.12) k = i; return k; };
+const st = (n) => lines.find((l) => l.shot === n).s - 0.12, since = (t, n) => t - st(n);
+const ov = document.getElementById("ov");
+const NEG = ["Due tomorrow.", "12 questions.", "Missed the lecture.", "40 tabs open.", "Still on Q1."];
+const Q = ["What do mitochondria do in a cell?", "How does DNA become mRNA?", "What does cellular respiration make?"];
+const TEXT = `Bio Homework 4. Answer each question in full sentences. ${Q.map((q, i) => `${i + 1}. ${q}`).join(" ")}`;
+const HITS = () => [[st("hook") + 0.05, 1], [st("highlight") + 1.75, 0.7], [st("paste") + 1.65, 0.8], [st("reels") + 0.75, 1], [st("write") + 0.9, 1], [st("cta") + 0.1, 1.1]];
+
+// The assignment, as it looks in a school doc: title, instructions, three questions.
+// sel: 0..1 how much is highlighted; checks: 0..1 the green ticks of "you get it" landing.
+function assignment(x, y, w, k, { sel = 0, checks = 0, copy = 0, copied = 0 } = {}) {
+  const rows = [["Bio Homework 4", "700 36px Unb", "#1a1f2c"], ["Answer each question in full sentences.", "600 23px Ins", "#5f6b80"], ...Q.map((q, i) => [`${i + 1}. ${q}`, "600 27px/1.35 Ins", "#1a1f2c"])];
+  const nSel = sel * rows.length;
+  let inner = `<div style="display:flex;gap:8px;padding:12px 16px;background:#eef1f6;border-bottom:1px solid #dde2ea">${["#ff5f57", "#febc2e", "#28c840"].map((c) => `<span style="width:12px;height:12px;border-radius:50%;background:${c}"></span>`).join("")}<span style="margin-left:12px;font:600 15px Ins;color:#5f6b80">Bio Homework 4 · Docs</span></div><div style="padding:26px 30px 30px">`;
+  rows.forEach(([txt, font, col], j) => { const f = clamp(nSel - j);
+    inner += `<div style="position:relative;margin:${j === 1 ? 6 : j === 2 ? 22 : 14}px 0 0"><span style="position:relative;z-index:1;font:${font};color:${col}">${txt}</span>${f > 0 ? `<div style="position:absolute;left:-3px;top:0;bottom:0;width:calc(${f * 100}% + 6px);background:rgba(47,125,225,.28)"></div>` : ""}${j >= 2 && checks > 0 ? `<span style="position:absolute;right:-6px;top:2px;${pop(checks * 3 - (j - 2))};display:inline-flex;width:30px;height:30px;border-radius:50%;background:${GREEN};color:#fff;font:700 18px Ins;align-items:center;justify-content:center">✓</span>` : ""}</div>`; });
+  if (sel > 0) inner += `<div style="position:absolute;left:28px;top:62px;width:4px;height:36px;background:${BLUE}"><div style="position:absolute;left:-6px;top:-12px;width:16px;height:16px;border-radius:50%;background:${BLUE}"></div></div>`;
+  inner += `</div>`;
+  if (copy > 0) inner += `<div style="position:absolute;left:${w / 2 - 120}px;top:-74px;${pop(copy)};display:flex;background:#2b2b2e;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.35);overflow:hidden">${["Cut", "Copy", "Paste"].map((b) => `<div style="padding:12px 18px;font:600 19px Ins;color:#fff;${b === "Copy" && copied > 0 ? "background:#4a4a50" : ""};border-right:1px solid #444">${b}</div>`).join("")}</div>`;
+  if (copied > 0) inner += `<div style="position:absolute;left:0;right:0;bottom:-70px;text-align:center;${pop(copied)}"><span style="display:inline-block;background:${NAVY};color:#fff;font:700 20px Unb;padding:10px 20px;border-radius:24px">Copied ✓</span></div>`;
+  return A(x, y, `<div style="position:relative;width:${w}px;background:#fff;border-radius:18px;box-shadow:0 20px 50px rgba(13,42,92,.18);${k}">${inner}</div>`);
+}
+
+window.renderAt = (t) => {
+  if (t < st("hook")) { const k = clamp((t - (st("hook") - 0.2)) / 0.2);
+    ov.innerHTML = coldOpen(t, NEG) + (k > 0 ? `<div style="position:absolute;inset:0;background:#f7f8fb;opacity:${k}"></div>` : ""); return; }
+  const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.12);
+  let h = logo();
+  if (shot === "hook") {
+    h += headline("HOMEWORK YOU<br>DON'T GET?", "COPY IT IN", lt / 0.25);
+    h += assignment(60, 420, 600, `${pop(lt / 0.4)};transform-origin:50% 0;rotate:-2deg`);
+  }
+  if (shot === "highlight") {
+    h += pill("1 · HIGHLIGHT IT, COPY IT", lt / 0.3);
+    const copy = clamp((lt - 1.15) / 0.3), copied = lt > 1.75 ? clamp((lt - 1.75) / 0.3) : 0;
+    h += assignment(40, 420, 640, "", { sel: ease((lt - 0.1) / 1.0), copy, copied });
+    h += tap(360, 375, (lt - 1.4) / 0.6);
+  }
+  if (shot === "paste") {
+    // zoom onto the box: press, Paste, the homework drops in, tap go
+    const z = ease(lt / 0.4), s = mix(0.9, 1.65, z), y = mix(300, 600 - 463 * 1.65, z);
+    const paste = lt > 0.55 && lt < 1.05 ? clamp((lt - 0.55) / 0.25) : 0, filled = lt > 1.0;
+    const X = (sx) => 360 - 196 * s + (16 + sx) * s, Y = (sy) => y + (16 + sy) * s;
+    h += phone(360, y, s, goScreen({ typed: filled ? TEXT : "", caret: !filled && Math.floor(t * 4) % 2 === 0, go: clamp((lt - 1.45) / 0.4), paste, focus: z }));
+    h += tap(X(120), Y(447), (lt - 0.15) / 0.6) + tap(X(98), Y(400), (lt - 0.8) / 0.6) + tap(X(312), Y(447), (lt - 1.4) / 0.6);
+    h += pill("2 · PASTE IT IN", lt / 0.3, 960);
+  }
+  if (shot === "search") {
+    h += pill("IT RESEARCHES EVERY QUESTION", lt / 0.3);
+    h += phone(360, 300, 0.9, researchScreen(lt * 1.25, "Bio Homework 4", ["Q1 · Mitochondria", "Q2 · DNA to mRNA", "Q3 · Cell respiration"]), pop(lt / 0.3));
+  }
+  if (shot === "reels") {
+    h += pill("THEN TURNS IT INTO REELS", lt / 0.3);
+    h += A(40, 300, `<div style="width:640px;height:720px;border-radius:30px;background:radial-gradient(120% 80% at 50% 40%,#1f3a2a,#0b120e);box-shadow:0 20px 50px rgba(13,42,92,.25)"></div>`);
+    h += `<div style="position:absolute;left:0;top:120px;width:720px;height:1280px">${docToReels(lt, { title: "", reels: ["mito", "dna", "resp"], docTitle: "Bio Homework 4", badge: "TEXT" })}</div>`;
+  }
+  if (shot === "quiz") {
+    h += pill("A QUIZ IN EVERY REEL", lt / 0.3);
+    h += phone(360, 300, 0.9, quizScreen(lt, "dna", "Where is DNA copied into mRNA?", ["Ribosome", "Nucleus", "Cell wall"], 1), pop(lt / 0.3));
+  }
+  if (shot === "write") {
+    h += pill("NOW YOU GET IT", lt / 0.3);
+    h += assignment(40, 400, 640, pop(lt / 0.35), { checks: clamp((lt - 0.4) / 0.9) });
+    h += A(420, 800, `<div style="${pop((lt - 1.3) / 0.3)};rotate:-8deg;border:5px solid ${GREEN};color:${GREEN};font:700 34px Unb;padding:8px 18px;border-radius:14px;background:#ffffffcc">GOT IT</div>`);
+  }
+  if (shot === "cta" || shot === "end") h += endCard(since(t, "cta"), "Copy. Paste.<br>Get it.", "homework into study reels", 1.2);
+  let out = stage(t, lt, h, HITS());
+  if (!["cta", "end"].includes(shot)) out += captionWord(t, L, /^(HOMEWORK|COPY|PASTE|GO|EVERY|REELS|QUIZ|UNDERSTAND|UNSPOOL)$/);
+  ov.innerHTML = out;
+};
+await Promise.all(["mito.jpg", "dna.jpg", "resp.jpg"].map((s) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = s; })));
+window.renderAt(0); setTimeout(() => (window.ready = true), 400);
+</script></body></html>

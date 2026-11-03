@@ -16,8 +16,8 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as { fileName?: string; size?: number; type?: string; testOne?: boolean; prompt?: string } | null;
   // A typed prompt ("photosynthesis for AP Bio") instead of a file: the reels come from web research.
   const prompt = typeof body?.prompt === "string" ? body.prompt.replace(/\s+/g, " ").trim() : null;
-  if (prompt !== null && (prompt.length < 3 || prompt.length > 500)) {
-    return error(400, prompt.length < 3 ? "Type a topic to study." : "Keep it under 500 characters.");
+  if (prompt !== null && (prompt.length < 3 || prompt.length > 4000)) {
+    return error(400, prompt.length < 3 ? "Type a topic to study." : "That's too long. Paste up to about 600 words.");
   }
   const fileName = prompt !== null ? prompt.slice(0, 80) : body?.fileName?.trim().slice(0, 200);
   const size = prompt !== null ? Buffer.byteLength(prompt) : Number(body?.size ?? 0);

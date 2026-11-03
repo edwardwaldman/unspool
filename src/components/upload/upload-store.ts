@@ -154,7 +154,7 @@ export async function startPrompt(text: string, onCreated: (documentId: string) 
     res = await fetch("/api/uploads", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: prompt.slice(0, 500), ...(opts.testOne ? { testOne: true } : {}) }),
+      body: JSON.stringify({ prompt: prompt.slice(0, 4000), ...(opts.testOne ? { testOne: true } : {}) }),
     });
   } catch {
     pending = null;

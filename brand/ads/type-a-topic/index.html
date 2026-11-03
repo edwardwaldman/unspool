@@ -1,0 +1,59 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#f7f8fb}
+#ov{position:absolute;inset:0;overflow:hidden}
+</style></head><body><div id="ov"></div>
+<script type="module">
+import { docToReels } from "./doc-to-reels.js";
+import { A, clamp, mix, ease, outBack, pop, pill, logo, headline, tap, phone, goScreen, researchScreen, quizScreen, feedScreen, coldOpen, captionWord, endCard, stage, NAVY, RED, GREEN } from "./kit.js";
+const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins")]);
+const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.12) k = i; return k; };
+const st = (n) => lines.find((l) => l.shot === n).s - 0.12, since = (t, n) => t - st(n);
+const ov = document.getElementById("ov");
+const NEG = ["No notes.", "Skipped the lecture.", "Lost the study guide.", "Test tomorrow.", "Where do I start?"];
+const PROMPT = "AP Bio: cells and DNA";
+const HITS = () => [[st("hook") + 0.05, 1], [st("type") + 2.25, 0.8], [st("reels") + 0.75, 1], [st("quiz") + 1.6, 0.8], [st("cta") + 0.1, 1.1]];
+
+window.renderAt = (t) => {
+  if (t < st("hook")) { const k = clamp((t - (st("hook") - 0.2)) / 0.2);
+    ov.innerHTML = coldOpen(t, NEG) + (k > 0 ? `<div style="position:absolute;inset:0;background:#f7f8fb;opacity:${k}"></div>` : ""); return; }
+  const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.12);
+  let h = logo();
+  if (shot === "hook") {
+    h += headline("NO NOTES?", "JUST TYPE IT", lt / 0.25);
+    h += phone(360, 300, 0.9, goScreen({ caret: Math.floor(t * 2.2) % 2 === 0 }), pop(lt / 0.4));
+  }
+  if (shot === "type") {
+    // zoom onto the box, type the topic, tap go
+    const z = ease(lt / 0.45), s = mix(0.9, 1.65, z), y = mix(300, 600 - 463 * 1.65, z);
+    const n = Math.floor(clamp((lt - 0.4) / 1.5) * PROMPT.length), go = clamp((lt - 2.0) / 0.4);
+    h += phone(360, y, s, goScreen({ typed: PROMPT.slice(0, n), caret: lt < 2.0 && Math.floor(t * 4) % 2 === 0, go, focus: z }));
+    h += tap(360 - 196 * s + (16 + 312) * s, y + (16 + 447) * s, (lt - 1.95) / 0.6);
+    h += pill("TYPE THE TOPIC", lt / 0.3, 960);
+  }
+  if (shot === "search") {
+    h += pill("IT RESEARCHES IT FOR YOU", lt / 0.3);
+    h += phone(360, 300, 0.9, researchScreen(lt, PROMPT), pop(lt / 0.3));
+  }
+  if (shot === "reels") {
+    h += pill("THEN TURNS IT INTO REELS", lt / 0.3);
+    h += A(40, 300, `<div style="width:640px;height:720px;border-radius:30px;background:radial-gradient(120% 80% at 50% 40%,#1f3a2a,#0b120e);box-shadow:0 20px 50px rgba(13,42,92,.25)"></div>`);
+    h += `<div style="position:absolute;left:0;top:120px;width:720px;height:1280px">${docToReels(lt, { title: "", reels: ["mito", "dna", "resp"], docTitle: "Cells &amp; DNA", badge: "WEB" })}</div>`;
+  }
+  if (shot === "quiz") {
+    h += pill("VOICEOVER · CAPTIONS · QUIZ", lt / 0.3);
+    h += phone(360, 300, 0.9, quizScreen(lt, "resp", "What does cell respiration make?", ["Glucose", "ATP", "DNA"], 1), pop(lt / 0.3));
+  }
+  if (shot === "scroll") {
+    h += pill("STUDY LIKE YOU SCROLL", lt / 0.3);
+    h += phone(360, 300, 0.9, feedScreen(lt, ["mito", "dna", "resp"], 0.75));
+  }
+  if (shot === "cta" || shot === "end") h += endCard(since(t, "cta"), "Type in<br>your next test", "and get study reels", 2.0);
+  let out = stage(t, lt, h, HITS());
+  if (!["cta", "end"].includes(shot)) out += captionWord(t, L, /^(NOTES|TYPE|TEST|WEB|NOTES|REELS|QUIZ|SCROLLING|DNA|BIO)$/);
+  ov.innerHTML = out;
+};
+await Promise.all(["mito.jpg", "dna.jpg", "resp.jpg"].map((s) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = s; })));
+window.renderAt(0); setTimeout(() => (window.ready = true), 400);
+</script></body></html>

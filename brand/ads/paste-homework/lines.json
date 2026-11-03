@@ -1,0 +1,11 @@
+{"voice": "am_michael", "speed": 1.2, "lead": 2.75, "tail": 0, "gap": 0.08, "lines": [
+ ["hook", "Got homework you don't get? Copy it into Unspool.", 0.15],
+ ["highlight", "Highlight the whole assignment, and copy it.", 0.35],
+ ["paste", "Paste it in, and hit go.", 0.55],
+ ["search", "Unspool researches every question.", 0.4],
+ ["reels", "And turns it into short reels that explain it.", 0.4],
+ ["quiz", "Each one ends with a quiz, so you know you've got it.", 0.12],
+ ["write", "Now you actually understand it, before you write a word.", 0.15],
+ ["cta", "Try it free, at unspool dot c c.", 0.15, "Try it free at unspool.cc"],
+ ["end", "", 1.4]
+]}
