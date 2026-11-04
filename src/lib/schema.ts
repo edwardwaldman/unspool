@@ -217,7 +217,10 @@ export function reelScriptProblems(s: ReelScript): string[] {
 }
 
 /** Clamp anything slightly out of range instead of failing the whole reel. */
-export function normalizeReelScript(s: ReelScript): ReelScript {
+/** Plain text for the quiz: the writer's *highlight* / ~underline~ marks only belong in spoken lines. */
+const plain = (x: string) => x.replace(/[*~^#_]+/g, "").replace(/\s+/g, " ").trim();
+
+export function normalizeReelScript(s: ReelScript, opts: { maxBeats?: number } = {}): ReelScript {
   let lastMove: string | undefined;
   const beats = s.beats.filter((b) => b.say.trim()).map((raw, i) => {
     // Keep the camera move and setting (they were being dropped here); fill a move the writer skipped, never the
@@ -279,6 +282,8 @@ export function normalizeReelScript(s: ReelScript): ReelScript {
     if (v.type === "equation") return { ...b, visual: { ...v, label: v.label.slice(0, 24), expr: v.expr.slice(0, 40), note: v.note.slice(0, 80), ask: v.ask.slice(0, 40) } };
     return b;
   });
+  // Short reels stay short: past the cap, keep the opening beats and the payoff (the last beat).
+  if (opts.maxBeats && beats.length > opts.maxBeats) beats.splice(opts.maxBeats - 1, beats.length - opts.maxBeats);
   // Mood colours mean something: never two non-calm beats in a row (the payoff, the last beat, keeps its own).
   for (let i = 1; i < beats.length - 1; i++) {
     const m = beats[i].mood, prev = beats[i - 1].mood;
@@ -287,7 +292,7 @@ export function normalizeReelScript(s: ReelScript): ReelScript {
   return {
     ...s,
     beats,
-    quiz: { ...s.quiz, options: s.quiz.options.slice(0, 4) },
+    quiz: { ...s.quiz, question: plain(s.quiz.question), options: s.quiz.options.slice(0, 4).map(plain) },
     // "Next:" was shown as a caption on its own; "Up next," reads as one spoken line.
     outro: { ...s.outro, say: s.outro.say.replace(/^\s*next\s*:\s*/i, "Up next, ") },
     stats: s.stats.slice(0, 3).map((st) => ({ ...st, at_beat: Math.max(0, Math.min(beats.length - 1, st.at_beat)) })),
