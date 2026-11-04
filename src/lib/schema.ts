@@ -217,6 +217,33 @@ export function reelScriptProblems(s: ReelScript): string[] {
 }
 
 /** Clamp anything slightly out of range instead of failing the whole reel. */
+// Shapes that are only geometry (they stand in for something and need a label to mean anything), filler the writer
+// scatters around the hero, and the real things the kit can draw (matched against an object's label).
+const STAND_INS = new Set<string>(["cube", "ball", "cylinder", "cone", "crate", "card"]);
+const FILLER = new Set<string>(["star", "coin", "coins", "arrow", "bottle", "dice", "chart", "scale"]);
+const REAL_BY_WORD: Record<string, SceneObject["shape"]> = {
+  bee: "bee", bees: "bee", bumble: "bee", bumblebee: "bee", flower: "flower", flowers: "flower", fish: "fish", bird: "bird", birds: "bird",
+  tree: "tree", trees: "tree", cell: "cell", cells: "cell", molecule: "molecule", molecules: "molecule", planet: "planet", planets: "planet",
+  sun: "sun", mountain: "mountain", cloud: "cloud", clouds: "cloud", house: "house", building: "building", person: "person", people: "crowd",
+  crowd: "crowd", heart: "heart", lightbulb: "lightbulb", key: "key", lock: "lock", clock: "clock", phone: "phone", book: "book", flask: "flask", coins: "coins",
+};
+/**
+ * Make a beat's 3D cast honest (from reviewing real reels: a "HONEY BEE" that was a bottle, crates labelled
+ * "IN MILLIONS", cards labelled "Q2 FY26", and two unlabelled props beside every hero). An object whose label names a
+ * shape the kit has becomes that shape; plain geometry standing in for an idea goes; unlabelled filler goes; and if
+ * nothing is left the beat shows its flat graphic instead.
+ */
+export function cleanObjects(objects: SceneObject[]): SceneObject[] {
+  return objects
+    .map((o) => {
+      const words = o.label.toLowerCase().split(/[^a-z]+/);
+      const real = words.map((w) => REAL_BY_WORD[w]).find(Boolean);
+      return { o: real ? { ...o, shape: real } : o, named: Boolean(real) || words.includes(o.shape) };
+    })
+    .filter(({ o, named }) => named || (!STAND_INS.has(o.shape) && (o.label || !FILLER.has(o.shape))))
+    .map(({ o }) => o);
+}
+
 /** Plain text for the quiz: the writer's *highlight* / ~underline~ marks only belong in spoken lines. */
 const plain = (x: string) => x.replace(/[*~^#_]+/g, "").replace(/\s+/g, " ").trim();
 
@@ -235,13 +262,13 @@ export function normalizeReelScript(s: ReelScript, opts: { maxBeats?: number } =
           camera: raw.scene.camera,
           ...(move ? { move } : {}),
           ...(setting ? { setting } : {}),
-          objects: raw.scene.objects.slice(0, 8).map((o) => ({
+          objects: cleanObjects(raw.scene.objects.slice(0, 8).map((o) => ({
             ...o,
             label: o.label.trim().slice(0, 28),
             x: Math.max(-3, Math.min(3, o.x)),
             z: Math.max(-2, Math.min(2, o.z)),
             size: Math.max(0.4, Math.min(2.5, o.size || 1)),
-          })),
+          }))),
         }
       : undefined;
     const mood = raw.mood && (MOODS as readonly string[]).includes(raw.mood) ? raw.mood : undefined;

@@ -2,8 +2,8 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
-import { DIAGRAM_TYPES, type HighlightColor } from "@/lib/schema";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { DIAGRAM_TYPES, cleanObjects, type HighlightColor } from "@/lib/schema";
 import { MOOD_BG } from "./diagrams";
 import { ParticleField } from "./particle-field";
 import { VisualStage, type StageProps } from "./visuals";
@@ -84,12 +84,16 @@ export function ReelMedia({
   // The GPU dropped the scene's context (driver reset, too many contexts, backgrounded tab): rebuild it once, then
   // fall back to the flat graphics if it drops again.
   const [lost, setLost] = useState(0);
+  // Reels written before the cast clean-up still get it: real shapes for labelled things, no filler props, and
+  // beats with only stand-in boxes drawn flat (objects are visual only, so the voiceover is unaffected).
+  const rawScene = stage?.scene;
+  const scene = useMemo(() => (rawScene ? { ...rawScene, objects: cleanObjects(rawScene.objects) } : undefined), [rawScene]);
   const glLost = lost > 1;
   if (videoUrl && videoRef) return <ReelVideo src={videoUrl} videoRef={videoRef} muted={muted} />;
   // The playing reel's beats are real 3D scenes (as in the demo reels); off-screen reels and devices without
   // WebGL (or with reduced motion) keep the flat graphics.
   const visual = stage?.visual;
-  const story = Boolean(stage?.scene?.objects?.length);
+  const story = Boolean(scene?.objects.length);
   // Graphs, equations and emoji props are full-frame flat diagrams: never inside the 3D scene.
   // Lists and icon rows of colours are drawn flat with real colour chips (the 3D versions can only show icons).
   const colours = Boolean(visual && (visual.type === "list" || visual.type === "icons") && visual.items.some((it) => it.color));
@@ -136,7 +140,7 @@ export function ReelMedia({
       {in3d && stage && sceneColors ? (
         <div className="absolute inset-x-0 z-[5]" style={{ top: stageBox.top, bottom: stageBox.bottom }}>
           {/* @ts-expect-error quiz/outro never reach here (SCENE_TYPES) */}
-          <Scene3D key={lost} visual={stage.visual} progress={stage.progress} accent={sceneColors.accent} colors={sceneColors.colors} beatKey={stageKey} scene={stage.scene} mood={stage.mood} onLost={() => setLost((n) => n + 1)} />
+          <Scene3D key={lost} visual={stage.visual} progress={stage.progress} accent={sceneColors.accent} colors={sceneColors.colors} beatKey={stageKey} scene={scene} mood={stage.mood} onLost={() => setLost((n) => n + 1)} />
         </div>
       ) : (
         <>
