@@ -1,0 +1,11 @@
+{"voice": "am_michael", "speed": 1.15, "lead": 0.3, "tail": 0, "gap": 0.08, "lines": [
+ ["q", "How does the stock market actually work?", 0.35],
+ ["dunno", "Everyone acts like they know. So I typed it into Unspool.", 0.45],
+ ["search", "It looked it up, and wrote the explanation.", 0.15],
+ ["reels", "Then turned it into short reels. One idea each.", 0.45],
+ ["learn", "What a stock is. Why prices move. What an index is.", 0.15],
+ ["quiz", "And a quiz, so it actually sticks.", 0.5],
+ ["curious", "Black holes. Taxes. Why the sky is blue. Type any question, and scroll.", 0.15],
+ ["cta", "Scroll something that makes you smarter. Try it free, at unspool dot c c.", 0.15, "Scroll something that makes you smarter. Try it free at unspool.cc"],
+ ["end", "", 1.4]
+]}

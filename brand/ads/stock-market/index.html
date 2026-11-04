@@ -1,0 +1,82 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#f7f8fb}
+#ov{position:absolute;inset:0;overflow:hidden}
+</style></head><body><div id="ov"></div>
+<script type="module">
+import { docToReels } from "./doc-to-reels.js";
+import { A, clamp, mix, ease, pop, pill, logo, headline, tap, phone, goScreen, researchScreen, quizScreen, feedScreen, coldOpen, captionWord, endCard, stage, NAVY } from "./kit.js";
+const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins")]);
+const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.12) k = i; return k; };
+const st = (n) => lines.find((l) => l.shot === n).s - 0.12, since = (t, n) => t - st(n), len = (n) => { const i = lines.findIndex((l) => l.shot === n); return lines[i + 1].s - lines[i].s; };
+const ov = document.getElementById("ov");
+const maya = (n, x, y, k, extra = "") => A(x, y, `<img src="maya-${n}.png" style="width:${600 * k}px;height:${900 * k}px;${extra}">`);
+
+// doomscrolling, slammed on in red
+const NEG = ["3 hours scrolling.", "Same 5 videos.", "Learned nothing.", "Brain rot."];
+const PROMPT = "How does the stock market actually work?";
+const MORE = [["How do black holes form?", 24, 212], ["How do taxes work?", 360, 272], ["Why is the sky blue?", 30, 950], ["What caused World War I?", 340, 1000]];
+const HITS = () => [[st("q") + 0.05, 0.6], [st("dunno") + 1.25, 0.6], [st("dunno") + len("dunno") - 0.15, 0.8], [st("reels") + 0.75, 1], [st("quiz") + 1.6, 0.8], [st("cta") + 0.1, 1.1]];
+
+window.renderAt = (t) => {
+  const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.12);
+  let h = logo();
+  if (shot === "q") {
+    // a sky, a jet crossing it, and the question typing itself on, big
+    h += `<div style="position:absolute;inset:0;background:linear-gradient(#e9f1fb,#f7f8fb 70%)"></div>` + logo();
+    // a live price chart drawing itself, candles and all, ticking up and down
+    const shown = clamp((t + 0.3) / (len("q") + 0.6)), N = 26, pts = Array.from({ length: N }, (_, i) => 760 - (Math.sin(i * 0.9) * 40 + Math.sin(i * 0.37) * 70 + i * 9));
+    let cs = ""; for (let i = 0; i < Math.floor(shown * N); i++) { const x = 40 + i * 25, o = pts[i], c = pts[i + 1] ?? pts[i] - 8, up = c < o, hi = Math.min(o, c) - 14, lo = Math.max(o, c) + 14;
+      cs += `<line x1="${x + 8}" y1="${hi}" x2="${x + 8}" y2="${lo}" stroke="${up ? "#1f9d55" : "#e5484d"}" stroke-width="3"/><rect x="${x}" y="${Math.min(o, c)}" width="16" height="${Math.max(4, Math.abs(c - o))}" rx="2" fill="${up ? "#1f9d55" : "#e5484d"}"/>`; }
+    const k = Math.floor(shown * N) - 1, last = pts[Math.max(0, k)];
+    h += `<svg style="position:absolute;left:0;top:0" width="720" height="1280">${[560, 660, 760, 860].map((y) => `<line x1="30" y1="${y}" x2="690" y2="${y}" stroke="#d8dde6" stroke-width="2"/>`).join("")}${cs}</svg>`;
+    if (k >= 0) h += A(40 + k * 25 + 22, last - 22, `<span style="display:inline-block;background:${NAVY};color:#fff;font:700 18px Ins;padding:4px 8px;border-radius:8px">${(412 + Math.sin(t * 7) * 3 + k * 1.7).toFixed(2)}</span>`);
+    const words = PROMPT.split(" ").map((w) => (w === "actually" ? `<span style="color:#1f9d55">ACTUALLY</span>` : w)), n = Math.min(words.length, Math.floor(clamp((t - L.s + 0.1) / (L.e - L.s - 0.2)) * words.length) + 1);
+    h += maya("lookup", 380, 600, 0.55, pop(lt / 0.35));
+    h += A(50, 150, `<div style="width:620px;font:700 58px/1.12 Unb;color:${NAVY};letter-spacing:-1.5px">${words.map((w, j) => `<span style="opacity:${j < n ? 1 : 0.12}">${w}</span>`).join(" ")}</div>`);
+  }
+  if (shot === "dunno") {
+    // the phone rises in, zoomed on the prompt box; the question flies down into it; tap go
+    const s = 1.65, y0 = 600 - 463 * s, rise = ease(lt / 0.55), y = y0 + 900 * (1 - rise);
+    const fly = ease((lt - 0.7) / 0.6), inBox = lt > 1.3, go = clamp((lt - (len("dunno") - 0.55)) / 0.35);
+    h += phone(360, y, s, goScreen({ typed: inBox ? PROMPT : fly > 0.55 ? " " : "", caret: !inBox && fly < 0.3 && Math.floor(t * 4) % 2 === 0, go, focus: 1 }));
+    // the question rides on a white card (readable over the phone), shrinks and drops into the box
+    if (!inBox) { const c = 1 - clamp((fly - 0.75) / 0.25);
+      h += A(mix(36, 112, fly), mix(136, 550, fly), `<div style="width:${mix(648, 420, fly)}px;box-sizing:border-box;padding:${mix(22, 8, fly)}px ${mix(24, 16, fly)}px;border-radius:${mix(26, 30, fly)}px;background:rgba(255,255,255,${c});box-shadow:0 18px 40px rgba(13,42,92,${0.25 * c});font:700 ${mix(52, 27, fly)}px/1.12 Unb;color:${fly > 0.8 ? "#e9f0e4" : NAVY};letter-spacing:${mix(-1.5, 0, fly)}px;${fly > 0.5 ? "white-space:nowrap;overflow:hidden;text-overflow:ellipsis" : ""}">${PROMPT}</div>`); }
+    h += tap(360 - 196 * s + (16 + 312) * s, y0 + (16 + 447) * s, (lt - (len("dunno") - 0.6)) / 0.6);
+    h += pill("TYPE ANY QUESTION", clamp((lt - 1.3) / 0.3), 960);
+  }
+  if (shot === "search") {
+    h += pill("IT LOOKS IT UP FOR YOU", lt / 0.3);
+    h += phone(360, 300, 0.9, researchScreen(lt * 1.1, "How does the stock market work?"), pop(lt / 0.3));
+  }
+  if (shot === "reels") {
+    h += pill("ONE IDEA PER REEL", lt / 0.3);
+    h += A(40, 300, `<div style="width:640px;height:720px;border-radius:30px;background:radial-gradient(120% 80% at 50% 40%,#1f3a2a,#0b120e);box-shadow:0 20px 50px rgba(13,42,92,.25)"></div>`);
+    h += `<div style="position:absolute;left:0;top:120px;width:720px;height:1280px">${docToReels(lt, { title: "", reels: ["share", "index", "price"], docTitle: "The stock market", badge: "WEB" })}</div>`;
+  }
+  if (shot === "learn") {
+    h += pill("LEARN IT LIKE YOU SCROLL", lt / 0.3);
+    h += phone(360, 300, 0.9, feedScreen(lt, ["share", "price", "index"], len("learn") / 3));
+  }
+  if (shot === "quiz") {
+    h += pill("A QUIZ SO IT STICKS", lt / 0.3);
+    h += phone(360, 300, 0.9, quizScreen(lt, "price", "What makes a stock\u2019s price go up?", ["The company says so", "More buyers than sellers", "The government sets it"], 1), pop(lt / 0.3));
+  }
+  if (shot === "curious") {
+    // anything you're curious about: the box cycles through questions, and they pile up around the phone
+    const q = Math.min(MORE.length - 1, Math.floor(lt / (len("curious") * 0.8 / MORE.length)));
+    h += phone(360, 336, 0.76, goScreen({ typed: MORE[q][0], go: 0.3 }));
+    MORE.forEach(([txt, x, y], j) => { const k = (lt - j * len("curious") * 0.8 / MORE.length) / 0.3; if (k <= 0) return;
+      h += A(x, y, `<div style="${pop(k)};rotate:${[-4, 3, 3, -3][j]}deg;background:#fff;border:3px solid ${NAVY};border-radius:18px;padding:10px 16px;font:700 22px Ins;color:${NAVY};box-shadow:0 8px 20px rgba(13,42,92,.18);white-space:nowrap">${txt}</div>`); });
+    h += pill("ANYTHING YOU'RE CURIOUS ABOUT", lt / 0.3, 140);
+  }
+  if (shot === "cta" || shot === "end") h += maya("cheer", 480, 800, 0.36, pop((since(t, "cta") - 1.2) / 0.35)) + endCard(since(t, "cta"), `<span style="font-size:50px;line-height:1.12">Scroll something<br>that makes you<br><span style="background:#bcd8fb;padding:0 10px">smarter.</span></span>`, "type any question", 2.4);
+  let out = stage(t, lt, h, HITS());
+  if (!["cta", "end"].includes(shot)) out += captionWord(t, L, /^(STOCK|MARKET|ACTUALLY|UNSPOOL|ANY|QUESTION|REELS|IDEA|QUIZ|STICKS|SCROLL|STALL|LIFTS)$/);
+  ov.innerHTML = out;
+};
+await Promise.all(["share.jpg", "price.jpg", "index.jpg"].map((s) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = s; })));
+window.renderAt(0); setTimeout(() => (window.ready = true), 400);
+</script></body></html>

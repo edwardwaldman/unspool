@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;width:540px;height:960px;overflow:hidden;background:radial-gradient(90% 70% at 50% 40%,#2c4250,#18232c);font-family:'DejaVu Sans',sans-serif;font-weight:700}
+.t{position:absolute;top:84px;width:540px;text-align:center;color:#d3f05a;font-size:42px;letter-spacing:1px}
+.cap{position:absolute;top:660px;width:540px;text-align:center;color:#fff;font-size:36px;line-height:1.22;text-shadow:0 3px 6px #0008}.cap b{color:#d3f05a}
+.f{position:absolute;bottom:30px;left:0;color:#fff;font-size:30px} .bar{position:absolute;bottom:0;left:0;width:540px;height:6px;background:#ffffff33}.bar i{display:block;height:6px;background:#fff}
+.tag{position:absolute;font-size:24px;border-radius:10px;padding:6px 12px;color:#1b2a12;background:#d3f05a}
+</style></head><body><div id="s"></div><script>
+const P = new URLSearchParams(location.search).get("s");
+const S = {
+  share: { t: "WHAT A STOCK IS", svg: `<g transform="translate(270 380)">${Array.from({ length: 8 }, (_, i) => { const a0 = i * Math.PI / 4, a1 = a0 + Math.PI / 4, off = i === 1 ? 26 : 0, mx = Math.cos(a0 + Math.PI / 8) * off, my = Math.sin(a0 + Math.PI / 8) * off; return `<path d="M${mx} ${my} L${mx + Math.cos(a0) * 150} ${my + Math.sin(a0) * 150} A150 150 0 0 1 ${mx + Math.cos(a1) * 150} ${my + Math.sin(a1) * 150} Z" fill="${i === 1 ? "#d3f05a" : "#4aa3df"}" stroke="#18232c" stroke-width="5"/>`; }).join("")}</g>`,
+    tags: [["THE COMPANY", 40, 200], ["YOUR SHARE", 330, 560]], cap: "A share is a tiny<br><b>piece of a company.</b>", n: "1 of 7", p: 0.14 },
+  price: { t: "WHY PRICES MOVE", svg: `<g transform="translate(270 380) rotate(-12)"><rect x="-200" y="-8" width="400" height="16" rx="8" fill="#e9eef2"/><path d="M-30 150 L0 0 L30 150 Z" fill="#c7d0d8" transform="rotate(12)"/>${[0, 1, 2, 3].map((i) => `<circle cx="${-170 + i * 30}" cy="-40" r="16" fill="#d3f05a"/>`).join("")}${[0].map((i) => `<circle cx="${160}" cy="-40" r="16" fill="#ff8b6c"/>`).join("")}</g><path d="M420 520 L460 470 L500 520 Z" fill="#d3f05a"/>`,
+    tags: [["BUYERS", 40, 230], ["SELLERS", 370, 230], ["PRICE UP", 340, 560]], cap: "More <b>buyers</b> than sellers?<br>The price goes <b>up.</b>", n: "2 of 7", p: 0.28 },
+  index: { t: "THE INDEX", svg: `<path d="M120 330 L420 330 L390 560 L150 560 Z" fill="#c98f4a" stroke="#8a5e3a" stroke-width="6"/>${Array.from({ length: 15 }, (_, i) => `<rect x="${150 + (i % 5) * 50}" y="${250 + Math.floor(i / 5) * 30 - (i % 2) * 10}" width="40" height="40" rx="6" fill="${["#4aa3df", "#d3f05a", "#ff8b6c", "#e59cff", "#ffc58a"][i % 5]}"/>`).join("")}`,
+    tags: [["500 COMPANIES", 140, 600]], cap: "<b>S&amp;P 500:</b> one basket of<br><b>500 big US companies.</b>", n: "3 of 7", p: 0.42 },
+}[P];
+document.getElementById("s").innerHTML = `<div class="t">${S.t}</div><svg style="position:absolute;left:0;top:0" width="540" height="960">${S.svg}</svg>${S.tags.map(([l, x, y]) => `<div class="tag" style="left:${x}px;top:${y}px">${l}</div>`).join("")}<div class="cap">${S.cap}</div><div class="f">unspool · Reel ${S.n}</div><div class="bar"><i style="width:${S.p * 100}%"></i></div>`;
+</script></body></html>
