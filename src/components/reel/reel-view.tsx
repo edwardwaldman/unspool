@@ -1,8 +1,9 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReelDTO, SpoolDTO } from "@/lib/spool-types";
+import { repairVisuals } from "@/lib/schema";
 import { PlayIcon, VolumeIcon } from "../ui/icons";
 import { reelStyleVars } from "@/lib/reel-style";
 import { reelVars } from "./accent";
@@ -71,7 +72,8 @@ export function ReelView({
   /** Recording to a video file: the reel alone (chip, scene, captions, quiz), none of the app's buttons. */
   record?: boolean;
 }) {
-  const script = reel.script!;
+  // Old reels get today's visual repairs too (nothing said or timed changes).
+  const script = useMemo(() => repairVisuals(reel.script!), [reel.script]);
   const video = reel.videoUrl && reel.video ? { url: reel.videoUrl, timeline: reel.video } : undefined;
   // The comments button opens the reel as text; the reel pauses while it's open.
   const [summaryOpen, setSummaryOpen] = useState(false);

@@ -244,6 +244,38 @@ export function cleanObjects(objects: SceneObject[]): SceneObject[] {
     .map(({ o }) => o);
 }
 
+/**
+ * Visual repairs that are safe on any stored reel (they never change what is said or how many beats there are), so
+ * the player runs them on old reels too and the writer's output gets them through normalizeReelScript.
+ * - A colour named in a list or icons beat shows as its colour chip when the reel's own swatch gives that colour's
+ *   hex (from a real palette reel: "SAGE · CORAL · BUTTER" drawn as a leaf, a flame and a sun, and "PAPER ·
+ *   background" as a stack-of-layers icon, while the hook's swatch had every one of their hex values).
+ */
+export function repairVisuals<T extends Pick<ReelScript, "beats">>(s: T): T {
+  const palette = new Map<string, string>();
+  const key = (x: string) => x.toLowerCase().replace(/^the\s+/, "").replace(/[^a-z0-9 ]+/g, "").trim();
+  for (const b of s.beats) {
+    const v = b.visual;
+    if (v.type === "swatch") for (const c of v.colors) if (/^#?[0-9a-f]{6}$/i.test(c.hex.trim()) && key(c.name)) palette.set(key(c.name), `#${c.hex.trim().replace(/^#/, "").toLowerCase()}`);
+  }
+  if (!palette.size) return s;
+  const chip = (label: string) => palette.get(key(label)) ?? palette.get(key(label.split(/\s*[·•|:–—]\s*|\s+-\s+/)[0] ?? ""));
+  let changed = false;
+  const beats = s.beats.map((b) => {
+    const v = b.visual;
+    if (v.type !== "list" && v.type !== "icons") return b;
+    const items = v.items.map((it) => {
+      if (it.color) return it;
+      const hex = chip(it.label);
+      if (!hex) return it;
+      changed = true;
+      return { ...it, color: hex };
+    });
+    return { ...b, visual: { ...v, items } };
+  });
+  return changed ? { ...s, beats } : s;
+}
+
 /** Plain text for the quiz: the writer's *highlight* / ~underline~ marks only belong in spoken lines. */
 const plain = (x: string) => x.replace(/[*~^#_]+/g, "").replace(/\s+/g, " ").trim();
 
@@ -318,7 +350,7 @@ export function normalizeReelScript(s: ReelScript, opts: { maxBeats?: number } =
   }
   return {
     ...s,
-    beats,
+    beats: repairVisuals({ beats }).beats,
     quiz: { ...s.quiz, question: plain(s.quiz.question), options: s.quiz.options.slice(0, 4).map(plain) },
     // "Next:" was shown as a caption on its own; "Up next," reads as one spoken line.
     outro: { ...s.outro, say: s.outro.say.replace(/^\s*next\s*:\s*/i, "Up next, ") },

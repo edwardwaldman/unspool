@@ -165,6 +165,17 @@ function FlowVisual({ v, progress }: { v: Extract<Visual, { type: "flow" }>; pro
   );
 }
 
+/** "PAPER · background": the name on its own line and its job under it, instead of one line broken at the dot. */
+function ItemLabel({ label }: { label: string }) {
+  const [name, ...rest] = splitDots(label);
+  return (
+    <span className="flex flex-col">
+      <span className="text-[21px] font-semibold leading-tight tracking-[-0.01em] text-white">{sentence(rest.length ? name : label)}</span>
+      {rest.length > 0 && <span className="mt-0.5 text-[15px] font-medium leading-tight text-white/65">{rest.join(" · ")}</span>}
+    </span>
+  );
+}
+
 function ListVisual({ v, progress }: { v: Extract<Visual, { type: "list" }>; progress: number }) {
   const n = v.items.length;
   const shown = Math.max(1, Math.min(n, Math.floor(progress * (n + 0.6)) + 1));
@@ -190,7 +201,7 @@ function ListVisual({ v, progress }: { v: Extract<Visual, { type: "list" }>; pro
           ) : (
             <Tile name={it.icon} size={20} box={44} on={i === shown - 1} />
           )}
-          <span className="text-[21px] font-semibold leading-tight tracking-[-0.01em] text-white">{sentence(it.label)}</span>
+          <ItemLabel label={it.label} />
         </motion.div>
       ))}
     </div>
