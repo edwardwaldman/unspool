@@ -49,3 +49,6 @@ next-env.d.ts
 /worker/node_modules
 /worker/dist
 /worker/package-lock.json
+
+# reel lab output (generated scripts and screenshots)
+/scripts/reel-lab/out/
