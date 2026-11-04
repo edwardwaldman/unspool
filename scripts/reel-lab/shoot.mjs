@@ -18,13 +18,19 @@ const errors = [];
 p.on("pageerror", (e) => errors.push(e.message));
 await p.goto(`${base}/dev/reel-lab?file=${encodeURIComponent(file)}${flags.includes("--raw") ? "&raw=1" : ""}`, { waitUntil: "networkidle" });
 await p.waitForTimeout(1500);
-// first tap starts playback; a second tap only if it shows as paused
+// first tap starts playback; tap again only while the paused overlay (or "Tap to play") is really on screen
 await p.mouse.click(195, 420);
-await p.waitForTimeout(600);
-if (await p.getByText(/tap to play|paused/i).count()) await p.mouse.click(195, 420);
+for (let i = 0; i < 4; i++) {
+  await p.waitForTimeout(700);
+  const paused = await p.locator('[data-testid="paused"]').isVisible().catch(() => false);
+  if (!paused && !(await p.getByText(/tap to play/i).isVisible().catch(() => false))) break;
+  await p.mouse.click(195, 420);
+}
 const shots = [];
 for (let i = 0; i < 60; i++) {
   await p.waitForTimeout(1000);
+  // a late paused overlay in the first seconds means a tap landed while it was already starting: tap once more
+  if (i < 5 && (await p.locator('[data-testid="paused"]').isVisible().catch(() => false))) { await p.mouse.click(195, 420); await p.waitForTimeout(500); }
   const f = `${out}-frames/${String(i).padStart(2, "0")}.png`;
   await p.screenshot({ path: f });
   shots.push(f);
