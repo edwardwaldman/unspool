@@ -51,3 +51,8 @@ export function splitDots(s: string): string[] {
 export function joinComma(parts: (string | null | undefined | false)[]): string {
   return parts.filter(Boolean).join(", ");
 }
+
+/** "$46.7B", "22%", "1,200", "+3.5 pts", "$57 billion": a figure, not a word. */
+export function isNumber(x: string): boolean {
+  return /\d/.test(x) && x.replace(/(\d)\s*(bn|b|m|k|x|pts?|billion|million|thousand|percent)\b/gi, "$1").replace(/[\d\s$€£%+\-−.,:/]/g, "").length === 0;
+}

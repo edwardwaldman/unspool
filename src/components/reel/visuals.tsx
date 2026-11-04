@@ -11,7 +11,7 @@ import { MarkedText } from "../ui/marked-text";
 import { CrowdCanvas } from "./crowd-canvas";
 import { HookScene } from "./hook-scene";
 import { ReelIcon } from "./icon";
-import { sentenceCase, splitDots } from "./text";
+import { isNumber, sentenceCase, splitDots } from "./text";
 import { QUIZ_WAIT_MS, type QuizState } from "./use-playback";
 
 // The motion graphics drawn inside a reel's frame. Everything reads the reel's own --thread accent
@@ -105,23 +105,42 @@ function BigWordVisual({ v }: { v: Extract<Visual, { type: "bigword" }> }) {
 }
 
 function SplitVisual({ v }: { v: Extract<Visual, { type: "split" }> }) {
+  const figures = isNumber(v.left.title) && isNumber(v.right.title);
   const side = (s: typeof v.left, i: number) => (
     <motion.div
       key={i}
       initial={{ opacity: 0, x: i === 0 ? -24 : 24 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: i * 0.3, duration: 0.55, ease }}
-      className={`flex flex-1 flex-col items-center px-3 py-5 text-center ${glass}`}
+      className={`flex flex-1 flex-col items-center text-center ${figures ? "w-full justify-center px-5 py-4" : "px-3 py-5"} ${glass}`}
     >
-      <Tile name={s.icon} on={i === 1} delay={i * 0.3} />
-      <div className="mt-4 font-hook text-[24px] font-extrabold leading-tight tracking-[-0.02em]" style={{ color: i === 0 ? "#fff" : "var(--thread)" }}>
+      {/* Two figures side by side: the figures are the picture (a clock and a calendar beside "22%" and "62%" were filler). */}
+      {!figures && <Tile name={s.icon} on={i === 1} delay={i * 0.3} />}
+      <div className={`${figures ? "font-hook text-[56px] leading-none tracking-[-0.035em]" : "mt-4 font-hook text-[24px] leading-tight tracking-[-0.02em]"} font-extrabold`} style={{ color: i === 0 ? "#fff" : "var(--thread)" }}>
         {sentence(s.title)}
       </div>
       <div className="mt-1 text-[13.5px] leading-snug text-white/70">{sentence(s.sub)}</div>
     </motion.div>
   );
+  // Two figures stack, one above the other, so each can be big without the "vs" badge landing on a number.
+  if (figures)
+    return (
+      <div className="relative flex w-full flex-col items-center gap-3 px-6">
+        {side(v.left, 0)}
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.2, duration: 0.4, ease }}
+          className="absolute left-1/2 top-1/2 z-10 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-[3px] font-hook text-[13px] font-extrabold text-[#08110e]"
+          style={{ background: "var(--thread)", borderColor: "var(--paper)" }}
+        >
+          {v.mode === "vs" ? "vs" : <ArrowRight size={16} strokeWidth={2.5} className="rotate-90" />}
+        </motion.div>
+        {side(v.right, 1)}
+      </div>
+    );
   return (
-    <div className="relative flex w-full items-center gap-3 px-5">
+    <div className="relative flex w-full items-stretch gap-3 px-5">
       {side(v.left, 0)}
       <motion.div
         initial={{ scale: 0 }}

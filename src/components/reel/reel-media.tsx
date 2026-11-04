@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DIAGRAM_TYPES, cleanObjects, type HighlightColor } from "@/lib/schema";
 import { MOOD_BG } from "./diagrams";
 import { ParticleField } from "./particle-field";
+import { isNumber } from "./text";
 import { VisualStage, type StageProps } from "./visuals";
 
 const Scene3D = dynamic(() => import("./scene-3d"), { ssr: false });
@@ -100,7 +101,11 @@ export function ReelMedia({
   // A list of three or more is the beat's content (often the payoff's cheat sheet): a story scene can only put its
   // title over the objects, so "ALL FIVE, EVERY TIME" showed a cell and a flag and none of the five.
   const sheet = visual?.type === "list" && visual.items.length >= 3;
-  const diagram = Boolean(visual && (DIAGRAM_TYPES.has(visual.type) || colours || sheet));
+  // A number's meaning is in its label ("62%" / "UP FROM A YEAR AGO", "22%" vs "62%" / "VS LAST QUARTER" vs "VS LAST
+  // YEAR"), which a story scene drops for a heading of the bare number over a prop standing in for it (a building
+  // labelled "+62%", a target labelled "62% YOY"). Stats and number-vs-number splits are drawn flat.
+  const numbers = visual?.type === "stat" || (visual?.type === "split" && isNumber(visual.left.title) && isNumber(visual.right.title));
+  const diagram = Boolean(visual && (DIAGRAM_TYPES.has(visual.type) || colours || sheet || numbers));
   const mood = stage?.mood ?? (diagram ? "calm" : undefined);
   // Only beats the writer made into a real 3D scene (with objects) go 3D. A text visual (bigword, split, list,
   // icons) with no objects is drawn flat: in 3D it became small labelled pedestals floating in empty space.

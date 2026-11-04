@@ -286,6 +286,8 @@ export function repairVisuals<T extends Pick<ReelScript, "beats"> & { title?: st
 
 /** Plain text for the quiz: the writer's *highlight* / ~underline~ marks only belong in spoken lines. */
 const plain = (x: string) => x.replace(/[*~^#_]+/g, "").replace(/\s+/g, " ").trim();
+/** Quiz options are read, not heard: "22 percent" (written for the voice) shows as "22%". */
+const option = (x: string) => plain(x).replace(/(\d)\s*percent\b/gi, "$1%");
 
 export function normalizeReelScript(s: ReelScript, opts: { maxBeats?: number } = {}): ReelScript {
   let lastMove: string | undefined;
@@ -359,7 +361,7 @@ export function normalizeReelScript(s: ReelScript, opts: { maxBeats?: number } =
   return {
     ...s,
     beats: repairVisuals({ beats, title: s.title }).beats,
-    quiz: { ...s.quiz, question: plain(s.quiz.question), options: s.quiz.options.slice(0, 4).map(plain) },
+    quiz: { ...s.quiz, question: plain(s.quiz.question), options: s.quiz.options.slice(0, 4).map(option) },
     // "Next:" was shown as a caption on its own; "Up next," reads as one spoken line.
     outro: { ...s.outro, say: s.outro.say.replace(/^\s*next\s*:\s*/i, "Up next, ") },
     stats: s.stats.slice(0, 3).map((st) => ({ ...st, at_beat: Math.max(0, Math.min(beats.length - 1, st.at_beat)) })),

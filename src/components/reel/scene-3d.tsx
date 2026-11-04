@@ -645,6 +645,8 @@ function HookScene({ v, progress, accent, color }: { v: Extract<Visual, { type: 
   );
 }
 
+const squash = (x: string) => x.toLowerCase().replace(/[^a-z0-9%$]+/g, "");
+
 /** A steady per-scene camera angle (about ±15-25°), picked from the cast and its hero so it repeats for the same shot. */
 function beatHash(scene: SceneSpec) {
   const key = `${scene.objects.map((o) => o.shape).join()}|${focusIndex(scene)}`;
@@ -662,7 +664,9 @@ function angleFor(scene: SceneSpec) {
 }
 
 /** The beat as a moment in the reel's own story: laid out, framed to fit, labels pinned on. */
-function StoryScene({ scene, progress, accent }: { scene: SceneSpec; progress: number; accent: string }) {
+function StoryScene({ scene, progress, accent, heading = "" }: { scene: SceneSpec; progress: number; accent: string; heading?: string }) {
+  // A chip that only repeats the heading above it ("RECORD" on the star under "Record") says it twice: drop it.
+  const same = (label: string) => Boolean(heading) && squash(label) === squash(heading);
   const slots = useMemo(() => layoutScene(scene), [scene]);
   const base = STORY_SHOTS[scene.camera] ?? STORY_SHOTS.front;
   // The angle comes from the shot; CameraRig's auto-framing decides distance and position from the real content.
@@ -680,7 +684,7 @@ function StoryScene({ scene, progress, accent }: { scene: SceneSpec; progress: n
       <CameraRig shot={shot} progress={progress} />
       <StoryObjects scene={scene} accent={accent} slots={slots} progress={progress} />
       {scene.objects.map((o, i) =>
-        o.label && progress >= (o.at ?? 0) ? <Label key={`l${i}-${o.label}`} id={`l${i}`} text={o.label.toUpperCase()} position={[slots[i].x, slots[i].height + 0.12, slots[i].z]} tone={o.color === "accent" ? "accent" : "dark"} line={20} /> : null,
+        o.label && !same(o.label) && progress >= (o.at ?? 0) ? <Label key={`l${i}-${o.label}`} id={`l${i}`} text={o.label.toUpperCase()} position={[slots[i].x, slots[i].height + 0.12, slots[i].z]} tone={o.color === "accent" ? "accent" : "dark"} line={20} /> : null,
       )}
     </>
   );
@@ -940,7 +944,7 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
             <group ref={content}>
               {story ? (
                 // Not keyed by beat: objects that carry on into the next beat stay put and glide.
-                <StoryScene scene={scene!} progress={progress} accent={accent} />
+                <StoryScene scene={scene!} progress={progress} accent={accent} heading={term} />
               ) : (
                 <group key={beatKey}>
                   <SceneFor visual={visual} progress={progress} accent={accent} colors={colors} />
