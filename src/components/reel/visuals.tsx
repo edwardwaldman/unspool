@@ -178,7 +178,9 @@ function ItemLabel({ label }: { label: string }) {
 
 function ListVisual({ v, progress }: { v: Extract<Visual, { type: "list" }>; progress: number }) {
   const n = v.items.length;
-  const shown = Math.max(1, Math.min(n, Math.floor(progress * (n + 0.6)) + 1));
+  // Every item is on screen by 60% of the line, so the whole list (often the payoff's cheat sheet) is seen complete
+  // before the beat ends; spread over the full line, the last item landed as the quiz slid in.
+  const shown = Math.max(1, Math.min(n, Math.floor((progress / 0.6) * (n - 1)) + 1));
   return (
     <div className="w-full px-6">
     <div className={`flex w-full flex-col p-4 ${glass}`}>

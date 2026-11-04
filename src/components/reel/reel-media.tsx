@@ -97,7 +97,10 @@ export function ReelMedia({
   // Graphs, equations and emoji props are full-frame flat diagrams: never inside the 3D scene.
   // Lists and icon rows of colours are drawn flat with real colour chips (the 3D versions can only show icons).
   const colours = Boolean(visual && (visual.type === "list" || visual.type === "icons") && visual.items.some((it) => it.color));
-  const diagram = Boolean(visual && (DIAGRAM_TYPES.has(visual.type) || colours));
+  // A list of three or more is the beat's content (often the payoff's cheat sheet): a story scene can only put its
+  // title over the objects, so "ALL FIVE, EVERY TIME" showed a cell and a flag and none of the five.
+  const sheet = visual?.type === "list" && visual.items.length >= 3;
+  const diagram = Boolean(visual && (DIAGRAM_TYPES.has(visual.type) || colours || sheet));
   const mood = stage?.mood ?? (diagram ? "calm" : undefined);
   // Only beats the writer made into a real 3D scene (with objects) go 3D. A text visual (bigword, split, list,
   // icons) with no objects is drawn flat: in 3D it became small labelled pedestals floating in empty space.

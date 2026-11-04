@@ -244,6 +244,8 @@ export function cleanObjects(objects: SceneObject[]): SceneObject[] {
     .map(({ o }) => o);
 }
 
+const EXAM_CLAIM = /\b(guaranteed|(?<!likely )on the (exam|test|final)|will be (tested|on the))\b/i;
+
 /**
  * Visual repairs that are safe on any stored reel (they never change what is said or how many beats there are), so
  * the player runs them on old reels too and the writer's output gets them through normalizeReelScript.
@@ -251,7 +253,13 @@ export function cleanObjects(objects: SceneObject[]): SceneObject[] {
  *   hex (from a real palette reel: "SAGE · CORAL · BUTTER" drawn as a leaf, a flame and a sun, and "PAPER ·
  *   background" as a stack-of-layers icon, while the hook's swatch had every one of their hex values).
  */
-export function repairVisuals<T extends Pick<ReelScript, "beats">>(s: T): T {
+export function repairVisuals<T extends Pick<ReelScript, "beats"> & { title?: string }>(s: T): T {
+  const hook = s.beats[0]?.visual;
+  // A hook tag that promises the exam ("GUARANTEED QUESTION" on a biology reel whose notes say nothing of the kind)
+  // is a claim the reel can't back; the reel's own title is always true.
+  if (hook?.type === "hook" && s.title && EXAM_CLAIM.test(hook.tag)) {
+    s = { ...s, beats: [{ ...s.beats[0], visual: { ...hook, tag: s.title } }, ...s.beats.slice(1)] };
+  }
   const palette = new Map<string, string>();
   const key = (x: string) => x.toLowerCase().replace(/^the\s+/, "").replace(/[^a-z0-9 ]+/g, "").trim();
   for (const b of s.beats) {
@@ -350,7 +358,7 @@ export function normalizeReelScript(s: ReelScript, opts: { maxBeats?: number } =
   }
   return {
     ...s,
-    beats: repairVisuals({ beats }).beats,
+    beats: repairVisuals({ beats, title: s.title }).beats,
     quiz: { ...s.quiz, question: plain(s.quiz.question), options: s.quiz.options.slice(0, 4).map(plain) },
     // "Next:" was shown as a caption on its own; "Up next," reads as one spoken line.
     outro: { ...s.outro, say: s.outro.say.replace(/^\s*next\s*:\s*/i, "Up next, ") },
