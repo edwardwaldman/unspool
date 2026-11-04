@@ -232,6 +232,34 @@ function ListVisual({ v, progress }: { v: Extract<Visual, { type: "list" }>; pro
 
 function IconsVisual({ v }: { v: Extract<Visual, { type: "icons" }> }) {
   const many = v.items.length > 2;
+  // Words, not colour chips: one item per row, big, with the arrow pointing down. Side by side, each label got
+  // 130px ("f of x near" / "7" broken over two lines at 18px) in a row a third of the stage tall.
+  if (!v.items.some((it) => it.color))
+    return (
+      <div className="relative flex w-full flex-col items-stretch px-5">
+        {v.items.map((it, i) => (
+          <div key={i} className="flex flex-col items-stretch">
+            {i > 0 && (
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.45 - 0.15 }} className="flex h-9 items-center pl-[30px] text-white/60">
+                {v.arrow ? <ArrowRight size={26} strokeWidth={2.25} className="rotate-90" /> : null}
+              </motion.div>
+            )}
+            <motion.div
+              initial={{ opacity: 0, x: -14 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.45, duration: 0.45, ease }}
+              className={`flex items-center gap-4 px-4 py-3.5 ${glass}`}
+            >
+              <Tile name={it.icon} size={30} box={56} on={i === v.items.length - 1} delay={i * 0.45} />
+              {/* A short label (an equation like "lim f(x) = 7") never breaks; the stage scales it to fit instead. */}
+              <span className={`font-hook text-[28px] font-extrabold leading-[1.08] tracking-[-0.02em] ${it.label.length <= 16 ? "whitespace-nowrap" : ""}`} style={{ color: i === v.items.length - 1 ? "var(--thread)" : "#fff" }}>
+                {sentence(it.label)}
+              </span>
+            </motion.div>
+          </div>
+        ))}
+      </div>
+    );
   return (
     <div className="relative flex w-full items-center justify-center gap-3 px-4">
       {v.items.map((it, i) => (
