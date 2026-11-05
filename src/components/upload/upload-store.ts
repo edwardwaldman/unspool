@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { ACCEPTED_EXTENSIONS, MAX_FILE_BYTES, extensionOf } from "@/lib/config";
+import { PROMPT_MAX_CHARS, isPastedDocument, promptTitle, tidyPrompt } from "@/lib/prompt-text";
 import { supabaseBrowser } from "../auth/supabase-browser";
 
 // Uploads live in a module-level store so they keep going while we navigate straight into the feed.
@@ -134,27 +135,29 @@ export async function startUpload(file: File, onCreated: (documentId: string) =>
 // A typed topic travels as a small text "file" named <topic>.prompt, so it can wait through sign-up
 // (and Google's redirect) exactly like a picked file. The server researches it instead of reading it.
 const PROMPT_EXT = "prompt";
+const PASTE_EXT = "paste";
 
 export function promptFile(text: string): File {
-  const clean = text.replace(/\s+/g, " ").trim();
-  return new File([clean], `${clean.slice(0, 60).replace(/[\\/.]/g, " ").trim() || "Topic"}.${PROMPT_EXT}`, { type: "text/plain" });
+  const clean = tidyPrompt(text);
+  // A pasted document travels as .paste (labelled TEXT), a topic as .prompt (labelled TOPIC).
+  return new File([clean], `${promptTitle(clean).replace(/[\\/.]/g, " ").trim() || "Topic"}.${isPastedDocument(clean) ? PASTE_EXT : PROMPT_EXT}`, { type: "text/plain" });
 }
 
-export const isPromptFile = (file: File) => extensionOf(file.name) === PROMPT_EXT;
-export const displayName = (file: File) => (isPromptFile(file) ? file.name.slice(0, -PROMPT_EXT.length - 1) : file.name);
+export const isPromptFile = (file: File) => [PROMPT_EXT, PASTE_EXT].includes(extensionOf(file.name));
+export const displayName = (file: File) => (isPromptFile(file) ? file.name.replace(/\.[^.]+$/, "") : file.name);
 
 /** Start reels from a typed topic: one request creates the document and starts the research. */
 export async function startPrompt(text: string, onCreated: (documentId: string) => void, opts: { testOne?: boolean } = {}): Promise<{ error?: string; code?: string }> {
-  const prompt = text.replace(/\s+/g, " ").trim();
+  const prompt = tidyPrompt(text);
   if (prompt.length < 3) return { error: "Type a topic to study." };
-  pending = { phase: "creating", fileName: prompt.slice(0, 60) };
+  pending = { phase: "creating", fileName: promptTitle(prompt) };
   emit();
   let res: Response;
   try {
     res = await fetch("/api/uploads", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: prompt.slice(0, 4000), ...(opts.testOne ? { testOne: true } : {}) }),
+      body: JSON.stringify({ prompt: prompt.slice(0, PROMPT_MAX_CHARS), ...(opts.testOne ? { testOne: true } : {}) }),
     });
   } catch {
     pending = null;
@@ -167,7 +170,7 @@ export async function startPrompt(text: string, onCreated: (documentId: string) 
     emit();
     return { error: body.error ?? "Couldn't start. Try again.", code: body.code };
   }
-  uploads.set(body.documentId, { phase: "done", fileName: prompt.slice(0, 60) });
+  uploads.set(body.documentId, { phase: "done", fileName: promptTitle(prompt) });
   emit();
   onCreated(body.documentId);
   return {};

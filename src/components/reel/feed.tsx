@@ -59,7 +59,7 @@ export function ReelSlot({
   }
   if (r.locked) {
     const s = item.spool;
-    return <LockedReel reel={r} total={total} bottomInset={bottomInset} topInset={topInset} onUnlock={onUnlock} freeAt={s ? freeAtFor(r.index, s.freeReels, s.nextFreeUnlockAt) : null} />;
+    return <LockedReel reel={r} total={total} bottomInset={bottomInset} topInset={topInset} onUnlock={onUnlock} gateOpen={onScreen && !active} freeAt={s ? freeAtFor(r.index, s.freeReels, s.nextFreeUnlockAt) : null} />;
   }
   return <ReelView spool={item.spool!} reel={r} active={active} onScreen={onScreen} total={total} chrome={{ bottomInset, topInset }} onMore={onMore} onEnded={onEnded} onShare={onShare} />;
 }

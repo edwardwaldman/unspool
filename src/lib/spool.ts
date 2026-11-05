@@ -98,7 +98,7 @@ export async function buildSpool(doc: DocumentRow, viewer: Viewer, opts: { heal?
   return {
     id: doc.id,
     fileName: doc.file_name,
-    fileType: doc.file_type === "prompt" ? "prompt" : extensionOf(doc.file_name),
+    fileType: doc.file_type === "prompt" || doc.file_type === "paste" ? doc.file_type : extensionOf(doc.file_name),
     title: doc.title,
     docType: doc.doc_type,
     sensitive: doc.sensitive,

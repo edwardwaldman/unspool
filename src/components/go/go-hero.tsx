@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Wordmark } from "../ui/icons";
+import { PROMPT_MAX_CHARS, isPastedDocument } from "@/lib/prompt-text";
 import { promptFile, usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { docToReels } from "./doc-to-reels";
@@ -99,6 +100,8 @@ export function PromptBox({ className = "mt-6" }: { className?: string }) {
   const upload = useUploader();
   const pending = usePendingUpload();
   const ready = text.trim().length >= 3 && !pending;
+  const multi = text.includes("\n") || text.length > 60;
+  const pasted = isPastedDocument(text);
   return (
     <form
       className={`w-full ${className}`}
@@ -109,18 +112,26 @@ export function PromptBox({ className = "mt-6" }: { className?: string }) {
     >
       <div className="mb-2 flex items-center gap-3 text-[13px] text-muted" aria-hidden>
         <span className="h-px flex-1 bg-line" />
-        or type a prompt
+        or type a topic or paste notes
         <span className="h-px flex-1 bg-line" />
       </div>
-      <div className="flex items-center gap-2 rounded-full border border-line bg-surface py-1.5 pl-5 pr-1.5 focus-within:border-thread">
-        <input
+      <div className={`flex items-end gap-2 border border-line bg-surface py-1.5 pl-5 pr-1.5 focus-within:border-thread ${multi ? "rounded-[22px]" : "rounded-full"}`}>
+        {/* A textarea, not an input: an input flattens a pasted study guide's line breaks into one run-on line. */}
+        <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          maxLength={4000}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              if (ready) void upload(promptFile(text));
+            }
+          }}
+          rows={multi ? 4 : 1}
+          maxLength={PROMPT_MAX_CHARS}
           enterKeyHint="go"
-          aria-label="Type a topic to study"
+          aria-label="Type a topic, or paste your notes"
           placeholder="e.g. Photosynthesis, AP Bio"
-          className="min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none placeholder:text-muted/70"
+          className="min-w-0 flex-1 resize-none self-center bg-transparent py-2 text-[16px] leading-snug text-ink outline-none placeholder:text-muted/70"
         />
         <button
           type="submit"
@@ -133,7 +144,7 @@ export function PromptBox({ className = "mt-6" }: { className?: string }) {
           </svg>
         </button>
       </div>
-      <p className="mt-2 text-center text-[12.5px] text-muted">We research it and turn it into reels.</p>
+      <p className="mt-2 text-center text-[12.5px] text-muted">{pasted ? "We turn your pasted notes into reels." : "Type a topic and we research it, or paste your notes."}</p>
     </form>
   );
 }

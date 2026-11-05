@@ -12,7 +12,7 @@ import { fileLabel } from "../reel/accent";
 import { toast } from "../ui/toast";
 import { RESUME_PARAM, RESUME_VALUE, stashFile } from "../upload/file-stash";
 import { WELCOME_FLAG } from "../studio/welcome-tour";
-import { displayName, holdFile, useHeldFile } from "../upload/upload-store";
+import { displayName, holdFile, isPromptFile, useHeldFile } from "../upload/upload-store";
 import { closeAuth, setAuthMode, useAuthModal } from "./auth-store";
 import { markSignedIn } from "./use-session";
 
@@ -278,7 +278,7 @@ export function AuthModal() {
     setStep("form");
     clearErr();
     closeAuth();
-    toast(created ? (file ? "Account created. Unspooling your file." : "Account created") : "Signed in");
+    toast(created ? (file ? (isPromptFile(file) ? "Account created. Making your reels." : "Account created. Unspooling your file.") : "Account created") : "Signed in");
     const claim = fetch("/api/auth/claim", { method: "POST" }).catch(() => undefined);
     if (onDone) onDone();
     else void claim.then(() => window.location.reload());

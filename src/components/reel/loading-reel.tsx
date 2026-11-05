@@ -83,7 +83,7 @@ export function LoadingReel({
         <p className="mt-2 text-[14.5px] text-muted">
           {isError
             ? errorText
-            : `${stage < 3 ? "Usually under a minute. " : ""}Reel ${reelIndex} plays here the moment it's ready.`}
+            : `${stage < 3 ? (spool?.fileType === "prompt" ? "Usually a minute or two: it researches the topic first. " : "Usually about a minute. ") : ""}Reel ${reelIndex} plays here the moment it's ready.`}
         </p>
         {spool && spool.status === "scripting" && !isError && !spool.id.startsWith("share-") && <StopButton id={spool.id} />}
         {isError && (

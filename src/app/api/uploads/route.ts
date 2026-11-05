@@ -7,6 +7,7 @@ import { claimUsage, freeDocumentUsed } from "@/lib/usage";
 import { clientIpHash, getViewer } from "@/lib/viewer";
 import { dispatch } from "@/lib/jobs";
 import { PROMPT_FILE } from "@/lib/pipeline";
+import { PROMPT_MAX_CHARS, isPastedDocument, promptTitle, tidyPrompt } from "@/lib/prompt-text";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +16,13 @@ export async function POST(req: Request) {
   if (!supabaseConfigured) return notConfigured();
   const body = (await req.json().catch(() => null)) as { fileName?: string; size?: number; type?: string; testOne?: boolean; prompt?: string } | null;
   // A typed prompt ("photosynthesis for AP Bio") instead of a file: the reels come from web research.
-  const prompt = typeof body?.prompt === "string" ? body.prompt.replace(/\s+/g, " ").trim() : null;
-  if (prompt !== null && (prompt.length < 3 || prompt.length > 4000)) {
-    return error(400, prompt.length < 3 ? "Type a topic to study." : "That's too long. Paste up to about 600 words.");
+  const prompt = typeof body?.prompt === "string" ? tidyPrompt(body.prompt) : null;
+  if (prompt !== null && (prompt.length < 3 || prompt.length > PROMPT_MAX_CHARS)) {
+    return error(400, prompt.length < 3 ? "Type a topic to study." : "That's too long to paste. Upload it as a file instead.");
   }
-  const fileName = prompt !== null ? prompt.slice(0, 80) : body?.fileName?.trim().slice(0, 200);
+  // A long paste is a document (used as it is); a short one is a topic to research.
+  const pasted = prompt !== null && isPastedDocument(prompt);
+  const fileName = prompt !== null ? promptTitle(prompt) : body?.fileName?.trim().slice(0, 200);
   const size = prompt !== null ? Buffer.byteLength(prompt) : Number(body?.size ?? 0);
   if (prompt === null) {
     if (!fileName || !isAccepted(fileName)) {
@@ -82,7 +85,7 @@ export async function POST(req: Request) {
       anon_token: viewer.userId ? null : viewer.anonToken,
       ip_hash: ipHash,
       file_name: fileName,
-      file_type: prompt !== null ? "prompt" : ext,
+      file_type: prompt !== null ? (pasted ? "paste" : "prompt") : ext,
       file_size: size,
       status: prompt !== null ? "uploaded" : "uploading",
       // Owner test mode: make reel 1 only, then one at a time on request (owner panel).

@@ -18,12 +18,15 @@ export function LockedReel({
   bottomInset,
   topInset = 0,
   freeAt = null,
+  gateOpen = false,
 }: {
   reel: ReelDTO;
   total: number;
   onUnlock: () => void;
   bottomInset: number;
   topInset?: number;
+  /** The unlock pop-up is open over this reel: its own button would sit right under the pop-up's, a second lime CTA. */
+  gateOpen?: boolean;
   freeAt?: string | null;
 }) {
   const left = useCountdown(freeAt);
@@ -60,7 +63,9 @@ export function LockedReel({
             e.stopPropagation();
             onUnlock();
           }}
-          className="mt-5 flex min-h-[52px] w-full max-w-[300px] items-center justify-center gap-2 px-5 text-[16px] font-semibold text-[#08110e] shadow-[0_10px_30px_rgba(0,0,0,.35)] hover:opacity-90"
+          aria-hidden={gateOpen}
+          tabIndex={gateOpen ? -1 : undefined}
+          className={`${gateOpen ? "invisible " : ""}mt-5 flex min-h-[52px] w-full max-w-[300px] items-center justify-center gap-2 px-5 text-[16px] font-semibold text-[#08110e] shadow-[0_10px_30px_rgba(0,0,0,.35)] hover:opacity-90`}
           style={{ background: "#d3f05a" }}
         >
           Unlock all reels

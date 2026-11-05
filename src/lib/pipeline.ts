@@ -4,6 +4,7 @@ import { fundPlannedDocument, ownerEntitlement, refundReel } from "./credits";
 import { PLANS, maxWordsFor } from "./plans";
 import type { DocumentRow, ReelRow } from "./db-types";
 import { ExtractionError, extractDocument } from "./extract";
+import { isPastedDocument, tidyPrompt } from "./prompt-text";
 import { dispatch } from "./jobs";
 import type { AudioMap, Plan } from "./schema";
 import { buildSegments } from "./segments";
@@ -80,6 +81,19 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
 export const PROMPT_FILE = "prompt.txt";
 const isPromptDocument = (path: string | null) => Boolean(path?.endsWith(`/${PROMPT_FILE}`));
 
+/**
+ * What a typed prompt becomes: a pasted document (a study guide copied from a school portal) is used as it is, up to
+ * the tier's word limit; only a topic or question is researched. (Seen in a real session: a full pasted study guide
+ * was sent to web research, which added about a minute before reel 1.)
+ */
+async function promptSource(request: string, maxWords: number) {
+  const text = tidyPrompt(request);
+  if (!isPastedDocument(text)) return researchedNotes(text);
+  const words = text.split(/\s+/).filter(Boolean);
+  const kept = words.length > maxWords ? words.slice(0, maxWords).join(" ") : text;
+  return { text: kept, pageCount: null, wordCount: Math.min(words.length, maxWords), truncated: words.length > maxWords, method: "text" as const };
+}
+
 async function researchedNotes(request: string) {
   const notes = await withRetry(() => researchTopic(request.trim()), 2);
   if (!notes || notes.split(/\s+/).length < 150) {
@@ -113,7 +127,7 @@ export async function processDocument(documentId: string) {
     if (!file) throw new ExtractionError("We couldn't read the uploaded file. Try uploading it again.");
     const fromPrompt = isPromptDocument(doc.file_path);
     const extracted = fromPrompt
-      ? await researchedNotes(await file.text())
+      ? await promptSource(await file.text(), maxWordsFor(ent.tier))
       : await extractDocument(Buffer.from(await file.arrayBuffer()), doc.file_name, {
           maxPages: plan_.maxPages,
           maxWords: maxWordsFor(ent.tier),
