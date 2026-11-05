@@ -253,7 +253,18 @@ const EXAM_CLAIM = /\b(guaranteed|(?<!likely )on the (exam|test|final)|will be (
  *   hex (from a real palette reel: "SAGE · CORAL · BUTTER" drawn as a leaf, a flame and a sun, and "PAPER ·
  *   background" as a stack-of-layers icon, while the hook's swatch had every one of their hex values).
  */
-export function repairVisuals<T extends Pick<ReelScript, "beats"> & { title?: string }>(s: T): T {
+/** On-screen text never shows the writer's voice marks (*stress*, #warn#, ~underline~, ^number^); hex colours keep their #. */
+function unmark<V>(v: V): V {
+  if (typeof v === "string") return v.replace(/#([^#\s][^#]*?)#/g, "$1").replace(/[*~^]+/g, "").replace(/\s{2,}/g, " ").trim() as V;
+  if (Array.isArray(v)) return v.map(unmark) as V;
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, k === "hex" || k === "color" ? x : unmark(x)])) as V;
+  return v;
+}
+
+export function repairVisuals<T extends Pick<ReelScript, "beats"> & { title?: string; quiz?: ReelScript["quiz"] }>(s: T): T {
+  // From the audit of every stored reel: voice marks leaked into 8 on-screen graphics ("#NOT ALL#") and into quiz
+  // options ("~The limit of g of x is 6.~"). Visual-only, so it is safe on stored reels too.
+  s = { ...s, beats: s.beats.map((b) => (b.visual.type === "equation" || b.visual.type === "graph" ? b : { ...b, visual: unmark(b.visual) })), ...(s.quiz ? { quiz: { ...s.quiz, question: plain(s.quiz.question), options: s.quiz.options.map(plain) } } : {}) };
   const hook = s.beats[0]?.visual;
   // A hook tag that promises the exam ("GUARANTEED QUESTION" on a biology reel whose notes say nothing of the kind)
   // is a claim the reel can't back; the reel's own title is always true.

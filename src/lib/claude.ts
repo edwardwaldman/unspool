@@ -244,7 +244,7 @@ Rules:
 // ---------------------------------------------------------------------------
 
 const SCRIPT_GUIDE = `Reel format:
-- ~30–45 seconds when spoken. Made of beats; a beat = one or two spoken sentences + one visual.
+- ~30–45 seconds when spoken (about 90–120 words in all). Made of beats; a beat = one or two short spoken sentences (at most 25 words) + one visual.
 - FIRST choose the reel's STYLE from the topic, and stick to it:
   · STORY: physical, scientific, historical or everyday things the 3D kit can genuinely show (cells, animals, planets, a chef's soup, money, people, buildings). Most beats are 3D scenes.
   · MOTION: design, colours, fonts, writing, language, grammar, law, policies, rules, code, finance terms, definitions, abstract ideas. Every beat is a flat motion graphic (swatch, typeset, compare, specimen, list, flow, split, stat, bigword, icons) with "objects": []. No 3D scenes in a MOTION reel.
@@ -272,10 +272,10 @@ Highlight markup inside "say", "headline", "explain" and quiz text (words get co
 
 Visuals — choose the one that best shows each beat; vary them across the reel: never the same type twice in a row, and at most two "bigword" beats in a whole reel (a big word is a punctuation mark, not the main way to show things):
 - hook {icon, tag, color}: one large line icon + a short tag. Only for beats[0].
-- bigword {word, sub, color}: one or two HUGE words + a small subtitle. For a key term or a punchline.
-- split {mode:"vs"|"to", left:{icon,title,sub}, right:{icon,title,sub}}: A vs B comparison, or A → B change.
+- bigword {word, sub, color}: one or two HUGE words (at most 12 characters) + a small subtitle. For a key term or a punchline, and the word on screen adds something the voice doesn't say in that same line (the answer, the number, the name), never just the line's own key word again.
+- split {mode:"vs"|"to", left:{icon,title,sub}, right:{icon,title,sub}}: A vs B comparison, or A → B change. Titles at most 12 characters, subs at most 4 words.
 - flow {steps:[{icon,title,sub}]}: 2–4 steps of a process, in order.
-- list {title, items:[{icon,label,color}]}: 3–5 items revealed one by one. color = the item's real hex when the item is a colour (it shows as a colour chip), else "".
+- list {title, items:[{icon,label,color}]}: 3–5 items revealed one by one, each label at most 20 characters. color = the item's real hex when the item is a colour (it shows as a colour chip), else "".
 - icons {items:[{icon,label,color}], arrow}: 1–3 icons with short labels; arrow=true shows a left-to-right arrow between them. color = the real hex for a colour item (shown as a big chip), else "".
 - crowd {total_label, highlight_label, ratio}: a field of glowing dots (the whole group) with a highlighted subset (ratio 0.02–0.9). Great for population vs sample, "who this applies to", percentages.
 - stat {value, label, color}: one big number with a label, e.g. value "$2,500" label "LATE PENALTY", value "30 DAYS" label "NOTICE REQUIRED". Only use numbers that appear in the document.
