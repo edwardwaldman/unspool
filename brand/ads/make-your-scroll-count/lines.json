@@ -1,0 +1,16 @@
+{"voice": "am_michael", "speed": 1.05, "lead": 0.35, "tail": 0, "gap": 0.2, "lines": [
+ ["hook", "You can quote a TikTok you saw once.", 0.25],
+ ["night", "At one A M. Half asleep.", 0.25, "At 1 AM. Half asleep."],
+ ["every", "And you still know every word.", 0.4],
+ ["chapter", "Your bio chapter?", 0.2],
+ ["three", "You read it three times.", 0.25],
+ ["gone", "Gone by Friday.", 0.45],
+ ["fix", "Unspool fixes that.", 0.2],
+ ["snap", "Snap the chapter, and it turns into short reels.", 0.2],
+ ["quiz", "With a quiz at the end of every one.", 0.3],
+ ["scroll", "So you scroll, like you already do.", 0.25],
+ ["sticks", "Except now, it sticks.", 0.35],
+ ["count", "Make your scroll count.", 0.3],
+ ["cta", "Try it free, at unspool dot c c.", 0.2, "Try it free at unspool.cc"],
+ ["end", "", 1.4]
+]}

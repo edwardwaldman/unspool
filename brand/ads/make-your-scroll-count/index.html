@@ -1,0 +1,164 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)} @font-face{font-family:Ser;src:url(SerifItalic.ttf)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#0d1430}
+#c{position:absolute;inset:0} #ov{position:absolute;inset:0;overflow:hidden}
+.cap{position:absolute;left:40px;right:40px;top:1010px;text-align:center;font:44px/1.15 Ser;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+.lbl{position:absolute;left:44px;top:170px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+.lbl small{display:block;font:700 15px Ins;letter-spacing:2px;opacity:.85} .lbl b{display:block;font:700 54px/1 Unb;letter-spacing:-1px;margin-top:6px}
+.stamp{position:absolute;font:700 46px Unb;color:#e5302a;border:6px solid #e5302a;border-radius:10px;padding:6px 18px;letter-spacing:1px;background:rgba(255,255,255,.08)}
+</style></head><body><canvas id="c" width="720" height="1280"></canvas><div id="ov"></div>
+<script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
+<script type="module">
+import { THREE, clamp, mix, ease, outBack, v3, tex, M, mesh, grp, sunLight, toy, book, pageTex, phone } from "./world.js";
+import { RoomEnvironment } from "./three/RoomEnvironment.js";
+const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins"), document.fonts.load("40px Ser")]);
+const W = 720, H = 1280;
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("c"), antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H, false); renderer.setPixelRatio(1); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
+const envTex = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+const camera = new THREE.PerspectiveCamera(40, W / H, 0.05, 200);
+const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.1) k = i; return k; };
+const st = (n) => lines.find((l) => l.shot === n).s - 0.1;
+const len = (n) => { const i = lines.findIndex((l) => l.shot === n); return (lines[i + 1]?.s ?? DUR) - lines[i].s; };
+const MAYA = { skin: "#c98f68", hair: "#2b1d16", top: "#7c4ad6", pants: "#3d5a9e", style: "pony" };
+const wood = tex(512, 512, (c, w, h) => { c.fillStyle = "#8a5a36"; c.fillRect(0, 0, w, h); for (let i = 0; i < 70; i++) { c.strokeStyle = `rgba(50,25,10,${0.08 + (i % 5) * 0.03})`; c.lineWidth = 2; c.beginPath(); c.moveTo(0, i * 7.3); c.bezierCurveTo(w * 0.3, i * 7.3 + 6, w * 0.6, i * 7.3 - 6, w, i * 7.3 + 3); c.stroke(); } });
+
+// the phone screens: a fun clip (the thing you remember), then an Unspool reel (the thing you'll now remember)
+const clipC = document.createElement("canvas"); clipC.width = 280; clipC.height = 590; const clipTex = new THREE.CanvasTexture(clipC); clipTex.colorSpace = THREE.SRGBColorSpace;
+function drawClip(t) { const c = clipC.getContext("2d"); const g = c.createLinearGradient(0, 0, 0, 590); g.addColorStop(0, "#ff7eb6"); g.addColorStop(1, "#7a5cff"); c.fillStyle = g; c.fillRect(0, 0, 280, 590);
+  c.font = "120px serif"; c.textAlign = "center"; c.save(); c.translate(140, 290); c.rotate(Math.sin(t * 6) * 0.25); c.fillText("🐱", 0, 40); c.restore();
+  c.fillStyle = "#fff"; c.font = "bold 22px Ins"; c.fillText("POV: the cat heard", 140, 110); c.fillText("the treat bag", 140, 138);
+  c.fillStyle = "rgba(255,255,255,.9)"; [0, 1, 2].forEach((i) => { c.beginPath(); c.arc(250, 380 + i * 50, 12, 0, 7); c.fill(); });
+  c.fillStyle = "rgba(255,255,255,.4)"; c.fillRect(0, 580, 280, 6); c.fillStyle = "#fff"; c.fillRect(0, 580, 280 * ((t * 0.3) % 1), 6); clipTex.needsUpdate = true; }
+drawClip(0);
+const reelTex = new THREE.TextureLoader().load("mito.jpg"); reelTex.colorSpace = THREE.SRGBColorSpace;
+
+// ================= BEDROOM, 1 AM =================
+const bed = new THREE.Scene(); bed.background = new THREE.Color("#0d1430"); bed.environment = envTex; bed.environmentIntensity = 0.12;
+bed.add(new THREE.HemisphereLight("#3a4a8a", "#0a0a14", 0.5));
+const lampL = new THREE.PointLight("#ffb46a", 9, 7, 1.6); lampL.position.set(-2.3, 2.6, 0.4); lampL.castShadow = true; lampL.shadow.mapSize.set(1024, 1024); bed.add(lampL);
+const clockL = new THREE.PointLight("#ff3b2f", 2.5, 3, 2); clockL.position.set(-2.0, 1.6, 0.9); bed.add(clockL);
+const glow = new THREE.PointLight("#bfe0ff", 3.5, 2.6, 2); bed.add(glow);
+mesh(new THREE.BoxGeometry(12, 7, 12), M("#1b2550", { side: THREE.BackSide, roughness: 1 }), v3(0, 3.5, 0), bed, false).receiveShadow = true;
+mesh(new THREE.PlaneGeometry(12, 12), M("#fff", { map: wood, roughness: 0.8 }), v3(0, 0.01, 0), bed).rotation.x = -Math.PI / 2;
+const nightC = tex(512, 384, (c, w, h) => { const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "#070c22"); g.addColorStop(1, "#1d2a63"); c.fillStyle = g; c.fillRect(0, 0, w, h); c.fillStyle = "#fff"; for (let i = 0; i < 50; i++) c.fillRect((i * 97) % w, (i * 53) % (h * 0.6), 2, 2); c.fillStyle = "#0b1230"; for (let i = 0; i < 9; i++) c.fillRect(i * 58, h - 80 - (i * 37 % 60), 50, 140); c.fillStyle = "#ffd76a"; for (let i = 0; i < 26; i++) c.fillRect((i * 61) % w + 8, h - 50 - (i * 13 % 50), 6, 8); });
+mesh(new THREE.PlaneGeometry(2.6, 2.2), new THREE.MeshBasicMaterial({ map: nightC, toneMapped: false }), v3(1.5, 3.4, -2.48), bed, false);
+[[1.5, 4.55, 2.8, 0.1], [1.5, 2.25, 2.8, 0.1], [0.15, 3.4, 0.1, 2.4], [2.85, 3.4, 0.1, 2.4], [1.5, 3.4, 0.08, 2.3]].forEach(([x, y, w, h]) => mesh(new THREE.BoxGeometry(w, h, 0.08), M("#2c3a74"), v3(x, y, -2.44), bed));
+mesh(new THREE.PlaneGeometry(12, 7), M("#1b2550", { roughness: 1 }), v3(0, 3.5, -2.5), bed);
+const quilt = tex(512, 512, (c, w, h) => { const cols = ["#e5484d", "#2f7de1", "#f2c14e", "#1f9d55", "#7c4ad6", "#ff8b6c", "#16314f", "#e8e2d4"]; for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { c.fillStyle = cols[(x * 3 + y * 5) % 8]; c.fillRect(x * 64, y * 64, 64, 64); c.strokeStyle = "rgba(0,0,0,.25)"; c.strokeRect(x * 64, y * 64, 64, 64); } });
+const bedG = grp(bed, v3(0.2, 0, -0.6));
+mesh(new THREE.BoxGeometry(2.8, 0.6, 4.2), M("#5a3a24"), v3(0, 0.3, 0.6), bedG); mesh(new THREE.BoxGeometry(2.7, 0.35, 4.0), M("#f4efe6"), v3(0, 0.78, 0.6), bedG);
+mesh(new THREE.BoxGeometry(2.74, 0.3, 2.8), M("#fff", { map: quilt, roughness: 0.9 }), v3(0, 0.95, 1.2), bedG);
+mesh(new THREE.BoxGeometry(2.9, 1.8, 0.2), M("#5a3a24"), v3(0, 1.0, -1.45), bedG); mesh(new THREE.BoxGeometry(1.6, 0.35, 0.6), M("#fff"), v3(0, 1.15, -1.05), bedG).rotation.x = -0.4;
+const stand = grp(bed, v3(-2.2, 0, -0.8)); mesh(new THREE.BoxGeometry(1.0, 1.1, 0.9), M("#a8322a"), v3(0, 0.55, 0), stand);
+const clockFace = (txt) => tex(256, 110, (c) => { c.fillStyle = "#111"; c.fillRect(0, 0, 256, 110); c.fillStyle = "#ff3b2f"; c.font = "bold 70px monospace"; c.textAlign = "center"; c.shadowColor = "#ff3b2f"; c.shadowBlur = 18; c.fillText(txt, 128, 82); });
+const clk = mesh(new THREE.BoxGeometry(0.6, 0.28, 0.25), [M("#222"), M("#222"), M("#222"), M("#222"), new THREE.MeshBasicMaterial({ map: clockFace("1:00"), toneMapped: false }), M("#222")], v3(0.15, 1.25, 0.25), stand); clk.rotation.y = 0.5;
+const lampG = grp(stand, v3(-0.25, 1.1, -0.15)); mesh(new THREE.CylinderGeometry(0.06, 0.12, 0.5, 12), M("#e8e2d4"), v3(0, 0.25, 0), lampG); mesh(new THREE.ConeGeometry(0.32, 0.38, 24, 1, true), M("#ffe2b0", { side: THREE.DoubleSide, emissive: "#a8661c" }), v3(0, 0.62, 0), lampG);
+const maya = toy(MAYA); bed.add(maya.g); maya.g.position.set(0.2, 0.66, -0.55); maya.pose("sitphone");
+const mPhone = phone(null, clipTex); maya.g.add(mPhone); mPhone.position.set(0.12, 1.78, 0.78); mPhone.rotation.set(-0.75, 0.05, 0); mPhone.scale.setScalar(0.5);
+
+// ================= DESK, evening: the chapter you reread =================
+const desk = new THREE.Scene(); desk.background = new THREE.Color("#2a2140"); desk.environment = envTex; desk.environmentIntensity = 0.25;
+desk.add(new THREE.HemisphereLight("#8a7ab0", "#1a1626", 0.6));
+const dLamp = new THREE.PointLight("#ffc979", 13, 8, 1.4); dLamp.position.set(-1.0, 2.7, 1.3); dLamp.castShadow = true; dLamp.shadow.mapSize.set(1024, 1024); desk.add(dLamp);
+mesh(new THREE.BoxGeometry(12, 7, 12), M("#3a3060", { side: THREE.BackSide, roughness: 1 }), v3(0, 3.5, 0), desk, false).receiveShadow = true;
+mesh(new THREE.PlaneGeometry(12, 12), M("#fff", { map: wood, roughness: 0.8 }), v3(0, 0.01, 0), desk).rotation.x = -Math.PI / 2;
+const dk = grp(desk, v3(0, 0, 1.4)); mesh(new THREE.BoxGeometry(3.4, 0.14, 1.5), M("#fff", { map: wood }), v3(0, 1.55, 0), dk);
+[[-1.55, -0.6], [1.55, -0.6], [-1.55, 0.6], [1.55, 0.6]].forEach(([x, z]) => mesh(new THREE.BoxGeometry(0.1, 1.5, 0.1), M("#5a3a24"), v3(x, 0.75, z), dk));
+const dl = grp(dk, v3(-1.0, 1.62, -0.3)); mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.08, 20), M("#333"), v3(0, 0, 0), dl); mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.8, 10), M("#333"), v3(0, 0.4, 0), dl); mesh(new THREE.ConeGeometry(0.32, 0.4, 24, 1, true), M("#f2c14e", { side: THREE.DoubleSide, emissive: "#6a4a10" }), v3(0.05, 0.9, 0.05), dl);
+const ob = grp(dk, v3(0.1, 1.63, 0.05)); mesh(new THREE.BoxGeometry(1.6, 0.1, 1.05), M("#1f8a70"), v3(0, 0, 0), ob);
+[-1, 1].forEach((s) => { const p = mesh(new THREE.PlaneGeometry(0.76, 1.0), M("#fff", { map: pageTex(14, { title: "Chapter 4" }), roughness: 0.9 }), v3(s * 0.39, 0.06, 0), ob); p.rotation.set(-Math.PI / 2, s * -0.06, 0); });
+const flip = grp(ob, v3(0, 0.07, 0)); const fp = mesh(new THREE.PlaneGeometry(0.76, 1.0), M("#fff", { map: pageTex(14), side: THREE.DoubleSide, roughness: 0.9 }), v3(0.38, 0, 0), flip); fp.rotation.x = -Math.PI / 2;
+const stack = book(dk, { w: 1.0, h: 1.3, d: 0.5 }); stack.position.set(1.15, 1.87, -0.2); stack.rotation.y = 0.3;
+const chair = grp(desk, v3(0, 0, -0.2)); mesh(new THREE.BoxGeometry(1.1, 0.12, 1.0), M("#e05a47"), v3(0, 1.0, 0), chair); mesh(new THREE.BoxGeometry(1.1, 1.2, 0.12), M("#e05a47"), v3(0, 1.6, -0.5), chair);
+const mayaD = toy(MAYA); desk.add(mayaD.g); mayaD.g.position.set(0, 0.05, -0.05);
+const dPhone = phone(null, reelTex); mayaD.g.add(dPhone); dPhone.position.set(0.28, 1.66, 0.62); dPhone.rotation.set(-0.45, 0.1, 0); dPhone.scale.setScalar(0.55);
+
+// ================= PAPER close-up =================
+const pap = new THREE.Scene(); pap.background = new THREE.Color("#8a5a36"); pap.environment = envTex; pap.environmentIntensity = 0.5;
+sunLight(pap, { pos: v3(-2, 8, 3), size: 3, intensity: 2.4, hemi: ["#fff7ea", "#8f7556", 0.9] });
+mesh(new THREE.PlaneGeometry(10, 10), M("#fff", { map: wood, roughness: 0.6 }), v3(0, 0, 0), pap).rotation.x = -Math.PI / 2;
+const quizTex = (grade) => tex(512, 680, (c, w, h) => { c.fillStyle = "#fff"; c.fillRect(0, 0, w, h); c.fillStyle = "#16314f"; c.font = "bold 30px Ins"; c.fillText("Bio · Chapter 4 quiz", 34, 56); c.fillText("Name: Maya", 34, 100);
+  [0, 1, 2, 3].forEach((i) => { c.fillStyle = "#9aa1ad"; c.fillRect(34, 170 + i * 120, 380, 8); c.fillRect(34, 190 + i * 120, 240, 8); c.strokeStyle = "#c8ccd4"; c.lineWidth = 3; c.strokeRect(34, 212 + i * 120, 440, 46);
+    if (grade) { c.fillStyle = "#1a3a8a"; c.font = "italic 30px serif"; c.fillText(["ATP, in the mitochondria", "the inner membrane", "glucose + oxygen", "the Krebs cycle"][i], 48, 246 + i * 120); } });
+  if (grade) { c.strokeStyle = "#1f9d55"; c.lineWidth = 12; c.beginPath(); c.ellipse(410, 80, 70, 60, -0.1, 0, 7); c.stroke(); c.fillStyle = "#1f9d55"; c.font = "bold 90px Unb"; c.textAlign = "center"; c.fillText("A", 410, 112); } });
+const paper = mesh(new THREE.PlaneGeometry(1.5, 2.0), M("#fff", { map: quizTex(false), roughness: 0.9 }), v3(0, 0.01, 0), pap); paper.rotation.set(-Math.PI / 2, 0, 0.06);
+const paperBlank = paper.material.map, paperA = quizTex(true);
+
+// ================= shots =================
+const cam = (p, l, f = 40) => { camera.position.copy(p); camera.lookAt(l); camera.fov = f; camera.updateProjectionMatrix(); };
+const camMove = (lt, d, a, b, la, lb, f = 40) => { const u = ease(clamp(lt / d)); cam(a.clone().lerp(b, u), la.clone().lerp(lb, u), f); };
+function scene3d(shot, lt, t) {
+  const L = len(shot);
+  if (["hook", "night", "every", "scroll"].includes(shot)) {
+    const unspool = shot === "scroll"; mPhone.userData.screen.material.map = unspool ? reelTex : clipTex; mPhone.userData.screen.material.needsUpdate = true; if (!unspool) drawClip(t);
+    glow.position.copy(mPhone.getWorldPosition(v3(0, 0, 0))).add(v3(0, 0.35, 0.5)); glow.intensity = 3.2 + Math.sin(t * 9) * 0.3; maya.head.rotation.x = 0.45 + Math.sin(t * 0.8) * 0.03;
+    if (shot === "hook") camMove(lt, L + 0.5, v3(0.4, 3.6, 7.6), v3(0.3, 3.2, 6.2), v3(0, 1.8, -0.4), v3(0, 1.9, -0.4), 40);
+    if (shot === "night") camMove(lt, L, v3(-3.2, 2.0, 2.6), v3(-2.8, 1.9, 2.2), v3(-2.1, 1.3, -0.4), v3(-1.6, 1.5, -0.4), 40);
+    if (shot === "every") { const p = mPhone.getWorldPosition(v3(0, 0, 0)); camMove(lt, L, p.clone().add(v3(0.05, 0.42, 1.35)), p.clone().add(v3(0.03, 0.3, 1.0)), p, p, 40); }
+    if (shot === "scroll") camMove(lt, L, v3(1.6, 3.0, 5.0), v3(1.0, 2.8, 4.2), v3(0, 1.9, -0.4), v3(0, 1.9, -0.4), 40);
+    return bed; }
+  if (["chapter", "three", "fix", "snap", "quiz"].includes(shot)) {
+    const studying = shot === "chapter" || shot === "three"; dPhone.visible = !studying; flip.visible = shot === "three";
+    if (studying) { mayaD.pose("sitdesk", t); flip.rotation.z = ((lt * 2.4) % 1) * Math.PI; mayaD.mouth.rotation.z = 0; }
+    else { mayaD.pose("phone"); mayaD.pose("sitphone"); dPhone.position.set(0.15, 1.75, 0.75); dPhone.rotation.set(-0.7, 0, 0); dPhone.scale.setScalar(0.5); mayaD.mouth.rotation.z = Math.PI; }
+    if (shot === "chapter") camMove(lt, L, v3(0, 3.6, 7.6), v3(0, 3.3, 6.4), v3(0, 2.3, -0.5), v3(0, 2.3, -0.5), 40);
+    else if (shot === "three") camMove(lt, L, v3(0.7, 3.1, 4.4), v3(0.5, 3.0, 3.8), v3(0, 2.2, 0.4), v3(0, 2.2, 0.4), 40);
+    else cam(v3(0, 2.6, 6.8), v3(0, 1.6, 0), 40);
+    return desk; }
+  if (shot === "gone" || shot === "sticks") { paper.material.map = shot === "gone" ? paperBlank : paperA; paper.material.needsUpdate = true; camMove(lt, L + 0.4, v3(0, 3.0, 0.9), v3(0, 2.4, 0.7), v3(0, 0, 0.05), v3(0, 0, 0.05), 40); return pap; }
+  return bed;
+}
+
+// ================= overlays =================
+const ov = document.getElementById("ov");
+const A = (x, y, inner, extra = "") => `<div style="position:absolute;left:${x}px;top:${y}px;${extra}">${inner}</div>`;
+const pop = (k) => `transform:scale(${outBack(k)});opacity:${clamp(k * 3)}`;
+const label = (small, big, k) => `<div class="lbl" style="opacity:${clamp(k * 3)};transform:translateY(${(1 - ease(k)) * 12}px)"><small>${small}</small><b>${big}</b></div>`;
+const stamp = (txt, x, y, rot, k, col = "#e5302a") => k > 0 ? A(x, y, `<div class="stamp" style="color:${col};border-color:${col};transform:scale(${mix(2.2, 1, ease(clamp(k / 0.25)))}) rotate(${rot}deg);opacity:${clamp(k * 5)}">${txt}</div>`) : "";
+// the app, floating over the scene like a real screen
+function app(shot, lt) {
+  const card = (inner, k) => A(150, 150, `<div style="width:420px;border-radius:28px;background:#0f1d18;box-shadow:0 30px 70px rgba(0,0,0,.55);padding:22px;box-sizing:border-box;${pop(k)};color:#e9f0e4">${inner}</div>`);
+  if (shot === "fix") return card(`<div style="text-align:center;font:700 26px Unb">unspool</div><div style="text-align:center;font:700 30px/1.1 Unb;margin-top:14px">Snap a photo.<br>Get study <span style="color:#d3f05a">reels.</span></div>
+    <div style="margin:20px auto 6px;width:110px;height:110px;border-radius:50%;background:#d3f05a;display:flex;align-items:center;justify-content:center"><svg width="46" height="46" viewBox="0 0 64 64"><path d="M32 10v44M10 32h44" stroke="#0f1d18" stroke-width="8" stroke-linecap="round"/></svg></div><div style="text-align:center;font:600 18px Ins">Snap a photo</div>`, lt / 0.35);
+  if (shot === "snap") { const k = ease((lt - 0.6) / 0.8);
+    return card(`<div style="font:700 15px Unb;color:#d3f05a;letter-spacing:1px">BIO · CHAPTER 4</div><div style="display:flex;gap:10px;margin-top:14px;justify-content:center">${["mito", "resp", "dna"].map((n, j) => `<div style="width:118px;height:210px;border-radius:14px;overflow:hidden;border:3px solid #000;transform:translateY(${(1 - clamp(k * 3 - j)) * 40}px);opacity:${clamp(k * 3 - j)}"><img src="${n}.jpg" style="width:100%;height:100%;object-fit:cover"></div>`).join("")}</div><div style="text-align:center;font:600 18px Ins;margin-top:14px;color:#8ea595">9 reels ready ✓</div>`, lt / 0.35); }
+  if (shot === "quiz") { const ok = lt > 1.4;
+    return card(`<div style="display:inline-block;background:#d3f05a;color:#0f1d18;font:700 14px Unb;padding:4px 10px">QUICK CHECK</div><div style="font:700 22px/1.3 Ins;margin-top:12px">What do mitochondria make?</div>${["Glucose", "ATP", "Oxygen"].map((o, x) => { const r = ok && x === 1; return `<div style="margin-top:10px;padding:12px 14px;border-radius:12px;border:2px solid ${r ? "#1f9d55" : "#28402f"};background:${r ? "rgba(31,157,85,.2)" : "transparent"};font:600 19px Ins">${String.fromCharCode(65 + x)}. ${o}${r ? " ✓" : ""}</div>`; }).join("")}`, lt / 0.35); }
+  return "";
+}
+function endCard(lc) {
+  return `<div style="position:absolute;inset:0;background:radial-gradient(90% 60% at 50% 40%,#203a2c,#0f1d18);opacity:${clamp(lc / 0.3)}">
+    ${A(0, 300, `<div style="width:720px;text-align:center;font:700 40px Unb;color:#e9f0e4;opacity:${clamp(lc / 0.3)}">unspool</div>`)}
+    ${A(0, 380, `<div style="width:720px;text-align:center;font:700 18px Ins;letter-spacing:3px;color:#8ea595;opacity:${clamp((lc - 0.3) / 0.3)}">MAKE YOUR SCROLL COUNT.</div>`)}
+    ${A(0, 440, `<div style="width:720px;text-align:center;font:700 86px/1 Unb;letter-spacing:-3px;color:#e9f0e4;transform:scale(${outBack((lc - 0.4) / 0.4)})">SAME<br>SCROLL.<br><span style="color:#d3f05a">SMARTER<br>FEED.</span></div>`)}
+    ${A(0, 830, `<div style="width:720px;text-align:center;transform:scale(${outBack((lc - 1.2) / 0.35)})"><span style="display:inline-block;background:#d3f05a;color:#0f1d18;font:700 30px Unb;padding:16px 34px;border-radius:40px">Try it free →</span><div style="margin-top:16px;font:600 26px Ins;color:#e9f0e4">unspool.cc</div></div>`)}</div>`;
+}
+window.renderAt = (t) => {
+  const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.1);
+  if (shot === "count" || shot === "cta" || shot === "end") {
+    renderer.render(bed, camera);
+    const lc = t - st("count");
+    ov.innerHTML = endCard(lc) + (shot !== "end" && L.text ? `<div class="cap" style="top:1060px">${L.text}</div>` : ""); return; }
+  const scene = scene3d(shot, lt, t); renderer.render(scene, camera);
+  let h = "";
+  if (shot === "hook") h += A(0, 150, `<div style="width:720px;text-align:center;font:60px/1.1 Ser;color:#fff;opacity:${clamp(lt / 0.3)};text-shadow:0 2px 14px rgba(0,0,0,.6)">You can quote a TikTok<br>you saw <span style="color:#d3f05a">once.</span></div>`);
+  if (shot === "night" || shot === "every") h += label("LAST NIGHT'S SCREEN TIME", "4H 12M", (t - st("night")) / 0.3);
+  if (shot === "chapter" || shot === "three") h += label("BIO · CHAPTER 4", "32 PAGES", (t - st("chapter")) / 0.3);
+  if (shot === "three") h += stamp("READ 3×", 70, 820, -8, lt - 0.6, "#ffffff");
+  if (shot === "gone") h += stamp("FORGOTTEN", 150, 480, -10, lt - 0.35);
+  if (shot === "scroll") h += label("TONIGHT'S SCREEN TIME", "SAME 4H", lt / 0.3);
+  if (shot === "sticks") h += stamp("IT STUCK", 210, 470, 6, lt - 0.5, "#1f9d55");
+  h += app(shot, lt);
+  // a soft dark band so the serif captions read on any shot (the white test paper swallowed them)
+  h += `<div style="position:absolute;left:0;right:0;top:930px;height:260px;background:linear-gradient(transparent,rgba(5,8,20,.55) 45%,rgba(5,8,20,.55) 70%,transparent)"></div>`;
+  if (L.text && shot !== "hook") h += `<div class="cap">${L.text}</div>`;
+  const flash = Math.max(0, 1 - lt / 0.1) * 0.25;
+  if (flash > 0 && i > 0) h += `<div style="position:absolute;inset:0;background:#000;opacity:${flash}"></div>`;
+  ov.innerHTML = h;
+};
+await new Promise((r) => { const chk = () => (reelTex.image ? r() : setTimeout(chk, 50)); chk(); });
+window.renderAt(0); setTimeout(() => (window.ready = true), 600);
+</script></body></html>
