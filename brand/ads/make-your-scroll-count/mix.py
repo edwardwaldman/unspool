@@ -1,5 +1,5 @@
 import json, numpy as np, soundfile as sf
-D="/tmp/claude-0/-home-user/a6768946-caac-5edd-b0c9-ac1afa389d34/scratchpad/adY2"
+D="/tmp/claude-0/-home-user/a6768946-caac-5edd-b0c9-ac1afa389d34/scratchpad/adY3"
 tl=json.load(open(f"{D}/web/tl.json")); DUR=tl["dur"]; SR=24000; N=int(SR*DUR); out=np.zeros(N); rng=np.random.default_rng(5); tt=np.arange(N)/SR
 st={l["shot"]:l["s"]-0.1 for l in tl["lines"]}; note=lambda m:440*2**((m-69)/12)
 def add(t0,x,g):
@@ -12,7 +12,7 @@ def kick(): k=np.arange(int(SR*.24))/SR; return np.tanh(3*np.sin(2*np.pi*(45+110
 def boom(): k=np.arange(int(SR*1.0))/SR; return np.sin(2*np.pi*(30+70*np.exp(-k*9))*k)*np.exp(-k*3.5)
 def riser(d): t=np.arange(int(SR*d))/SR; return rng.standard_normal(len(t))*(t/d)**2*0.5+np.sin(2*np.pi*(200+1200*(t/d)**2)*t)*(t/d)**2*0.3
 F=st["fix"]; E=st["count"]+1.2
-b=60/140; dark=[[45,48,52],[41,45,48],[43,47,50],[40,43,47]]; bright=[[48,52,55],[45,48,52],[53,57,60],[55,59,62]]
+b=60/118; dark=[[45,48,52],[41,45,48],[43,47,50],[40,43,47]]; bright=[[48,52,55],[45,48,52],[53,57,60],[55,59,62]]
 for i in range(int(E/(b/4))):
     t0=i*b/4; prog=dark if t0<F else bright; ch=prog[(i//16)%4]
     if F-b<=t0<F: continue                                        # one beat of silence before Unspool comes in
