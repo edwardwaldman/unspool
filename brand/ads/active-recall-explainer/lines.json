@@ -1,0 +1,15 @@
+{"engine": "kokoro", "voice": "af_heart", "speed": 1.08, "lead": 0.3, "tail": 0, "gap": 0.22, "lines": [
+ ["hook", "Highlight.", 0.35],
+ ["page", "You just highlighted a whole page, without reading a single word.", 0.3],
+ ["hi", "Hi! I'm Uni.", 0.2],
+ ["noidea", "And I have no idea what you just studied.", 0.35],
+ ["topic", "So today, we're talking about active recall.", 0.3],
+ ["define", "Active recall is pulling the answer out of your own head.", 0.3],
+ ["reread", "Rereading feels like studying. But your brain is just looking.", 0.3],
+ ["dig", "When you have to answer, your brain has to dig it back up. And digging is what makes it stick.", 0.3],
+ ["quiz", "That's why a quick quiz beats a fourth reread.", 0.35],
+ ["unspool", "Unspool turns your notes into short reels, with a quiz at the end of every one.", 0.25],
+ ["pull", "So every reel makes you pull it out. A few minutes a day.", 0.3],
+ ["cta", "Try it free, at unspool dot c c!", 0.25, "Try it free at unspool.cc!"],
+ ["end", "", 1.3]
+]}

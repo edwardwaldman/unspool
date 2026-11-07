@@ -1,0 +1,5 @@
+# rendered frames and audio are rebuilt by brand/ads/tools
+*/frames/
+*/voice.wav
+*/voice_raw.wav
+*/mix.wav
