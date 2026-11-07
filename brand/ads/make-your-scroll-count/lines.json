@@ -1,16 +1,16 @@
-{"voice": "am_michael", "speed": 1.05, "lead": 0.35, "tail": 0, "gap": 0.2, "lines": [
- ["hook", "You can quote a TikTok you saw once.", 0.25],
- ["night", "At one A M. Half asleep.", 0.25, "At 1 AM. Half asleep."],
- ["every", "And you still know every word.", 0.4],
- ["chapter", "Your bio chapter?", 0.2],
- ["three", "You read it three times.", 0.25],
- ["gone", "Gone by Friday.", 0.45],
- ["fix", "Unspool fixes that.", 0.2],
- ["snap", "Snap the chapter, and it turns into short reels.", 0.2],
- ["quiz", "With a quiz at the end of every one.", 0.3],
- ["scroll", "So you scroll, like you already do.", 0.25],
- ["sticks", "Except now, it sticks.", 0.35],
- ["count", "Make your scroll count.", 0.3],
- ["cta", "Try it free, at unspool dot c c.", 0.2, "Try it free at unspool.cc"],
- ["end", "", 1.4]
+{"voice": "am_fenrir", "speed": 1.32, "lead": 0.2, "tail": 0, "gap": 0.06, "lines": [
+ ["hook", "You can quote a TikTok you saw ONCE!", 0.1],
+ ["night", "At one A M! Half asleep!", 0.08, "At 1 AM! Half asleep!"],
+ ["every", "And you STILL know every word!", 0.15],
+ ["chapter", "But your bio chapter?", 0.06],
+ ["three", "You read it THREE times!", 0.08],
+ ["gone", "GONE! By Friday!", 0.2],
+ ["fix", "Unspool fixes that!", 0.06],
+ ["snap", "Snap the chapter. It turns into reels!", 0.06],
+ ["quiz", "With a quiz in every one!", 0.1],
+ ["scroll", "So you scroll, like you already do!", 0.08],
+ ["sticks", "Except now? It STICKS!", 0.15],
+ ["count", "Make your scroll COUNT!", 0.12],
+ ["cta", "Try it free! unspool dot c c!", 0.1, "Try it free! unspool.cc"],
+ ["end", "", 1.2]
 ]}
