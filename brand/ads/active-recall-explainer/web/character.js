@@ -7,7 +7,9 @@ export const EXPRESSIONS = ["neutral", "talk", "smile", "wink", "think"];
 let images = null;
 export async function loadCharacter() {
   const found = await Promise.all(EXPRESSIONS.map((e) => new Promise((r) => { const i = new Image(); i.onload = () => r([e, i.src]); i.onerror = () => r(null); i.src = `char/${e}.png`; })));
-  if (found.every(Boolean)) images = Object.fromEntries(found);
+  const have = Object.fromEntries(found.filter(Boolean));
+  if (have.neutral) images = Object.fromEntries(EXPRESSIONS.map((e) => [e, have[e] ?? have.neutral]));
+  if (images) images.hasTalk = Boolean(have.talk);
   return images ? "png" : "svg";
 }
 
@@ -28,7 +30,8 @@ function eye(cx, cy, s, mode) {
 }
 
 export function drawCharacter({ expr = "neutral", talk = 0, blink = 0, t = 0, tilt = 0 } = {}) {
-  if (images) return `<img src="${images[talk > 0.35 && expr === "neutral" ? "talk" : expr]}" style="width:400px;height:560px;object-fit:contain;transform:rotate(${tilt}deg) translateY(${Math.sin(t * 2.2) * 3}px);transform-origin:50% 90%">`;
+  if (images) { const open = talk > 0.35 && expr === "neutral", bob = images.hasTalk ? 0 : talk * 6;
+    return `<img src="${images[open ? "talk" : expr]}" style="width:400px;height:560px;object-fit:contain;transform:rotate(${tilt}deg) translateY(${Math.sin(t * 2.2) * 3 - bob}px) scaleY(${1 + bob * 0.004});transform-origin:50% 90%">`; }
   const sway = Math.sin(t * 1.7) * 3 + tilt * 0.6, breathe = Math.sin(t * 2.2) * 2.2;
   const eyesMode = blink > 0.5 || expr === "smile" ? (expr === "smile" ? "happy" : "closed") : "open";
   const leftEye = expr === "wink" ? "closed" : eyesMode, rightEye = eyesMode;

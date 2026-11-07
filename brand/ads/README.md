@@ -60,3 +60,20 @@ Everything needed is in `brand/ads/tools/`:
 
 **ElevenLabs:** add your API key to the cloud environment as a network secret for `api.elevenlabs.io` (header
 `xi-api-key`), or locally as `ELEVENLABS_API_KEY`. Pick voice ids in the ElevenLabs Voice Library.
+
+## The anime explainer character (your pictures)
+
+The explainer ads (`active-recall-explainer` and copies of it) animate a still picture of a character: it bobs and
+breathes, flips between expressions and "talks" with the voice. Put the pictures in a folder named by expression
+(`neutral`, `talk`, `smile`, `wink`, `think`; only `neutral` is required) and run
+`brand/ads/tools/.venv/bin/python brand/ads/tools/character.py <folder> brand/ads/<ad>/web/char`. It removes the
+background (rembg's anime model), trims and lines up every picture on the same 1200x1680 canvas. Then render.
+Use art you own or have commercial rights to.
+
+## Keys
+
+- **ElevenLabs** (better voices): cloud environment settings, network secret for `api.elevenlabs.io`, header
+  `xi-api-key`; or an environment variable `ELEVENLABS_API_KEY`.
+- **Anthropic** (the reel-critic agent generating fresh reels with the real writer, `scripts/reel-lab/gen.ts`): an
+  environment variable `ANTHROPIC_API_KEY` in the cloud environment settings (Anthropic hosts can't take a network
+  secret). Use a separate, spend-limited key from the one the live site uses.
