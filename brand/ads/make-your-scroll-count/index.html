@@ -60,6 +60,32 @@ const lampG = grp(stand, v3(-0.25, 1.1, -0.15)); mesh(new THREE.CylinderGeometry
 const maya = toy(MAYA); bed.add(maya.g); maya.g.position.set(0.2, 0.66, -0.55); maya.pose("sitphone");
 const mPhone = phone(null, clipTex); maya.g.add(mPhone); mPhone.position.set(0.12, 1.78, 0.78); mPhone.rotation.set(-0.75, 0.05, 0); mPhone.scale.setScalar(0.5);
 
+// ================= POV: her phone, from her eyes =================
+const feedC = document.createElement("canvas"); feedC.width = 270; feedC.height = 480; const feedTex = new THREE.CanvasTexture(feedC); feedTex.colorSpace = THREE.SRGBColorSpace; feedTex.magFilter = THREE.NearestFilter;
+const feedImgs = await Promise.all(["mito", "resp", "dna"].map((n) => new Promise((r) => { const i = new Image(); i.onload = () => r(i); i.src = `${n}_px.png`; })));
+const SWIPE = 0.85;                                           // seconds per reel
+function drawFeed(lt) {
+  const c = feedC.getContext("2d"), k = lt / SWIPE, i = Math.floor(k), f = clamp((k - i - 0.62) / 0.38), y = -480 * (f < 0.5 ? 4 * f * f * f : 1 - Math.pow(-2 * f + 2, 3) / 2);
+  c.fillStyle = "#000"; c.fillRect(0, 0, 270, 480);
+  c.drawImage(feedImgs[i % 3], 0, y, 270, 480); c.drawImage(feedImgs[(i + 1) % 3], 0, y + 480, 270, 480);
+  // the app around it: rail, account row, reel counter
+  c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(0, 0, 270, 28); c.fillStyle = "#fff"; c.font = "bold 12px Ins"; c.textAlign = "center"; c.fillText("This doc   ·   All spools", 135, 18);
+  c.fillStyle = "#d3f05a"; c.textAlign = "left"; c.fillText(`REEL ${Math.min(9, i + 1 + (f > 0.5 ? 1 : 0))} / 9`, 10, 46);
+  ["♥", "💬", "➤"].forEach((g, j) => { c.fillStyle = "#fff"; c.font = "18px sans-serif"; c.fillText(g, 240, 300 + j * 40); });
+  c.fillStyle = "rgba(255,255,255,.35)"; c.fillRect(0, 474, 270, 6); c.fillStyle = "#fff"; c.fillRect(0, 474, 270 * ((k % 1) * 1.6 % 1), 6);
+  feedTex.needsUpdate = true; return f;
+}
+const pov = grp(bed); pov.visible = false;
+const povPhone = grp(pov); mesh(new THREE.BoxGeometry(0.62, 1.24, 0.07), M("#16181d", { roughness: 0.3, metalness: 0.4 }), v3(0, 0, 0), povPhone);
+mesh(new THREE.PlaneGeometry(0.57, 1.14), new THREE.MeshBasicMaterial({ map: feedTex, toneMapped: false }), v3(0, 0, 0.037), povPhone, false);
+const skinM = M(MAYA.skin, { roughness: 0.5 }), sleeveM = M(MAYA.top, { roughness: 0.85 });
+[-1, 1].forEach((sx) => { const h = grp(povPhone, v3(sx * 0.3, -0.32, 0.02));
+  mesh(new THREE.SphereGeometry(0.15, 10, 8), skinM, v3(sx * 0.04, 0, -0.04), h).scale.set(0.8, 1.25, 0.7);
+  [0, 1, 2].forEach((j) => mesh(new THREE.CapsuleGeometry(0.035, 0.12, 2, 6), skinM, v3(sx * 0.03, 0.2 - j * 0.11, -0.07), h).rotation.z = Math.PI / 2);
+  mesh(new THREE.CapsuleGeometry(0.13, 0.7, 2, 8), sleeveM, v3(sx * 0.12, -0.45, -0.12), h).rotation.z = -sx * 0.35; });
+const thumb = grp(povPhone, v3(0.18, -0.25, 0.06)); mesh(new THREE.CapsuleGeometry(0.045, 0.2, 2, 6), skinM, v3(0, 0.1, 0), thumb).rotation.z = 0.5;
+const povLight = new THREE.PointLight("#cfe2ff", 0, 2.2, 2); pov.add(povLight);
+
 // ================= DESK, evening: the chapter you reread =================
 const desk = new THREE.Scene(); desk.background = new THREE.Color("#2a2140"); desk.environment = envTex; desk.environmentIntensity = 0.25;
 desk.add(new THREE.HemisphereLight("#8a7ab0", "#1a1626", 0.6));
@@ -116,7 +142,17 @@ function scene3d(shot, lt, t) {
       cam(a.clone().lerp(b, u), v3(0, 1.85, -0.4).lerp(v3(-1.7, 1.4, -0.4), u), 40); }
     if (shot === "night") camMove(lt, L, v3(-3.2, 2.0, 2.6), v3(-2.8, 1.9, 2.2), v3(-2.1, 1.3, -0.4), v3(-1.6, 1.5, -0.4), 40);
     if (shot === "every") { const p = mPhone.getWorldPosition(v3(0, 0, 0)); camMove(lt, L, p.clone().add(v3(0.05, 0.42, 1.35)), p.clone().add(v3(0.03, 0.3, 1.0)), p, p, 40); }
-    if (shot === "scroll") camMove(lt, L, v3(1.4, 2.9, 4.6), v3(0.8, 2.7, 3.6), v3(0, 1.95, -0.4), v3(0, 1.95, -0.4), 40);
+    maya.g.visible = shot !== "scroll"; pov.visible = shot === "scroll";
+    if (shot === "scroll") {
+      // her eyes, looking down at the phone over the quilt; the phone rises in, then her thumb flicks reel after reel
+      const rise = ease(lt / 0.35);
+      cam(v3(0.2, 2.95, -0.35), v3(0.25, 1.55, 1.2), 46);
+      const f = v3(0, 0, -1).applyQuaternion(camera.quaternion), r = v3(1, 0, 0).applyQuaternion(camera.quaternion), u = v3(0, 1, 0).applyQuaternion(camera.quaternion);
+      pov.position.copy(camera.position).add(f.multiplyScalar(2.3)).add(r.multiplyScalar(0.03)).add(u.multiplyScalar(-0.12 - (1 - rise) * 1.4 + Math.sin(t * 1.3) * 0.012));
+      pov.quaternion.copy(camera.quaternion); pov.rotateX(0.08);
+      const sw = drawFeed(Math.max(0, lt - 0.3)); thumb.position.y = -0.25 + Math.sin(Math.min(1, sw) * Math.PI) * 0.32; thumb.position.x = 0.18 - Math.sin(Math.min(1, sw) * Math.PI) * 0.04;
+      povLight.intensity = 2.4; povLight.position.set(0, 0, 0.6);
+    }
     return bed; }
   if (["chapter", "three", "fix", "snap", "cards", "quiz"].includes(shot)) {
     const studying = shot === "chapter" || shot === "three"; dPhone.visible = !studying; flip.visible = shot === "three";
@@ -206,7 +242,7 @@ window.renderAt = (t) => {
   if (shot === "gone") h += stamp("FORGOTTEN", 130, 480, -10, lt - 0.05);
   if (shot === "scroll") { h += label("TONIGHT'S SCREEN TIME", "SAME 4H", lt / 0.3);
     // what she just learned, popping up as each reel goes by
-    ["MITOCHONDRIA ✓", "ATP ✓", "DNA → mRNA ✓"].forEach((w, j) => { const k = (lt - 0.5 - j * 0.7) / 0.2; if (k > 0) h += A([390, 40, 330][j], [600, 690, 790][j], `<div style="white-space:nowrap;font:24px Px;color:#0f1d18;background:#d3f05a;padding:10px 14px;box-shadow:5px 5px 0 #000;${pop(k)}">${w}</div>`); }); }
+    ["MITOCHONDRIA ✓", "ATP ✓", "DNA → mRNA ✓"].forEach((w, j) => { const k = (lt - 0.3 - SWIPE * 0.75 - j * SWIPE) / 0.2; if (k > 0) h += A([404, 22, 420][j], [300, 520, 720][j], `<div style="white-space:nowrap;font:19px Px;color:#0f1d18;background:#d3f05a;padding:10px 14px;box-shadow:5px 5px 0 #000;${pop(k)}">${w}</div>`); }); }
   if (shot === "sticks") h += stamp("IT STUCK", 200, 470, 6, lt - 0.45, "#1f9d55");
   h += app(shot, lt);
   // a soft dark band so the serif captions read on any shot (the white test paper swallowed them)
