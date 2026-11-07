@@ -51,6 +51,7 @@ mesh(new THREE.PlaneGeometry(12, 7), M("#1b2550", { roughness: 1 }), v3(0, 3.5, 
 const quilt = tex(512, 512, (c, w, h) => { const cols = ["#e5484d", "#2f7de1", "#f2c14e", "#1f9d55", "#7c4ad6", "#ff8b6c", "#16314f", "#e8e2d4"]; for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { c.fillStyle = cols[(x * 3 + y * 5) % 8]; c.fillRect(x * 64, y * 64, 64, 64); c.strokeStyle = "rgba(0,0,0,.25)"; c.strokeRect(x * 64, y * 64, 64, 64); } });
 const bedG = grp(bed, v3(0.2, 0, -0.6));
 mesh(new THREE.BoxGeometry(2.8, 0.6, 4.2), M("#5a3a24"), v3(0, 0.3, 0.6), bedG); mesh(new THREE.BoxGeometry(2.7, 0.35, 4.0), M("#f4efe6"), v3(0, 0.78, 0.6), bedG);
+quilt.wrapS = quilt.wrapT = THREE.RepeatWrapping; quilt.repeat.set(2, 2);
 mesh(new THREE.BoxGeometry(2.74, 0.3, 2.8), M("#fff", { map: quilt, roughness: 0.9 }), v3(0, 0.95, 1.2), bedG);
 mesh(new THREE.BoxGeometry(2.9, 1.8, 0.2), M("#5a3a24"), v3(0, 1.0, -1.45), bedG); mesh(new THREE.BoxGeometry(1.6, 0.35, 0.6), M("#fff"), v3(0, 1.15, -1.05), bedG).rotation.x = -0.4;
 const stand = grp(bed, v3(-2.2, 0, -0.8)); mesh(new THREE.BoxGeometry(1.0, 1.1, 0.9), M("#a8322a"), v3(0, 0.55, 0), stand);
@@ -146,12 +147,12 @@ function scene3d(shot, lt, t) {
     if (shot === "scroll") {
       // her eyes, looking down at the phone over the quilt; the phone rises in, then her thumb flicks reel after reel
       const rise = ease(lt / 0.35);
-      cam(v3(0.2, 2.95, -0.35), v3(0.25, 1.55, 1.2), 46);
+      cam(v3(0.2, 2.95, -0.35), v3(0.25, 0.9, 1.35), 46);
       const f = v3(0, 0, -1).applyQuaternion(camera.quaternion), r = v3(1, 0, 0).applyQuaternion(camera.quaternion), u = v3(0, 1, 0).applyQuaternion(camera.quaternion);
-      pov.position.copy(camera.position).add(f.multiplyScalar(2.3)).add(r.multiplyScalar(0.03)).add(u.multiplyScalar(-0.24 - (1 - rise) * 1.4 + Math.sin(t * 1.3) * 0.012));
+      pov.position.copy(camera.position).add(f.multiplyScalar(2.15)).add(r.multiplyScalar(0.03)).add(u.multiplyScalar(-0.04 - (1 - rise) * 1.2 + Math.sin(t * 1.3) * 0.012));
       pov.quaternion.copy(camera.quaternion); pov.rotateX(0.08);
       const sw = drawFeed(Math.max(0, lt - 0.3)); thumb.position.y = -0.25 + Math.sin(Math.min(1, sw) * Math.PI) * 0.32; thumb.position.x = 0.18 - Math.sin(Math.min(1, sw) * Math.PI) * 0.04;
-      povLight.intensity = 2.4; povLight.position.set(0, 0, 0.6);
+      povLight.intensity = 1.2; povLight.position.set(0, 0, 0.6);
     }
     return bed; }
   if (["chapter", "three", "fix", "snap", "cards", "quiz"].includes(shot)) {
@@ -240,9 +241,9 @@ window.renderAt = (t) => {
   if (shot === "chapter" || shot === "three") h += label("BIO · CHAPTER 4", "32 PAGES", (t - st("chapter")) / 0.3);
   if (shot === "three") h += stamp("READ 3X", 70, 820, -8, lt - 0.3, "#ffffff");
   if (shot === "gone") h += stamp("FORGOTTEN", 130, 480, -10, lt - 0.05);
-  if (shot === "scroll") { h += label("TONIGHT'S SCREEN TIME", "SAME 4H", lt / 0.3);
+  if (shot === "scroll") { h += `<div style="position:absolute;inset:0;background:radial-gradient(75% 60% at 50% 55%,transparent 45%,rgba(5,6,16,.75))"></div>`; h += label("TONIGHT'S SCREEN TIME", "SAME 4H", lt / 0.3);
     // what she just learned, popping up as each reel goes by
-    ["MITOCHONDRIA", "ATP", "DNA TO RNA"].forEach((w, j) => { const k = (lt - 0.3 - SWIPE * 0.75 - j * SWIPE) / 0.2; if (k > 0) h += A(470, 112 + j * 46, `<div style="white-space:nowrap;width:210px;text-align:center;font:16px Px;color:#0f1d18;background:#d3f05a;padding:8px 10px;box-shadow:4px 4px 0 #000;${pop(k)}">${w} <span style=\"font:700 17px Ins\">✓</span></div>`); }); }
+    ["MITOCHONDRIA", "ATP", "DNA TO RNA"].forEach((w, j) => { const k = (lt - 0.3 - SWIPE * 0.75 - j * SWIPE) / 0.2; if (k > 0) h += A(470, 112 + j * 46, `<div style="white-space:nowrap;text-align:center;font:16px Px;color:#0f1d18;background:#d3f05a;padding:8px 10px;box-shadow:4px 4px 0 #000;${pop(k)}">${w} <span style=\"font:700 17px Ins\">✓</span></div>`); }); }
   if (shot === "sticks") h += stamp("IT STUCK", 200, 470, 6, lt - 0.45, "#1f9d55");
   h += app(shot, lt);
   // a soft dark band so the serif captions read on any shot (the white test paper swallowed them)

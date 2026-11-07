@@ -1,16 +1,81 @@
-{"voice": "am_fenrir", "speed": 1.16, "lead": 0.3, "tail": 0, "gap": 0.24, "lines": [
- ["hook", "You can quote a TikTok you saw ONCE, half asleep at one A M!", 0.24, "You can quote a TikTok you saw ONCE, half asleep at 1 AM!"],
- ["every", "And you STILL know every word!", 0.3],
- ["chapter", "But your bio chapter?", 0.2],
- ["three", "You read it THREE times!", 0.22],
- ["gone", "GONE! By Friday!", 0.34],
- ["fix", "Unspool fixes that!", 0.2],
- ["snap", "Snap the chapter, and BOOM! It turns into reels!", 0.24],
- ["cards", "Short reels, made from YOUR chapter!", 0.24],
- ["quiz", "With a quiz in every one!", 0.24],
- ["scroll", "So you scroll, like you already do. And you actually LEARN it!", 0.24],
- ["sticks", "Except now? It STICKS!", 0.3],
- ["count", "Make your scroll COUNT!", 0.26],
- ["cta", "Try it free! unspool dot c c!", 0.24, "Try it free! unspool.cc"],
- ["end", "", 1.2]
-]}
+{
+ "voice": "am_fenrir",
+ "speed": 1.16,
+ "lead": 0.3,
+ "tail": 0,
+ "gap": 0.24,
+ "lines": [
+  [
+   "hook",
+   "You can quote a TikTok you saw ONCE, half asleep at one A M!",
+   0.24,
+   "You can quote a TikTok you saw ONCE, half asleep at 1 AM!"
+  ],
+  [
+   "every",
+   "And you STILL know every word!",
+   0.3
+  ],
+  [
+   "chapter",
+   "But your bio chapter?",
+   0.2
+  ],
+  [
+   "three",
+   "You read it THREE times!",
+   0.22
+  ],
+  [
+   "gone",
+   "GONE! By Friday!",
+   0.34
+  ],
+  [
+   "fix",
+   "Unspool fixes that!",
+   0.2
+  ],
+  [
+   "snap",
+   "Snap the chapter, and BOOM! It turns into TikToks!",
+   0.24
+  ],
+  [
+   "cards",
+   "Short TikToks, made from YOUR chapter!",
+   0.24
+  ],
+  [
+   "quiz",
+   "With a quiz in every one!",
+   0.24
+  ],
+  [
+   "scroll",
+   "So you scroll, like you already do. And you actually LEARN it!",
+   0.24
+  ],
+  [
+   "sticks",
+   "Except now? It STICKS!",
+   0.3
+  ],
+  [
+   "count",
+   "Make your scroll COUNT!",
+   0.26
+  ],
+  [
+   "cta",
+   "Try it free! unspool dot c c!",
+   0.24,
+   "Try it free! unspool.cc"
+  ],
+  [
+   "end",
+   "",
+   1.2
+  ]
+ ]
+}
