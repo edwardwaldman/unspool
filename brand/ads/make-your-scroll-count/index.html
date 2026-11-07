@@ -202,6 +202,33 @@ function turnIntoReels(shot, lt) {
   if (shot === "cards") h += A(0, 250, `<div style="width:720px;text-align:center;font:34px/1.3 Px;color:#fff;text-shadow:5px 5px 0 #000;${pop(lt / 0.25)}">MADE FROM<br><span style="color:#d3f05a">YOUR CHAPTER</span></div>`);
   return h;
 }
+// the scroll: just a big phone on a dark backdrop, the feed swiping up reel after reel, a thumb flicking
+function phoneScroll(lt, t) {
+  const S = 0.95, imgs = ["mito", "resp", "dna", "mito"], k = Math.max(0, lt - 0.25) / S, i = Math.floor(k);
+  const f = clamp((k - i - 0.6) / 0.4), y = -(f < 0.5 ? 4 * f * f * f : 1 - Math.pow(-2 * f + 2, 3) / 2) * 100;
+  const rise = ease(lt / 0.35), sway = Math.sin(t * 1.4) * 4;
+  const W = 380, Hh = 676;
+  let h = `<div style="position:absolute;inset:0;background:radial-gradient(70% 55% at 50% 48%,#26305e,#0b0f22 70%,#05070f)"></div>`;
+  // soft lime glow behind the phone, pixel grid floor of light
+  h += `<div style="position:absolute;left:110px;top:300px;width:500px;height:600px;border-radius:50%;background:radial-gradient(#d3f05a33,transparent 70%);filter:blur(10px)"></div>`;
+  const cur = imgs[i % 4], nxt = imgs[(i + 1) % 4], n = Math.min(9, i + 1 + (f > 0.5 ? 1 : 0));
+  const screen = `<div style="position:absolute;inset:0;transform:translateY(${y}%)"><img src="${cur}_px.png" style="position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;image-rendering:pixelated"><img src="${nxt}_px.png" style="position:absolute;left:0;top:100%;width:100%;height:100%;object-fit:cover;image-rendering:pixelated"></div>
+    <div style="position:absolute;left:0;right:0;top:0;height:46px;background:linear-gradient(rgba(0,0,0,.55),transparent);display:flex;justify-content:center;align-items:center;font:13px Px;color:#fff">FOR YOU</div>
+    <div style="position:absolute;left:14px;top:52px;font:13px Px;color:#d3f05a;text-shadow:2px 2px 0 #000">TIKTOK ${n}/9</div>
+    ${["♥", "💬", "➤"].map((g, j) => `<div style="position:absolute;right:12px;top:${360 + j * 62}px;font:28px sans-serif;color:#fff;text-shadow:0 2px 4px #000">${g}</div>`).join("")}
+    <div style="position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.3)"><div style="height:5px;width:${((k % 1) * 1.7 % 1) * 100}%;background:#fff"></div></div>`;
+  h += `<div style="position:absolute;left:${360 - W / 2}px;top:${300 + (1 - rise) * 700}px;width:${W}px;height:${Hh}px;transform:rotate(${sway * 0.25}deg)">
+    <div style="position:absolute;inset:-14px;background:#15171d;border:4px solid #000;box-shadow:12px 12px 0 #000"></div>
+    <div style="position:absolute;left:${W / 2 - 50}px;top:-6px;width:100px;height:14px;background:#000;z-index:3"></div>
+    <div style="position:absolute;inset:0;overflow:hidden;background:#000">${screen}</div></div>`;
+  // the thumb flicks up on each swipe
+  const fl = Math.sin(Math.min(1, f * 1.2) * Math.PI);
+  h += A(430 + fl * -20, 860 - fl * 230, `<div style="width:64px;height:150px;background:#c98f68;border:4px solid #000;border-radius:30px 30px 10px 10px;transform:rotate(-18deg);opacity:${f > 0 && f < 1 ? 1 : 0.0}"><div style="margin:10px auto;width:36px;height:30px;background:#e8b48c;border-radius:12px"></div></div>`);
+  // what she just learned, lined up beside the phone
+  ["MITOCHONDRIA", "ATP", "DNA TO RNA"].forEach((w, j) => { const kk = (lt - 0.25 - S * 0.8 - j * S) / 0.2; if (kk > 0) h += A([30, 268, 470][j], 1110, `<div style="white-space:nowrap;font:15px Px;color:#0f1d18;background:#d3f05a;padding:8px 10px;box-shadow:4px 4px 0 #000;${pop(kk)}">${w} <span style="font:700 18px Ins">✓</span></div>`); });
+  h += label("TONIGHT'S SCREEN TIME", "SAME 4H", lt / 0.3);
+  return h;
+}
 function endCard(lc) {
   return `<div style="position:absolute;inset:0;background:radial-gradient(90% 60% at 50% 40%,#203a2c,#0f1d18);opacity:${clamp(lc / 0.3)}">
     ${A(0, 300, `<div style="width:720px;text-align:center;font:30px Px;color:#e9f0e4;opacity:${clamp(lc / 0.3)}">unspool</div>`)}
@@ -241,9 +268,7 @@ window.renderAt = (t) => {
   if (shot === "chapter" || shot === "three") h += label("BIO · CHAPTER 4", "32 PAGES", (t - st("chapter")) / 0.3);
   if (shot === "three") h += stamp("READ 3X", 70, 820, -8, lt - 0.3, "#ffffff");
   if (shot === "gone") h += stamp("FORGOTTEN", 130, 480, -10, lt - 0.05);
-  if (shot === "scroll") { h += `<div style="position:absolute;inset:0;background:radial-gradient(75% 60% at 50% 55%,transparent 45%,rgba(5,6,16,.75))"></div>`; h += label("TONIGHT'S SCREEN TIME", "SAME 4H", lt / 0.3);
-    // what she just learned, popping up as each reel goes by
-    ["MITOCHONDRIA", "ATP", "DNA TO RNA"].forEach((w, j) => { const k = (lt - 0.3 - SWIPE * 0.75 - j * SWIPE) / 0.2; if (k > 0) h += A(470, 112 + j * 46, `<div style="white-space:nowrap;text-align:center;font:16px Px;color:#0f1d18;background:#d3f05a;padding:8px 10px;box-shadow:4px 4px 0 #000;${pop(k)}">${w} <span style=\"font:700 17px Ins\">✓</span></div>`); }); }
+  if (shot === "scroll") h += phoneScroll(lt, t);
   if (shot === "sticks") h += stamp("IT STUCK", 200, 470, 6, lt - 0.45, "#1f9d55");
   h += app(shot, lt);
   // a soft dark band so the serif captions read on any shot (the white test paper swallowed them)

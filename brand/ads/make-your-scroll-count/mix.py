@@ -1,5 +1,5 @@
 import json, numpy as np, soundfile as sf
-D="/tmp/claude-0/-home-user/a6768946-caac-5edd-b0c9-ac1afa389d34/scratchpad/adY7"
+D="/tmp/claude-0/-home-user/a6768946-caac-5edd-b0c9-ac1afa389d34/scratchpad/adY8"
 tl=json.load(open(f"{D}/web/tl.json")); DUR=tl["dur"]; SR=24000; N=int(SR*DUR); out=np.zeros(N); rng=np.random.default_rng(5); tt=np.arange(N)/SR
 st={l["shot"]:l["s"]-0.1 for l in tl["lines"]}; note=lambda m:440*2**((m-69)/12)
 def add(t0,x,g):
@@ -27,10 +27,9 @@ for s in st:                                                        # an impact 
 add(F-0.9,riser(0.9),0.16); add(F,boom(),0.4)
 for h in (st["three"]+0.3, st["gone"]+0.05, st["sticks"]+0.45, st["count"]+0.4): add(h,kick(),0.5); add(h,boom(),0.35); add(h,noise(0.25,12),0.2)
 for k in range(4): add(st["hook"]+2.0+k*0.25,tone(2200,0.03,90,(1,)),0.07)
-for k in range(4): add(st["scroll"]+0.3+0.85*0.62+k*0.85,noise(0.12,14)*np.linspace(1,0,int(SR*0.12)),0.12)
+for k in range(4): add(st["scroll"]+0.25+0.95*0.6+k*0.95,noise(0.12,14)*np.linspace(1,0,int(SR*0.12)),0.12)
 for j in range(3): add(st["scroll"]+0.5+j*0.7,tone(note(84+j*3),0.25,10,(1,.3)),0.09)
 for j in range(3): add(st["snap"]+0.15+j*0.15,tone(note(76+j*4),0.2,12,(1,.3)),0.1)
-for j,m in enumerate([76,83]): add(st["quiz"]+0.55+j*0.07,tone(note(m),0.4,7,(1,.3)),0.12)
 for j,m in enumerate([72,76,79,84,88]): add(st["count"]+0.4+j*0.05,tone(note(m),1.2,2.5,(1,.3)),0.1)
 v,_=sf.read(f"{D}/voice.wav"); vv=np.zeros(N); vv[:min(N,len(v))]=v[:N]; vv/=np.abs(vv).max()
 env=np.convolve(np.abs(vv),np.ones(2400)/2400,"same"); m=out*(1-0.45*np.minimum(1,env/0.08))*0.55+vv*1.0
