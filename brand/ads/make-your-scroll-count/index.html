@@ -141,14 +141,14 @@ function scene3d(shot, lt, t) {
       const a = v3(0.4, 3.6, 7.6).lerp(v3(0.3, 3.2, 6.4), clamp(lt / (L * 0.45))), b = v3(-2.9, 2.0, 2.5);
       cam(a.clone().lerp(b, u), v3(0, 1.85, -0.4).lerp(v3(-1.7, 1.4, -0.4), u), 40); }
     if (shot === "night") camMove(lt, L, v3(-3.2, 2.0, 2.6), v3(-2.8, 1.9, 2.2), v3(-2.1, 1.3, -0.4), v3(-1.6, 1.5, -0.4), 40);
-    if (shot === "every") { const p = mPhone.getWorldPosition(v3(0, 0, 0)); camMove(lt, L, p.clone().add(v3(0.05, 0.42, 1.35)), p.clone().add(v3(0.03, 0.3, 1.0)), p, p, 40); }
+    if (shot === "every") { const p = mPhone.getWorldPosition(v3(0, 0, 0)); camMove(lt, L, p.clone().add(v3(0.05, 0.05, 1.55)), p.clone().add(v3(0.03, 0.02, 1.2)), p.clone().add(v3(0, -0.05, 0)), p.clone().add(v3(0, -0.05, 0)), 40); }
     maya.g.visible = shot !== "scroll"; pov.visible = shot === "scroll";
     if (shot === "scroll") {
       // her eyes, looking down at the phone over the quilt; the phone rises in, then her thumb flicks reel after reel
       const rise = ease(lt / 0.35);
       cam(v3(0.2, 2.95, -0.35), v3(0.25, 1.55, 1.2), 46);
       const f = v3(0, 0, -1).applyQuaternion(camera.quaternion), r = v3(1, 0, 0).applyQuaternion(camera.quaternion), u = v3(0, 1, 0).applyQuaternion(camera.quaternion);
-      pov.position.copy(camera.position).add(f.multiplyScalar(2.3)).add(r.multiplyScalar(0.03)).add(u.multiplyScalar(-0.12 - (1 - rise) * 1.4 + Math.sin(t * 1.3) * 0.012));
+      pov.position.copy(camera.position).add(f.multiplyScalar(2.3)).add(r.multiplyScalar(0.03)).add(u.multiplyScalar(-0.24 - (1 - rise) * 1.4 + Math.sin(t * 1.3) * 0.012));
       pov.quaternion.copy(camera.quaternion); pov.rotateX(0.08);
       const sw = drawFeed(Math.max(0, lt - 0.3)); thumb.position.y = -0.25 + Math.sin(Math.min(1, sw) * Math.PI) * 0.32; thumb.position.x = 0.18 - Math.sin(Math.min(1, sw) * Math.PI) * 0.04;
       povLight.intensity = 2.4; povLight.position.set(0, 0, 0.6);
@@ -162,7 +162,7 @@ function scene3d(shot, lt, t) {
     else if (shot === "three") camMove(lt, L, v3(0.7, 3.1, 4.4), v3(0.5, 3.0, 3.8), v3(0, 2.2, 0.4), v3(0, 2.2, 0.4), 40);
     else cam(v3(0, 2.6, 6.8), v3(0, 1.6, 0), 40);
     return desk; }
-  if (shot === "gone" || shot === "sticks") { paper.material.map = shot === "gone" ? paperBlank : paperA; paper.material.needsUpdate = true; camMove(lt, L + 0.4, v3(0, 3.0, 0.9), v3(0, 2.4, 0.7), v3(0, 0, 0.05), v3(0, 0, 0.05), 40); return pap; }
+  if (shot === "gone" || shot === "sticks") { paper.material.map = shot === "gone" ? paperBlank : paperA; paper.material.needsUpdate = true; camMove(lt, L + 0.4, v3(0.03, 4.4, 0.8), v3(0.03, 4.05, 0.7), v3(0.03, 0, 0.05), v3(0.03, 0, 0.05), 38); return pap; }
   return bed;
 }
 
@@ -194,10 +194,10 @@ function turnIntoReels(shot, lt) {
   if (burst && split < 1) h += A(360 - 380 * split, 580 - 380 * split, `<div style="width:${760 * split}px;height:${760 * split}px;border:14px solid #d3f05a;opacity:${1 - split};box-sizing:border-box"></div>`)
     + `<div style="position:absolute;inset:0;background:#fff;opacity:${Math.max(0, 1 - (t0 - 1.0) / 0.12) * 0.8}"></div>`;
   if (burst && t0 < 1.5) h += A(0, 250, `<div style="width:720px;text-align:center;font:72px Px;color:#d3f05a;text-shadow:7px 7px 0 #000;transform:scale(${outBack((t0 - 1.0) / 0.15)}) rotate(-6deg)">BOOM!</div>`);
-  const imgs = ["mito", "resp", "dna", "mito", "resp"], spots = [[-260, -8], [260, 8], [0, 0], [-130, -4], [130, 4]];
-  if (burst) spots.forEach(([dx, r], j) => { const k = ease((t0 - 1.0 - (j > 2 ? 0.5 : j * 0.08)) / 0.5); if (k <= 0) return;
-    const fan = shot === "cards" ? Math.sin(lt * 2 + j) * 6 : 0, w = j > 2 ? 150 : 190, z = j > 2 ? 0 : 1;
-    h += A(360 + dx * k - w / 2, 420 + (j > 2 ? -60 : 0) + fan, `<div style="width:${w}px;height:${w * 16 / 9}px;border:6px solid #000;box-shadow:8px 8px 0 #000;transform:rotate(${r * k}deg) scale(${0.3 + 0.7 * k});z-index:${z};background:#000"><img src="${imgs[j]}_px.png" style="width:100%;height:100%;object-fit:cover;image-rendering:pixelated"></div>`); });
+  const imgs = ["resp", "dna", "mito"], spots = [[-190, -9], [190, 9], [0, 0]];
+  if (burst) spots.forEach(([dx, r], j) => { const k = ease((t0 - 1.0 - j * 0.08) / 0.5); if (k <= 0) return;
+    const fan = shot === "cards" ? Math.sin(lt * 2 + j) * 6 : 0, w = j === 2 ? 230 : 190, z = j === 2 ? 2 : 1;
+    h += A(360 + dx * k - w / 2, (j === 2 ? 400 : 440) + fan, `<div style="width:${w}px;height:${w * 16 / 9}px;border:6px solid #000;box-shadow:8px 8px 0 #000;transform:rotate(${r * k}deg) scale(${0.3 + 0.7 * k});z-index:${z};background:#000"><img src="${imgs[j]}_px.png" style="width:100%;height:100%;object-fit:cover;image-rendering:pixelated"></div>`); });
   if (shot === "cards") h += A(0, 250, `<div style="width:720px;text-align:center;font:34px/1.3 Px;color:#fff;text-shadow:5px 5px 0 #000;${pop(lt / 0.25)}">MADE FROM<br><span style="color:#d3f05a">YOUR CHAPTER</span></div>`);
   return h;
 }
@@ -216,12 +216,12 @@ function shout(L, t) {
   const tot = chunks.reduce((a, c) => a + c.length + 1, 0), u = clamp((t - L.s) / (L.e - L.s)) * tot; let acc = 0, cur = 0, start = 0;
   chunks.forEach((c, k) => { if (u >= acc) { cur = k; start = acc; } acc += c.length + 1; });
   const c = chunks[cur], age = (u - start) / tot * (L.e - L.s), hot = /[A-Z]{3,}|!/.test(c);
-  return `<div style="position:absolute;left:20px;right:20px;top:1000px;text-align:center"><span style="display:inline-block;font:${c.length > 14 ? 34 : c.length > 9 ? 42 : 52}px/1.2 Px;letter-spacing:0;text-transform:uppercase;color:${hot ? "#d3f05a" : "#fff"};-webkit-text-stroke:0;text-shadow:5px 5px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000;transform:scale(${1 + 0.35 * Math.max(0, 1 - age / 0.1)}) rotate(${(cur % 2 ? 1.5 : -1.5)}deg)">${c}</span></div>`;
+  return `<div style="position:absolute;left:20px;right:20px;top:1000px;text-align:center"><span style="display:inline-block;max-width:660px;font:${c.length > 16 ? 28 : c.length > 12 ? 34 : c.length > 8 ? 42 : 50}px/1.2 Px;letter-spacing:0;text-transform:uppercase;color:${hot ? "#d3f05a" : "#fff"};-webkit-text-stroke:0;text-shadow:5px 5px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000;transform:scale(${1 + (c.length > 12 ? 0.08 : 0.2) * Math.max(0, 1 - age / 0.1)}) rotate(${(cur % 2 ? 1 : -1)}deg)">${c}</span></div>`;
 }
 // moments that hit: stamps and the big lines shake the frame
 const HITS = () => [[st("hook") + 0.05, 0.8], [st("snap") + 1.0, 1.6], [st("three") + 0.3, 1], [st("gone") + 0.05, 1.4], [st("fix") + 0.05, 0.7], [st("sticks") + 0.45, 1.2], [st("count") + 0.4, 1.2]];
 function frameShake(t, lt) {
-  const punch = 1 + 0.09 * Math.max(0, 1 - lt / 0.2) ** 2;
+  const punch = t < 0.4 ? 1 : 1 + 0.09 * Math.max(0, 1 - Math.max(0, lt) / 0.2) ** 2;
   let sh = 0; for (const [ht, a] of HITS()) { const d = t - ht; if (d > 0 && d < 0.35) sh = Math.max(sh, a * (1 - d / 0.35)); }
   const tf = `translate(${Math.sin(t * 83) * 14 * sh}px,${Math.cos(t * 71) * 11 * sh}px) scale(${punch})`;
   document.getElementById("c").style.transform = tf; ov.style.transform = tf;
@@ -229,20 +229,20 @@ function frameShake(t, lt) {
 window.renderAt = (t) => {
   const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.1);
   if (shot === "count" || shot === "cta" || shot === "end") {
-    renderer.render(bed, camera);
+    renderer.render(scene3d("sticks", len("sticks"), t), camera);
     const lc = t - st("count");
     ov.innerHTML = endCard(lc) + (shot !== "end" && L.text ? shout(L, t).replace("top:1000px", "top:1050px") : ""); frameShake(t, lt); return; }
   const scene = scene3d(shot, lt, t); renderer.render(scene, camera);
   let h = "";
-  if (shot === "hook") h += A(0, 140, `<div style="width:720px;text-align:center;font:44px/1.3 Px;color:#fff;transform:scale(${outBack(lt / 0.22)});text-shadow:5px 5px 0 #000">YOU CAN QUOTE<br>A TIKTOK YOU<br>SAW <span style="color:#d3f05a">ONCE.</span></div>`);
+  if (shot === "hook") h += A(0, 140, `<div style="width:720px;text-align:center;font:44px/1.3 Px;color:#fff;transform:scale(${t < 0.4 ? 1 : outBack(lt / 0.22)});text-shadow:5px 5px 0 #000">YOU CAN QUOTE<br>A TIKTOK YOU<br>SAW <span style="color:#d3f05a">ONCE.</span></div>`);
   if (shot === "hook") { const L2 = len("hook"); if (lt > L2 * 0.55) h += A(0, 360, `<div style="width:720px;text-align:center;font:34px/1.3 Px;color:#ff5a4a;text-shadow:4px 4px 0 #000;${pop((lt - L2 * 0.55) / 0.2)}">HALF ASLEEP. 1 AM.</div>`); }
   if (shot === "every") h += label("LAST NIGHT'S SCREEN TIME", "4H 12M", lt / 0.3);
   if (shot === "chapter" || shot === "three") h += label("BIO · CHAPTER 4", "32 PAGES", (t - st("chapter")) / 0.3);
-  if (shot === "three") h += stamp("READ 3×", 70, 820, -8, lt - 0.3, "#ffffff");
+  if (shot === "three") h += stamp("READ 3X", 70, 820, -8, lt - 0.3, "#ffffff");
   if (shot === "gone") h += stamp("FORGOTTEN", 130, 480, -10, lt - 0.05);
   if (shot === "scroll") { h += label("TONIGHT'S SCREEN TIME", "SAME 4H", lt / 0.3);
     // what she just learned, popping up as each reel goes by
-    ["MITOCHONDRIA ✓", "ATP ✓", "DNA → mRNA ✓"].forEach((w, j) => { const k = (lt - 0.3 - SWIPE * 0.75 - j * SWIPE) / 0.2; if (k > 0) h += A([404, 22, 420][j], [300, 520, 720][j], `<div style="white-space:nowrap;font:19px Px;color:#0f1d18;background:#d3f05a;padding:10px 14px;box-shadow:5px 5px 0 #000;${pop(k)}">${w}</div>`); }); }
+    ["MITOCHONDRIA", "ATP", "DNA TO RNA"].forEach((w, j) => { const k = (lt - 0.3 - SWIPE * 0.75 - j * SWIPE) / 0.2; if (k > 0) h += A(470, 112 + j * 46, `<div style="white-space:nowrap;width:210px;text-align:center;font:16px Px;color:#0f1d18;background:#d3f05a;padding:8px 10px;box-shadow:4px 4px 0 #000;${pop(k)}">${w} <span style=\"font:700 17px Ins\">✓</span></div>`); }); }
   if (shot === "sticks") h += stamp("IT STUCK", 200, 470, 6, lt - 0.45, "#1f9d55");
   h += app(shot, lt);
   // a soft dark band so the serif captions read on any shot (the white test paper swallowed them)
