@@ -12,6 +12,8 @@ import { docToReels } from "./doc-to-reels";
 const FRAME_W = 720;
 const CROP_TOP = 370;
 const CROP_H = 400;
+// soften the crop so the phones fade out instead of being cut by a hard line
+const FADE = "linear-gradient(to bottom, #000 78%, transparent)";
 const LOOP_S = 4.2;
 
 /** The ads' document → reels animation, looping, scaled to the width it's given. */
@@ -48,7 +50,7 @@ function AdAnimation() {
     return () => cancelAnimationFrame(raf);
   }, []);
   return (
-    <div ref={box} className="relative w-full overflow-hidden" style={{ height: CROP_H * k }} aria-hidden>
+    <div ref={box} className="relative w-full overflow-hidden" style={{ height: CROP_H * k, maskImage: FADE, WebkitMaskImage: FADE }} aria-hidden>
       <div ref={stage} className="absolute left-0" style={{ width: FRAME_W, height: 1280, top: -CROP_TOP * k, transform: `scale(${k})`, transformOrigin: "0 0" }} />
     </div>
   );
