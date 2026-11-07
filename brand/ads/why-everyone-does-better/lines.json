@@ -1,0 +1,22 @@
+{
+ "voice": "am_fenrir",
+ "speed": 1.12,
+ "lead": 0.3,
+ "tail": 0,
+ "gap": 0.24,
+ "lines": [
+  ["hook", "WHY does EVERYONE do better than you in class?!", 0.3, "WHY does EVERYONE do better than you in class?!"],
+  ["chapter", "You read the chapter.", 0.2],
+  ["three", "THREE times!", 0.22],
+  ["gone", "And on the test? GONE!", 0.34],
+  ["every", "But a TikTok you saw ONCE? You know every word!", 0.26],
+  ["fix", "Unspool fixes that!", 0.2],
+  ["snap", "Snap the chapter, and BOOM! It turns into TikToks!", 0.24],
+  ["cards", "Short TikToks, made from YOUR chapter!", 0.24],
+  ["scroll", "So you scroll, like you already do. And you actually LEARN it!", 0.24],
+  ["sticks", "Next test? It STICKS!", 0.3],
+  ["count", "Now YOU'RE the one doing better!", 0.26],
+  ["cta", "Try it free! unspool dot c c!", 0.24, "Try it free! unspool.cc"],
+  ["end", "", 1.2]
+ ]
+}
