@@ -1,0 +1,14 @@
+{"engine": "kokoro", "voice": "af_heart", "speed": 1.1, "lead": 0.3, "tail": 0, "gap": 0.22, "lines": [
+ ["hook", "Why do you remember a TikTok from last week, but not your notes from yesterday?", 0.3],
+ ["hi", "Hi, I'm Uni! It's not because you're bad at studying.", 0.25],
+ ["short", "One. A TikTok is short, and it's about one thing. Your brain can hold all of it at once.", 0.25],
+ ["dual", "Two. You see it and hear it at the same time. Two routes in, so it sticks better.", 0.25],
+ ["again", "Three. You see the same trends again and again, days apart. That spacing is how memories last.", 0.25],
+ ["retell", "Four. You tell your friends about it. Pulling it back out of your head locks it in.", 0.3],
+ ["final", "Now your final. A forty page chapter, read once, the night before.", 0.25, "Now your final. A 40-page chapter, read once, the night before."],
+ ["none", "Too much at once. Text only. No spacing. And nothing ever asks you to pull it back out.", 0.35],
+ ["fix", "So make your notes work like TikTok.", 0.2],
+ ["unspool", "Unspool turns them into short reels. One idea each, with a voice, visuals, and a quiz.", 0.25],
+ ["cta", "Try it free, at unspool dot c c!", 0.25, "Try it free at unspool.cc!"],
+ ["end", "", 1.3]
+]}

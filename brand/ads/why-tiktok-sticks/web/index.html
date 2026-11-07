@@ -1,0 +1,135 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)} @font-face{font-family:Px;src:url(Pixel.woff2)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#f3e3c8}
+#c{position:absolute;inset:0} #ov{position:absolute;inset:0;overflow:hidden}
+</style></head><body><canvas id="c" width="720" height="1280"></canvas><div id="ov"></div>
+<script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
+<script type="module">
+import * as THREE from "three";
+import { loadGirl } from "./girl.js";
+const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur, ENV = TL.env; window.DUR = DUR;
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins"), document.fonts.load("20px Px")]);
+const W = 720, H = 1280, clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), mix = (a, b, x) => a + (b - a) * x;
+const ease = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const outBack = (x) => { x = clamp(x); const k = 1.7; return 1 + (k + 1) * Math.pow(x - 1, 3) + k * Math.pow(x - 1, 2); };
+const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.1) k = i; return k; };
+const st = (n) => lines.find((l) => l.shot === n).s - 0.1;
+
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("c"), antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H, false); renderer.setPixelRatio(1); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(); scene.background = new THREE.Color("#f3e3c8");
+const camera = new THREE.PerspectiveCamera(38, W / H, 0.05, 100);
+const M = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.8, flatShading: true, ...o });
+const mesh = (g, m, p) => { const x = new THREE.Mesh(g, m); x.castShadow = x.receiveShadow = true; if (p) x.position.copy(p); scene.add(x); return x; };
+
+// ---------------- a low-poly classroom ----------------
+scene.add(new THREE.HemisphereLight("#fff4e4", "#8a6a4a", 1.1));
+const sun = new THREE.DirectionalLight("#ffe2b8", 2.6); sun.position.set(3, 5, 4); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -2, near: 0.5, far: 20 }); scene.add(sun);
+mesh(new THREE.PlaneGeometry(20, 20), M("#c9935e"), v3(0, 0, 0)).rotation.x = -Math.PI / 2;
+for (let i = -8; i <= 8; i++) mesh(new THREE.BoxGeometry(0.02, 0.003, 20), M("#b5814f"), v3(i * 0.5, 0.002, 0));
+mesh(new THREE.PlaneGeometry(20, 8), M("#f2dfc0"), v3(0, 4, -1.6));
+mesh(new THREE.BoxGeometry(20, 0.9, 0.06), M("#e3c79b"), v3(0, 0.45, -1.56));
+// windows with sky
+[-2.6, 2.6].forEach((x) => { mesh(new THREE.BoxGeometry(1.2, 1.5, 0.05), M("#9fd0f0", { emissive: "#6aa6d6", emissiveIntensity: 0.6 }), v3(x, 2.2, -1.57));
+  mesh(new THREE.BoxGeometry(1.3, 0.06, 0.1), M("#ffffff"), v3(x, 2.2, -1.53)); mesh(new THREE.BoxGeometry(0.06, 1.6, 0.1), M("#ffffff"), v3(x, 2.2, -1.53)); });
+// the chalkboard: its face is a canvas the points are drawn on
+const bc = document.createElement("canvas"); bc.width = 1024; bc.height = 640; const bt = new THREE.CanvasTexture(bc); bt.colorSpace = THREE.SRGBColorSpace;
+mesh(new THREE.BoxGeometry(2.6, 1.68, 0.08), M("#7a4e2d"), v3(0.3, 1.95, -1.52));
+const board = mesh(new THREE.PlaneGeometry(2.44, 1.52), new THREE.MeshStandardMaterial({ map: bt, roughness: 0.95 }), v3(0.3, 1.95, -1.47));
+mesh(new THREE.BoxGeometry(2.5, 0.05, 0.12), M("#7a4e2d"), v3(0.3, 1.16, -1.43));
+[[-0.1, "#ffffff"], [0.05, "#f2c14e"], [0.18, "#ff8b8b"]].forEach(([x, c]) => mesh(new THREE.BoxGeometry(0.08, 0.02, 0.02), M(c), v3(0.3 + x, 1.2, -1.42)));
+// a teacher's desk with books and a phone, and student desks in the front corners
+mesh(new THREE.BoxGeometry(1.2, 0.08, 0.6), M("#a8754b"), v3(1.45, 0.78, -0.55)); mesh(new THREE.BoxGeometry(1.1, 0.74, 0.5), M("#94653f"), v3(1.45, 0.37, -0.57));
+[["#e05a47", 0.08], ["#2f7de1", 0.06], ["#f2c14e", 0.07]].forEach(([c, h], i) => mesh(new THREE.BoxGeometry(0.34, h, 0.24), M(c), v3(1.2, 0.86 + i * 0.07, -0.55)).rotation.y = i * 0.15);
+mesh(new THREE.BoxGeometry(0.1, 0.012, 0.2), M("#111"), v3(1.72, 0.83, -0.45)).rotation.y = -0.3;
+[[-1.9, 1.3], [2.2, 1.4]].forEach(([x, z]) => { mesh(new THREE.BoxGeometry(0.7, 0.05, 0.45), M("#c99a62"), v3(x, 0.7, z)); [[-0.3, -0.18], [0.3, -0.18], [-0.3, 0.18], [0.3, 0.18]].forEach(([a, b]) => mesh(new THREE.BoxGeometry(0.04, 0.7, 0.04), M("#6a6a72"), v3(x + a, 0.35, z + b))); });
+const plant = new THREE.Group(); mesh(new THREE.CylinderGeometry(0.12, 0.09, 0.22, 6), M("#d8714a"), v3(-1.7, 0.11, -1.2)); [0, 1, 2, 3, 4].forEach((i) => mesh(new THREE.ConeGeometry(0.08, 0.36, 4), M("#4f9a4a"), v3(-1.7 + Math.sin(i * 1.3) * 0.08, 0.38, -1.2 + Math.cos(i * 1.3) * 0.08)).rotation.z = Math.sin(i * 1.3) * 0.35);
+
+const girl = await loadGirl(scene); girl.root.position.set(0.02, 0, 1.9); girl.root.rotation.y = 0.25;
+
+// ---------------- what goes on the board ----------------
+const imgs = Object.fromEntries(await Promise.all(["mito", "resp", "dna"].map((n) => new Promise((r) => { const i = new Image(); i.onload = () => r([n, i]); i.src = `${n}_px.png`; }))));
+const CH = "#f4f1e6", YEL = "#f2d56b", PINK = "#ff9a9a", BLUE = "#9fd2ff";
+function chalk(c) { c.lineWidth = 7; c.lineCap = c.lineJoin = "round"; c.strokeStyle = CH; c.fillStyle = CH; c.textAlign = "center"; c.textBaseline = "middle"; }
+const txt = (c, s, x, y, size, col = CH) => { c.fillStyle = col; c.font = `700 ${size}px Unb`; c.fillText(s, x, y); };
+const phoneIcon = (c, x, y, w, h) => { c.strokeRect(x - w / 2, y - h / 2, w, h); c.beginPath(); c.arc(x, y + h / 2 - 16, 5, 0, 7); c.stroke(); };
+const pageIcon = (c, x, y, w, h) => { c.strokeRect(x - w / 2, y - h / 2, w, h); for (let i = 0; i < 6; i++) { c.beginPath(); c.moveTo(x - w / 2 + 16, y - h / 2 + 22 + i * (h - 40) / 6); c.lineTo(x + w / 2 - 16 - (i % 3) * 14, y - h / 2 + 22 + i * (h - 40) / 6); c.stroke(); } };
+const cross = (c, x, y, r) => { c.strokeStyle = PINK; c.beginPath(); c.moveTo(x - r, y - r); c.lineTo(x + r, y + r); c.moveTo(x + r, y - r); c.lineTo(x - r, y + r); c.stroke(); c.strokeStyle = CH; };
+const tick = (c, x, y, r) => { c.strokeStyle = "#a8f07a"; c.beginPath(); c.moveTo(x - r, y); c.lineTo(x - r * 0.3, y + r * 0.7); c.lineTo(x + r, y - r * 0.7); c.stroke(); c.strokeStyle = CH; };
+const BOARD = {
+  hook: (c) => { phoneIcon(c, 300, 300, 150, 260); txt(c, "♪", 300, 290, 70, YEL); txt(c, "remember", 300, 500, 40, "#a8f07a");
+    pageIcon(c, 724, 300, 190, 250); txt(c, "?", 724, 300, 120, PINK); txt(c, "forgot", 724, 500, 40, PINK); txt(c, "vs", 512, 300, 54, YEL); },
+  hi: (c) => { txt(c, "Why TikTok", 512, 220, 84); txt(c, "sticks", 512, 340, 84, YEL); txt(c, "(and your notes don't)", 512, 460, 36); },
+  short: (c) => { txt(c, "1  ONE IDEA", 512, 90, 50, YEL); phoneIcon(c, 330, 360, 150, 260); txt(c, "60s", 330, 350, 42);
+    c.beginPath(); c.arc(700, 360, 120, 0, 7); c.stroke(); txt(c, "1 idea", 700, 340, 40, "#a8f07a"); txt(c, "fits", 700, 392, 32); c.beginPath(); c.moveTo(430, 360); c.lineTo(560, 360); c.stroke(); c.beginPath(); c.moveTo(540, 340); c.lineTo(565, 360); c.lineTo(540, 380); c.stroke(); },
+  dual: (c) => { txt(c, "2  SEE + HEAR", 512, 90, 50, YEL);
+    c.beginPath(); c.ellipse(260, 260, 90, 50, 0, 0, 7); c.stroke(); c.beginPath(); c.arc(260, 260, 26, 0, 7); c.fill(); txt(c, "see", 260, 350, 36);
+    c.beginPath(); c.arc(260, 470, 50, -1.2, 1.9); c.stroke(); txt(c, "hear", 260, 560, 36);
+    [[360, 260], [330, 470]].forEach(([x, y]) => { c.beginPath(); c.moveTo(x, y); c.lineTo(600, 370); c.stroke(); });
+    c.beginPath(); c.ellipse(720, 370, 130, 100, 0, 0, 7); c.stroke(); txt(c, "2 routes in", 720, 370, 34, "#a8f07a"); },
+  again: (c) => { txt(c, "3  SEEN AGAIN, DAYS APART", 512, 90, 44, YEL);
+    ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].forEach((d, i) => { const x = 140 + i * 124; c.strokeRect(x - 52, 200, 104, 150); txt(c, d, x, 230, 24); if (i % 3 === 0) txt(c, "♪", x, 300, 54, YEL); });
+    txt(c, "spaced = it lasts", 512, 470, 46, "#a8f07a"); },
+  retell: (c) => { txt(c, "4  YOU RETELL IT", 512, 90, 50, YEL);
+    c.beginPath(); c.ellipse(330, 300, 200, 110, 0, 0, 7); c.stroke(); c.beginPath(); c.moveTo(250, 400); c.lineTo(210, 470); c.lineTo(310, 405); c.stroke(); txt(c, "did you see", 330, 280, 34); txt(c, "the one where…", 330, 330, 34);
+    c.beginPath(); c.arc(760, 330, 110, 0, 7); c.stroke(); txt(c, "pulled", 760, 310, 34, "#a8f07a"); txt(c, "back out", 760, 355, 30, "#a8f07a"); },
+  final: (c) => { txt(c, "YOUR FINAL", 512, 90, 54, PINK); for (let i = 0; i < 5; i++) pageIcon(c, 330 + i * 10, 330 - i * 10, 200, 260); txt(c, "40 pages", 330, 520, 36);
+    txt(c, "read once", 730, 290, 40); txt(c, "the night before", 730, 360, 34); txt(c, "11:58 PM", 730, 440, 40, PINK); },
+  none: (c) => { txt(c, "WHY IT FADES", 512, 80, 52, PINK);
+    ["too much at once", "text only", "no spacing", "never pulled back out"].forEach((s, i) => { txt(c, s, 560, 190 + i * 110, 42); cross(c, 190, 190 + i * 110, 26); }); },
+  fix: (c) => { pageIcon(c, 290, 330, 210, 270); txt(c, "notes", 290, 520, 38); c.beginPath(); c.moveTo(430, 330); c.lineTo(590, 330); c.stroke(); c.beginPath(); c.moveTo(565, 305); c.lineTo(595, 330); c.lineTo(565, 355); c.stroke();
+    phoneIcon(c, 740, 330, 150, 260); txt(c, "♪", 740, 320, 70, YEL); txt(c, "TikToks", 740, 520, 38, "#a8f07a"); },
+  unspool: (c) => { txt(c, "unspool", 512, 80, 56, "#d3f05a"); ["mito", "resp", "dna"].forEach((n, i) => { const x = 240 + i * 272; c.drawImage(imgs[n], x - 90, 140, 180, 320); c.strokeRect(x - 92, 138, 184, 324); });
+    [["1 idea each", 0], ["voice + visuals", 1], ["a quiz", 2]].forEach(([s, i]) => { const x = 240 + i * 272; tick(c, x - 80, 520, 16); txt(c, s, x + 14, 520, 28); }); },
+  cta: (c) => { txt(c, "unspool.cc", 512, 280, 96, "#d3f05a"); txt(c, "first reel free", 512, 420, 44); },
+};
+BOARD.end = BOARD.cta;
+let drawn = "";
+function drawBoard(shot, k) {
+  const key = shot + Math.round(k * 20); if (key === drawn) return; drawn = key;
+  const c = bc.getContext("2d"); c.fillStyle = "#2f5a45"; c.fillRect(0, 0, 1024, 640);
+  c.fillStyle = "rgba(255,255,255,.05)"; for (let i = 0; i < 40; i++) c.fillRect((i * 263) % 1024, (i * 151) % 640, 120, 30);
+  chalk(c); c.save(); c.beginPath(); c.rect(0, 0, 1024 * k, 640); c.clip(); (BOARD[shot] ?? (() => {}))(c); c.restore();
+  bt.needsUpdate = true;
+}
+
+// ---------------- shots ----------------
+const POSE = { hook: "think", hi: "wave", short: "point", dual: "point", again: "point", retell: "point", final: "point", none: "think", fix: "point", unspool: "point", cta: "wave", end: "wave" };
+const SMILE = { hi: 1, unspool: 0.6, cta: 1, end: 1 };
+const WIDE = { p: v3(0.38, 1.7, 5.9), l: v3(0.33, 1.5, -0.6) }, CLOSE = { p: v3(0.05, 1.45, 4.2), l: v3(-0.12, 1.3, 1.2) };
+const FRAMING = { hook: WIDE, hi: CLOSE, short: WIDE, dual: WIDE, again: WIDE, retell: WIDE, final: CLOSE, none: WIDE, fix: WIDE, unspool: WIDE, cta: WIDE, end: WIDE };
+function camFor(shot, lt) { const f = FRAMING[shot] ?? WIDE, push = clamp(lt / 5) * 0.25, d = f.l.clone().sub(f.p).normalize();
+  camera.position.copy(f.p).add(d.multiplyScalar(push)).add(v3(Math.sin(lt * 0.4) * 0.03, 0, 0)); camera.lookAt(f.l); camera.updateProjectionMatrix(); }
+
+// ---------------- overlays (kept inside TikTok's safe area: 180 top, 230 bottom, 100 right) ----------------
+const ov = document.getElementById("ov");
+const A = (x, y, inner, extra = "") => `<div style="position:absolute;left:${x}px;top:${y}px;${extra}">${inner}</div>`;
+const pop = (k) => `transform:scale(${outBack(k)});opacity:${clamp(k * 3)}`;
+const TAG = { short: "1 · ONE IDEA", dual: "2 · SEE + HEAR", again: "3 · SPACED", retell: "4 · RETOLD", final: "YOUR FINAL", none: "WHY IT FADES", unspool: "THE FIX" };
+function caption(L, t) {
+  if (!L.text) return "";
+  const chunks = []; for (const ph of L.text.split(/(?<=[.,!?])\s+/)) { const w = ph.split(" "), n = Math.ceil(w.length / 4), per = Math.ceil(w.length / n); for (let k = 0; k < w.length; k += per) chunks.push(w.slice(k, k + per).join(" ")); }
+  const tot = chunks.reduce((a, c) => a + c.length + 1, 0), u = clamp((t - L.s) / (L.e - L.s)) * tot; let acc = 0, cur = 0, start = 0;
+  chunks.forEach((c, k) => { if (u >= acc) { cur = k; start = acc; } acc += c.length + 1; });
+  const c = chunks[cur], age = (u - start) / tot * (L.e - L.s);
+  return A(30, 960, `<div style="width:590px;text-align:center"><span style="display:inline-block;font:${c.length > 18 ? 30 : c.length > 12 ? 36 : 44}px/1.25 Px;color:#fff;text-transform:uppercase;text-shadow:4px 4px 0 #1a1a2e,-2px -2px 0 #1a1a2e,2px -2px 0 #1a1a2e,-2px 2px 0 #1a1a2e;transform:scale(${1 + 0.12 * Math.max(0, 1 - age / 0.1)})">${c}</span></div>`);
+}
+window.renderAt = (t) => {
+  const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.1);
+  drawBoard(shot, ease(lt / 0.9));
+  camFor(shot, lt);
+  const talk = clamp((ENV[Math.floor(t * 30)] ?? 0) * 1.4), blink = (t % 3.4) < 0.1 ? 1 : 0;
+  girl.update(t, { talk, blink, smile: SMILE[shot] ?? 0, pose: POSE[shot] ?? "idle", dt: 1 / 30 });
+  renderer.render(scene, camera);
+  let h = "";
+  if (false && TAG[shot]) h += A(0, 200, `<div style="width:620px;text-align:center"><span style="display:inline-block;background:#1a1a2e;color:#f2d56b;font:26px Px;padding:12px 18px;box-shadow:5px 5px 0 #f2d56b;${pop(lt / 0.25)}">${TAG[shot]}</span></div>`);
+  if (shot === "hi") h += A(70, 880, `<span style="display:inline-block;background:#fff;color:#1a1a2e;font:30px Px;padding:10px 20px;box-shadow:5px 5px 0 #1a1a2e;${pop((lt - 0.4) / 0.25)}">UNI</span>`);
+  h += caption(L, t);
+  const flash = Math.max(0, 1 - lt / 0.08) * 0.35; if (flash > 0 && i > 0) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${flash}"></div>`;
+  ov.innerHTML = h;
+};
+window.renderAt(0); setTimeout(() => (window.ready = true), 400);
+</script></body></html>
