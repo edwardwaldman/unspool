@@ -34,6 +34,7 @@ function drawClip(t) { const c = clipC.getContext("2d"); const g = c.createLinea
   c.fillStyle = "rgba(255,255,255,.4)"; c.fillRect(0, 580, 280, 6); c.fillStyle = "#fff"; c.fillRect(0, 580, 280 * ((t * 0.3) % 1), 6); clipTex.needsUpdate = true; }
 drawClip(0);
 const reelTex = new THREE.TextureLoader().load("mito.jpg"); reelTex.colorSpace = THREE.SRGBColorSpace;
+const REELS = ["mito", "resp", "dna"].map((n) => { const t = new THREE.TextureLoader().load(`${n}_px.png`); t.colorSpace = THREE.SRGBColorSpace; t.magFilter = THREE.NearestFilter; return t; });
 
 // ================= BEDROOM, 1 AM =================
 const bed = new THREE.Scene(); bed.background = new THREE.Color("#0d1430"); bed.environment = envTex; bed.environmentIntensity = 0.12;
@@ -107,15 +108,17 @@ const cam = (p, l, f = 40) => { camera.position.copy(p); camera.lookAt(l); camer
 const camMove = (lt, d, a, b, la, lb, f = 40) => { const u = ease(clamp(lt / d)); cam(a.clone().lerp(b, u), la.clone().lerp(lb, u), f); };
 function scene3d(shot, lt, t) {
   const L = len(shot);
-  if (["hook", "night", "every", "scroll"].includes(shot)) {
-    const unspool = shot === "scroll"; mPhone.userData.screen.material.map = unspool ? reelTex : clipTex; mPhone.userData.screen.material.needsUpdate = true; if (!unspool) drawClip(t);
+  if (["hook", "every", "scroll"].includes(shot)) {
+    const unspool = shot === "scroll"; mPhone.userData.screen.material.map = unspool ? REELS[Math.floor(lt / 0.7) % 3] : clipTex; mPhone.userData.screen.material.needsUpdate = true; if (!unspool) drawClip(t);
     glow.position.copy(mPhone.getWorldPosition(v3(0, 0, 0))).add(v3(0, 0.35, 0.5)); glow.intensity = 3.2 + Math.sin(t * 9) * 0.3; maya.head.rotation.x = 0.45 + Math.sin(t * 0.8) * 0.03;
-    if (shot === "hook") camMove(lt, L + 0.5, v3(0.4, 3.6, 7.6), v3(0.3, 3.2, 6.2), v3(0, 1.8, -0.4), v3(0, 1.9, -0.4), 40);
+    if (shot === "hook") { const u = ease(clamp((lt - L * 0.45) / (L * 0.5)));
+      const a = v3(0.4, 3.6, 7.6).lerp(v3(0.3, 3.2, 6.4), clamp(lt / (L * 0.45))), b = v3(-2.9, 2.0, 2.5);
+      cam(a.clone().lerp(b, u), v3(0, 1.85, -0.4).lerp(v3(-1.7, 1.4, -0.4), u), 40); }
     if (shot === "night") camMove(lt, L, v3(-3.2, 2.0, 2.6), v3(-2.8, 1.9, 2.2), v3(-2.1, 1.3, -0.4), v3(-1.6, 1.5, -0.4), 40);
     if (shot === "every") { const p = mPhone.getWorldPosition(v3(0, 0, 0)); camMove(lt, L, p.clone().add(v3(0.05, 0.42, 1.35)), p.clone().add(v3(0.03, 0.3, 1.0)), p, p, 40); }
-    if (shot === "scroll") camMove(lt, L, v3(1.6, 3.0, 5.0), v3(1.0, 2.8, 4.2), v3(0, 1.9, -0.4), v3(0, 1.9, -0.4), 40);
+    if (shot === "scroll") camMove(lt, L, v3(1.4, 2.9, 4.6), v3(0.8, 2.7, 3.6), v3(0, 1.95, -0.4), v3(0, 1.95, -0.4), 40);
     return bed; }
-  if (["chapter", "three", "fix", "snap", "quiz"].includes(shot)) {
+  if (["chapter", "three", "fix", "snap", "cards", "quiz"].includes(shot)) {
     const studying = shot === "chapter" || shot === "three"; dPhone.visible = !studying; flip.visible = shot === "three";
     if (studying) { mayaD.pose("sitdesk", t); flip.rotation.z = ((lt * 2.4) % 1) * Math.PI; mayaD.mouth.rotation.z = 0; }
     else { mayaD.pose("phone"); mayaD.pose("sitphone"); dPhone.position.set(0.15, 1.75, 0.75); dPhone.rotation.set(-0.7, 0, 0); dPhone.scale.setScalar(0.5); mayaD.mouth.rotation.z = Math.PI; }
@@ -138,11 +141,29 @@ function app(shot, lt) {
   const card = (inner, k) => A(150, 150, `<div style="width:420px;border-radius:0;border:5px solid #d3f05a;background:#0f1d18;box-shadow:10px 10px 0 #000;padding:22px;box-sizing:border-box;${pop(k)};color:#e9f0e4">${inner}</div>`);
   if (shot === "fix") return card(`<div style="text-align:center;font:700 26px Unb">unspool</div><div style="text-align:center;font:700 30px/1.1 Unb;margin-top:14px">Snap a photo.<br>Get study <span style="color:#d3f05a">reels.</span></div>
     <div style="margin:20px auto 6px;width:110px;height:110px;border-radius:50%;background:#d3f05a;display:flex;align-items:center;justify-content:center"><svg width="46" height="46" viewBox="0 0 64 64"><path d="M32 10v44M10 32h44" stroke="#0f1d18" stroke-width="8" stroke-linecap="round"/></svg></div><div style="text-align:center;font:600 18px Ins">Snap a photo</div>`, lt / 0.35);
-  if (shot === "snap") { const k = ease((lt - 0.1) / 0.6);
+  if (shot === "snap" || shot === "cards") return turnIntoReels(shot, lt);
+  if (shot === "__old_snap") { const k = ease((lt - 0.1) / 0.6);
     return card(`<div style="font:700 15px Unb;color:#d3f05a;letter-spacing:1px">BIO · CHAPTER 4</div><div style="display:flex;gap:10px;margin-top:14px;justify-content:center">${["mito", "resp", "dna"].map((n, j) => `<div style="width:118px;height:210px;border-radius:14px;overflow:hidden;border:3px solid #000;transform:translateY(${(1 - clamp(k * 3 - j)) * 40}px);opacity:${clamp(k * 3 - j)}"><img src="${n}.jpg" style="width:100%;height:100%;object-fit:cover"></div>`).join("")}</div><div style="text-align:center;font:600 18px Ins;margin-top:14px;color:#8ea595">9 reels ready ✓</div>`, lt / 0.35); }
   if (shot === "quiz") { const ok = lt > 0.55;
     return card(`<div style="display:inline-block;background:#d3f05a;color:#0f1d18;font:700 14px Unb;padding:4px 10px">QUICK CHECK</div><div style="font:700 22px/1.3 Ins;margin-top:12px">What do mitochondria make?</div>${["Glucose", "ATP", "Oxygen"].map((o, x) => { const r = ok && x === 1; return `<div style="margin-top:10px;padding:12px 14px;border-radius:12px;border:2px solid ${r ? "#1f9d55" : "#28402f"};background:${r ? "rgba(31,157,85,.2)" : "transparent"};font:600 19px Ins">${String.fromCharCode(65 + x)}. ${o}${r ? " ✓" : ""}</div>`; }).join("")}`, lt / 0.35); }
   return "";
+}
+function turnIntoReels(shot, lt) {
+  const t0 = shot === "snap" ? lt : lt + len("snap");
+  let h = `<div style="position:absolute;inset:0;background:rgba(10,14,30,${Math.min(0.82, t0 * 2)})"></div>`;
+  const page = (x, y, s, rot, a) => A(x, y, `<div style="width:300px;height:400px;background:#fbf8ef;border:6px solid #000;box-shadow:10px 10px 0 #000;padding:20px;box-sizing:border-box;transform:scale(${s}) rotate(${rot}deg);opacity:${a}"><div style="display:inline-block;background:#1f8a70;color:#fff;font:14px Px;padding:6px 8px">BIO · CH 4</div>${[90, 76, 94, 60, 86, 92, 70, 88, 64, 80].map((w) => `<div style="height:12px;margin:14px 0;background:#9aa1ad;width:${w}%"></div>`).join("")}</div>`);
+  // the page lands, shakes, bursts at "BOOM", and the reels fly out of it
+  const land = outBack(t0 / 0.3), burst = t0 > 1.0, split = ease((t0 - 1.0) / 0.6);
+  if (!burst) h += page(210, 380, land * (1 + 0.04 * Math.sin(t0 * 40) * clamp(t0 - 0.5)), Math.sin(t0 * 30) * 2 * clamp(t0 - 0.5), 1);
+  if (burst && split < 1) h += A(360 - 380 * split, 580 - 380 * split, `<div style="width:${760 * split}px;height:${760 * split}px;border:14px solid #d3f05a;opacity:${1 - split};box-sizing:border-box"></div>`)
+    + `<div style="position:absolute;inset:0;background:#fff;opacity:${Math.max(0, 1 - (t0 - 1.0) / 0.12) * 0.8}"></div>`;
+  if (burst && t0 < 1.5) h += A(0, 250, `<div style="width:720px;text-align:center;font:72px Px;color:#d3f05a;text-shadow:7px 7px 0 #000;transform:scale(${outBack((t0 - 1.0) / 0.15)}) rotate(-6deg)">BOOM!</div>`);
+  const imgs = ["mito", "resp", "dna", "mito", "resp"], spots = [[-260, -8], [260, 8], [0, 0], [-130, -4], [130, 4]];
+  if (burst) spots.forEach(([dx, r], j) => { const k = ease((t0 - 1.0 - (j > 2 ? 0.5 : j * 0.08)) / 0.5); if (k <= 0) return;
+    const fan = shot === "cards" ? Math.sin(lt * 2 + j) * 6 : 0, w = j > 2 ? 150 : 190, z = j > 2 ? 0 : 1;
+    h += A(360 + dx * k - w / 2, 420 + (j > 2 ? -60 : 0) + fan, `<div style="width:${w}px;height:${w * 16 / 9}px;border:6px solid #000;box-shadow:8px 8px 0 #000;transform:rotate(${r * k}deg) scale(${0.3 + 0.7 * k});z-index:${z};background:#000"><img src="${imgs[j]}_px.png" style="width:100%;height:100%;object-fit:cover;image-rendering:pixelated"></div>`); });
+  if (shot === "cards") h += A(0, 250, `<div style="width:720px;text-align:center;font:34px/1.3 Px;color:#fff;text-shadow:5px 5px 0 #000;${pop(lt / 0.25)}">MADE FROM<br><span style="color:#d3f05a">YOUR CHAPTER</span></div>`);
+  return h;
 }
 function endCard(lc) {
   return `<div style="position:absolute;inset:0;background:radial-gradient(90% 60% at 50% 40%,#203a2c,#0f1d18);opacity:${clamp(lc / 0.3)}">
@@ -162,7 +183,7 @@ function shout(L, t) {
   return `<div style="position:absolute;left:20px;right:20px;top:1000px;text-align:center"><span style="display:inline-block;font:${c.length > 14 ? 34 : c.length > 9 ? 42 : 52}px/1.2 Px;letter-spacing:0;text-transform:uppercase;color:${hot ? "#d3f05a" : "#fff"};-webkit-text-stroke:0;text-shadow:5px 5px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000;transform:scale(${1 + 0.35 * Math.max(0, 1 - age / 0.1)}) rotate(${(cur % 2 ? 1.5 : -1.5)}deg)">${c}</span></div>`;
 }
 // moments that hit: stamps and the big lines shake the frame
-const HITS = () => [[st("hook") + 0.05, 0.8], [st("three") + 0.3, 1], [st("gone") + 0.05, 1.4], [st("fix") + 0.05, 0.7], [st("sticks") + 0.45, 1.2], [st("count") + 0.4, 1.2]];
+const HITS = () => [[st("hook") + 0.05, 0.8], [st("snap") + 1.0, 1.6], [st("three") + 0.3, 1], [st("gone") + 0.05, 1.4], [st("fix") + 0.05, 0.7], [st("sticks") + 0.45, 1.2], [st("count") + 0.4, 1.2]];
 function frameShake(t, lt) {
   const punch = 1 + 0.09 * Math.max(0, 1 - lt / 0.2) ** 2;
   let sh = 0; for (const [ht, a] of HITS()) { const d = t - ht; if (d > 0 && d < 0.35) sh = Math.max(sh, a * (1 - d / 0.35)); }
@@ -178,11 +199,14 @@ window.renderAt = (t) => {
   const scene = scene3d(shot, lt, t); renderer.render(scene, camera);
   let h = "";
   if (shot === "hook") h += A(0, 140, `<div style="width:720px;text-align:center;font:44px/1.3 Px;color:#fff;transform:scale(${outBack(lt / 0.22)});text-shadow:5px 5px 0 #000">YOU CAN QUOTE<br>A TIKTOK YOU<br>SAW <span style="color:#d3f05a">ONCE.</span></div>`);
-  if (shot === "night" || shot === "every") h += label("LAST NIGHT'S SCREEN TIME", "4H 12M", (t - st("night")) / 0.3);
+  if (shot === "hook") { const L2 = len("hook"); if (lt > L2 * 0.55) h += A(0, 360, `<div style="width:720px;text-align:center;font:34px/1.3 Px;color:#ff5a4a;text-shadow:4px 4px 0 #000;${pop((lt - L2 * 0.55) / 0.2)}">HALF ASLEEP. 1 AM.</div>`); }
+  if (shot === "every") h += label("LAST NIGHT'S SCREEN TIME", "4H 12M", lt / 0.3);
   if (shot === "chapter" || shot === "three") h += label("BIO · CHAPTER 4", "32 PAGES", (t - st("chapter")) / 0.3);
   if (shot === "three") h += stamp("READ 3×", 70, 820, -8, lt - 0.3, "#ffffff");
   if (shot === "gone") h += stamp("FORGOTTEN", 130, 480, -10, lt - 0.05);
-  if (shot === "scroll") h += label("TONIGHT'S SCREEN TIME", "SAME 4H", lt / 0.3);
+  if (shot === "scroll") { h += label("TONIGHT'S SCREEN TIME", "SAME 4H", lt / 0.3);
+    // what she just learned, popping up as each reel goes by
+    ["MITOCHONDRIA ✓", "ATP ✓", "DNA → mRNA ✓"].forEach((w, j) => { const k = (lt - 0.5 - j * 0.7) / 0.2; if (k > 0) h += A([390, 40, 330][j], [600, 690, 790][j], `<div style="white-space:nowrap;font:24px Px;color:#0f1d18;background:#d3f05a;padding:10px 14px;box-shadow:5px 5px 0 #000;${pop(k)}">${w}</div>`); }); }
   if (shot === "sticks") h += stamp("IT STUCK", 200, 470, 6, lt - 0.45, "#1f9d55");
   h += app(shot, lt);
   // a soft dark band so the serif captions read on any shot (the white test paper swallowed them)

@@ -1,5 +1,5 @@
 import json, numpy as np, soundfile as sf
-D="/tmp/claude-0/-home-user/a6768946-caac-5edd-b0c9-ac1afa389d34/scratchpad/adY3"
+D="/tmp/claude-0/-home-user/a6768946-caac-5edd-b0c9-ac1afa389d34/scratchpad/adY4"
 tl=json.load(open(f"{D}/web/tl.json")); DUR=tl["dur"]; SR=24000; N=int(SR*DUR); out=np.zeros(N); rng=np.random.default_rng(5); tt=np.arange(N)/SR
 st={l["shot"]:l["s"]-0.1 for l in tl["lines"]}; note=lambda m:440*2**((m-69)/12)
 def add(t0,x,g):
@@ -26,7 +26,9 @@ for s in st:                                                        # an impact 
     add(st[s],boom(),0.22); add(st[s],noise(0.18,16)*np.linspace(1,0,int(SR*0.18)),0.14)
 add(F-0.9,riser(0.9),0.16); add(F,boom(),0.4)
 for h in (st["three"]+0.3, st["gone"]+0.05, st["sticks"]+0.45, st["count"]+0.4): add(h,kick(),0.5); add(h,boom(),0.35); add(h,noise(0.25,12),0.2)
-for k in range(4): add(st["night"]+k*0.25,tone(2200,0.03,90,(1,)),0.07)
+for k in range(4): add(st["hook"]+2.0+k*0.25,tone(2200,0.03,90,(1,)),0.07)
+for k in range(8): add(st["scroll"]+0.5+k*0.7,noise(0.12,14)*np.linspace(1,0,int(SR*0.12)),0.1)
+for j in range(3): add(st["scroll"]+0.5+j*0.7,tone(note(84+j*3),0.25,10,(1,.3)),0.09)
 for j in range(3): add(st["snap"]+0.15+j*0.15,tone(note(76+j*4),0.2,12,(1,.3)),0.1)
 for j,m in enumerate([76,83]): add(st["quiz"]+0.55+j*0.07,tone(note(m),0.4,7,(1,.3)),0.12)
 for j,m in enumerate([72,76,79,84,88]): add(st["count"]+0.4+j*0.05,tone(note(m),1.2,2.5,(1,.3)),0.1)
