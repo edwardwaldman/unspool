@@ -42,3 +42,21 @@ frame by frame (`index.html`), the voiceover script (`lines.json` or `tts.py`) a
 ```
 study tips,studytok,how to study,study hacks,studying,exam tips,finals week,how to study for exams,study tips for students,college study tips,how to remember what you study,active recall,spaced repetition,forgetting curve,retrieval practice,study smarter,study techniques,memory tips,learning tips,study motivation,ai study app,ai study tool,study app,textbook to video,pdf to video,notes to video,study reels,unspool,unspool app,student,college
 ```
+
+## Making an ad (tools)
+
+Everything needed is in `brand/ads/tools/`:
+
+1. `bash brand/ads/tools/setup.sh` once (Python voice tools, the free Kokoro voice model, Playwright check).
+2. Write `<ad>/lines.json` (the script) and `<ad>/web/index.html` (the page: sets `window.DUR`, `window.ready`, and
+   draws any moment with `window.renderAt(seconds)`). Copy an existing ad as a start.
+3. Voice: `brand/ads/tools/.venv/bin/python brand/ads/tools/vo.py <ad>` → `voice.wav` + `web/tl.json` (line timings).
+   `"engine": "elevenlabs"` with an ElevenLabs voice id uses ElevenLabs (real shouting, acting; `eleven_v3` reads tags
+   like `[shouting]`, `[whispers]`, `[laughs]` in the line); without a key it falls back to Kokoro automatically.
+4. Sound: a `mix.py` per ad (music + effects under `voice.wav`) → `mix.wav`.
+5. Frames: `node brand/ads/tools/render.mjs <ad> 4` → `<ad>/frames/`.
+6. Video: `bash brand/ads/tools/encode.sh <ad> <name>` → `brand/social/unspool-ad-<name>.mp4` (safe zone) and the
+   full-frame copy.
+
+**ElevenLabs:** add your API key to the cloud environment as a network secret for `api.elevenlabs.io` (header
+`xi-api-key`), or locally as `ELEVENLABS_API_KEY`. Pick voice ids in the ElevenLabs Voice Library.
