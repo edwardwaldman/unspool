@@ -1,0 +1,155 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)} @font-face{font-family:Ser;src:url(SerifItalic.ttf)}
+html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#dfe8f4}
+#c{position:absolute;inset:0} #ov{position:absolute;inset:0;overflow:hidden}
+.cap{position:absolute;left:60px;right:60px;text-align:center;font:40px/1.15 Ser;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+.cap span{background:rgba(20,24,40,.5);padding:4px 14px;border-radius:12px;box-decoration-break:clone;-webkit-box-decoration-break:clone;line-height:1.5}
+.panel{position:absolute;left:0;width:430px;padding:18px 26px 16px;box-sizing:border-box;background:linear-gradient(90deg,rgba(20,24,40,.62),rgba(20,24,40,.35) 80%,transparent);color:#fff}
+.panel small{display:block;font:700 15px Ins;letter-spacing:2px;opacity:.85}
+.panel b{display:block;font:62px/1.05 Ser;letter-spacing:-.5px;margin-top:4px;font-style:normal}
+.panel i{display:block;font:700 15px Ins;letter-spacing:1.5px;color:#f2c14e;font-style:normal;margin-top:4px}
+</style></head><body><canvas id="c" width="720" height="1280"></canvas><div id="ov"></div>
+<script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
+<script type="module">
+import { THREE, clamp, mix, ease, outBack, v3, tex, M, mesh, grp, toy, phone } from "./world.js";
+import { RoomEnvironment } from "./three/RoomEnvironment.js";
+const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
+await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins"), document.fonts.load("40px Ser")]);
+const W = 720, H = 1280;
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("c"), antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H, false); renderer.setPixelRatio(1); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
+const envTex = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+const camera = new THREE.PerspectiveCamera(42, W / H, 0.05, 400);
+const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.1) k = i; return k; };
+const st = (n) => lines.find((l) => l.shot === n).s - 0.1;
+const len = (n) => { const i = lines.findIndex((l) => l.shot === n); return (lines[i + 1]?.s ?? DUR) - lines[i].s; };
+const imgs = Object.fromEntries(await Promise.all(["mito", "resp", "dna"].map((n) => new Promise((r) => { const i = new Image(); i.onload = () => r([n, i]); i.src = `${n}.jpg`; }))));
+
+// ================= the city: a pale low-poly street, like the reference =================
+const city = new THREE.Scene(); city.background = new THREE.Color("#dfe8f4"); city.environment = envTex; city.environmentIntensity = 0.6;
+city.fog = new THREE.Fog("#dfe8f4", 30, 140);
+city.add(new THREE.HemisphereLight("#ffffff", "#9aa6c0", 1.2));
+const sun = new THREE.DirectionalLight("#fff6e6", 2.4); sun.position.set(20, 40, 15); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, near: 1, far: 120 }); city.add(sun); city.add(sun.target);
+mesh(new THREE.PlaneGeometry(400, 400), M("#c9d3e2", { roughness: 1 }), v3(0, 0, 0), city).rotation.x = -Math.PI / 2;
+mesh(new THREE.PlaneGeometry(10, 400), M("#b4bfd0", { roughness: 1 }), v3(0, 0.01, 0), city).rotation.x = -Math.PI / 2;
+[-6.5, 6.5].forEach((x) => mesh(new THREE.BoxGeometry(3, 0.2, 400), M("#e8edf5"), v3(x, 0.1, 0), city));
+const winTex = (base, win) => { const t = tex(128, 256, (c, w, h) => { c.fillStyle = base; c.fillRect(0, 0, w, h); c.fillStyle = win; for (let y = 10; y < h; y += 26) for (let x = 10; x < w; x += 30) c.fillRect(x, y, 18, 16); }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
+const PAL = [["#f4f6fa", "#a9c4e8"], ["#c9daf0", "#7f9fcf"], ["#d8664e", "#f2c9b8"], ["#e9ecf3", "#9fb6d6"], ["#b8c9e6", "#eef3fb"]];
+const buildings = [];
+for (const side of [-1, 1]) for (let z = 10; z > -300; ) { const w = 6 + ((z * 7) % 5 + 5) % 5, d = 8 + ((z * 3) % 6 + 6) % 6, h = 14 + ((z * 13) % 40 + 40) % 40, [b, wn] = PAL[Math.abs(Math.floor(z * 1.7 + side)) % 5];
+  const t = winTex(b, wn); t.repeat.set(w / 4, h / 8); const m = mesh(new THREE.BoxGeometry(w, h, d), M("#fff", { map: t, roughness: 0.85 }), v3(side * (8 + w / 2), h / 2, z - d / 2), city); buildings.push(m); z -= d + 0.6; }
+// a crowd of students walking toward you (a thousand facts)
+const crowd = [];
+const TOPS = ["#2f7de1", "#1f9d55", "#f2c14e", "#e05a47", "#16314f", "#ff8b6c", "#7c4ad6", "#ffffff"];
+for (let i = 0; i < 36; i++) { const p = toy({ top: TOPS[i % 8], hair: ["#2b1d16", "#5a3a20", "#111", "#c9a15a"][i % 4], skin: ["#f1c7a3", "#c98f68", "#8d5a3b", "#e8b48c"][i % 4], style: ["short", "pony", "bun", "short"][i % 4] });
+  p.g.position.set(((i * 37) % 9) - 4, 0.2, -6 - Math.floor(i / 4) * 3.2 - (i % 4) * 0.6); p.g.rotation.y = Math.PI * 0; city.add(p.g); p.g.visible = false; crowd.push(p); }
+// a million: the streets below, packed with tiny people (instanced)
+const DOTS = 14000; const dotMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.5, 0.9, 0.5), new THREE.MeshStandardMaterial({ roughness: 0.6 }), DOTS);
+{ const m = new THREE.Matrix4(), c = new THREE.Color(); for (let i = 0; i < DOTS; i++) { const street = i % 3; const x = street === 0 ? (Math.random() - 0.5) * 9 : (street === 1 ? -1 : 1) * (6 + Math.random() * 1.2); m.makeTranslation(x, 0.5, 10 - Math.random() * 300); dotMesh.setMatrixAt(i, m); dotMesh.setColorAt(i, c.set(TOPS[i % 8])); } }
+dotMesh.visible = false; city.add(dotMesh);
+
+// ================= the brain on fire: a red tunnel of bookshelves =================
+const fire = new THREE.Scene(); fire.background = new THREE.Color("#2a0a05"); fire.fog = new THREE.Fog("#3a0d06", 6, 60);
+fire.add(new THREE.HemisphereLight("#ff8a4a", "#200805", 1.0));
+const fl = new THREE.PointLight("#ff5a1a", 40, 30, 1.5); fl.position.set(0, 6, -10); fire.add(fl);
+mesh(new THREE.PlaneGeometry(14, 200), M("#3a120a", { roughness: 0.9 }), v3(0, 0, -80), fire).rotation.x = -Math.PI / 2;
+const BOOKS = 6000; const books = new THREE.InstancedMesh(new THREE.BoxGeometry(0.22, 1, 0.8), new THREE.MeshStandardMaterial({ roughness: 0.6, emissive: "#3a0a00" }), BOOKS);
+{ const m = new THREE.Matrix4(), c = new THREE.Color(), q = new THREE.Quaternion(), s = new THREE.Vector3(); let i = 0;
+  for (const side of [-1, 1]) for (let shelf = 0; shelf < 8; shelf++) for (let k = 0; k < BOOKS / 16 && i < BOOKS; k++, i++) { const h = 0.7 + (k * 13 % 7) / 14; s.set(1, h, 1); m.compose(v3(side * 5, 0.6 + shelf * 1.4 + h / 2, 5 - k * 0.27), q, s); books.setMatrixAt(i, m); books.setColorAt(i, c.set(["#ff8b6c", "#f2c14e", "#e5484d", "#ffd6a0", "#c2381e"][k % 5])); } }
+fire.add(books);
+[-1, 1].forEach((side) => { for (let shelf = 0; shelf <= 8; shelf++) mesh(new THREE.BoxGeometry(0.9, 0.1, 200), M("#5a1a0c"), v3(side * 5, 0.55 + shelf * 1.4, -95), fire, false); });
+const embers = Array.from({ length: 70 }, () => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ color: "#ffb04a", transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); s.scale.setScalar(0.12); fire.add(s); return s; });
+
+// ================= the phone in your hand =================
+const scrC = document.createElement("canvas"); scrC.width = 280; scrC.height = 590; const scrTex = new THREE.CanvasTexture(scrC); scrTex.colorSpace = THREE.SRGBColorSpace;
+const hand = grp(null); const ph = phone(hand, scrTex); ph.scale.setScalar(0.42);
+const skin = M("#e8b48c", { roughness: 0.5 });
+[[0.14, -0.12, 0.03, 0.07], [0.15, -0.02, 0.03, 0.06], [0.15, 0.08, 0.03, 0.06], [-0.15, -0.16, 0.02, 0.06]].forEach(([x, y, z, r]) => mesh(new THREE.SphereGeometry(r, 14, 10), skin, v3(x, y, z), hand).scale.set(1.3, 0.8, 0.8));
+mesh(new THREE.SphereGeometry(0.17, 18, 12), skin, v3(0.1, -0.3, -0.05), hand).scale.set(1, 1.2, 0.7);
+mesh(new THREE.CapsuleGeometry(0.1, 0.5, 6, 14), M("#3a3f52", { roughness: 0.8 }), v3(0.16, -0.62, -0.1), hand).rotation.z = 0.2;
+const fmt = (n) => Math.round(n).toLocaleString("en-US");
+function drawScreen(mode, n, k, lt) {
+  const c = scrC.getContext("2d"); c.fillStyle = "#0f1d18"; c.fillRect(0, 0, 280, 590);
+  c.fillStyle = "#e9f0e4"; c.font = "bold 20px Unb"; c.textAlign = "left"; c.fillText("unspool", 22, 46);
+  if (mode === "count") {
+    c.fillStyle = "#8ea595"; c.font = "600 15px Ins"; c.fillText("WHAT YOU KNOW", 22, 100);
+    c.fillStyle = "#e9f0e4"; c.font = `bold ${n >= 1e6 ? 30 : 44}px Unb`; c.fillText(fmt(n), 22, 150);
+    c.fillStyle = "#1f9d55"; c.fillRect(22, 166, 66, 22); c.fillStyle = "#fff"; c.font = "bold 13px Ins"; c.fillText("+100%", 30, 182);
+    c.strokeStyle = "#d3f05a"; c.lineWidth = 4; c.beginPath(); for (let x = 0; x <= 236; x += 4) { const u = x / 236, y = 470 - Math.pow(u, 6) * 230 * k; x ? c.lineTo(22 + x, y) : c.moveTo(22, y); } c.stroke();
+    c.fillStyle = "#d3f05a"; c.beginPath(); c.roundRect(22, 510, 236, 46, 23); c.fill(); c.fillStyle = "#0f1d18"; c.font = "bold 16px Ins"; c.textAlign = "center"; c.fillText("Keep scrolling", 140, 539);
+  } else {
+    // Unspool: snap, the reels, the quiz
+    if (lt < 1.4) { c.fillStyle = "#d3f05a"; c.beginPath(); c.arc(140, 240, 70, 0, 7); c.fill(); c.strokeStyle = "#0f1d18"; c.lineWidth = 10; c.beginPath(); c.moveTo(140, 205); c.lineTo(140, 275); c.moveTo(105, 240); c.lineTo(175, 240); c.stroke(); c.fillStyle = "#e9f0e4"; c.font = "600 18px Ins"; c.textAlign = "center"; c.fillText("Snap your notes", 140, 350); }
+    else if (lt < 3.0) { ["mito", "resp", "dna"].forEach((nm, j) => { const kk = clamp((lt - 1.4 - j * 0.15) / 0.4); c.globalAlpha = kk; c.drawImage(imgs[nm], 14 + j * 86, 120 + (1 - kk) * 30, 80, 142); c.globalAlpha = 1; }); c.fillStyle = "#8ea595"; c.font = "600 16px Ins"; c.textAlign = "center"; c.fillText("9 reels ready ✓", 140, 300); }
+    else { c.fillStyle = "#d3f05a"; c.fillRect(22, 100, 110, 24); c.fillStyle = "#0f1d18"; c.font = "bold 12px Unb"; c.textAlign = "left"; c.fillText("QUICK CHECK", 30, 117); c.fillStyle = "#e9f0e4"; c.font = "bold 19px Ins"; c.fillText("What do mitochondria", 22, 160); c.fillText("make?", 22, 184);
+      ["Glucose", "ATP", "Oxygen"].forEach((o, x) => { const r = lt > 3.8 && x === 1; c.strokeStyle = r ? "#1f9d55" : "#28402f"; c.lineWidth = 3; c.beginPath(); c.roundRect(22, 210 + x * 60, 236, 46, 10); c.stroke(); if (r) { c.fillStyle = "rgba(31,157,85,.25)"; c.fill(); } c.fillStyle = r ? "#7fe0a6" : "#e9f0e4"; c.font = "600 17px Ins"; c.fillText(`${String.fromCharCode(65 + x)}. ${o}${r ? "  ✓" : ""}`, 36, 239 + x * 60); }); }
+  }
+  scrTex.needsUpdate = true;
+}
+const handIn = (scene, sway) => { scene.add(hand); const f = v3(0, 0, -1).applyQuaternion(camera.quaternion), r = v3(1, 0, 0).applyQuaternion(camera.quaternion), u = v3(0, 1, 0).applyQuaternion(camera.quaternion);
+  hand.position.copy(camera.position).add(f.multiplyScalar(1.5)).add(r.multiplyScalar(0.12)).add(u.multiplyScalar(-0.36 + sway)); hand.quaternion.copy(camera.quaternion); hand.rotateX(0.12); hand.rotateZ(-0.05); };
+
+// ================= shots =================
+const cam = (p, l, f = 42) => { camera.position.copy(p); camera.lookAt(l); camera.fov = f; camera.updateProjectionMatrix(); camera.updateMatrixWorld(); };
+// the counter, per shot: [from, to] with an easing over the shot
+function count(shot, lt) { const L = len(shot), u = clamp(lt / (L - 0.2));
+  if (shot === "hook" || shot === "open") return 0;
+  if (shot === "one") return 1;
+  if (shot === "doubles") return lt > L - 0.4 ? 2 : 1;
+  if (shot === "two") return lt < L * 0.33 ? 2 : lt < L * 0.62 ? 4 : 8;
+  if (shot === "teacher") return 8;
+  if (shot === "thousand") return Math.pow(2, mix(3, 10, ease(u)));
+  if (shot === "million") return Math.pow(2, mix(10, 20, ease(u)));
+  if (shot === "fire") return Math.pow(2, mix(20, 26, u));
+  if (shot === "billion") return Math.pow(2, mix(26, 30, ease(u)));
+  return 1; }
+const SUB = { hook: "JUST STARTED", open: "JUST STARTED", one: "PROBABLY THE MITOCHONDRIA", doubles: "DOUBLING", two: "DOUBLING", teacher: "TEACHER IMPRESSED", thousand: "30 SECONDS IN", million: "ONE MINUTE IN", billion: "EVERYTHING. LITERALLY.", reality: "REALITY CHECK", truth: "REALITY CHECK" };
+function scene3d(shot, lt, t) {
+  const L = len(shot), walk = t * 0.9;
+  crowd.forEach((p) => (p.g.visible = false)); dotMesh.visible = false;
+  if (["hook", "open", "one", "doubles", "two", "teacher", "reality", "truth", "step", "how"].includes(shot)) {
+    cam(v3(0.6, 1.7, 6 - walk), v3(0.3, 1.9, -20 - walk), 42);
+    drawScreen(shot === "step" || shot === "how" ? "app" : "count", count(shot, lt), clamp(Math.log2(Math.max(1, count(shot, lt))) / 10), shot === "how" ? lt : 0);
+    handIn(city, Math.sin(t * 5) * 0.01); return city; }
+  if (shot === "thousand") { crowd.forEach((p, i) => { p.g.visible = true; p.pose("walk", t + i * 0.37); p.g.position.z = -6 - Math.floor(i / 4) * 3.2 - (i % 4) * 0.6 + lt * 1.4 - walk; });
+    cam(v3(0, 2.4, 9 - walk), v3(0, 1.2, -20 - walk), 46); city.remove(hand); return city; }
+  if (shot === "million") { dotMesh.visible = true; const u = ease(lt / L); cam(v3(0, mix(30, 70, u), 4 - walk), v3(0, 0, -30 - walk), 50); city.remove(hand); return city; }
+  if (shot === "fire") { embers.forEach((e, i) => { const k = (t * 0.4 + i * 0.137) % 1; e.position.set(Math.sin(i * 2.3) * 3.5, k * 12, -2 - (i * 1.7) % 40); e.material.opacity = Math.sin(k * Math.PI); });
+    fl.intensity = 40 + Math.sin(t * 13) * 8; cam(v3(Math.sin(t * 30) * 0.05, 4 + Math.cos(t * 23) * 0.05, 8 - lt * 2), v3(0, 4, -40), 50); return fire; }
+  if (shot === "billion") { dotMesh.visible = true; const u = ease(lt / L); city.fog.far = mix(140, 30, u); cam(v3(0, mix(70, 160, u), 4 - walk), v3(0, 0, -40 - walk), 55); city.remove(hand); return city; }
+  return city;
+}
+
+const ov = document.getElementById("ov");
+const A = (x, y, inner, extra = "") => `<div style="position:absolute;left:${x}px;top:${y}px;${extra}">${inner}</div>`;
+const pulse = (t) => `<svg width="120" height="18" viewBox="0 0 120 18"><path d="M0 9 H40 L46 2 L52 16 L58 9 H120" fill="none" stroke="#f2c14e" stroke-width="2" stroke-dasharray="120" stroke-dashoffset="${(t * 90) % 240 - 120}"/></svg>`;
+function panel(shot, lt, t) {
+  if (shot === "fire") { const pct = Math.round(Math.pow(2, mix(9.8, 16.6, clamp(lt / (len("fire") - 0.2))))); return `<div class="panel" style="top:430px;background:linear-gradient(90deg,rgba(60,8,2,.7),rgba(60,8,2,.35) 80%,transparent)"><small>BRAIN LOAD</small><b>${pct.toLocaleString("en-US")}%</b><i style="color:#ff8a5a">${pct > 9000 ? "ON FIRE" : "OVERHEATING"}</i>${pulse(t)}</div>`; }
+  if (shot === "step" || shot === "how") return `<div class="panel" style="top:430px"><small>STEP ONE</small><b>Make it teach you</b><i>NOTES IN. REELS OUT.</i></div>`;
+  if (["cta", "end"].includes(shot)) return "";
+  const top = ["thousand", "million", "billion"].includes(shot) ? 430 : 360;
+  return `<div class="panel" style="top:${top}px"><small>WHAT YOU KNOW</small><b>${fmt(count(shot, lt))}</b><i>${SUB[shot] ?? ""}</i>${pulse(t)}</div>`;
+}
+function endCard(lc) {
+  return `<div style="position:absolute;inset:0;background:radial-gradient(90% 60% at 50% 40%,#203a2c,#0f1d18);opacity:${clamp(lc / 0.3)}">
+    ${A(0, 330, `<div style="width:720px;text-align:center;font:700 40px Unb;color:#e9f0e4">unspool</div>`)}
+    ${A(0, 420, `<div style="width:720px;text-align:center;font:64px/1.12 Ser;color:#e9f0e4;transform:scale(${outBack((lc - 0.2) / 0.4)})">Make your feed<br><span style="color:#d3f05a">teach you.</span></div>`)}
+    ${A(0, 650, `<div style="width:720px;text-align:center;font:700 17px Ins;letter-spacing:3px;color:#8ea595;opacity:${clamp((lc - 0.5) / 0.3)}">NOTES IN · REELS OUT · A QUIZ IN EVERY ONE</div>`)}
+    ${A(0, 760, `<div style="width:720px;text-align:center;transform:scale(${outBack((lc - 0.9) / 0.35)})"><span style="display:inline-block;background:#d3f05a;color:#0f1d18;font:700 30px Unb;padding:16px 34px;border-radius:40px">Try it free →</span><div style="margin-top:16px;font:600 26px Ins;color:#e9f0e4">unspool.cc</div></div>`)}</div>`;
+}
+window.renderAt = (t) => {
+  const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.1);
+  if (shot === "cta" || shot === "end") { const scene = scene3d("how", 5, t); renderer.render(scene, camera); const lc = t - st("cta"); ov.innerHTML = endCard(lc) + (shot === "cta" ? `<div class="cap" style="top:1060px">${L.text}</div>` : ""); return; }
+  const scene = scene3d(shot, lt, t); renderer.render(scene, camera);
+  let h = "";
+  // the hook, big, like the reference's title card; the billion shot fades to white
+  if (shot === "hook") h += A(0, 120, `<div style="width:720px;text-align:center"><span style="display:inline-block;background:rgba(20,24,40,.45);padding:14px 26px;border-radius:14px;font:52px/1.12 Ser;color:#fff">What you know doubles<br>every 3 seconds</span></div>`);
+  if (shot === "billion") h += `<div style="position:absolute;inset:0;background:#fff;opacity:${clamp((lt - 1.2) / 1.6) * 0.85}"></div>`;
+  h += panel(shot, lt, t);
+  if (L.text && shot !== "hook") { const top = shot === "how" ? 520 : ["thousand", "million", "billion", "fire", "step"].includes(shot) ? 620 : 560; h += `<div class="cap" style="top:${top}px"><span>${L.text}</span></div>`; }
+  ov.innerHTML = h;
+};
+window.renderAt(0); setTimeout(() => (window.ready = true), 600);
+</script></body></html>

@@ -1,0 +1,18 @@
+{"voice": "am_michael", "speed": 1.08, "lead": 0.3, "tail": 0, "gap": 0.15, "lines": [
+ ["hook", "What you know doubles every three seconds.", 0.3],
+ ["open", "You open a reel.", 0.15],
+ ["one", "One fact.", 0.25],
+ ["doubles", "Every three seconds, it doubles.", 0.15],
+ ["two", "Two. Four. Eight.", 0.25],
+ ["teacher", "Your teacher is finally impressed.", 0.3],
+ ["thousand", "Thirty seconds in: a thousand facts.", 0.25],
+ ["million", "One minute: a million.", 0.25],
+ ["fire", "Your brain is on fire.", 0.3],
+ ["billion", "Ninety seconds: a billion. You know everything.", 0.45],
+ ["reality", "Okay, that won't happen.", 0.25],
+ ["truth", "Your feed isn't teaching you anything.", 0.3],
+ ["step", "Step one: make it teach you.", 0.2],
+ ["how", "Snap your notes. Unspool turns them into reels, with a quiz in every one.", 0.3],
+ ["cta", "Try it free, at unspool dot c c.", 0.2, "Try it free at unspool.cc"],
+ ["end", "", 1.4]
+]}
