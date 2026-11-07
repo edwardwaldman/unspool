@@ -33,10 +33,11 @@ async function vrmGirl(scene) {
     update(t, st) {
       const L = bone("leftUpperArm"), R = bone("rightUpperArm"), LL = bone("leftLowerArm"), RL = bone("rightLowerArm"), head = bone("head"), spine = bone("spine");
       // arms down by default (VRM rest pose is a T-pose)
-      L.rotation.set(0, 0, 1.2); R.rotation.set(0, 0, -1.2); LL.rotation.set(0, 0, 0); RL.rotation.set(0, 0, 0);
-      if (st.pose === "point") { L.rotation.set(0, 0, 0.2 + Math.sin(t * 2) * 0.04); L.rotation.y = -0.4; }
-      if (st.pose === "wave") { R.rotation.set(0, 0, 0.3); RL.rotation.set(0, 0, -0.9 + Math.sin(t * 9) * 0.35); }
-      if (st.pose === "think") { R.rotation.set(0.3, 0, -0.6); RL.rotation.set(0, -2.2, 0); }
+      // arms down by default (VRM rest pose is a T-pose; in normalized bones +z lifts the right arm, -z the left)
+      L.rotation.set(0, 0, -1.2); R.rotation.set(0, 0, 1.2); LL.rotation.set(0, 0, 0); RL.rotation.set(0, 0, 0);
+      if (st.pose === "point") { L.rotation.set(0, 0.5, -0.15 + Math.sin(t * 2) * 0.04); LL.rotation.set(0, 0.15, 0); }
+      if (st.pose === "wave") { R.rotation.set(0, 0, -0.9); RL.rotation.set(0, 0, -0.6 + Math.sin(t * 9) * 0.4); }
+      if (st.pose === "think") { R.rotation.set(0, 0, 1.0); RL.rotation.set(0, 2.0, 0); }
       head.rotation.set(Math.sin(t * 1.3) * 0.04, Math.sin(t * 0.7) * 0.08, Math.sin(t * 1.1) * 0.03 + (st.pose === "think" ? 0.15 : 0));
       spine.rotation.set(0, 0, Math.sin(t * 1.6) * 0.02);
       if (ex) { ex.setValue("aa", st.talk * 0.8); ex.setValue("blink", st.blink); ex.setValue("happy", st.smile); }
