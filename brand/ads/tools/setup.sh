@@ -3,7 +3,7 @@
 #   bash brand/ads/tools/setup.sh
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
-python3 -m venv "$here/.venv" && "$here/.venv/bin/pip" -q install kokoro-onnx soundfile numpy "rembg[cpu]" pillow
+python3 -m venv "$here/.venv" && "$here/.venv/bin/pip" -q install kokoro-onnx soundfile numpy "rembg[cpu]" pillow librosa
 mkdir -p "$here/.models"
 for f in kokoro-v1.0.onnx voices-v1.0.bin; do
   [ -s "$here/.models/$f" ] || curl -sSL -o "$here/.models/$f" "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/$f"
