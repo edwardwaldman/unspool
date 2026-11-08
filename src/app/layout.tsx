@@ -18,7 +18,7 @@ const SAME_AS = SOCIALS.map((s) => s.href);
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://unspool.cc"),
-  title: { default: "Unspool — Turn any document into study reels", template: "%s · Unspool" },
+  title: { default: "Unspool - Documents into Short Videos", template: "%s · Unspool" },
   description:
     "Drop in class notes, a textbook chapter, a work PDF or a contract. Unspool turns it into short reels with voiceover, captions, visuals and a quiz, so studying takes minutes instead of hours.",
   applicationName: "Unspool",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-video-preview": -1, "max-snippet": -1 } },
   formatDetection: { telephone: false, email: false, address: false },
   openGraph: {
-    title: "Unspool — Turn any document into study reels",
+    title: "Unspool - Documents into Short Videos",
     description: "Your textbook, but it's reels. Voiceover, captions and a quiz in every one.",
     siteName: "Unspool",
     type: "website",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Unspool — Turn any document into study reels",
+    title: "Unspool - Documents into Short Videos",
     description: "Your textbook, but it's reels. Voiceover, captions and a quiz in every one.",
     images: ["/og-image.png"],
   },

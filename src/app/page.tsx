@@ -8,7 +8,7 @@ import { getViewer } from "@/lib/viewer";
 export const dynamic = "force-dynamic";
 
 // The home page's own canonical and share URL (kept off the root layout so other pages don't inherit them).
-export const metadata: Metadata = { alternates: { canonical: "/" }, openGraph: { url: "/", title: "Unspool — Turn any document into study reels", description: "Your textbook, but it's reels. Voiceover, captions and a quiz in every one.", siteName: "Unspool", type: "website", locale: "en_US", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Unspool — One document into reels" }] } };
+export const metadata: Metadata = { alternates: { canonical: "/" }, openGraph: { url: "/", title: "Unspool - Documents into Short Videos", description: "Your textbook, but it's reels. Voiceover, captions and a quiz in every one.", siteName: "Unspool", type: "website", locale: "en_US", images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Unspool — One document into reels" }] } };
 
 /** Signed-out visitors get the landing; signed-in accounts always land in their Studio at /studio. */
 export default async function Home({ searchParams }: PageProps<"/">) {
