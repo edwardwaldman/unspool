@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import type { Visual } from "@/lib/schema";
+import { sentenceCase, splitDots } from "./text";
 
 // Flat, full-frame visuals for design, language and other abstract topics, where a 3D object would only be a
 // stand-in: real colour swatches, a before/after comparison, and a type or quote specimen. Each animates in on
@@ -28,7 +29,12 @@ export function SwatchVisual({ v }: { v: Extract<Visual, { type: "swatch" }> }) 
     <div className="flex w-full flex-col items-center px-[6cqw]" data-testid="swatch">
       {v.title && (
         <motion.div initial={reduce ? false : { opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="mb-[5cqw] text-center font-display leading-[1.05] text-white" style={{ fontSize: "min(34px, 8.5cqw)", textShadow: "0 3px 12px rgba(0,0,0,.35)" }}>
-          {v.title}
+          {/* "9 COLORS · 1 MAIN ACCENT" breaks at the dot, one idea per line, not as "9 COLORS · 1 MAIN / ACCENT". */}
+          {splitDots(v.title).map((part, i) => (
+            <span key={i} className="block">
+              {part}
+            </span>
+          ))}
         </motion.div>
       )}
       {hero ? (
@@ -47,8 +53,13 @@ export function SwatchVisual({ v }: { v: Extract<Visual, { type: "swatch" }> }) 
               </motion.div>
               <motion.div initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 0.85 }} transition={{ delay: 0.55 }} className="mt-[2cqw] font-mono" style={{ fontSize: "min(20px, 5cqw)" }}>
                 {hero.hex.toUpperCase()}
-                {hero.note ? ` · ${hero.note}` : ""}
               </motion.div>
+              {/* The colour's job on its own line in plain type ("#D3F05A · the main" / "accent" wrapped in mono). */}
+              {hero.note && (
+                <motion.div initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 0.9 }} transition={{ delay: 0.65 }} className="mt-[1cqw] font-hook font-bold leading-tight" style={{ fontSize: "min(22px, 5.5cqw)" }}>
+                  {sentenceCase(hero.note)}
+                </motion.div>
+              )}
             </div>
           </motion.div>
           {v.colors.length > 1 && (

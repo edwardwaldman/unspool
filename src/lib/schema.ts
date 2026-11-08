@@ -322,6 +322,13 @@ export function clip(text: string, n: number): string {
   return out.trim() || t.slice(0, n);
 }
 
+const words = (x: string) => plain(x).toLowerCase().replace(/[^\p{L}\p{N}%$ ]+/gu, " ").split(/\s+/).filter(Boolean);
+/** True when a line of 4+ words is spoken verbatim in the voiceover. */
+function echoes(line: string, say: string): boolean {
+  const w = words(line);
+  return w.length >= 4 && ` ${words(say).join(" ")} `.includes(` ${w.join(" ")} `);
+}
+
 export function normalizeReelScript(s: ReelScript, opts: { maxBeats?: number } = {}): ReelScript {
   let lastMove: string | undefined;
   const beats = s.beats.filter((b) => b.say.trim()).map((raw, i) => {
@@ -359,6 +366,9 @@ export function normalizeReelScript(s: ReelScript, opts: { maxBeats?: number } =
     if (v.type === "flow") return v.steps.length < 2 ? word(v.steps[0]?.title ?? "", v.steps[0]?.sub) : { ...b, visual: { ...v, steps: v.steps.slice(0, 4) } };
     if (v.type === "list") return v.items.length < 2 ? word(v.title, v.items[0]?.label) : { ...b, visual: { ...v, items: v.items.slice(0, 5) } };
     if (v.type === "icons") return v.items.length < 1 ? word("KEY IDEA") : { ...b, visual: { ...v, items: v.items.slice(0, 3) } };
+    // A sub that the voice says word for word in the same beat ("the other eight back it up" under "ONLY 1 SHOUTS"
+    // while the caption reads "The other eight back it up") is on screen twice: keep the big word alone.
+    if (v.type === "bigword" && echoes(v.sub, b.say)) return { ...b, visual: { ...v, sub: "" } };
     if (v.type === "crowd") return { ...b, visual: { ...v, ratio: Math.min(0.9, Math.max(0.02, v.ratio)) } };
     if (v.type === "graph") return { ...b, visual: normalizeGraph(v) };
     if (v.type === "swatch") {
