@@ -1,6 +1,6 @@
 # Voiceover for an ad: reads <dir>/lines.json, writes <dir>/voice.wav and <dir>/web/tl.json (line timings + loudness).
 #   python brand/ads/tools/vo.py brand/ads/<ad>          (or a scratch copy of it)
-# lines.json: {"engine": "elevenlabs"|"kokoro", "voice": ..., "speed": 1.1, "lead": 0.3, "tail": 0, "gap": 0.2,
+# lines.json: {"engine": "elevenlabs"|"kokoro"|"files", "voice": ..., "speed": 1.1, "lead": 0.3, "tail": 0, "gap": 0.2,
 #              "pron": {"word": "IPA"}, "lines": [[shot, text, gap?, caption?], ...]}
 # ElevenLabs is used when the engine says so and api.elevenlabs.io is reachable with a key: either ELEVENLABS_API_KEY,
 # or a network secret on the cloud environment (the proxy adds the key, so a placeholder header is sent).
@@ -51,6 +51,14 @@ def speak(text):
     for word, ipa in cfg.get("pron", {}).items():
         if engine == "kokoro": text = re.sub(rf"\b{re.escape(word)}\b", f"[{word}](/{ipa}/)", text)
     text = say_years(text)
+    if engine == "files":  # clips made elsewhere (e.g. the ElevenLabs connector): <dir>/vo/<shot>.mp3|wav, one per line
+        import subprocess
+        for ext in ("wav", "mp3"):
+            f = os.path.join(D, "vo", f"{shot_now}.{ext}")
+            if os.path.exists(f):
+                raw = subprocess.run(["ffmpeg", "-v", "error", "-i", f, "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"], capture_output=True, check=True).stdout
+                return np.frombuffer(raw, dtype="<f4").copy()
+        raise SystemExit(f"missing vo/{shot_now}.mp3 for engine 'files'")
     if engine == "elevenlabs":
         try: return eleven(text)
         except Exception as e:
@@ -62,7 +70,7 @@ for row in cfg["lines"]:
     shot, text = row[0], row[1]; gap = row[2] if len(row) > 2 else cfg.get("gap", 0.25)
     if not text:
         out.append({"shot": shot, "s": round(t, 3), "e": round(t + gap, 3), "text": ""}); pcm.append(np.zeros(int(SR * gap), np.float32)); t += gap; continue
-    a = speak(text); nz = np.where(np.abs(a) > 0.01)[0]
+    shot_now = shot; a = speak(text); nz = np.where(np.abs(a) > 0.01)[0]
     if len(nz): a = a[max(0, nz[0] - 500): nz[-1] + 900]
     d = len(a) / SR
     caption = row[3] if len(row) > 3 else re.sub(r"\[[a-z ]+\]\s*", "", text)
