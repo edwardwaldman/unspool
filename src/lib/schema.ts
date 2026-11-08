@@ -244,6 +244,10 @@ export function cleanObjects(objects: SceneObject[]): SceneObject[] {
     .map(({ o }) => o);
 }
 
+// A hook tag that says nothing about this reel ("BIG NUMBER" over a $57 billion quarter, "KEY IDEA", "DID YOU KNOW")
+// wastes the first frame's headline.
+const GENERIC_TAG = /^\s*(the\s+)?(big|key|main|one|important|fun|quick|crazy|wild|huge)?\s*(number|idea|point|fact|term|thing|concept|lesson|takeaway|rule|basics|trick)s?\s*!?\s*$|^\s*(did you know|must know|pay attention|listen up|wait for it|watch this|here'?s the thing|mind ?blown|hot take|real talk|fyi)\??!?\s*$/i;
+
 const EXAM_CLAIM = /\b(guaranteed|(?<!likely )on the (exam|test|final)|will be (tested|on the))\b/i;
 
 /**
@@ -267,8 +271,9 @@ export function repairVisuals<T extends Pick<ReelScript, "beats"> & { title?: st
   s = { ...s, beats: s.beats.map((b) => (b.visual.type === "equation" || b.visual.type === "graph" ? b : { ...b, visual: unmark(b.visual) })), ...(s.quiz ? { quiz: { ...s.quiz, question: plain(s.quiz.question), options: s.quiz.options.map(plain) } } : {}) };
   const hook = s.beats[0]?.visual;
   // A hook tag that promises the exam ("GUARANTEED QUESTION" on a biology reel whose notes say nothing of the kind)
-  // is a claim the reel can't back; the reel's own title is always true.
-  if (hook?.type === "hook" && s.title && EXAM_CLAIM.test(hook.tag)) {
+  // is a claim the reel can't back, and a generic one ("BIG NUMBER") says nothing; the reel's own title is always true
+  // and names the subject.
+  if (hook?.type === "hook" && s.title && (EXAM_CLAIM.test(hook.tag) || GENERIC_TAG.test(hook.tag) || !hook.tag.trim())) {
     s = { ...s, beats: [{ ...s.beats[0], visual: { ...hook, tag: s.title } }, ...s.beats.slice(1)] };
   }
   const palette = new Map<string, string>();

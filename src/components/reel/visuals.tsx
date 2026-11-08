@@ -214,11 +214,13 @@ function FlowVisual({ v, progress }: { v: Extract<Visual, { type: "flow" }>; pro
 
 /** "PAPER · background": the name on its own line and its job under it, instead of one line broken at the dot. */
 function ItemLabel({ label }: { label: string }) {
-  const [name, ...rest] = splitDots(label);
+  // "Q3 FY26: THIS QUARTER" and "Telos: the goal" read like "PAPER · background": a short name, then its job.
+  const colon = /^([^:]{1,18}):\s+(.+)$/.exec(label);
+  const [name, ...rest] = colon && !/^\d+$/.test(colon[1].trim()) ? [colon[1], colon[2]] : splitDots(label);
   return (
     <span className="flex flex-col">
       <span className="text-[21px] font-semibold leading-tight tracking-[-0.01em] text-white">{sentence(rest.length ? name : label)}</span>
-      {rest.length > 0 && <span className="mt-0.5 text-[15px] font-medium leading-tight text-white/65">{rest.join(" · ")}</span>}
+      {rest.length > 0 && <span className="mt-0.5 text-[15px] font-medium leading-tight text-white/65">{sentence(rest.join(" · "))}</span>}
     </span>
   );
 }
