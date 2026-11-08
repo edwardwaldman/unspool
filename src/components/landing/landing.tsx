@@ -155,7 +155,7 @@ function Headline() {
 }
 
 /** First-visit home: one line, the upload reel, and a big document-to-reels animation beside it. */
-export function Landing({ studioOnSignIn = true }: { /** Off while the owner tests as a signed-out visitor (the server keeps showing them the landing). */ studioOnSignIn?: boolean } = {}) {
+export function Landing({ studioOnSignIn = true, faq }: { /** Off while the owner tests as a signed-out visitor (the server keeps showing them the landing). */ studioOnSignIn?: boolean; /** Server-rendered FAQ section, above the footer. */ faq?: React.ReactNode } = {}) {
   // The side-by-side hero starts at 900px so landscape iPads (about 1000px wide) get it too.
   const lg = useMedia("(min-width: 900px)");
   const vh = useViewport("innerHeight", 900);
@@ -261,6 +261,7 @@ export function Landing({ studioOnSignIn = true }: { /** Off while the owner tes
           Pull up
         </button>
         <InfoSlide toStudio={studioOnSignIn} />
+        {faq}
         <SiteFooter />
       </div>
     </div>

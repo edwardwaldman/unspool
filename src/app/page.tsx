@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { HomeFaq } from "@/components/landing/home-faq";
 import { Landing } from "@/components/landing/landing";
 import { AppShell } from "@/components/shell/app-shell";
 import { supabaseConfigured } from "@/lib/config";
@@ -33,7 +34,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   }
   return (
     <AppShell active="home">
-      <Landing studioOnSignIn={!ownerOut} />
+      <Landing studioOnSignIn={!ownerOut} faq={<HomeFaq />} />
     </AppShell>
   );
 }
