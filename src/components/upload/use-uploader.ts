@@ -4,15 +4,16 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef } from "react";
 import { track } from "../analytics/track";
 import { openAuth } from "../auth/auth-store";
-import { getSessionUser, useSessionUser } from "../auth/use-session";
+import { useSessionUser } from "../auth/use-session";
 import { toast } from "../ui/toast";
 import { RESUME_PARAM, takeStashedFile } from "./file-stash";
 import { holdFile, isPromptFile, startPrompt, startUpload, validateFile } from "./upload-store";
 
 /**
- * Upload a file and jump straight into its feed. The file always comes first: uploading needs a (free)
- * account, so signed-out visitors keep the file they chose in memory while the sign-up popup opens,
- * and it starts uploading the moment they're in.
+ * Upload a file and jump straight into its feed. The file always comes first. Signed-out visitors get one
+ * preview document without an account: it unspools, they see the first frame of reel 1, and any tap asks
+ * them to sign up (SpoolFeed). If the server won't allow a preview, the file is held in memory while the
+ * sign-up popup opens, and it starts uploading the moment they're in.
  */
 export function useUploader() {
   const router = useRouter();
@@ -47,8 +48,9 @@ export function useUploader() {
         }
       };
 
-      if (getSessionUser() === false) gate();
-      else await run();
+      // Signed out too: the first document is made without an account, so they see its first reel before
+      // signing up (the server says "auth" when a preview isn't allowed, and then the sign-up gate opens first).
+      await run();
     },
     [router],
   );

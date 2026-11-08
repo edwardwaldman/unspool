@@ -549,6 +549,7 @@ export function Workbench({
   upload,
   onRetry,
   onDeleted,
+  holdFirstFrame = false,
 }: {
   items: FeedItem[];
   viewer: ViewerDTO | null;
@@ -557,6 +558,8 @@ export function Workbench({
   upload?: UploadState | null;
   onRetry?: (spool: SpoolDTO | null) => void;
   onDeleted?: (spool: SpoolDTO) => void;
+  /** Signed-out preview: keep the reel on its first frame (any tap asks them to sign up). */
+  holdFirstFrame?: boolean;
 }) {
   const [index, setIndex] = useState(initialIndex);
   const [paywall, setPaywall] = useState(false);
@@ -726,7 +729,7 @@ export function Workbench({
                 <ReelSlot
                   item={it}
                   upload={i === 0 ? upload ?? null : null}
-                  active={i === cur && !paywall && !moreOpen && !shareOpen}
+                  active={i === cur && !paywall && !moreOpen && !shareOpen && !holdFirstFrame}
                   onScreen={i === cur}
                   total={reels.length || MAX_REELS}
                   bottomInset={0}

@@ -33,10 +33,21 @@ export async function POST(req: Request) {
   if (!fileName) return error(400, "Type a topic to study.");
 
   const viewer = await getViewer();
-  // A free account is required to unspool: it's what the free reel (and any purchase) is tied to.
-  if (!viewer.userId) return error(401, "Create a free account to unspool your document.", { code: "auth" });
   const ipHash = await clientIpHash();
   const db = adminClient();
+  const SIGN_UP = "Create a free account to unspool your document.";
+  if (!viewer.userId) {
+    // Signed out: one preview document per browser (and per network a day), made so they can see their first
+    // reel before signing up. It's tied to the anonymous cookie and attached to the account at sign-up
+    // (/api/auth/claim, /auth/callback). Anything more needs the account.
+    if (!viewer.anonToken) return error(401, SIGN_UP, { code: "auth" });
+    const { count } = await db.from("documents").select("id", { count: "exact", head: true }).is("user_id", null).eq("anon_token", viewer.anonToken);
+    if (count) return error(401, SIGN_UP, { code: "auth" });
+    const ok = await claimUsage({ kind: "upload", scope: "user_or_ip", limit: 1, userId: null, ipHash });
+    if (ok === null) return error(503, "Uploads are briefly unavailable. Try again in a minute.");
+    if (!ok) return error(401, SIGN_UP, { code: "auth" });
+    return createDocument(db, viewer, ipHash, prompt, pasted, fileName, size, body);
+  }
 
   // Free accounts get one document, ever (counted from the upload ledger, so deleting it doesn't give it back),
   // unless the owner has switched on open access.
@@ -77,6 +88,20 @@ export async function POST(req: Request) {
     );
   }
 
+  return createDocument(db, viewer, ipHash, prompt, pasted, fileName, size, body);
+}
+
+/** Insert the document and either store the typed prompt and start, or hand back a signed upload URL for the file. */
+async function createDocument(
+  db: ReturnType<typeof adminClient>,
+  viewer: Awaited<ReturnType<typeof getViewer>>,
+  ipHash: string | null,
+  prompt: string | null,
+  pasted: boolean,
+  fileName: string,
+  size: number,
+  body: { testOne?: unknown } | null,
+) {
   const ext = prompt !== null ? "txt" : extensionOf(fileName);
   const { data: doc, error: insErr } = await db
     .from("documents")

@@ -1,4 +1,6 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
+import { attachAnonymousUpload } from "@/lib/usage";
+import { clientIpHash } from "@/lib/viewer";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { ANON_COOKIE, safeNextPath } from "@/lib/config";
@@ -30,12 +32,17 @@ export async function GET(req: Request) {
   if (error || !data.user) return fail("auth");
 
   const anon = (await cookies()).get(ANON_COOKIE)?.value;
+  const userId = data.user.id;
   if (anon) {
     await adminClient()
       .from("documents")
-      .update({ user_id: data.user.id, anon_token: null })
+      .update({ user_id: userId, anon_token: null })
       .is("user_id", null)
-      .eq("anon_token", anon);
+      .eq("anon_token", anon)
+      .select("id")
+      .then(async ({ data: claimed }) => {
+        if (claimed?.length) await attachAnonymousUpload(userId, await clientIpHash());
+      });
   }
   return NextResponse.redirect(new URL(next, url.origin));
 }

@@ -3,7 +3,8 @@ import { ANON_COOKIE, REF_COOKIE, supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
 import { SHARE_SLUG } from "@/lib/shares";
 import { adminClient } from "@/lib/supabase/admin";
-import { getViewer } from "@/lib/viewer";
+import { attachAnonymousUpload } from "@/lib/usage";
+import { clientIpHash, getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,8 @@ export async function POST() {
   const jar = await cookies();
   const anon = jar.get(ANON_COOKIE)?.value;
   if (anon) {
-    await adminClient().from("documents").update({ user_id: viewer.userId, anon_token: null }).is("user_id", null).eq("anon_token", anon);
+    const { data } = await adminClient().from("documents").update({ user_id: viewer.userId, anon_token: null }).is("user_id", null).eq("anon_token", anon).select("id");
+    if (data?.length) await attachAnonymousUpload(viewer.userId, await clientIpHash());
   }
   // Came in through someone's share link: record it once (first touch), for attribution later.
   const ref = jar.get(REF_COOKIE)?.value;

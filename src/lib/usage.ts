@@ -51,3 +51,13 @@ export async function freeDocumentUsed(userId: string) {
   const { count } = await adminClient().from("usage_events").select("id", { count: "exact", head: true }).eq("kind", "upload").eq("user_id", userId);
   return (count ?? 0) > 0;
 }
+
+/**
+ * A signed-out preview document was just attached to this account: move its upload from the network's
+ * anonymous tally to the account, so it counts as the account's one free document.
+ */
+export async function attachAnonymousUpload(userId: string, ipHash: string | null) {
+  if (!ipHash) return;
+  const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  await adminClient().from("usage_events").update({ user_id: userId }).eq("kind", "upload").is("user_id", null).eq("ip_hash", ipHash).gte("created_at", since);
+}

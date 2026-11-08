@@ -101,6 +101,7 @@ export function Feed({
   upload,
   onRetry,
   onDeleted,
+  holdFirstFrame = false,
 }: {
   items: FeedItem[];
   viewer: ViewerDTO | null;
@@ -111,6 +112,8 @@ export function Feed({
   upload?: UploadState | null;
   onRetry?: (spool: SpoolDTO | null) => void;
   onDeleted?: (spool: SpoolDTO) => void;
+  /** Signed-out preview: keep the reel on its first frame (any tap asks them to sign up). */
+  holdFirstFrame?: boolean;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(initialIndex);
@@ -200,7 +203,7 @@ export function Feed({
             <ReelSlot
               item={it}
               upload={i === 0 ? upload ?? null : null}
-              active={isActive && paywallFor === null && !moreOpen && !shareOpen}
+              active={isActive && paywallFor === null && !moreOpen && !shareOpen && !holdFirstFrame}
               onScreen={isActive}
               total={total(it.spool)}
               bottomInset={bottomInset}
