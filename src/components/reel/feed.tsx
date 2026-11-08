@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReelDTO, SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { MAX_REELS } from "@/lib/config";
 import { track } from "../analytics/track";
-import { ChevronDown, ChevronUp, FilterIcon } from "../ui/icons";
+import { ChevronDown, ChevronUp, FilterIcon, PlayIcon } from "../ui/icons";
 import { toast } from "../ui/toast";
 import { useIsDesktop } from "../ui/use-media";
 import type { UploadState } from "../upload/upload-store";
@@ -37,6 +37,7 @@ export function ReelSlot({
   onMore,
   onEnded,
   onShare,
+  onPlayGate,
 }: {
   item: FeedItem;
   upload: UploadState | null;
@@ -52,6 +53,8 @@ export function ReelSlot({
   onMore: () => void;
   onEnded: () => void;
   onShare?: () => void;
+  /** Signed-out preview: hold the first frame under a play button; pressing it calls this (the sign-up). */
+  onPlayGate?: () => void;
 }) {
   const r = item.reel;
   if (!r || (!r.locked && r.status !== "ready")) {
@@ -61,7 +64,7 @@ export function ReelSlot({
     const s = item.spool;
     return <LockedReel reel={r} total={total} bottomInset={bottomInset} topInset={topInset} onUnlock={onUnlock} gateOpen={onScreen && !active} freeAt={s ? freeAtFor(r.index, s.freeReels, s.nextFreeUnlockAt) : null} />;
   }
-  return <ReelView spool={item.spool!} reel={r} active={active} onScreen={onScreen} total={total} chrome={{ bottomInset, topInset }} onMore={onMore} onEnded={onEnded} onShare={onShare} />;
+  return <ReelView spool={item.spool!} reel={r} active={active} onScreen={onScreen} total={total} chrome={{ bottomInset, topInset }} onMore={onMore} onEnded={onEnded} onShare={onShare} overlay={onPlayGate ? <PlayGate onPlay={onPlayGate} /> : undefined} />;
 }
 
 /** The "more" sheet for a spool's reel (mute, speed, delete the document). */
@@ -101,7 +104,7 @@ export function Feed({
   upload,
   onRetry,
   onDeleted,
-  holdFirstFrame = false,
+  onPlayGate,
 }: {
   items: FeedItem[];
   viewer: ViewerDTO | null;
@@ -112,8 +115,8 @@ export function Feed({
   upload?: UploadState | null;
   onRetry?: (spool: SpoolDTO | null) => void;
   onDeleted?: (spool: SpoolDTO) => void;
-  /** Signed-out preview: keep the reel on its first frame (any tap asks them to sign up). */
-  holdFirstFrame?: boolean;
+  /** Signed-out preview: the reel waits on its first frame behind a play button that asks them to sign up. */
+  onPlayGate?: () => void;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(initialIndex);
@@ -203,7 +206,8 @@ export function Feed({
             <ReelSlot
               item={it}
               upload={i === 0 ? upload ?? null : null}
-              active={isActive && paywallFor === null && !moreOpen && !shareOpen && !holdFirstFrame}
+              active={isActive && paywallFor === null && !moreOpen && !shareOpen && !onPlayGate}
+              onPlayGate={onPlayGate}
               onScreen={isActive}
               total={total(it.spool)}
               bottomInset={bottomInset}
@@ -288,5 +292,28 @@ export function Feed({
       {active?.spool && <SpoolMoreSheet spool={active.spool} reel={active.reel} viewer={viewer} open={moreOpen} onClose={() => setMoreOpen(false)} onDeleted={onDeleted} />}
     </div>
     </div>
+  );
+}
+
+/** The paused first frame of a signed-out preview: a play button over the reel; trying to play it opens sign-up. */
+function PlayGate({ onPlay }: { onPlay: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onPlay();
+      }}
+      aria-label="Play your reel (sign up free)"
+      className="absolute inset-0 z-40 flex cursor-pointer items-center justify-center bg-black/10"
+      data-testid="play-gate"
+    >
+      <span className="flex flex-col items-center gap-3">
+        <span className="flex h-[84px] w-[84px] items-center justify-center rounded-full bg-black/40 pl-1.5 text-white backdrop-blur-[2px] shadow-[0_10px_30px_rgba(0,0,0,.35)]">
+          <PlayIcon size={40} />
+        </span>
+        <span className="rounded-full bg-black/55 px-3.5 py-1.5 text-[14px] font-semibold text-white">Your reel is ready. Tap to play</span>
+      </span>
+    </button>
   );
 }

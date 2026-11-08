@@ -29,7 +29,7 @@ type ViewProps = {
   onIndexChange?: (i: number) => void;
   onRetry?: () => void;
   onDeleted?: () => void;
-  holdFirstFrame?: boolean;
+  onPlayGate?: () => void;
 };
 
 /** Phones and tablets get the vertical reel feed; desktops (>= 1024px) get the workbench around the same player. */
@@ -116,13 +116,11 @@ export function SpoolFeed({ id }: { id: string }) {
 
   const preview = viewer !== null && !viewer.signedIn;
   return (
-    <>
-    {preview && <SignUpToWatch id={id} />}
     <SpoolView
       items={items}
       viewer={viewer}
       docHref={`/s/${id}`}
-      holdFirstFrame={preview}
+      onPlayGate={preview ? () => askToSignUp(id) : undefined}
       initialIndex={initialReel}
       upload={upload}
       onIndexChange={(i) => {
@@ -136,41 +134,13 @@ export function SpoolFeed({ id }: { id: string }) {
       }}
       onDeleted={() => router.push("/library")}
     />
-    </>
   );
 }
 
-/**
- * A signed-out visitor's preview document: their reel unspools and sits on its first frame, and the first tap
- * or key anywhere asks them to sign up. Signing up attaches the document to the new account and it plays on.
- */
-function SignUpToWatch({ id }: { id: string }) {
-  const ask = (e: { preventDefault: () => void; stopPropagation: () => void }) => {
-    e.preventDefault();
-    e.stopPropagation();
-    openAuth("signup", {
-      next: `/s/${id}`,
-      onDone: () => void fetch("/api/auth/claim", { method: "POST" }).finally(() => window.location.reload()),
-    });
-  };
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (document.querySelector("[data-auth-modal]")) return;
-      if (e.key === " " || e.key === "Enter" || e.key.startsWith("Arrow")) ask(e);
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-  return (
-    <button
-      type="button"
-      aria-label="Sign up free to watch your reels"
-      onPointerDownCapture={ask}
-      onWheel={ask}
-      onTouchMove={ask}
-      className="fixed inset-0 z-[80] cursor-pointer bg-transparent"
-      data-testid="signup-to-watch"
-    />
-  );
+/** A signed-out visitor pressed play on their preview reel: sign up, attach the document to the account, play on. */
+function askToSignUp(id: string) {
+  openAuth("signup", {
+    next: `/s/${id}`,
+    onDone: () => void fetch("/api/auth/claim", { method: "POST" }).finally(() => window.location.reload()),
+  });
 }
