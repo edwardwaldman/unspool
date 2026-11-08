@@ -265,6 +265,40 @@ function unmark<V>(v: V): V {
   return v;
 }
 
+/** Per-beat visual repairs that read the beat's own line (safe on stored reels: nothing said or timed changes). */
+function repairBeat<B extends Beat>(beat: B): B {
+  let b = beat;
+  // A prop labelled with half a name ("CARPENTER" on a crate, "BUMBLE" on a ball) while the line says "carpenter
+  // bees": the noun that follows the label in the line says what it is, so it is drawn as a bee instead of being
+  // dropped as a stand-in (the carpenter bee vanished from "bumble bees vs carpenter bees").
+  if (b.scene?.objects.length) {
+    const line = ` ${words(b.say).join(" ")} `;
+    let changed = false;
+    const objects = b.scene.objects.map((o) => {
+      const label = words(o.label);
+      if (!label.length || label.some((w) => REAL_BY_WORD[w])) return o;
+      const at = line.indexOf(` ${label.join(" ")} `);
+      const next = at < 0 ? "" : (line.slice(at + label.join(" ").length + 2).split(" ")[0] ?? "");
+      const real = REAL_BY_WORD[next];
+      if (!real) return o;
+      changed = true;
+      return { ...o, shape: real, label: clip(`${o.label.trim()} ${next.toUpperCase()}`, 28) };
+    });
+    if (changed) b = { ...b, scene: { ...b.scene, objects } };
+  }
+  const v = b.visual;
+  if (v.type === "bigword" && v.sub.trim() && !v.sub.trim().startsWith("…")) {
+    // A sub that finishes the big word's sentence ("NOT ALL" + "bees are honey bees", said as "Not all bees are honey
+    // bees") is half of the point: mark it as a continuation ("…bees are honey bees") so it reads as one line, and a
+    // 3D scene's heading shows the whole phrase instead of "Not all".
+    if (echoes(`${v.word} ${v.sub}`, b.say)) return { ...b, visual: { ...v, sub: `…${v.sub.trim()}` } };
+    // A sub that the voice says word for word in the same beat ("the other eight back it up" under "ONLY 1 SHOUTS"
+    // while the caption reads "The other eight back it up") is on screen twice: keep the big word alone.
+    if (echoes(v.sub, b.say)) return { ...b, visual: { ...v, sub: "" } };
+  }
+  return b;
+}
+
 export function repairVisuals<T extends Pick<ReelScript, "beats"> & { title?: string; quiz?: ReelScript["quiz"] }>(s: T): T {
   // From the audit of every stored reel: voice marks leaked into 8 on-screen graphics ("#NOT ALL#") and into quiz
   // options ("~The limit of g of x is 6.~"). Visual-only, so it is safe on stored reels too.
@@ -276,6 +310,7 @@ export function repairVisuals<T extends Pick<ReelScript, "beats"> & { title?: st
   if (hook?.type === "hook" && s.title && (EXAM_CLAIM.test(hook.tag) || GENERIC_TAG.test(hook.tag) || !hook.tag.trim())) {
     s = { ...s, beats: [{ ...s.beats[0], visual: { ...hook, tag: s.title } }, ...s.beats.slice(1)] };
   }
+  s = { ...s, beats: s.beats.map(repairBeat) };
   const palette = new Map<string, string>();
   const key = (x: string) => x.toLowerCase().replace(/^the\s+/, "").replace(/[^a-z0-9 ]+/g, "").trim();
   for (const b of s.beats) {
@@ -344,17 +379,19 @@ export function normalizeReelScript(s: ReelScript, opts: { maxBeats?: number } =
           camera: raw.scene.camera,
           ...(move ? { move } : {}),
           ...(setting ? { setting } : {}),
-          objects: cleanObjects(raw.scene.objects.slice(0, 8).map((o) => ({
+          objects: raw.scene.objects.slice(0, 8).map((o) => ({
             ...o,
             label: clip(o.label.trim(), 28),
             x: Math.max(-3, Math.min(3, o.x)),
             z: Math.max(-2, Math.min(2, o.z)),
             size: Math.max(0.4, Math.min(2.5, o.size || 1)),
-          }))),
+          })),
         }
       : undefined;
     const mood = raw.mood && (MOODS as readonly string[]).includes(raw.mood) ? raw.mood : undefined;
-    const b = { ...raw, scene, mood, image_prompt: (raw.image_prompt ?? "").trim().slice(0, 400) };
+    // Props are named from the line first ("CARPENTER" + "carpenter bees" is a bee), then stand-ins are dropped.
+    const named = repairBeat({ ...raw, scene, mood, image_prompt: (raw.image_prompt ?? "").trim().slice(0, 400) });
+    const b = { ...named, scene: named.scene ? { ...named.scene, objects: cleanObjects(named.scene.objects) } : undefined };
     const v = b.visual;
     // Too few items to be a flow or list: one big word instead (fixed here rather than rewriting the script).
     const word = (w: string, sub = "") => ({ ...b, visual: { type: "bigword" as const, word: clip(w, 24) || "KEY IDEA", sub: clip(sub, 60), color: "primary" as const } });
@@ -366,9 +403,6 @@ export function normalizeReelScript(s: ReelScript, opts: { maxBeats?: number } =
     if (v.type === "flow") return v.steps.length < 2 ? word(v.steps[0]?.title ?? "", v.steps[0]?.sub) : { ...b, visual: { ...v, steps: v.steps.slice(0, 4) } };
     if (v.type === "list") return v.items.length < 2 ? word(v.title, v.items[0]?.label) : { ...b, visual: { ...v, items: v.items.slice(0, 5) } };
     if (v.type === "icons") return v.items.length < 1 ? word("KEY IDEA") : { ...b, visual: { ...v, items: v.items.slice(0, 3) } };
-    // A sub that the voice says word for word in the same beat ("the other eight back it up" under "ONLY 1 SHOUTS"
-    // while the caption reads "The other eight back it up") is on screen twice: keep the big word alone.
-    if (v.type === "bigword" && echoes(v.sub, b.say)) return { ...b, visual: { ...v, sub: "" } };
     if (v.type === "crowd") return { ...b, visual: { ...v, ratio: Math.min(0.9, Math.max(0.02, v.ratio)) } };
     if (v.type === "graph") return { ...b, visual: normalizeGraph(v) };
     if (v.type === "swatch") {

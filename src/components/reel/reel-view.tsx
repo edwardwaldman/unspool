@@ -191,7 +191,7 @@ export function ReelView({
             ? { visual: pb.segment.visual, script, progress: fraction, last: reel.index === total, pulse: hits, scene: pb.segment.kind === "beat" ? script.beats[pb.segment.beatIndex]?.scene : undefined, mood: pb.segment.kind === "beat" ? script.beats[pb.segment.beatIndex]?.mood : undefined }
             : isQuiz && quizBeat
               ? // The story's last 3D scene keeps playing behind the quiz, and its mood reacts to the answer.
-                { visual: quizBeat.visual, script, progress: 1, last: reel.index === total, pulse: 0, scene: quizBeat.scene, mood: !pb.quiz.revealed ? "calm" : pb.quiz.selected === script.quiz.answer ? "win" : "warn" }
+                { visual: quizBeat.visual, script, progress: 1, last: reel.index === total, pulse: 0, scene: quizBeat.scene, mood: !pb.quiz.revealed ? "calm" : pb.quiz.selected === script.quiz.answer ? "win" : "warn", bare: true }
               : null
         }
       />

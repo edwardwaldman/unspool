@@ -92,14 +92,18 @@ function BigWordVisual({ v }: { v: Extract<Visual, { type: "bigword" }> }) {
       >
         {word}
       </motion.div>
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.5 }}
-        className={`relative mt-5 max-w-[290px] px-4 py-1.5 text-[15px] font-medium text-white ${glass}`}
-      >
-        {sentence(subs.join(", "))}
-      </motion.div>
+      {/* No sub, no pill (an empty glass box sat under the word when the normalizer dropped an echoed sub). */}
+      {subs.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className={`relative mt-5 max-w-[290px] px-4 py-1.5 text-[15px] font-medium text-white ${glass}`}
+        >
+          {/* "…bees are honey bees" carries on the big word's sentence, so it stays lower case. */}
+          {v.sub.trim().startsWith("…") ? sentence(subs.join(", ")).replace(/^…(\p{Lu})/u, (_, c: string) => `…${c.toLowerCase()}`) : sentence(subs.join(", "))}
+        </motion.div>
+      )}
     </div>
   );
 }
@@ -569,6 +573,8 @@ export type StageProps = {
   scene?: SceneSpec;
   /** The beat's background mood, when the script sets one. */
   mood?: Mood;
+  /** Behind the quiz card: the last scene keeps playing without its heading or labels. */
+  bare?: boolean;
 };
 
 /** One beat's motion graphic, centred and as large as the space allows, popping in and floating gently (as in the ads). The quiz is an interactive overlay (QuizCard), not part of the stage. */

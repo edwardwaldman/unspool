@@ -16,7 +16,7 @@ import { sentenceCase } from "./text";
 // pushes in while the beat plays. One scene per visual type, built from the beat's own words and icons.
 
 type SceneVisual = Exclude<Visual, { type: "quiz" }>;
-export type Scene3DProps = { visual: SceneVisual; progress: number; accent: string; colors: Record<HighlightColor, string>; beatKey: string; scene?: SceneSpec; mood?: Mood; onLost?: () => void };
+export type Scene3DProps = { visual: SceneVisual; progress: number; accent: string; colors: Record<HighlightColor, string>; beatKey: string; scene?: SceneSpec; mood?: Mood; onLost?: () => void; /** Behind the quiz: the scene plays on, without its heading and labels competing with the question. */ bare?: boolean };
 
 const SCENE_TYPES = new Set(["hook", "bigword", "split", "flow", "list", "icons", "crowd", "stat"]);
 export const hasScene = (v: { type: string }) => SCENE_TYPES.has(v.type);
@@ -721,7 +721,8 @@ function SceneFor({ visual, progress, accent, colors }: Omit<Scene3DProps, "beat
 export function keyTerm(v: SceneVisual): string {
   switch (v.type) {
     case "bigword":
-      return v.word;
+      // "NOT ALL" + "…bees are honey bees": the heading is the whole phrase, not its first two words.
+      return v.sub.trim().startsWith("…") ? `${sentenceCase(v.word)} ${sentenceCase(v.sub.trim().slice(1)).replace(/^\p{Lu}(?=\p{Ll})/u, (c) => c.toLowerCase())}` : v.word;
     case "stat":
       return v.value;
     case "split":
@@ -873,7 +874,7 @@ function Setting({ name }: { name: SettingName }) {
   );
 }
 
-export default function Scene3D({ visual, progress, accent, colors, beatKey, scene, mood, onLost }: Scene3DProps) {
+export default function Scene3D({ visual, progress, accent, colors, beatKey, scene, mood, onLost, bare }: Scene3DProps) {
   const story = Boolean(scene?.objects?.length);
   const lostRef = useRef(onLost);
   useEffect(() => {
@@ -889,7 +890,7 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
     };
   }, []);
   const content = useRef<THREE.Group>(null);
-  const term = story ? keyTerm(visual).replace(/[*#^~]/g, "").trim() : "";
+  const term = story && !bare ? keyTerm(visual).replace(/[*#^~]/g, "").trim() : "";
   const pins = useRef(new Map<string, Pin>());
   const els = useRef(new Map<string, HTMLDivElement>());
   const [list, setList] = useState<Pin[]>([]);
@@ -968,7 +969,7 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
         </div>
       )}
       {/* The pinned label chips */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className={`pointer-events-none absolute inset-0 overflow-hidden transition-opacity duration-300 ${bare ? "opacity-0" : ""}`}>
         {list.map((p) => (
           <div
             key={p.id}

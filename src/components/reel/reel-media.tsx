@@ -148,7 +148,7 @@ export function ReelMedia({
       {in3d && stage && sceneColors ? (
         <div className="absolute inset-x-0 z-[5]" style={{ top: stageBox.top, bottom: stageBox.bottom }}>
           {/* @ts-expect-error quiz/outro never reach here (SCENE_TYPES) */}
-          <Scene3D key={lost} visual={stage.visual} progress={stage.progress} accent={sceneColors.accent} colors={sceneColors.colors} beatKey={stageKey} scene={scene} mood={stage.mood} onLost={() => setLost((n) => n + 1)} />
+          <Scene3D key={lost} visual={stage.visual} progress={stage.progress} accent={sceneColors.accent} colors={sceneColors.colors} beatKey={stageKey} scene={scene} mood={stage.mood} bare={stage.bare} onLost={() => setLost((n) => n + 1)} />
         </div>
       ) : (
         <>
