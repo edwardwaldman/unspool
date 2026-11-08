@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default async function OwnerPage() {
   const viewer = await getViewer();
   if (!viewer.isOwner) notFound(); // the real identity, even while testing as another tier
-  // Once Face ID is set up, the panel needs a recent Face ID unlock.
+  // Signed in as the owner is enough; Face ID is only the way in when signed out (/owner/unlock).
   if (await ownerNeedsUnlock(viewer.realUserId)) redirect("/owner/unlock");
   return (
     <AppShell active="none">

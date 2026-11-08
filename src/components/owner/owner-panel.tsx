@@ -121,7 +121,7 @@ function Trail({ events }: { events: TrailEvent[] }) {
 async function post<T = Record<string, unknown>>(body: Record<string, unknown>): Promise<T | null> {
   const res = await fetch("/api/owner", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   const b = await res.json().catch(() => ({}));
-  // The Face ID unlock ran out: back to the door.
+  // Signed out mid-session: back to the Face ID door.
   if (res.status === 403 && b.code === "locked") {
     window.location.replace("/owner/unlock");
     return null;

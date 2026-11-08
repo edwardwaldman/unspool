@@ -1,18 +1,17 @@
 import { generateRegistrationOptions, verifyRegistrationResponse } from "@simplewebauthn/server";
 import type { RegistrationResponseJSON } from "@simplewebauthn/server";
 import { error, json } from "@/lib/http";
-import { isUnlocked, listPasskeys, relyingParty, setChallenge, setUnlocked, takeChallenge } from "@/lib/owner-passkey";
+import { listPasskeys, relyingParty, setChallenge, setUnlocked, takeChallenge } from "@/lib/owner-passkey";
 import { adminClient } from "@/lib/supabase/admin";
 import { getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 
-/** Only the verified, signed-in owner; and once a passkey exists, only from an already unlocked session. */
+/** Only the verified, signed-in owner (being signed in is what lets you into the panel, so it can add a device too). */
 async function owner() {
   const viewer = await getViewer();
   if (!viewer.isOwner || !viewer.realUserId || !viewer.realEmail) return null;
   const keys = await listPasskeys();
-  if (keys.length && !(await isUnlocked(viewer.realUserId))) return null;
   return { viewer, keys };
 }
 

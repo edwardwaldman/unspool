@@ -3,8 +3,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { adminClient } from "./supabase/admin";
 
-// Face ID (a WebAuthn passkey) for the owner panel. The owner registers a passkey while signed in; after that the
-// panel and its data need a fresh passkey unlock (12 h), and /owner/unlock signs the owner in with Face ID alone.
+// Face ID (a WebAuthn passkey) for the owner panel. The owner registers a passkey while signed in; after that a
+// signed-in owner goes straight into the panel; when signed out, /owner/unlock signs the owner in with Face ID alone.
 
 const CHALLENGE_COOKIE = "unspool_pk_chal";
 export const UNLOCK_COOKIE = "unspool_owner_unlock";
@@ -89,12 +89,10 @@ export async function listPasskeys(): Promise<OwnerPasskey[]> {
 }
 
 /**
- * Whether the panel must be unlocked with Face ID for this owner: once any passkey exists. Before the first one
- * is set up the panel works as before (signed-in owner), so setting it up can't lock the owner out.
+ * Whether the panel must be unlocked with Face ID. A signed-in owner never does: being logged in is enough, and Face ID
+ * is the way in when you are NOT signed in (/owner/unlock signs you in with it). Callers have already checked that
+ * userId is the verified owner; with no signed-in user the answer is always "locked".
  */
 export async function ownerNeedsUnlock(userId: string | null) {
-  const keys = await listPasskeys().catch(() => null);
-  // A failed read fails closed once passkeys might exist: treat as locked.
-  if (keys === null) return !(await isUnlocked(userId));
-  return keys.length > 0 && !(await isUnlocked(userId));
+  return !userId;
 }
