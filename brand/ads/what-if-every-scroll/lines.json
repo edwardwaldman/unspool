@@ -1,0 +1,21 @@
+{
+ "voice": "am_fenrir",
+ "speed": 1.04,
+ "lead": 0.3,
+ "tail": 0,
+ "gap": 0.26,
+ "lines": [
+  ["hook", "What if every scroll stole double the time?", 0.35],
+  ["every", "One minute. Then two. Then four. Then eight.", 0.3],
+  ["chapter", "By sunrise? Eight hours. Your bio chapter? Still unread.", 0.3],
+  ["gone", "By the test? A whole week. Gone.", 0.4],
+  ["fix", "So, don't put it down.", 0.3],
+  ["snap", "Snap the chapter, and BOOM! It turns into TikToks.", 0.24],
+  ["cards", "Short TikToks, made from YOUR chapter.", 0.24],
+  ["scroll", "Now every scroll teaches you something.", 0.3],
+  ["sticks", "Test day? It STICKS.", 0.3],
+  ["count", "Don't put it down. Make it count.", 0.3],
+  ["cta", "Try it free. unspool dot c c.", 0.24, "Try it free. unspool.cc"],
+  ["end", "", 1.2]
+ ]
+}
