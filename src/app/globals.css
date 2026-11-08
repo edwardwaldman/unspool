@@ -149,3 +149,11 @@ em.font-display {
 .prose-unspool.legal-dense p, .prose-unspool.legal-dense li { font-size: 14.5px; line-height: 1.58; margin-bottom: 0.55rem; }
 .prose-unspool.legal-dense h2 { font-size: 1.3rem; margin-top: 1.9rem; margin-bottom: 0.45rem; }
 .prose-unspool.legal-dense ul { padding-left: 1.1rem; }
+
+/* The prompt box's typing caret */
+@keyframes caret-blink {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
+.typing-caret { animation: caret-blink 1s infinite; }
+@media (prefers-reduced-motion: reduce) { .typing-caret { animation: none; } }

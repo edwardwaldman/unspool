@@ -96,6 +96,47 @@ function PlusUpload() {
   );
 }
 
+/** Example topics the empty prompt box types out, one after another. */
+const EXAMPLE_TOPICS = [
+  "Photosynthesis, AP Bio",
+  "The causes of World War I",
+  "How the stock market works",
+  "Supply and demand",
+  "The French Revolution",
+  "Mitosis vs meiosis",
+  "Newton's three laws",
+  "The Krebs cycle",
+  "Derivatives in calculus",
+  "The Great Gatsby, chapter 1",
+  "How vaccines work",
+  "The Cold War",
+];
+
+/** Types each topic out, holds it, deletes it, then types the next. Static first topic when motion is reduced. */
+function useTypewriter(words: string[], on: boolean) {
+  const [shown, setShown] = useState(words[0]);
+  useEffect(() => {
+    if (!on || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let i = 0, n = words[0].length, deleting = true, timer: ReturnType<typeof setTimeout>;
+    const step = () => {
+      if (deleting) {
+        n--;
+        if (n <= 0) { deleting = false; i = (i + 1) % words.length; n = 0; }
+      } else {
+        n++;
+      }
+      setShown(words[i].slice(0, Math.max(0, n)));
+      let wait = deleting ? 28 : 55 + Math.random() * 45;
+      if (!deleting && n >= words[i].length) { deleting = true; wait = 1700; }
+      if (deleting && n === 0) wait = 350;
+      timer = setTimeout(step, wait);
+    };
+    timer = setTimeout(step, 1700); // the first topic is on screen from the start, then it begins
+    return () => clearTimeout(timer);
+  }, [on, words]);
+  return shown;
+}
+
 /** "or type a prompt": a topic instead of a file. Unspool researches it and makes the reels. */
 export function PromptBox({ className = "mt-4" }: { className?: string }) {
   const [text, setText] = useState("");
@@ -104,6 +145,8 @@ export function PromptBox({ className = "mt-4" }: { className?: string }) {
   const ready = text.trim().length >= 3 && !pending;
   const multi = text.includes("\n") || text.length > 60;
   const pasted = isPastedDocument(text);
+  const [focused, setFocused] = useState(false);
+  const example = useTypewriter(EXAMPLE_TOPICS, !text && !focused);
   return (
     <form
       className={`w-full ${className}`}
@@ -118,6 +161,14 @@ export function PromptBox({ className = "mt-4" }: { className?: string }) {
         <span className="h-px flex-1 bg-line" />
       </div>
       <div className={`flex items-end gap-2 border border-line bg-surface py-1.5 pl-5 pr-1.5 focus-within:border-thread ${multi ? "rounded-[22px]" : "rounded-full"}`}>
+        <div className="relative flex min-w-0 flex-1 self-center">
+        {/* While empty and not focused, an example topic types itself out behind the box (the real placeholder stays for screen readers). */}
+        {!text && !focused && (
+          <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 flex items-center truncate text-[16px] leading-snug text-muted/70">
+            e.g. {example}
+            <span className="typing-caret ml-px inline-block h-[1.1em] w-[2px] translate-y-[1px] bg-thread" />
+          </span>
+        )}
         {/* A textarea, not an input: an input flattens a pasted study guide's line breaks into one run-on line. */}
         <textarea
           value={text}
@@ -132,9 +183,12 @@ export function PromptBox({ className = "mt-4" }: { className?: string }) {
           maxLength={PROMPT_MAX_CHARS}
           enterKeyHint="go"
           aria-label="Type a topic, or paste your notes"
-          placeholder="e.g. Photosynthesis, AP Bio"
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder={focused ? "e.g. Photosynthesis, AP Bio" : ""}
           className="min-w-0 flex-1 resize-none self-center bg-transparent py-2 text-[16px] leading-snug text-ink outline-none placeholder:text-muted/70"
         />
+        </div>
         <button
           type="submit"
           disabled={!ready}
