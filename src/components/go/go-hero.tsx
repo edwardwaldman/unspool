@@ -146,7 +146,7 @@ export function PromptBox({ className = "mt-4" }: { className?: string }) {
           </svg>
         </button>
       </div>
-      <p className="mt-2 text-center text-[12.5px] text-muted">{pasted ? "We turn your pasted notes into reels." : "Type a topic and we research it, or paste your notes."}</p>
+      <p className="mt-2 text-center text-[12.5px] text-muted">{pasted ? "We turn your pasted notes into TikToks." : "Type a topic and we research it, or paste your notes."}</p>
     </form>
   );
 }
@@ -158,10 +158,10 @@ export function GoHero() {
       <div className="flex w-full max-w-[460px] flex-col items-center">
         <Wordmark size={24} />
         <h1 className="mt-3 text-center font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em]">
-          Snap a photo. Get study <span className="text-thread">reels.</span>
+          Snap a photo. Get study <span className="text-thread">TikToks.</span>
         </h1>
         <p className="mt-2 text-center text-[14.5px] leading-[1.4] text-muted">
-          Short reels with a voiceover, captions and a quiz.
+          Short TikToks with a voiceover, captions and a quiz.
         </p>
         {/* Kept small so the + and the topic box fit above in-app browser toolbars (TikTok, Instagram) */}
         <div className="mt-1 w-full max-w-[300px]">
