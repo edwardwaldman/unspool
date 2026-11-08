@@ -98,12 +98,26 @@ export function CompareVisual({ v, progress }: { v: Extract<Visual, { type: "com
         </div>
         <ul className="mt-[3.5cqw] space-y-[2cqw]">
           {side.points.map((p, i) => (
-            <li key={i} className="relative font-hook font-bold leading-snug text-white" style={{ fontSize: "min(20px, 5cqw)" }}>
-              {p}
-              {/* The "don't" side gets crossed out as the voice moves on */}
-              {!good && (
-                <motion.span aria-hidden className="absolute left-0 top-1/2 h-[3px] origin-left" style={{ background: col, width: "100%" }} initial={{ scaleX: 0 }} animate={{ scaleX: progress > 0.25 + i * 0.06 ? 1 : 0 }} transition={{ duration: 0.3 }} />
-              )}
+            <li key={i} className="font-hook font-bold leading-snug text-white" style={{ fontSize: "min(20px, 5cqw)" }}>
+              {/* The "don't" side gets crossed out as the voice moves on: a strike through the words only (a line the
+                  width of the card ran on past short points), on every line of a point that wraps. */}
+              <span
+                style={
+                  good
+                    ? undefined
+                    : {
+                        backgroundImage: `linear-gradient(${col}, ${col})`,
+                        backgroundRepeat: "no-repeat",
+                        backgroundPosition: "0 55%",
+                        backgroundSize: `${progress > 0.25 + i * 0.06 ? 100 : 0}% 3px`,
+                        transition: reduce ? undefined : "background-size .3s ease-out",
+                        WebkitBoxDecorationBreak: "clone",
+                        boxDecorationBreak: "clone",
+                      }
+                }
+              >
+                {p}
+              </span>
             </li>
           ))}
         </ul>

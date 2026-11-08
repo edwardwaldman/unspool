@@ -106,17 +106,60 @@ function BigWordVisual({ v }: { v: Extract<Visual, { type: "bigword" }> }) {
 
 function SplitVisual({ v }: { v: Extract<Visual, { type: "split" }> }) {
   const figures = isNumber(v.left.title) && isNumber(v.right.title);
+  // Side by side, each card gets ~110px beside the action rail, and a word never breaks: "INSTRUMENT SANS" or
+  // "FINAL CAUSE" ran out of its card and under the "vs" badge. Long titles (or long subs) stack as two full-width
+  // rows instead; short pairs ("ACORN" -> "OAK") stay side by side.
+  const words = [v.left.title, v.right.title].flatMap((t) => t.split(/\s+/));
+  const stacked = !figures && (Math.max(...words.map((w) => w.length)) > 7 || [v.left, v.right].some((x) => x.title.length > 12 || x.sub.length > 26));
+  const badge = (vertical: boolean) => (
+    <motion.div
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ delay: 0.2, duration: 0.4, ease }}
+      className="absolute left-1/2 top-1/2 z-10 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-[3px] font-hook text-[13px] font-extrabold text-[#08110e]"
+      style={{ background: "var(--thread)", borderColor: "var(--paper)" }}
+    >
+      {v.mode === "vs" ? "vs" : <ArrowRight size={16} strokeWidth={2.5} className={vertical ? "rotate-90" : undefined} />}
+    </motion.div>
+  );
+  const color = (i: number) => (i === 0 ? "#fff" : "var(--thread)");
+  if (stacked) {
+    const row = (s: typeof v.left, i: number) => (
+      <motion.div
+        key={i}
+        initial={{ opacity: 0, y: i === 0 ? -18 : 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: i * 0.3, duration: 0.55, ease }}
+        className={`flex w-full items-center gap-3 px-4 py-4 ${glass}`}
+      >
+        <Tile name={s.icon} on={i === 1} delay={i * 0.3} box={48} />
+        <div className="min-w-0">
+          <div className="font-hook text-[22px] font-extrabold leading-tight tracking-[-0.02em]" style={{ color: color(i) }}>
+            {sentence(s.title)}
+          </div>
+          <div className="mt-0.5 text-[14px] leading-snug text-white/70">{sentence(s.sub)}</div>
+        </div>
+      </motion.div>
+    );
+    return (
+      <div className="relative flex w-full flex-col items-center gap-11 px-5">
+        {row(v.left, 0)}
+        {badge(true)}
+        {row(v.right, 1)}
+      </div>
+    );
+  }
   const side = (s: typeof v.left, i: number) => (
     <motion.div
       key={i}
       initial={{ opacity: 0, x: i === 0 ? -24 : 24 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: i * 0.3, duration: 0.55, ease }}
-      className={`flex flex-1 flex-col items-center text-center ${figures ? "w-full justify-center px-5 py-4" : "px-3 py-5"} ${glass}`}
+      className={`flex min-w-0 flex-1 flex-col items-center text-center ${figures ? "w-full justify-center px-5 py-4" : "px-3 py-5"} ${glass}`}
     >
       {/* Two figures side by side: the figures are the picture (a clock and a calendar beside "22%" and "62%" were filler). */}
       {!figures && <Tile name={s.icon} on={i === 1} delay={i * 0.3} />}
-      <div className={`${figures ? "font-hook text-[56px] leading-none tracking-[-0.035em]" : "mt-4 font-hook text-[24px] leading-tight tracking-[-0.02em]"} font-extrabold`} style={{ color: i === 0 ? "#fff" : "var(--thread)" }}>
+      <div className={`${figures ? "font-hook text-[56px] leading-none tracking-[-0.035em]" : "mt-4 font-hook text-[24px] leading-tight tracking-[-0.02em]"} font-extrabold`} style={{ color: color(i) }}>
         {sentence(s.title)}
       </div>
       <div className="mt-1 text-[13.5px] leading-snug text-white/70">{sentence(s.sub)}</div>
@@ -127,30 +170,15 @@ function SplitVisual({ v }: { v: Extract<Visual, { type: "split" }> }) {
     return (
       <div className="relative flex w-full flex-col items-center gap-3 px-6">
         {side(v.left, 0)}
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.4, ease }}
-          className="absolute left-1/2 top-1/2 z-10 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-[3px] font-hook text-[13px] font-extrabold text-[#08110e]"
-          style={{ background: "var(--thread)", borderColor: "var(--paper)" }}
-        >
-          {v.mode === "vs" ? "vs" : <ArrowRight size={16} strokeWidth={2.5} className="rotate-90" />}
-        </motion.div>
+        {badge(true)}
         {side(v.right, 1)}
       </div>
     );
   return (
-    <div className="relative flex w-full items-stretch gap-3 px-5">
+    // The badge sits in the gap between the cards (it used to overlap both, landing on the titles).
+    <div className="relative flex w-full items-stretch gap-11 px-5">
       {side(v.left, 0)}
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.2, duration: 0.4, ease }}
-        className="absolute left-1/2 top-1/2 z-10 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-[3px] font-hook text-[13px] font-extrabold text-[#08110e]"
-        style={{ background: "var(--thread)", borderColor: "var(--paper)" }}
-      >
-        {v.mode === "vs" ? "vs" : <ArrowRight size={16} strokeWidth={2.5} />}
-      </motion.div>
+      {badge(false)}
       {side(v.right, 1)}
     </div>
   );
@@ -466,7 +494,8 @@ export function QuizCard({
                 initial={{ opacity: 0, x: i % 2 ? 40 : -40, scale: 0.9 }}
                 animate={{ opacity: revealed && !correct && !chosen ? 0.4 : 1, x: 0, scale: revealed && correct ? [1, 1.05, 1] : 1 }}
                 whileTap={{ scale: 0.96 }}
-                transition={{ delay: revealed ? 0 : 0.2 + i * 0.1, type: "spring", stiffness: 300, damping: 22 }}
+                // A spring can't run three keyframes (the [1, 1.05, 1] pop threw a page error): the pop is a short tween.
+                transition={{ delay: revealed ? 0 : 0.2 + i * 0.1, type: "spring", stiffness: 300, damping: 22, scale: { duration: 0.35, ease: "easeOut" } }}
                 className="flex items-center gap-3 border px-3 py-2.5 text-left text-[15px] font-semibold text-white transition-colors enabled:hover:bg-white/[0.12]"
                 style={{
                   borderColor: tone ?? "rgba(255,255,255,.16)",

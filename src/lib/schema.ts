@@ -300,6 +300,23 @@ const plain = (x: string) => x.replace(/[*~^#_]+/g, "").replace(/\s+/g, " ").tri
 /** Quiz options are read, not heard: "22 percent" (written for the voice) shows as "22%". */
 const option = (x: string) => plain(x).replace(/(\d)\s*percent\b/gi, "$1%");
 
+/**
+ * Shortens on-screen text to at most n characters at a word boundary ("INSTRUMENT SANS: BODY AN" was a label cut
+ * mid-word at 24), dropping a dangling connector or punctuation at the cut. A single over-long word is hard-cut.
+ */
+export function clip(text: string, n: number): string {
+  const t = text.trim();
+  if (t.length <= n) return t;
+  const cut = t.slice(0, n + 1);
+  const at = cut.lastIndexOf(" ");
+  let out = at > 0 ? cut.slice(0, at) : t.slice(0, n);
+  for (let prev = ""; prev !== out; ) {
+    prev = out;
+    out = out.replace(/[\s,;:·—–-]+$/, "").replace(/\s+(and|or|of|the|a|an|to|in|on|for|with|&)$/i, "");
+  }
+  return out.trim() || t.slice(0, n);
+}
+
 export function normalizeReelScript(s: ReelScript, opts: { maxBeats?: number } = {}): ReelScript {
   let lastMove: string | undefined;
   const beats = s.beats.filter((b) => b.say.trim()).map((raw, i) => {
@@ -317,7 +334,7 @@ export function normalizeReelScript(s: ReelScript, opts: { maxBeats?: number } =
           ...(setting ? { setting } : {}),
           objects: cleanObjects(raw.scene.objects.slice(0, 8).map((o) => ({
             ...o,
-            label: o.label.trim().slice(0, 28),
+            label: clip(o.label.trim(), 28),
             x: Math.max(-3, Math.min(3, o.x)),
             z: Math.max(-2, Math.min(2, o.z)),
             size: Math.max(0.4, Math.min(2.5, o.size || 1)),
@@ -328,7 +345,7 @@ export function normalizeReelScript(s: ReelScript, opts: { maxBeats?: number } =
     const b = { ...raw, scene, mood, image_prompt: (raw.image_prompt ?? "").trim().slice(0, 400) };
     const v = b.visual;
     // Too few items to be a flow or list: one big word instead (fixed here rather than rewriting the script).
-    const word = (w: string, sub = "") => ({ ...b, visual: { type: "bigword" as const, word: w.slice(0, 24) || "KEY IDEA", sub: sub.slice(0, 60), color: "primary" as const } });
+    const word = (w: string, sub = "") => ({ ...b, visual: { type: "bigword" as const, word: clip(w, 24) || "KEY IDEA", sub: clip(sub, 60), color: "primary" as const } });
     if (v.type === "list" || v.type === "icons") {
       // Colour items: keep a valid hex only.
       const items = v.items.map((it) => ({ ...it, color: /^#?[0-9a-f]{6}$/i.test((it.color ?? "").trim()) ? `#${(it.color ?? "").trim().replace(/^#/, "").toLowerCase()}` : "" }));
@@ -341,25 +358,25 @@ export function normalizeReelScript(s: ReelScript, opts: { maxBeats?: number } =
     if (v.type === "graph") return { ...b, visual: normalizeGraph(v) };
     if (v.type === "swatch") {
       const colors = v.colors
-        .map((c) => ({ ...c, hex: (/^#?([0-9a-f]{6})$/i.exec(c.hex.trim())?.[1] ?? "").toLowerCase(), name: c.name.slice(0, 18), note: c.note.slice(0, 32) }))
+        .map((c) => ({ ...c, hex: (/^#?([0-9a-f]{6})$/i.exec(c.hex.trim())?.[1] ?? "").toLowerCase(), name: clip(c.name, 18), note: clip(c.note, 32) }))
         .filter((c) => c.hex)
         .map((c) => ({ ...c, hex: `#${c.hex}` }))
         .slice(0, 9);
       // No usable colours: a big word instead of an empty stage.
-      if (!colors.length) return { ...b, visual: { type: "bigword" as const, word: v.title.slice(0, 24) || "COLOUR", sub: "", color: "primary" as const } };
-      return { ...b, visual: { ...v, title: v.title.slice(0, 40), colors, focus: v.focus >= 0 && v.focus < colors.length ? v.focus : -1 } };
+      if (!colors.length) return { ...b, visual: { type: "bigword" as const, word: clip(v.title, 24) || "COLOUR", sub: "", color: "primary" as const } };
+      return { ...b, visual: { ...v, title: clip(v.title, 40), colors, focus: v.focus >= 0 && v.focus < colors.length ? v.focus : -1 } };
     }
     if (v.type === "compare") {
-      const side = (s: { title: string; points: string[] }) => ({ title: s.title.slice(0, 24), points: s.points.slice(0, 3).map((p) => p.slice(0, 40)) });
+      const side = (s: { title: string; points: string[] }) => ({ title: clip(s.title, 24), points: s.points.slice(0, 3).map((p) => clip(p, 40)) });
       return { ...b, visual: { ...v, bad: side(v.bad), good: side(v.good) } };
     }
-    if (v.type === "specimen") return { ...b, visual: { ...v, label: v.label.slice(0, 40), text: v.text.slice(0, 60), note: v.note.slice(0, 60) } };
+    if (v.type === "specimen") return { ...b, visual: { ...v, label: clip(v.label, 40), text: clip(v.text, 60), note: clip(v.note, 60) } };
     if (v.type === "typeset") {
-      const items = v.items.slice(0, 3).map((it) => ({ ...it, name: it.name.slice(0, 24), role: it.role.slice(0, 40) }));
-      return items.length ? { ...b, visual: { ...v, title: v.title.slice(0, 40), items } } : word(v.title || "FONTS");
+      const items = v.items.slice(0, 3).map((it) => ({ ...it, name: clip(it.name, 24), role: clip(it.role, 40) }));
+      return items.length ? { ...b, visual: { ...v, title: clip(v.title, 40), items } } : word(v.title || "FONTS");
     }
-    if (v.type === "emoji") return { ...b, visual: { ...v, emoji: [...(v.emoji.trim() || "💡")].slice(0, 4).join(""), title: v.title.slice(0, 40), caption: v.caption.slice(0, 40) } };
-    if (v.type === "equation") return { ...b, visual: { ...v, label: v.label.slice(0, 24), expr: v.expr.slice(0, 40), note: v.note.slice(0, 80), ask: v.ask.slice(0, 40) } };
+    if (v.type === "emoji") return { ...b, visual: { ...v, emoji: [...(v.emoji.trim() || "💡")].slice(0, 4).join(""), title: clip(v.title, 40), caption: clip(v.caption, 40) } };
+    if (v.type === "equation") return { ...b, visual: { ...v, label: clip(v.label, 24), expr: v.expr.slice(0, 40), note: clip(v.note, 80), ask: clip(v.ask, 40) } };
     return b;
   });
   // Short reels stay short: past the cap, keep the opening beats and the payoff (the last beat).
