@@ -201,8 +201,9 @@ const stamp = (txt, x, y, rot, k, col = "#e5302a") => k > 0 ? A(x, y, `<div clas
 // the app, floating over the scene like a real screen
 function app(shot, lt) {
   const card = (inner, k) => A(130, 230, `<div style="width:420px;border-radius:0;border:5px solid #d3f05a;background:#0f1d18;box-shadow:10px 10px 0 #000;padding:22px;box-sizing:border-box;${pop(k)};color:#e9f0e4">${inner}</div>`);
-  if (shot === "fix") return card(`<div style="text-align:center;font:700 26px Unb">unspool</div><div style="text-align:center;font:700 30px/1.1 Unb;margin-top:14px">Snap a photo.<br>Get study <span style="color:#d3f05a">reels.</span></div>
-    <div style="margin:20px auto 6px;width:110px;height:110px;border-radius:50%;background:#d3f05a;display:flex;align-items:center;justify-content:center"><svg width="46" height="46" viewBox="0 0 64 64"><path d="M32 10v44M10 32h44" stroke="#0f1d18" stroke-width="8" stroke-linecap="round"/></svg></div><div style="text-align:center;font:600 18px Ins">Snap a photo</div>`, lt / 0.35);
+  if (shot === "fix") { const typed = "Cell respiration".slice(0, Math.max(0, Math.floor((lt - 0.5) * 14)));
+    return card(`<div style="text-align:center;font:700 26px Unb">unspool</div><div style="text-align:center;font:700 30px/1.1 Unb;margin-top:14px">Type a topic.<br>Get study <span style="color:#d3f05a">TikToks.</span></div>
+    <div style="margin:22px 0 6px;display:flex;align-items:center;gap:8px;border:3px solid #d3f05a;border-radius:40px;padding:10px 10px 10px 18px;font:600 20px Ins;color:#e9f0e4;background:#0b1712"><span style="flex:1;white-space:nowrap;overflow:hidden">${typed || '<span style="color:#6f8a78">e.g. Photosynthesis</span>'}<span style="display:inline-block;width:2px;height:20px;background:#d3f05a;margin-left:2px;vertical-align:-3px;opacity:${Math.floor(lt * 3) % 2 ? 0 : 1}"></span></span><span style="width:40px;height:40px;border-radius:50%;background:#d3f05a;color:#0f1d18;display:flex;align-items:center;justify-content:center;font:700 22px Ins">→</span></div>`, lt / 0.35); }
   if (shot === "snap" || shot === "cards") return turnIntoReels(shot, lt);
   if (shot === "__old_snap") { const k = ease((lt - 0.1) / 0.6);
     return card(`<div style="font:700 15px Unb;color:#d3f05a;letter-spacing:1px">BIO · CHAPTER 4</div><div style="display:flex;gap:10px;margin-top:14px;justify-content:center">${["mito", "resp", "dna"].map((n, j) => `<div style="width:118px;height:210px;border-radius:14px;overflow:hidden;border:3px solid #000;transform:translateY(${(1 - clamp(k * 3 - j)) * 40}px);opacity:${clamp(k * 3 - j)}"><img src="${n}.jpg" style="width:100%;height:100%;object-fit:cover"></div>`).join("")}</div><div style="text-align:center;font:600 18px Ins;margin-top:14px;color:#8ea595">9 reels ready ✓</div>`, lt / 0.35); }
@@ -216,7 +217,9 @@ function turnIntoReels(shot, lt) {
   const page = (x, y, s, rot, a) => A(x, y, `<div style="width:300px;height:400px;background:#fbf8ef;border:6px solid #000;box-shadow:10px 10px 0 #000;padding:20px;box-sizing:border-box;transform:scale(${s}) rotate(${rot}deg);opacity:${a}"><div style="display:inline-block;background:#1f8a70;color:#fff;font:14px Px;padding:6px 8px">BIO · CH 4</div>${[90, 76, 94, 60, 86, 92, 70, 88, 64, 80].map((w) => `<div style="height:12px;margin:14px 0;background:#9aa1ad;width:${w}%"></div>`).join("")}</div>`);
   // the page lands, shakes, bursts at "BOOM", and the reels fly out of it
   const land = outBack(t0 / 0.3), burst = t0 > 1.0, split = ease((t0 - 1.0) / 0.6);
-  if (!burst) h += page(210, 380, land * (1 + 0.04 * Math.sin(t0 * 40) * clamp(t0 - 0.5)), Math.sin(t0 * 30) * 2 * clamp(t0 - 0.5), 1);
+  if (!burst) { const typed = "CELL RESPIRATION".slice(0, Math.floor(t0 * 20)), shake = 0.04 * Math.sin(t0 * 40) * clamp((t0 - 0.8) * 4);
+    h += A(100, 560, `<div style="width:520px;box-sizing:border-box;display:flex;align-items:center;gap:12px;background:#fbf8ef;border:6px solid #000;box-shadow:10px 10px 0 #000;padding:18px 18px 18px 24px;transform:scale(${land * (1 + shake)})"><span style="flex:1;font:21px Px;color:#0f1d18;white-space:nowrap;overflow:hidden">${typed}<span style="display:inline-block;width:4px;height:26px;background:#0f1d18;vertical-align:-3px;opacity:${Math.floor(t0 * 4) % 2 ? 0 : 1}"></span></span><span style="width:54px;height:54px;background:#d3f05a;border:4px solid #000;display:flex;align-items:center;justify-content:center;font:700 30px Ins">→</span></div>`)
+      + A(90, 470, `<div style="width:500px;text-align:center;font:18px Px;color:#d3f05a;text-shadow:3px 3px 0 #000">TYPE ANY TOPIC</div>`); }
   if (burst && split < 1) h += A(360 - 380 * split, 580 - 380 * split, `<div style="width:${760 * split}px;height:${760 * split}px;border:14px solid #d3f05a;opacity:${1 - split};box-sizing:border-box"></div>`)
     + `<div style="position:absolute;inset:0;background:#fff;opacity:${Math.max(0, 1 - (t0 - 1.0) / 0.12) * 0.8}"></div>`;
   if (burst && t0 < 1.5) h += A(90, 250, `<div style="width:500px;text-align:center;font:64px Px;color:#d3f05a;text-shadow:7px 7px 0 #000;transform:scale(${outBack((t0 - 1.0) / 0.15)}) rotate(-6deg)">BOOM!</div>`);
@@ -224,7 +227,7 @@ function turnIntoReels(shot, lt) {
   if (burst) spots.forEach(([dx, r], j) => { const k = ease((t0 - 1.0 - j * 0.08) / 0.5); if (k <= 0) return;
     const fan = shot === "cards" ? Math.sin(lt * 2 + j) * 6 : 0, w = j === 2 ? 230 : 190, z = j === 2 ? 2 : 1;
     h += A(360 + dx * k - w / 2, (j === 2 ? 400 : 440) + fan, `<div style="width:${w}px;height:${w * 16 / 9}px;border:6px solid #000;box-shadow:8px 8px 0 #000;transform:rotate(${r * k}deg) scale(${0.3 + 0.7 * k});z-index:${z};background:#000"><img src="${imgs[j]}_px.png" style="width:100%;height:100%;object-fit:cover;image-rendering:pixelated"></div>`); });
-  if (shot === "cards") h += A(90, 250, `<div style="width:500px;text-align:center;font:34px/1.3 Px;color:#fff;text-shadow:5px 5px 0 #000;${pop(lt / 0.25)}">MADE FROM<br><span style="color:#d3f05a">YOUR CHAPTER</span></div>`);
+  if (shot === "cards") h += A(90, 250, `<div style="width:500px;text-align:center;font:34px/1.3 Px;color:#fff;text-shadow:5px 5px 0 #000;${pop(lt / 0.25)}">RESEARCHED<br><span style="color:#d3f05a">FOR YOU</span></div>`);
   return h;
 }
 // the scroll: just a big phone on a dark backdrop, the feed swiping up reel after reel, a thumb flicking
