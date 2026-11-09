@@ -33,8 +33,8 @@ for j in range(3): add(st["snap"]+0.15+j*0.15,tone(note(76+j*4),0.2,12,(1,.3)),0
 for j,m in enumerate([72,76,79,84,88]): add(st["count"]+0.4+j*0.05,tone(note(m),1.2,2.5,(1,.3)),0.1)
 v,_=sf.read(f"{D}/voice.wav"); vv=np.zeros(N); vv[:min(N,len(v))]=v[:N]; vv/=np.abs(vv).max()
 # the voice is a real angry yell now (ElevenLabs): no fake pitch-shift or distortion, just kept loud and up front
-vv/=np.abs(vv).max()
-env=np.convolve(np.abs(vv),np.ones(2400)/2400,"same"); m=out*(1-0.6*np.minimum(1,env/0.08))*0.42+vv*1.25
-m=np.tanh(m*1.4)/np.tanh(1.4)                                       # glue it loud
+vv/=np.abs(vv).max(); vv=np.tanh(vv*2.4)/np.tanh(2.4)   # compressed so every word sits loud
+env=np.convolve(np.abs(vv),np.ones(2400)/2400,"same"); m=out*(1-0.7*np.minimum(1,env/0.08))*0.32+vv*1.5
+m=np.tanh(m*2.2)/np.tanh(2.2)                                       # glue it loud
 m*=np.minimum(1,tt/0.02)*np.minimum(1,(DUR-tt)/0.4); m/=np.abs(m).max()/0.95
 sf.write(f"{D}/mix.wav",m.astype(np.float32),SR); print("ok")
