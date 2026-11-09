@@ -32,13 +32,7 @@ for j in range(3): add(st["scroll"]+0.5+j*0.7,tone(note(84+j*3),0.25,10,(1,.3)),
 for j in range(3): add(st["snap"]+0.15+j*0.15,tone(note(76+j*4),0.2,12,(1,.3)),0.1)
 for j,m in enumerate([72,76,79,84,88]): add(st["count"]+0.4+j*0.05,tone(note(m),1.2,2.5,(1,.3)),0.1)
 v,_=sf.read(f"{D}/voice.wav"); vv=np.zeros(N); vv[:min(N,len(v))]=v[:N]; vv/=np.abs(vv).max()
-# mad, start to finish: pitched up (a strained, yelling register), doubled for a thick shout, driven into distortion, bright
-import librosa
-up=librosa.effects.pitch_shift(vv.astype(np.float32),sr=SR,n_steps=3.0); dbl=librosa.effects.pitch_shift(vv.astype(np.float32),sr=SR,n_steps=3.6)
-dbl=np.concatenate([np.zeros(int(SR*0.014)),dbl])[:N]; vv=up+0.6*dbl
-vv=vv+np.concatenate([[0],np.diff(vv)])*2.5                       # presence: the rasp of a yell
-vv/=np.abs(vv).max(); vv=np.tanh(vv*7)/np.tanh(7)                       # hard drive: every line clipped like a scream
-h0,h1=int(st["hook"]*SR),int(st["chapter"]*SR); vv[h0:h1]=np.tanh(vv[h0:h1]*3)/np.tanh(3)   # the opening line hardest of all
+# the voice is a real angry yell now (ElevenLabs): no fake pitch-shift or distortion, just kept loud and up front
 vv/=np.abs(vv).max()
 env=np.convolve(np.abs(vv),np.ones(2400)/2400,"same"); m=out*(1-0.6*np.minimum(1,env/0.08))*0.42+vv*1.25
 m=np.tanh(m*1.4)/np.tanh(1.4)                                       # glue it loud

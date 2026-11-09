@@ -56,7 +56,8 @@ def speak(text):
         for ext in ("wav", "mp3"):
             f = os.path.join(D, "vo", f"{shot_now}.{ext}")
             if os.path.exists(f):
-                raw = subprocess.run(["ffmpeg", "-v", "error", "-i", f, "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"], capture_output=True, check=True).stdout
+                tempo = cfg.get("files_tempo")  # speed the clips up (or down) without changing pitch, e.g. 1.12
+                raw = subprocess.run(["ffmpeg", "-v", "error", "-i", f, *(["-filter:a", f"atempo={tempo}"] if tempo else []), "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"], capture_output=True, check=True).stdout
                 return np.frombuffer(raw, dtype="<f4").copy()
         raise SystemExit(f"missing vo/{shot_now}.mp3 for engine 'files'")
     if engine == "elevenlabs":

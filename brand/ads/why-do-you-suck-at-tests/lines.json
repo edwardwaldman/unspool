@@ -1,9 +1,9 @@
 {
- "voice": "am_fenrir",
+ "voice": "ElevenLabs Charlie (IKne3meq5aSn9XLyUdCD), eleven_v4, angry yelling",
  "speed": 1.12,
  "lead": 0.3,
  "tail": 0,
- "gap": 0.24,
+ "gap": 0.18,
  "lines": [
   [
    "hook",
@@ -72,5 +72,7 @@
    "",
    1.2
   ]
- ]
+ ],
+ "engine": "files",
+ "files_tempo": 1.12
 }
