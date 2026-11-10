@@ -153,7 +153,8 @@ export function ReelMedia({
       ) : (
         <>
       {!diagram && <ParticleField active={active && playing} pulse={pulse} />}
-      <div className="absolute inset-x-0 z-[5] flex items-center justify-center" style={stageBox}>
+      {/* Behind the quiz card the last flat graphic fades out (its list or card peeked out above the question). */}
+      <div className={`absolute inset-x-0 z-[5] flex items-center justify-center transition-opacity duration-300 ${stage?.bare ? "opacity-0" : ""}`} style={stageBox}>
         <AnimatePresence mode="wait">
           <motion.div
             key={stageKey}
