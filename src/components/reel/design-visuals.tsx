@@ -71,15 +71,16 @@ export function SwatchVisual({ v }: { v: Extract<Visual, { type: "swatch" }> }) 
           )}
         </>
       ) : (
-        // Every colour, dealt onto the screen one after another
+        // Every colour, dealt onto the screen one after another (two colours get tall chips: as 3.2:1 bars they sat
+        // small in half an empty stage)
         <div className={`grid w-full gap-[2.5cqw] ${v.colors.length <= 3 ? "grid-cols-1" : v.colors.length === 4 ? "grid-cols-2" : "grid-cols-3"}`}>
           {v.colors.map((c, i) => (
-            <motion.div key={i} {...deal(i)} className="relative overflow-hidden" style={{ background: c.hex, borderRadius: 12, aspectRatio: v.colors.length <= 3 ? "3.2 / 1" : "1 / 1.05", boxShadow: "0 10px 26px rgba(0,0,0,.35), inset 0 0 0 1.5px rgba(255,255,255,.14)" }}>
+            <motion.div key={i} {...deal(i)} className="relative overflow-hidden" style={{ background: c.hex, borderRadius: 12, aspectRatio: v.colors.length <= 2 ? "1.8 / 1" : v.colors.length === 3 ? "3.2 / 1" : "1 / 1.05", boxShadow: "0 10px 26px rgba(0,0,0,.35), inset 0 0 0 1.5px rgba(255,255,255,.14)" }}>
               <div className="absolute inset-x-[3cqw] bottom-[2.5cqw]" style={{ color: ink(c.hex) }}>
-                <div className="font-display leading-none" style={{ fontSize: v.colors.length <= 3 ? "min(30px, 7.5cqw)" : "min(17px, 4.3cqw)" }}>
+                <div className="font-display leading-none" style={{ fontSize: v.colors.length <= 2 ? "min(40px, 10cqw)" : v.colors.length === 3 ? "min(30px, 7.5cqw)" : "min(17px, 4.3cqw)" }}>
                   {c.name}
                 </div>
-                <div className="mt-[1cqw] font-mono opacity-80" style={{ fontSize: v.colors.length <= 3 ? "min(15px, 3.8cqw)" : "min(11px, 2.8cqw)" }}>
+                <div className="mt-[1cqw] font-mono opacity-80" style={{ fontSize: v.colors.length <= 2 ? "min(18px, 4.5cqw)" : v.colors.length === 3 ? "min(15px, 3.8cqw)" : "min(11px, 2.8cqw)" }}>
                   {c.hex.toUpperCase()}
                 </div>
               </div>

@@ -265,6 +265,9 @@ function unmark<V>(v: V): V {
   return v;
 }
 
+/** "BRAND" → "Brand" for a colour's name on its chip (mixed case is kept). */
+const sentenceTitle = (x: string) => (x === x.toUpperCase() ? x.charAt(0) + x.slice(1).toLowerCase() : x).trim();
+
 /** Per-beat visual repairs that read the beat's own line (safe on stored reels: nothing said or timed changes). */
 function repairBeat<B extends Beat>(beat: B): B {
   let b = beat;
@@ -287,6 +290,13 @@ function repairBeat<B extends Beat>(beat: B): B {
     if (changed) b = { ...b, scene: { ...b.scene, objects } };
   }
   const v = b.visual;
+  // Two colours as a split ("BRAND #d3f05a" vs "ACCENT #0f1d18") were two icon cards, or in 3D a gold coin labelled
+  // "BRAND D3F05A": the colours never showed. They are a two-colour swatch, drawn flat with the real colours.
+  const hexOf = (x: string) => /^\s*#?([0-9a-f]{6})\s*$/i.exec(x)?.[1]?.toLowerCase();
+  if (v.type === "split" && hexOf(v.left.sub) && hexOf(v.right.sub)) {
+    const colors = [v.left, v.right].map((side) => ({ hex: `#${hexOf(side.sub)}`, name: sentenceTitle(side.title), note: "" }));
+    return { ...b, scene: b.scene ? { ...b.scene, objects: [] } : b.scene, visual: { type: "swatch", title: "", colors, focus: -1 } };
+  }
   if (v.type === "bigword" && v.sub.trim() && !v.sub.trim().startsWith("…")) {
     // A sub that finishes the big word's sentence ("NOT ALL" + "bees are honey bees", said as "Not all bees are honey
     // bees") is half of the point: mark it as a continuation ("…bees are honey bees") so it reads as one line, and a
