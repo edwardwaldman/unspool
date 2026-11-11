@@ -152,7 +152,7 @@ function lowPoly(scene) {
 [bed, desk, pap, cls].forEach(lowPoly);
 // Maya is your VRM character (web/girl.vrm) in every scene she's in; the toy versions only keep their slots and poses
 const VRMS = [];
-for (const t of [maya, mayaD, mayaC]) { const v = await vrmPerson(t, { height: 2.95 }); const orig = t.pose; t.pose = (n, k) => { orig(n, k); v.pose(n); }; t.pose(t === mayaC ? "sitsad" : "sitphone"); VRMS.push([t, v]); }
+for (const t of [maya, mayaD, mayaC]) { const v = await vrmPerson(t, { height: 5.9 }); const orig = t.pose; t.pose = (n, k) => { orig(n, k); v.pose(n); }; t.pose(t === mayaC ? "sitsad" : "sitphone"); VRMS.push([t, v]); }
 const [, vBed] = VRMS[0], [, vDesk] = VRMS[1];
 mesh(new THREE.BoxGeometry(3.4, 1.35, 0.06), M("#fff", { map: wood }), v3(0, 0.85, 0.74), dk);
 cls.children.filter((o) => o.isGroup && o.children.length > 5).forEach((d) => mesh(new THREE.BoxGeometry(1.5, 1.0, 0.05), M("#c89a62"), v3(0, 0.92, 1.04), d));
@@ -164,8 +164,8 @@ const vrmMeshes = new Set(); for (const [, v] of VRMS) v.vrm.scene.traverse((o) 
 function sharpMaya(scene) {
   let any = false; scene.traverse((o) => { if (vrmMeshes.has(o) && o.visible) { let p = o, vis = true; while (p) { if (p.visible === false) vis = false; p = p.parent; } any ||= vis; } });
   if (!any) { hi.clear(); return; }
-  const saved = [], bg = scene.background; scene.background = null;
-  scene.traverse((o) => { if (o.isMesh && !vrmMeshes.has(o)) for (const m of [o.material].flat()) { saved.push([m, m.colorWrite]); m.colorWrite = false; } });
+  const saved = new Map(), bg = scene.background; scene.background = null;   // a Map: shared materials are saved once, so they all come back
+  scene.traverse((o) => { if (o.isMesh && !vrmMeshes.has(o)) for (const m of [o.material].flat()) { if (!saved.has(m)) saved.set(m, m.colorWrite); m.colorWrite = false; } });
   hi.render(scene, camera);
   for (const [m, c] of saved) m.colorWrite = c; scene.background = bg;
 }
@@ -183,8 +183,8 @@ function scene3d(shot, lt, t) {
     kids.forEach(({ k, pp, ph }) => { k.pose("cheer", t + ph); k.g.position.y = 0.05 + Math.abs(Math.sin(t * 6 + ph)) * 0.18; pp.rotation.z = Math.sin(t * 8 + ph) * 0.15; });
     mayaC.pose("sitsad"); mayaC.head.rotation.x = 0.6 + Math.sin(t * 1.2) * 0.03;
     // wide on the cheering class, then a hard push in on her and the C-
-    const u = ease(clamp((lt - L * 0.5) / (L * 0.45)));
-    cam(v3(0, 4.6, 11.5).lerp(v3(0.3, 3.3, 5.0), u), v3(0, 3.3, -1.8).lerp(v3(0.1, 2.3, 1.4), u), 42);
+    const u = 0.55 * ease(clamp((lt - L * 0.6) / (L * 0.4)));
+    cam(v3(0, 4.8, 11.5).lerp(v3(0.3, 4.4, 4.6), u / 0.55), v3(0, 3.2, -1.8).lerp(v3(0.1, 3.2, 1.0), u / 0.55), 42);
     return cls; }
   if (["hook", "every", "scroll"].includes(shot)) {
     const unspool = shot === "scroll"; mPhone.userData.screen.material.map = unspool ? REELS[Math.floor(lt / 0.7) % 3] : clipTex; mPhone.userData.screen.material.needsUpdate = true; if (!unspool) drawClip(t);
@@ -210,9 +210,9 @@ function scene3d(shot, lt, t) {
     const studying = shot === "chapter" || shot === "three"; dPhone.visible = !studying; flip.visible = shot === "three";
     if (studying) { mayaD.pose("sitdesk", t); flip.rotation.z = ((lt * 2.4) % 1) * Math.PI; mayaD.mouth.rotation.z = 0; }
     else { mayaD.pose("phone"); mayaD.pose("sitphone"); dPhone.position.set(0.15, 1.75, 0.75); dPhone.rotation.set(-0.7, 0, 0); dPhone.scale.setScalar(0.5); mayaD.mouth.rotation.z = Math.PI; }
-    if (shot === "chapter") camMove(lt, L, v3(0, 3.3, 7.4), v3(0, 3.1, 6.2), v3(0, 2.3, -0.5), v3(0, 2.3, -0.5), 40);
-    else if (shot === "three") camMove(lt, L, v3(0.6, 3.1, 4.4), v3(0.45, 3.05, 3.8), v3(0, 2.45, 0.3), v3(0, 2.45, 0.3), 40);
-    else cam(v3(0, 2.6, 6.8), v3(0, 1.6, 0), 40);
+    if (shot === "chapter") camMove(lt, L, v3(0, 4.0, 8.4), v3(0, 3.9, 7.2), v3(0, 3.1, -0.5), v3(0, 3.1, -0.5), 40);
+    else if (shot === "three") camMove(lt, L, v3(0.6, 4.3, 5.4), v3(0.45, 4.25, 4.8), v3(0, 3.7, 0.3), v3(0, 3.7, 0.3), 40);
+    else cam(v3(0, 3.4, 7.6), v3(0, 2.5, 0), 40);
     return desk; }
   if (shot === "gone" || shot === "sticks") { paper.material.map = shot === "gone" ? paperBlank : paperA; paper.material.needsUpdate = true; camMove(lt, L + 0.4, v3(0.03, 4.4, 0.8), v3(0.03, 4.05, 0.7), v3(0.03, 0, 0.05), v3(0.03, 0, 0.05), 38); return pap; }
   return bed;
