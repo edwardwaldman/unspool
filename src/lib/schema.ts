@@ -311,8 +311,9 @@ function repairBeat<B extends Beat>(beat: B): B {
 
 export function repairVisuals<T extends Pick<ReelScript, "beats"> & { title?: string; quiz?: ReelScript["quiz"] }>(s: T): T {
   // From the audit of every stored reel: voice marks leaked into 8 on-screen graphics ("#NOT ALL#") and into quiz
-  // options ("~The limit of g of x is 6.~"). Visual-only, so it is safe on stored reels too.
-  s = { ...s, beats: s.beats.map((b) => (b.visual.type === "equation" || b.visual.type === "graph" ? b : { ...b, visual: unmark(b.visual) })), ...(s.quiz ? { quiz: { ...s.quiz, question: plain(s.quiz.question), options: s.quiz.options.map(plain) } } : {}) };
+  // options ("~The limit of g of x is 6.~"). Visual-only, so it is safe on stored reels too. Options are read, not
+  // heard: a stored "22 percent" shows as "22%" (that ran only for new reels).
+  s = { ...s, beats: s.beats.map((b) => (b.visual.type === "equation" || b.visual.type === "graph" ? b : { ...b, visual: unmark(b.visual) })), ...(s.quiz ? { quiz: { ...s.quiz, question: plain(s.quiz.question), options: s.quiz.options.map(option) } } : {}) };
   const hook = s.beats[0]?.visual;
   // A hook tag that promises the exam ("GUARANTEED QUESTION" on a biology reel whose notes say nothing of the kind)
   // is a claim the reel can't back, and a generic one ("BIG NUMBER") says nothing; the reel's own title is always true
