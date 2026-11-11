@@ -47,7 +47,7 @@ export async function vrmPerson(toy, { url = "girl.vrm", height = 2.85 } = {}) {
     wrap.position.y = sitting ? -box.min.y * s - 0.15 + (1.0 - hipY) : -box.min.y * s - 0.15;
     if (sitting) for (const side of ["left", "right"]) { B(side + "UpperLeg").rotation.set(Math.PI / 2 - 0.08, 0, side === "left" ? 0.08 : -0.08); B(side + "LowerLeg").rotation.set(-(Math.PI / 2 - 0.1), 0, 0); }
     // the toy's body and head tilt carry over (sitsad slumps forward; head nods are set by the shot code)
-    const lean = pose === "sitsad" ? 0.3 : pose === "sitdesk" ? 0.12 : 0;
+    const lean = pose === "sitsad" ? 0.12 : pose === "sitdesk" ? 0.12 : 0;
     B("spine").rotation.x = -lean * 0.6; B("chest").rotation.x = -lean * 0.4;
     const nod = toy.head.rotation.x; B("neck").rotation.x = -nod * 0.45; B("head").rotation.x = -nod * 0.55;
     const [u, f] = ARMS[pose] ?? ARMS.stand;
