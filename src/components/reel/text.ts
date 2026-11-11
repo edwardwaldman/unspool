@@ -7,7 +7,8 @@ const ACRONYMS = new Set([
   "EPS", "ATP", "ADP", "NADPH", "HTML", "CSS", "USD", "UV", "WWI", "WWII", "CO", "NATO", "OK", "ETF", "IPO", "APR", "SEC",
 ]);
 /** Acronyms with a fixed mixed case. */
-const CASED: Record<string, string> = { YOY: "YoY", QOQ: "QoQ", MOM: "MoM", PH: "pH" };
+// Brand names keep their own casing ("TIKTOK LINK" read "Tiktok link").
+const CASED: Record<string, string> = { YOY: "YoY", QOQ: "QoQ", MOM: "MoM", PH: "pH", TIKTOK: "TikTok", YOUTUBE: "YouTube", LINKEDIN: "LinkedIn", IPHONE: "iPhone", IPAD: "iPad", IOS: "iOS", MACOS: "macOS", GITHUB: "GitHub", PAYPAL: "PayPal", OPENAI: "OpenAI", JAVASCRIPT: "JavaScript", TYPESCRIPT: "TypeScript", POWERPOINT: "PowerPoint", WHATSAPP: "WhatsApp", ECOMMERCE: "eCommerce" };
 /** Function names that are lowercase in maths. */
 const MATH_WORDS = new Set(["LIM", "SIN", "COS", "TAN", "LOG", "LN", "EXP", "MAX", "MIN", "SQRT"]);
 /** After a number these are suffixes ("2ND", "1990S"), not codes. */

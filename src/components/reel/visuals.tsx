@@ -114,7 +114,8 @@ function SplitVisual({ v }: { v: Extract<Visual, { type: "split" }> }) {
   // "FINAL CAUSE" ran out of its card and under the "vs" badge. Long titles (or long subs) stack as two full-width
   // rows instead; short pairs ("ACORN" -> "OAK") stay side by side.
   const words = [v.left.title, v.right.title].flatMap((t) => t.split(/\s+/));
-  const stacked = !figures && (Math.max(...words.map((w) => w.length)) > 7 || [v.left, v.right].some((x) => x.title.length > 12 || x.sub.length > 26));
+  // ("SNAP A PHOTO" broke one word per line, "Snap / a / photo", in a 110px card.)
+  const stacked = !figures && (Math.max(...words.map((w) => w.length)) > 7 || [v.left, v.right].some((x) => x.title.length > 9 || x.sub.length > 18));
   const badge = (vertical: boolean) => (
     <motion.div
       initial={{ scale: 0 }}
@@ -145,10 +146,11 @@ function SplitVisual({ v }: { v: Extract<Visual, { type: "split" }> }) {
         </div>
       </motion.div>
     );
+    // The badge sits in the flow between the rows: centred on the container, it landed on the taller row's title.
     return (
-      <div className="relative flex w-full flex-col items-center gap-11 px-5">
+      <div className="relative flex w-full flex-col items-center gap-2 px-5">
         {row(v.left, 0)}
-        {badge(true)}
+        <div className="relative h-10 w-10">{badge(true)}</div>
         {row(v.right, 1)}
       </div>
     );
@@ -285,8 +287,9 @@ function IconsVisual({ v }: { v: Extract<Visual, { type: "icons" }> }) {
               className={`flex items-center gap-4 px-4 py-3.5 ${glass}`}
             >
               <Tile name={it.icon} size={30} box={56} on={i === v.items.length - 1} delay={i * 0.45} />
-              {/* A short label (an equation like "lim f(x) = 7") never breaks; the stage scales it to fit instead. */}
-              <span className={`font-hook text-[28px] font-extrabold leading-[1.08] tracking-[-0.02em] ${it.label.length <= 16 ? "whitespace-nowrap" : ""}`} style={{ color: i === v.items.length - 1 ? "var(--thread)" : "#fff" }}>
+              {/* A short formula ("lim f(x) = 7") never breaks; the stage scales it to fit instead. Words wrap: kept on one
+                  line, "Swap the text" ran out of its card and was cut off at the frame's edge. */}
+              <span className={`min-w-0 font-hook text-[28px] font-extrabold leading-[1.08] tracking-[-0.02em] ${it.label.length <= 16 && /[=()0-9→<>^√]/.test(it.label) ? "whitespace-nowrap" : ""}`} style={{ color: i === v.items.length - 1 ? "var(--thread)" : "#fff" }}>
                 {sentence(it.label)}
               </span>
             </motion.div>
