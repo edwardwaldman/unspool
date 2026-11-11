@@ -11,6 +11,7 @@ html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#0d1430}
 <script type="module">
 import { THREE, clamp, mix, ease, outBack, v3, tex, M, mesh, grp, sunLight, toy, book, pageTex, phone } from "./world.js";
 import { RoomEnvironment } from "./three/RoomEnvironment.js";
+import { vrmPerson } from "./vrmperson.js";
 const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
 await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins"), document.fonts.load("40px Ser"), document.fonts.load("20px Px")]);
 const W = 720, H = 1280;
@@ -149,6 +150,18 @@ function lowPoly(scene) {
   });
 }
 [bed, desk, pap, cls].forEach(lowPoly);
+// Maya is your VRM character (web/girl.vrm) in every scene she's in; the toy versions only keep their slots and poses
+const VRMS = [];
+for (const t of [maya, mayaD, mayaC]) { const v = await vrmPerson(t); const orig = t.pose; t.pose = (n, k) => { orig(n, k); v.pose(n); }; t.pose(t === mayaC ? "sitsad" : "sitphone"); VRMS.push([t, v]); }
+const [, vBed] = VRMS[0], [, vDesk] = VRMS[1];
+mesh(new THREE.BoxGeometry(3.4, 1.35, 0.06), M("#fff", { map: wood }), v3(0, 0.85, 0.74), dk);
+cls.children.filter((o) => o.isGroup && o.children.length > 5).forEach((d) => mesh(new THREE.BoxGeometry(1.5, 1.0, 0.05), M("#c89a62"), v3(0, 0.92, 1.04), d));
+function poseVRMs(t) {
+  for (const [, v] of VRMS) v.update(t);
+  // the phone goes in her hands
+  vBed.wrap.visible = false;   // the bed shot is the phone screen alone (the clip she saw once)
+  if (dPhone.visible) { const b = vDesk.handsMid(); dPhone.position.set(b.x, b.y + 0.1, b.z + 0.22); }
+}
 const cam = (p, l, f = 40) => { camera.position.copy(p); camera.lookAt(l); camera.fov = f; camera.updateProjectionMatrix(); };
 const camMove = (lt, d, a, b, la, lb, f = 40) => { const u = ease(clamp(lt / d)); cam(a.clone().lerp(b, u), la.clone().lerp(lb, u), f); };
 function scene3d(shot, lt, t) {
@@ -288,7 +301,7 @@ window.renderAt = (t) => {
     renderer.render(scene3d("sticks", len("sticks"), t), camera);
     const lc = t - st("count");
     ov.innerHTML = endCard(lc) + (shot !== "end" && L.text ? shout(L, t).replace("top:870px", "top:990px") : ""); frameShake(t, lt); return; }
-  const scene = scene3d(shot, lt, t); renderer.render(scene, camera);
+  poseVRMs(t); const scene = scene3d(shot, lt, t); poseVRMs(t); renderer.render(scene, camera);   // twice: the camera follows the phone, which follows her hands
   let h = "";
   if (shot === "hook") { // the screamed question, word by word as it's yelled, the last word red
     const ws = ["WHY", "DO", "YOU", "SUCK", "AT", "TESTS?"], rows = [[0, 1, 2], [3], [4, 5]];
