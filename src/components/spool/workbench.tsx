@@ -266,7 +266,7 @@ function UnlockCta({ spool, viewer, onUnlock }: { spool: SpoolDTO; viewer: Viewe
         onClick={onUnlock}
         className="mt-3 flex w-full items-center justify-between bg-thread px-4 py-3 text-[14px] font-semibold text-paper transition-opacity hover:opacity-90"
       >
-        <span>{spool.demo ? "Make your own reels" : free ? (viewer?.usage?.trialEligible ? "Start 1-day free trial" : "Unlock more reels") : "Upgrade or top up"}</span>
+        <span>{spool.demo ? "Make your own reels" : free ? (viewer?.usage?.trialEligible ? "Unlock the rest of your reels free" : "Unlock more reels") : "Upgrade or top up"}</span>
       </button>
     </div>
   );
@@ -731,6 +731,7 @@ export function Workbench({
                   upload={i === 0 ? upload ?? null : null}
                   active={i === cur && !paywall && !moreOpen && !shareOpen && !onPlayGate}
                   onPlayGate={onPlayGate}
+                  trialEligible={Boolean(viewer?.usage?.trialEligible)}
                   onScreen={i === cur}
                   total={reels.length || MAX_REELS}
                   bottomInset={0}

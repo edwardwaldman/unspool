@@ -19,10 +19,13 @@ export function LockedReel({
   topInset = 0,
   freeAt = null,
   gateOpen = false,
+  trialEligible = false,
 }: {
   reel: ReelDTO;
   total: number;
   onUnlock: () => void;
+  /** Still has the 1-day free trial: the button offers the rest of the reels free. */
+  trialEligible?: boolean;
   bottomInset: number;
   topInset?: number;
   /** The unlock pop-up is open over this reel: its own button would sit right under the pop-up's, a second lime CTA. */
@@ -68,8 +71,9 @@ export function LockedReel({
           className={`${gateOpen ? "invisible " : ""}mt-5 flex min-h-[52px] w-full max-w-[300px] items-center justify-center gap-2 px-5 text-[16px] font-semibold text-[#08110e] shadow-[0_10px_30px_rgba(0,0,0,.35)] hover:opacity-90`}
           style={{ background: "#d3f05a" }}
         >
-          Unlock all reels
+          {trialEligible ? "Unlock the rest of your reels free" : "Unlock all reels"}
         </button>
+        {trialEligible && <p className="mt-2 text-[13px] text-white/70">Free for 1 day. Cancel anytime.</p>}
       </div>
     </div>
   );

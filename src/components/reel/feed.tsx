@@ -38,6 +38,7 @@ export function ReelSlot({
   onEnded,
   onShare,
   onPlayGate,
+  trialEligible = false,
 }: {
   item: FeedItem;
   upload: UploadState | null;
@@ -55,6 +56,7 @@ export function ReelSlot({
   onShare?: () => void;
   /** Signed-out preview: hold the first frame under a play button; pressing it calls this (the sign-up). */
   onPlayGate?: () => void;
+  trialEligible?: boolean;
 }) {
   const r = item.reel;
   if (!r || (!r.locked && r.status !== "ready")) {
@@ -62,7 +64,7 @@ export function ReelSlot({
   }
   if (r.locked) {
     const s = item.spool;
-    return <LockedReel reel={r} total={total} bottomInset={bottomInset} topInset={topInset} onUnlock={onUnlock} gateOpen={onScreen && !active} freeAt={s ? freeAtFor(r.index, s.freeReels, s.nextFreeUnlockAt) : null} />;
+    return <LockedReel reel={r} total={total} bottomInset={bottomInset} topInset={topInset} onUnlock={onUnlock} gateOpen={onScreen && !active} trialEligible={trialEligible} freeAt={s ? freeAtFor(r.index, s.freeReels, s.nextFreeUnlockAt) : null} />;
   }
   return <ReelView spool={item.spool!} reel={r} active={active} onScreen={onScreen} total={total} chrome={{ bottomInset, topInset }} onMore={onMore} onEnded={onEnded} onShare={onShare} overlay={onPlayGate ? <PlayGate onPlay={onPlayGate} /> : undefined} />;
 }
@@ -208,6 +210,7 @@ export function Feed({
               upload={i === 0 ? upload ?? null : null}
               active={isActive && paywallFor === null && !moreOpen && !shareOpen && !onPlayGate}
               onPlayGate={onPlayGate}
+              trialEligible={Boolean(viewer?.usage?.trialEligible)}
               onScreen={isActive}
               total={total(it.spool)}
               bottomInset={bottomInset}

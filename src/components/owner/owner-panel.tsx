@@ -34,7 +34,8 @@ type Outcomes = {
 type Data = {
   build: string;
   openAccess: boolean;
-  stats: { accounts: number; paying: number; comped: number; documents: number; readyReels: number };
+  stats: { accounts: number; paying: number; paid: number; trialing: number; comped: number; documents: number; readyReels: number };
+  premium: { email: string; tier: string; interval: string; status: string; since: string | null; renews: string | null }[];
   deployment: { name: string; on: boolean; hint: string }[];
   accounts: Account[];
   documents: Doc[];
@@ -182,6 +183,8 @@ export function OwnerPanel() {
           Refresh
         </button>
       </div>
+
+      <PremiumCard data={data} />
 
       <section className={card}>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -946,6 +949,42 @@ function HowIpsAndEmailsAreUsed() {
         </div>
       </div>
       <p className="mt-4 text-[12.5px] text-muted">Open access only lifts the 1-free-document limit; it doesn&apos;t change what is collected or how it is used.</p>
+    </section>
+  );
+}
+
+/** Premium users at the top of the panel: how many have paid, how many are on the free trial, and who, newest first. */
+function PremiumCard({ data }: { data: Data }) {
+  const ago = (iso: string | null) => (iso ? new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "");
+  return (
+    <section className={card} data-testid="premium-card">
+      <div className="label">Premium users</div>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <div className="border border-sage/50 p-4">
+          <div className="font-mono text-[34px] leading-none text-sage">{data.stats.paid}</div>
+          <div className="mt-1 text-[13px] text-muted">Paid</div>
+        </div>
+        <div className="border border-thread/50 p-4">
+          <div className="font-mono text-[34px] leading-none text-thread">{data.stats.trialing}</div>
+          <div className="mt-1 text-[13px] text-muted">On the 1-day free trial</div>
+        </div>
+      </div>
+      {data.premium.length === 0 ? (
+        <p className="mt-3 text-[13.5px] text-muted">No one yet. When someone starts a trial or pays, they show up here.</p>
+      ) : (
+        <ul className="mt-3 divide-y divide-line border-t border-line text-[13.5px]">
+          {data.premium.slice(0, 25).map((p) => (
+            <li key={p.email + p.since} className="flex items-baseline justify-between gap-3 py-2">
+              <span className="min-w-0 truncate">
+                {p.email} <span className="text-muted">· {p.tier} · {p.interval === "year" ? "yearly" : "weekly"}</span>
+              </span>
+              <span className={`shrink-0 ${p.status === "trialing" ? "text-thread" : p.status === "past_due" ? "text-coral" : "text-sage"}`}>
+                {p.status === "trialing" ? "trial" : p.status === "past_due" ? "payment failed" : "paid"} · {ago(p.since)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

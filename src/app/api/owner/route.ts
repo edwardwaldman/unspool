@@ -86,7 +86,7 @@ export async function GET(req: Request) {
 
   const { data: list } = await db.auth.admin.listUsers({ page: 1, perPage: 500 });
   const users = list?.users ?? [];
-  const { data: profiles } = await db.from("profiles").select("id,plan,tier,comp_tier,subscription_status,billing_interval");
+  const { data: profiles } = await db.from("profiles").select("id,plan,tier,comp_tier,subscription_status,billing_interval,current_period_end,updated_at");
   const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
   const { data: docs } = await db
     .from("documents")
@@ -124,12 +124,24 @@ export async function GET(req: Request) {
     })
     .sort((a, b) => Number(b.owner) - Number(a.owner) || b.joined.localeCompare(a.joined));
 
+  // Premium users: everyone on a subscription right now (comped accounts are listed separately), newest change first,
+  // so a new payment shows up at the top.
+  const premium = (profiles ?? [])
+    .filter((p) => p.plan === "sub" && ["active", "trialing", "past_due"].includes(p.subscription_status ?? ""))
+    .map((p) => ({ email: emailOf.get(p.id) ?? "(no email)", tier: p.tier ?? "plus", interval: p.billing_interval ?? "week", status: p.subscription_status as string, since: (p.updated_at as string | null) ?? null, renews: (p.current_period_end as string | null) ?? null }))
+    .filter((x) => !isOwnerEmail(x.email))
+    .sort((a, b) => (b.since ?? "").localeCompare(a.since ?? ""));
+
   return json({
+    premium,
     build: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local",
     openAccess: (await appSettings()).openAccess,
     stats: {
       accounts: accounts.length,
       paying: accounts.filter((a) => a.subscription).length,
+      // premium split: paid (active / past due) vs on the free trial (Stripe "trialing")
+      paid: premium.filter((x) => x.status !== "trialing").length,
+      trialing: premium.filter((x) => x.status === "trialing").length,
       comped: accounts.filter((a) => a.comp).length,
       documents: docOwners?.length ?? 0,
       readyReels: readyReels ?? 0,
