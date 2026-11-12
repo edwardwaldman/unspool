@@ -154,6 +154,7 @@ function lowPoly(scene) {
 const VRMS = [];
 for (const t of [maya, mayaD, mayaC]) { const v = await vrmPerson(t, { height: 5.9 }); const orig = t.pose; t.pose = (n, k) => { orig(n, k); v.pose(n); }; t.pose(t === mayaC ? "sitsad" : "sitphone"); VRMS.push([t, v]); }
 const [, vBed] = VRMS[0], [, vDesk] = VRMS[1];
+dk.scale.y = 1.5;   // she's big now: a taller desk keeps her lap behind it from every front camera
 mesh(new THREE.BoxGeometry(3.4, 1.35, 0.06), M("#fff", { map: wood }), v3(0, 0.85, 0.74), dk);
 cls.children.filter((o) => o.isGroup && o.children.length > 5).forEach((d) => mesh(new THREE.BoxGeometry(1.5, 1.0, 0.05), M("#c89a62"), v3(0, 0.92, 1.04), d));
 // Maya drawn again at full resolution over the pixelated scene: everything else only writes depth (so desks still
