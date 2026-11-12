@@ -16,14 +16,14 @@ const LINKS = [
 export function SiteFooter() {
   return (
     <footer className="border-t border-line px-6 py-8 text-center">
-      <nav className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13px] text-muted">
+      <nav className="flex flex-wrap justify-center gap-x-2 text-[13px] text-muted">
         {LINKS.map(([href, label]) => (
-          <Link key={href} href={href} className="hover:text-ink">
+          <Link key={href} href={href} className="inline-flex min-h-[32px] items-center px-1.5 hover:text-ink">
             {label}
           </Link>
         ))}
       </nav>
-      <Link href="/privacy#do-not-sell" className="mt-2 inline-block text-[13px] text-muted hover:text-ink">
+      <Link href="/privacy#do-not-sell" className="mt-1 inline-flex min-h-[32px] items-center text-[13px] text-muted hover:text-ink">
         Do Not Sell My Personal Information
       </Link>
       <SocialLinks className="mt-4 justify-center" />

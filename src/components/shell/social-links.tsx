@@ -11,7 +11,7 @@ export function SocialLinks({ className = "" }: { className?: string }) {
   return (
     <div className={`flex items-center gap-4 ${className}`}>
       {SOCIALS.map((s) => (
-        <a key={s.name} href={s.href} target="_blank" rel="noopener noreferrer me" aria-label={`Unspool on ${s.name}`} className="text-muted transition-colors hover:text-ink">
+        <a key={s.name} href={s.href} target="_blank" rel="noopener noreferrer me" aria-label={`Unspool on ${s.name}`} className="-m-1.5 p-1.5 text-muted transition-colors hover:text-ink">
           <svg viewBox="0 0 24 24" width={18} height={18} fill="currentColor" aria-hidden>
             <path d={s.path} />
           </svg>

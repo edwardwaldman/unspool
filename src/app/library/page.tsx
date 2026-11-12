@@ -107,7 +107,8 @@ export default async function LibraryPage() {
             </div>
           )}
         </header>
-        <LibraryGrid initial={items} />
+        {/* Signed out with nothing yet: the sign-up buttons above are the one call to action, no second "Upload" box */}
+        {(viewer?.userId || items.length > 0 || !supabaseConfigured) && <LibraryGrid initial={items} />}
       </div>
     </AppShell>
   );
