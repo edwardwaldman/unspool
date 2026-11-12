@@ -71,9 +71,9 @@ export function LockedReel({
           className={`${gateOpen ? "invisible " : ""}mt-5 flex min-h-[52px] w-full max-w-[300px] items-center justify-center gap-2 px-5 text-[16px] font-semibold text-[#08110e] shadow-[0_10px_30px_rgba(0,0,0,.35)] hover:opacity-90`}
           style={{ background: "#d3f05a" }}
         >
-          {trialEligible ? "Unlock the rest of your reels free" : "Unlock all reels"}
+          {trialEligible ? "Unlock the rest of your reels FREE" : "Unlock all reels"}
         </button>
-        {trialEligible && <p className="mt-2 text-[13px] text-white/70">Free for 1 day. Cancel anytime.</p>}
+        {trialEligible && <p className="mt-2 text-[13px] text-white/70">FREE for 1 day. Cancel anytime.</p>}
       </div>
     </div>
   );

@@ -60,11 +60,11 @@ export function UsageMeter({ usage, compact = false, onUpgrade }: { usage: Usage
               : "Want every reel now? "}
           {onUpgrade ? (
             <button type="button" onClick={onUpgrade} className="text-thread hover:underline">
-              {usage.trialEligible ? "Unlock the rest free for a day" : "See plans"}
+              {usage.trialEligible ? "Unlock the rest FREE for a day" : "See plans"}
             </button>
           ) : (
             <Link href="/pricing" className="text-thread hover:underline">
-              {usage.trialEligible ? "Unlock the rest free for a day" : "See plans"}
+              {usage.trialEligible ? "Unlock the rest FREE for a day" : "See plans"}
             </Link>
           )}
         </p>
