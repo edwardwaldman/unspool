@@ -6,7 +6,7 @@ html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#0d1430}
 .lbl{position:absolute;left:96px;top:220px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.5)}
 .lbl small{display:block;font:14px Px;letter-spacing:1px;opacity:.9} .lbl b{display:block;font:44px/1.1 Px;margin-top:10px;text-shadow:4px 4px 0 #000}
 .stamp{position:absolute;white-space:nowrap;font:40px Px;color:#e5302a;border:6px solid #e5302a;border-radius:10px;padding:6px 18px;letter-spacing:1px;background:rgba(255,255,255,.08)}
-</style></head><body><canvas id="c" width="720" height="1280"></canvas><canvas id="c2" width="720" height="1280" style="position:absolute;inset:0;width:720px;height:1280px"></canvas><div id="ov"></div>
+</style></head><body><canvas id="c" width="720" height="1280"></canvas><canvas id="c2" width="240" height="427" style="position:absolute;inset:0;width:720px;height:1280px;image-rendering:pixelated"></canvas><div id="ov"></div>
 <script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
 <script type="module">
 import { THREE, clamp, mix, ease, outBack, v3, tex, M, mesh, grp, sunLight, toy, book, pageTex, phone } from "./world.js";
@@ -158,8 +158,8 @@ mesh(new THREE.BoxGeometry(3.4, 1.35, 0.06), M("#fff", { map: wood }), v3(0, 0.8
 cls.children.filter((o) => o.isGroup && o.children.length > 5).forEach((d) => mesh(new THREE.BoxGeometry(1.5, 1.0, 0.05), M("#c89a62"), v3(0, 0.92, 1.04), d));
 // Maya drawn again at full resolution over the pixelated scene: everything else only writes depth (so desks still
 // hide her where they should), she writes colour, and the background stays transparent.
-const hi = new THREE.WebGLRenderer({ canvas: document.getElementById("c2"), antialias: true, alpha: true, preserveDrawingBuffer: true });
-hi.setSize(720, 1280, false); hi.setPixelRatio(1); hi.toneMapping = THREE.ACESFilmicToneMapping; hi.outputColorSpace = THREE.SRGBColorSpace; hi.setClearColor(0x000000, 0);
+const hi = new THREE.WebGLRenderer({ canvas: document.getElementById("c2"), antialias: false, alpha: true, preserveDrawingBuffer: true });
+hi.setSize(240, 427, false);   // a third of full resolution: pixelated, a little finer than the room (a quarter) hi.setPixelRatio(1); hi.toneMapping = THREE.ACESFilmicToneMapping; hi.outputColorSpace = THREE.SRGBColorSpace; hi.setClearColor(0x000000, 0);
 const vrmMeshes = new Set(); for (const [, v] of VRMS) v.vrm.scene.traverse((o) => o.isMesh && vrmMeshes.add(o));
 function sharpMaya(scene) {
   let any = false; scene.traverse((o) => { if (vrmMeshes.has(o) && o.visible) { let p = o, vis = true; while (p) { if (p.visible === false) vis = false; p = p.parent; } any ||= vis; } });
@@ -211,7 +211,7 @@ function scene3d(shot, lt, t) {
     if (studying) { mayaD.pose("sitdesk", t); flip.rotation.z = ((lt * 2.4) % 1) * Math.PI; mayaD.mouth.rotation.z = 0; }
     else { mayaD.pose("phone"); mayaD.pose("sitphone"); dPhone.position.set(0.15, 1.75, 0.75); dPhone.rotation.set(-0.7, 0, 0); dPhone.scale.setScalar(0.5); mayaD.mouth.rotation.z = Math.PI; }
     if (shot === "chapter") camMove(lt, L, v3(0, 4.0, 8.4), v3(0, 3.9, 7.2), v3(0, 3.1, -0.5), v3(0, 3.1, -0.5), 40);
-    else if (shot === "three") camMove(lt, L, v3(0.6, 4.3, 5.4), v3(0.45, 4.25, 4.8), v3(0, 3.7, 0.3), v3(0, 3.7, 0.3), 40);
+    else if (shot === "three") camMove(lt, L, v3(0.6, 3.5, 6.2), v3(0.45, 3.45, 5.6), v3(0, 2.95, 0.3), v3(0, 2.95, 0.3), 40);
     else cam(v3(0, 3.4, 7.6), v3(0, 2.5, 0), 40);
     return desk; }
   if (shot === "gone" || shot === "sticks") { paper.material.map = shot === "gone" ? paperBlank : paperA; paper.material.needsUpdate = true; camMove(lt, L + 0.4, v3(0.03, 4.4, 0.8), v3(0.03, 4.05, 0.7), v3(0.03, 0, 0.05), v3(0.03, 0, 0.05), 38); return pap; }
