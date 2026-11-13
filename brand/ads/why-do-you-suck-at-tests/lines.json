@@ -1,70 +1,70 @@
 {
  "voice": "ElevenLabs Charlie (IKne3meq5aSn9XLyUdCD), eleven_v4, angry yelling",
  "speed": 1.12,
- "lead": 0.2,
+ "lead": 0.12,
  "tail": 0,
- "gap": 0.12,
+ "gap": 0.08,
  "lines": [
   [
    "hook",
    "WHY do you SUCK at tests?!",
-   0.39,
+   0.23,
    "WHY do you SUCK at tests?!"
   ],
   [
    "chapter",
    "You read the chapter.",
-   0.11
+   0.07
   ],
   [
    "three",
    "THREE times!",
-   0.12
+   0.07
   ],
   [
    "gone",
    "Then the test hits? GONE!",
-   0.19
+   0.11
   ],
   [
    "every",
    "But a TikTok you saw ONCE? You know every word!",
-   0.14
+   0.08
   ],
   [
    "fix",
    "Unspool fixes that!",
-   0.11
+   0.07
   ],
   [
    "snap",
    "Just TYPE in your topic, and BOOM! It turns into TikToks!",
-   0.13
+   0.08
   ],
   [
    "cards",
    "It does the research, and makes YOUR TikToks!",
-   0.13
+   0.08
   ],
   [
    "scroll",
    "So you scroll, like you already do. And you actually LEARN it!",
-   0.13
+   0.08
   ],
   [
    "sticks",
    "Next test? It STICKS!",
-   0.17
+   0.1
   ],
   [
    "count",
    "Now you CRUSH tests!",
-   0.14
+   0.08
   ],
   [
    "cta",
    "Try it free! unspool dot c c!",
-   0.13,
+   0.08,
    "Try it free! unspool.cc"
   ],
   [
@@ -74,5 +74,5 @@
   ]
  ],
  "engine": "files",
- "files_tempo": 1.25
+ "files_tempo": 1.38
 }
