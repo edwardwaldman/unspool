@@ -1,5 +1,5 @@
 {
- "voice": "ElevenLabs Charlie (IKne3meq5aSn9XLyUdCD), eleven_v4, angry yelling",
+ "voice": "ElevenLabs Charlie (IKne3meq5aSn9XLyUdCD), eleven_v4, enraged; the strong swear is bleeped (vo/gone.wav)",
  "speed": 1.12,
  "lead": 0.12,
  "tail": 0,
@@ -7,9 +7,9 @@
  "lines": [
   [
    "hook",
-   "WHY do you SUCK at tests?!",
+   "WHY the HELL do you SUCK at tests?!",
    0.23,
-   "WHY do you SUCK at tests?!"
+   "WHY the HELL do you SUCK at tests?!"
   ],
   [
    "chapter",
@@ -18,18 +18,21 @@
   ],
   [
    "three",
-   "THREE times!",
-   0.07
+   "THREE. DAMN. TIMES!",
+   0.07,
+   "THREE. DAMN. TIMES!"
   ],
   [
    "gone",
-   "Then the test hits? GONE!",
-   0.11
+   "Then the test hits? GONE! Are you F***ING kidding me?!",
+   0.11,
+   "Then the test hits? GONE! Are you F***ING kidding me?!"
   ],
   [
    "every",
-   "But a TikTok you saw ONCE? You know every word!",
-   0.08
+   "But a TikTok you saw ONCE? You know every DAMN word!",
+   0.08,
+   "But a TikTok you saw ONCE? You know every DAMN word!"
   ],
   [
    "fix",
@@ -53,13 +56,15 @@
   ],
   [
    "sticks",
-   "Next test? It STICKS!",
-   0.1
+   "Next test? It bloody STICKS!",
+   0.1,
+   "Next test? It bloody STICKS!"
   ],
   [
    "count",
-   "Now you CRUSH tests!",
-   0.08
+   "Now you CRUSH tests! Hell yeah!",
+   0.08,
+   "Now you CRUSH tests! Hell yeah!"
   ],
   [
    "cta",
