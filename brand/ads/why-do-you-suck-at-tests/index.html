@@ -185,7 +185,8 @@ function scene3d(shot, lt, t) {
     mayaC.pose("sitsad"); mayaC.head.rotation.x = -0.12 + Math.sin(t * 1.2) * 0.03;   // head up, facing us
     // wide on the cheering class, then a hard push in on her and the C-
     const u = 0.55 * ease(clamp((lt - L * 0.6) / (L * 0.4)));
-    cam(v3(0, 4.8, 11.5).lerp(v3(0.3, 5.0, 5.4), u / 0.55), v3(0, 3.2, -1.8).lerp(v3(0.1, 4.3, 1.0), u / 0.55), 42);
+    VRMS[2][1].update(t); const face = VRMS[2][1].facePos();   // push straight in at her face, at her eye level
+    cam(v3(0, 4.8, 11.5).lerp(face.clone().add(v3(0.12, 0.05, 3.1)), u / 0.55), v3(0, 3.2, -1.8).lerp(face, u / 0.55), 42);
     return cls; }
   if (["hook", "every", "scroll"].includes(shot)) {
     const unspool = shot === "scroll"; mPhone.userData.screen.material.map = unspool ? REELS[Math.floor(lt / 0.7) % 3] : clipTex; mPhone.userData.screen.material.needsUpdate = true; if (!unspool) drawClip(t);

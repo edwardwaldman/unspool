@@ -67,6 +67,8 @@ export async function vrmPerson(toy, { url = "girl.vrm", height = 2.85 } = {}) {
   };
   // a point between her hands, in the toy's local space (where a held phone goes)
   P.handsMid = () => { const a = new THREE.Vector3(), b = new THREE.Vector3(); B("leftHand").getWorldPosition(a); B("rightHand").getWorldPosition(b); return toy.g.worldToLocal(a.add(b).multiplyScalar(0.5)); };
+  // where her face is, in world space (for cameras that push in on her)
+  P.facePos = () => { const p = new THREE.Vector3(); B("head").getWorldPosition(p); return p.add(new THREE.Vector3(0, 0.06 * s, 0)); };
   P.update(0);
   return P;
 }
