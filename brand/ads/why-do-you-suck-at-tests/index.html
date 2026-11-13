@@ -131,7 +131,7 @@ const schoolDesk = (x, z) => { const d = grp(cls, v3(x, 0, z)); mesh(new THREE.B
 const KIDS = [{ skin: "#f1c7a5", hair: "#c9862f", top: "#e5484d", pants: "#33415c", style: "short" }, { skin: "#8d5a3b", hair: "#1a120d", top: "#1f9d55", pants: "#2a2a3a", style: "bun" }, { skin: "#e8b48c", hair: "#5a3a24", top: "#f2c14e", pants: "#3d5a9e", style: "short" }, { skin: "#b07850", hair: "#1a120d", top: "#2f7de1", pants: "#33415c", style: "pony" }];
 const kids = [[-1.7, -1.2], [1.7, -1.2], [-1.0, -3.8], [1.0, -3.8]].map(([x, z], i) => { schoolDesk(x, z); const k = toy({ ...KIDS[i], smile: true }); cls.add(k.g); k.g.position.set(x, 0.05, z - 0.55);
   const pp = mesh(new THREE.PlaneGeometry(0.85, 1.06), M("#fff", { map: aTex, roughness: 0.9, side: THREE.DoubleSide }), v3(0, 3.35, 0.15), k.g); return { k, pp, ph: i * 1.3 }; });
-schoolDesk(0, 1.2); const mayaC = toy({ ...MAYA, smile: false }); cls.add(mayaC.g); mayaC.g.position.set(0, 0.05, 0.65); mayaC.pose("sitsad");
+const herDesk = schoolDesk(0, 1.2); herDesk.scale.y = 1.35; const mayaC = toy({ ...MAYA, smile: false }); cls.add(mayaC.g); mayaC.g.position.set(0, 0.05, 0.65); mayaC.pose("sitsad");
 const cPaper = mesh(new THREE.PlaneGeometry(0.55, 0.69), M("#fff", { map: cTex, roughness: 0.9 }), v3(0.15, 1.51, 1.95), cls); cPaper.rotation.set(-Math.PI / 2, 0, 0.18);
 
 // ================= shots =================
@@ -152,9 +152,9 @@ function lowPoly(scene) {
 [bed, desk, pap, cls].forEach(lowPoly);
 // Maya is your VRM character (web/girl.vrm) in every scene she's in; the toy versions only keep their slots and poses
 const VRMS = [];
-for (const t of [maya, mayaD, mayaC]) { const v = await vrmPerson(t, { height: 5.9 }); const orig = t.pose; t.pose = (n, k) => { orig(n, k); v.pose(n); }; t.pose(t === mayaC ? "sitsad" : "sitphone"); VRMS.push([t, v]); }
+for (const t of [maya, mayaD, mayaC]) { const v = await vrmPerson(t, { height: t === mayaC ? 7.6 : 6.5 }); const orig = t.pose; t.pose = (n, k) => { orig(n, k); v.pose(n); }; t.pose(t === mayaC ? "sitsad" : "sitphone"); VRMS.push([t, v]); }
 const [, vBed] = VRMS[0], [, vDesk] = VRMS[1];
-dk.scale.y = 1.5;   // she's big now: a taller desk keeps her lap behind it from every front camera
+dk.scale.y = 1.6;   // she's big now: a taller desk keeps her lap behind it from every front camera
 mesh(new THREE.BoxGeometry(3.4, 1.35, 0.06), M("#fff", { map: wood }), v3(0, 0.85, 0.74), dk);
 cls.children.filter((o) => o.isGroup && o.children.length > 5).forEach((d) => mesh(new THREE.BoxGeometry(1.5, 1.0, 0.05), M("#c89a62"), v3(0, 0.92, 1.04), d));
 // Maya drawn again at full resolution over the pixelated scene: everything else only writes depth (so desks still
@@ -185,7 +185,7 @@ function scene3d(shot, lt, t) {
     mayaC.pose("sitsad"); mayaC.head.rotation.x = -0.12 + Math.sin(t * 1.2) * 0.03;   // head up, facing us
     // wide on the cheering class, then a hard push in on her and the C-
     const u = 0.55 * ease(clamp((lt - L * 0.6) / (L * 0.4)));
-    cam(v3(0, 4.8, 11.5).lerp(v3(0.3, 4.4, 4.6), u / 0.55), v3(0, 3.2, -1.8).lerp(v3(0.1, 3.2, 1.0), u / 0.55), 42);
+    cam(v3(0, 4.8, 11.5).lerp(v3(0.3, 5.0, 5.4), u / 0.55), v3(0, 3.2, -1.8).lerp(v3(0.1, 4.3, 1.0), u / 0.55), 42);
     return cls; }
   if (["hook", "every", "scroll"].includes(shot)) {
     const unspool = shot === "scroll"; mPhone.userData.screen.material.map = unspool ? REELS[Math.floor(lt / 0.7) % 3] : clipTex; mPhone.userData.screen.material.needsUpdate = true; if (!unspool) drawClip(t);
