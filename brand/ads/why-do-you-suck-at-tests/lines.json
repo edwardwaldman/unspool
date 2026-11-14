@@ -1,5 +1,5 @@
 {
- "voice": "ElevenLabs Charlie (IKne3meq5aSn9XLyUdCD), eleven_v4, enraged; the strong swear is bleeped (vo/gone.wav)",
+ "voice": "ElevenLabs Charlie (IKne3meq5aSn9XLyUdCD), eleven_v4, enraged; every swear bleeped (pauses in the takes replaced with a 1 kHz bleep)",
  "speed": 1.12,
  "lead": 0.12,
  "tail": 0,
@@ -7,70 +7,75 @@
  "lines": [
   [
    "hook",
-   "WHY the HELL do you SUCK at tests?!",
+   "WHY the $#%! do you SUCK at tests?! $#%!",
    0.23,
-   "WHY the HELL do you SUCK at tests?!"
+   "WHY the $#%! do you SUCK at tests?! $#%!"
   ],
   [
    "chapter",
-   "You read the chapter.",
-   0.07
+   "You read the $#%! chapter.",
+   0.07,
+   "You read the $#%! chapter."
   ],
   [
    "three",
-   "THREE. DAMN. TIMES!",
+   "THREE $#%! TIMES!",
    0.07,
-   "THREE. DAMN. TIMES!"
+   "THREE $#%! TIMES!"
   ],
   [
    "gone",
-   "Then the test hits? GONE! Are you F***ING kidding me?!",
+   "Then the $#%! test hits? GONE! Are you $#%! kidding me?!",
    0.11,
-   "Then the test hits? GONE! Are you F***ING kidding me?!"
+   "Then the $#%! test hits? GONE! Are you $#%! kidding me?!"
   ],
   [
    "every",
-   "But a TikTok you saw ONCE? You know every DAMN word!",
+   "But a TikTok you saw ONCE? You know every $#%! word!",
    0.08,
-   "But a TikTok you saw ONCE? You know every DAMN word!"
+   "But a TikTok you saw ONCE? You know every $#%! word!"
   ],
   [
    "fix",
-   "Unspool fixes that!",
-   0.07
+   "Unspool $#%! fixes that!",
+   0.07,
+   "Unspool $#%! fixes that!"
   ],
   [
    "snap",
-   "Just TYPE in your topic, and BOOM! It turns into TikToks!",
-   0.08
+   "Just TYPE in your $#%! topic, and BOOM! It turns into $#%! TikToks!",
+   0.08,
+   "Just TYPE in your $#%! topic, and BOOM! It turns into $#%! TikToks!"
   ],
   [
    "cards",
-   "It does the research, and makes YOUR TikToks!",
-   0.08
+   "It does the $#%! research, and makes YOUR $#%! TikToks!",
+   0.08,
+   "It does the $#%! research, and makes YOUR $#%! TikToks!"
   ],
   [
    "scroll",
-   "So you scroll, like you already do. And you actually LEARN it!",
-   0.08
+   "So you scroll, like you already $#%! do. And you actually LEARN it!",
+   0.08,
+   "So you scroll, like you already $#%! do. And you actually LEARN it!"
   ],
   [
    "sticks",
-   "Next test? It bloody STICKS!",
+   "Next $#%! test? It $#%! STICKS!",
    0.1,
-   "Next test? It bloody STICKS!"
+   "Next $#%! test? It $#%! STICKS!"
   ],
   [
    "count",
-   "Now you CRUSH tests! Hell yeah!",
+   "Now you $#%! CRUSH tests! $#%! yeah!",
    0.08,
-   "Now you CRUSH tests! Hell yeah!"
+   "Now you $#%! CRUSH tests! $#%! yeah!"
   ],
   [
    "cta",
-   "Try it free! unspool dot c c!",
+   "Try it $#%! free! unspool.cc",
    0.08,
-   "Try it free! unspool.cc"
+   "Try it $#%! free! unspool.cc"
   ],
   [
    "end",
