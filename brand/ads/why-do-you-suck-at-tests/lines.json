@@ -1,80 +1,80 @@
 {
  "voice": "ElevenLabs Charlie (IKne3meq5aSn9XLyUdCD), eleven_v4, enraged; every swear bleeped (pauses in the takes replaced with a 1 kHz bleep)",
  "speed": 1.12,
- "lead": 0.12,
+ "lead": 0.1,
  "tail": 0,
- "gap": 0.08,
+ "gap": 0.06,
  "lines": [
   [
    "hook",
    "WHY the $#%! do you SUCK at tests?! $#%!",
-   0.23,
+   0.14,
    "WHY the $#%! do you SUCK at tests?! $#%!"
   ],
   [
    "chapter",
    "You read the $#%! chapter.",
-   0.07,
+   0.04,
    "You read the $#%! chapter."
   ],
   [
    "three",
    "THREE $#%! TIMES!",
-   0.07,
+   0.04,
    "THREE $#%! TIMES!"
   ],
   [
    "gone",
    "Then the $#%! test hits? GONE! Are you $#%! kidding me?!",
-   0.11,
+   0.07,
    "Then the $#%! test hits? GONE! Are you $#%! kidding me?!"
   ],
   [
    "every",
    "But a TikTok you saw ONCE? You know every $#%! word!",
-   0.08,
+   0.05,
    "But a TikTok you saw ONCE? You know every $#%! word!"
   ],
   [
    "fix",
    "Unspool $#%! fixes that!",
-   0.07,
+   0.04,
    "Unspool $#%! fixes that!"
   ],
   [
    "snap",
    "Just TYPE in your $#%! topic, and BOOM! It turns into $#%! TikToks!",
-   0.08,
+   0.05,
    "Just TYPE in your $#%! topic, and BOOM! It turns into $#%! TikToks!"
   ],
   [
    "cards",
    "It does the $#%! research, and makes YOUR $#%! TikToks!",
-   0.08,
+   0.05,
    "It does the $#%! research, and makes YOUR $#%! TikToks!"
   ],
   [
    "scroll",
    "So you scroll, like you already $#%! do. And you actually LEARN it!",
-   0.08,
+   0.05,
    "So you scroll, like you already $#%! do. And you actually LEARN it!"
   ],
   [
    "sticks",
    "Next $#%! test? It $#%! STICKS!",
-   0.1,
+   0.06,
    "Next $#%! test? It $#%! STICKS!"
   ],
   [
    "count",
    "Now you $#%! CRUSH tests! $#%! yeah!",
-   0.08,
+   0.05,
    "Now you $#%! CRUSH tests! $#%! yeah!"
   ],
   [
    "cta",
    "Try it $#%! free! unspool.cc",
-   0.08,
+   0.05,
    "Try it $#%! free! unspool.cc"
   ],
   [
@@ -84,5 +84,5 @@
   ]
  ],
  "engine": "files",
- "files_tempo": 1.38
+ "files_tempo": 1.55
 }
