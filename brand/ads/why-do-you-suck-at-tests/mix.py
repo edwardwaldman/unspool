@@ -27,8 +27,10 @@ for s in st:                                                        # an impact 
 add(F-0.9,riser(0.9),0.16); add(F,boom(),0.4)
 for h in (st["three"]+0.3, st["gone"]+0.05, st["sticks"]+0.45, st.get("count",st["cta"])+0.4): add(h,kick(),0.5); add(h,boom(),0.35); add(h,noise(0.25,12),0.2)
 for k in range(10): add(st["hook"]+0.1+k*0.2,noise(0.5,4)*np.sin(np.linspace(0,np.pi,int(SR*0.5))),0.05)   # the class cheering
-for k in range(4): add(st["scroll"]+0.25+0.95*0.6+k*0.95,noise(0.12,14)*np.linspace(1,0,int(SR*0.12)),0.12)
-for j in range(3): add(st["scroll"]+0.5+j*0.7,tone(note(84+j*3),0.25,10,(1,.3)),0.09)
+if "scroll" in st:
+  for k in range(4): add(st["scroll"]+0.25+0.95*0.6+k*0.95,noise(0.12,14)*np.linspace(1,0,int(SR*0.12)),0.12)
+if "scroll" in st:
+  for j in range(3): add(st["scroll"]+0.5+j*0.7,tone(note(84+j*3),0.25,10,(1,.3)),0.09)
 for j in range(3): add(st["snap"]+0.15+j*0.15,tone(note(76+j*4),0.2,12,(1,.3)),0.1)
 for j,m in enumerate([72,76,79,84,88]): add(st.get("count",st["cta"])+0.4+j*0.05,tone(note(m),1.2,2.5,(1,.3)),0.1)
 v,_=sf.read(f"{D}/voice.wav"); vv=np.zeros(N); vv[:min(N,len(v))]=v[:N]; vv/=np.abs(vv).max()
