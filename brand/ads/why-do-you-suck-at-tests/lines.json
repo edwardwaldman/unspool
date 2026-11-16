@@ -1,62 +1,62 @@
 {
  "voice": "ElevenLabs Charlie (IKne3meq5aSn9XLyUdCD), eleven_v4, enraged; every swear bleeped (pauses in the takes replaced with a 1 kHz bleep)",
  "speed": 1.12,
- "lead": 0.1,
+ "lead": 0.06,
  "tail": 0,
- "gap": 0.06,
+ "gap": 0.04,
  "lines": [
   [
    "hook",
    "WHY the $#%! do you SUCK at tests?! $#%!",
-   0.14,
+   0.07,
    "WHY the $#%! do you SUCK at tests?! $#%!"
   ],
   [
    "chapter",
    "You read the $#%! chapter.",
-   0.04,
+   0.02,
    "You read the $#%! chapter."
   ],
   [
    "three",
    "THREE $#%! TIMES!",
-   0.04,
+   0.02,
    "THREE $#%! TIMES!"
   ],
   [
    "gone",
    "Then the $#%! test hits? GONE! Are you $#%! kidding me?!",
-   0.07,
+   0.04,
    "Then the $#%! test hits? GONE! Are you $#%! kidding me?!"
   ],
   [
    "fix",
    "Unspool $#%! fixes that!",
-   0.04,
+   0.02,
    "Unspool $#%! fixes that!"
   ],
   [
    "snap",
    "Just TYPE in your $#%! topic, and BOOM! It turns into $#%! TikToks!",
-   0.05,
+   0.03,
    "Just TYPE in your $#%! topic, and BOOM! It turns into $#%! TikToks!"
   ],
   [
    "scroll",
    "So you scroll, like you already $#%! do. And you actually LEARN it!",
-   0.05,
+   0.03,
    "So you scroll, like you already $#%! do. And you actually LEARN it!"
   ],
   [
    "sticks",
    "Next $#%! test? It $#%! STICKS!",
-   0.06,
+   0.03,
    "Next $#%! test? It $#%! STICKS!"
   ],
   [
    "cta",
    "Try it $#%! free! unspool.cc",
-   0.05,
+   0.03,
    "Try it $#%! free! unspool.cc"
   ],
   [
@@ -66,5 +66,5 @@
   ]
  ],
  "engine": "files",
- "files_tempo": 1.55
+ "files_tempo": 1.75
 }
