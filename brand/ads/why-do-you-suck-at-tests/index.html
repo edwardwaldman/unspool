@@ -292,13 +292,21 @@ function endCard(lc) {
 }
 // shouted captions: two words at a time, huge, each chunk slamming in
 function shout(L, t) {
+  // karaoke captions: the line in phrases of up to 3 words; inside a phrase each word pops in as it's said
+  // (paced by its letters), slams in big and tilted, then settles; the word being said is lime, the rest white
   const chunks = [];
-  // break at punctuation first, then into balanced runs of at most 3 words ("AT 1 AM!" / "HALF ASLEEP!", never "AM! HALF")
-  for (const ph of L.text.split(/(?<=[.,!?])\s+/)) { const w = ph.split(" "), n = Math.ceil(w.length / 3), per = Math.ceil(w.length / n); for (let k = 0; k < w.length; k += per) chunks.push(w.slice(k, k + per).join(" ")); }
-  const tot = chunks.reduce((a, c) => a + c.length + 1, 0), u = clamp((t - L.s) / (L.e - L.s)) * tot; let acc = 0, cur = 0, start = 0;
-  chunks.forEach((c, k) => { if (u >= acc) { cur = k; start = acc; } acc += c.length + 1; });
-  const c = chunks[cur], age = (u - start) / tot * (L.e - L.s), hot = /[A-Z]{3,}|!/.test(c);
-  return `<div style="position:absolute;left:90px;right:130px;top:870px;text-align:center"><span style="display:inline-block;max-width:500px;font:${c.length > 18 ? 24 : c.length > 16 ? 28 : c.length > 12 ? 34 : c.length > 9 ? 40 : 48}px/1.2 Px;letter-spacing:0;text-transform:uppercase;color:${hot ? "#d3f05a" : "#fff"};-webkit-text-stroke:0;text-shadow:5px 5px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000;transform:scale(${1 + (c.length > 12 ? 0.08 : 0.2) * Math.max(0, 1 - age / 0.1)}) rotate(${(cur % 2 ? 1 : -1)}deg)">${c}</span></div>`;
+  for (const ph of L.text.split(/(?<=[.,!?])\s+/)) { const w = ph.split(" "), n = Math.ceil(w.length / 3), per = Math.ceil(w.length / n); for (let k = 0; k < w.length; k += per) chunks.push(w.slice(k, k + per)); }
+  const words = chunks.flat(), wlen = (w) => w.length + 1, tot = words.reduce((a, w) => a + wlen(w), 0), dur = L.e - L.s;
+  const u = clamp((t - L.s) / dur) * tot;
+  let acc = 0, ci = 0, wi = 0; const starts = words.map((w) => { const a = acc; acc += wlen(w); return a; });
+  words.forEach((w, k) => { if (u >= starts[k]) wi = k; });
+  let n = 0; chunks.forEach((c, k) => { if (wi >= n) ci = k; n += c.length; });
+  const first = chunks.slice(0, ci).reduce((a, c) => a + c.length, 0), c = chunks[ci], len = c.join(" ").length;
+  const size = len > 18 ? 26 : len > 14 ? 32 : len > 10 ? 40 : 48;
+  const spans = c.map((w, k) => { const g = first + k; if (g > wi) return `<span style="display:inline-block;margin:0 .34em;opacity:0">${w}</span>`;
+    const age = (u - starts[g]) / tot * dur, p = clamp(age / 0.11), pop = 1 + 0.55 * (1 - ease(p)), rot = (1 - p) * (g % 2 ? 9 : -9), cur = g === wi;
+    return `<span style="display:inline-block;margin:0 .34em;transform:scale(${pop}) rotate(${rot}deg);color:${cur ? "#d3f05a" : "#fff"}">${w}</span>`; }).join("");
+  return `<div style="position:absolute;left:90px;right:130px;top:870px;text-align:center"><div style="display:inline-block;max-width:500px;font:${size}px/1.25 Px;text-transform:uppercase;text-shadow:5px 5px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000">${spans}</div></div>`;
 }
 // moments that hit: stamps and the big lines shake the frame
 const HITS = () => [[st("hook") + 0.05, 0.8], [st("snap") + 1.0, 1.6], [st("three") + 0.3, 1], [st("gone") + 0.05, 1.4], [st("fix") + 0.05, 0.7], [st("sticks") + 0.45, 1.2], [st("count") + 0.4, 1.2]];
