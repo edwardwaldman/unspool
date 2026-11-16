@@ -11,7 +11,7 @@ def noise(d,dec=6): t=np.arange(int(SR*d))/SR; return rng.standard_normal(len(t)
 def kick(): k=np.arange(int(SR*.24))/SR; return np.tanh(3*np.sin(2*np.pi*(45+110*np.exp(-k*28))*k)*np.exp(-k*9))
 def boom(): k=np.arange(int(SR*1.0))/SR; return np.sin(2*np.pi*(30+70*np.exp(-k*9))*k)*np.exp(-k*3.5)
 def riser(d): t=np.arange(int(SR*d))/SR; return rng.standard_normal(len(t))*(t/d)**2*0.5+np.sin(2*np.pi*(200+1200*(t/d)**2)*t)*(t/d)**2*0.3
-F=st["fix"]; E=st.get("count",st["cta"])+1.2
+F=st["fix"]; E=DUR   # the music runs to the very end (no dead air on the end card)
 b=60/118; dark=[[45,48,52],[41,45,48],[43,47,50],[40,43,47]]; bright=[[48,52,55],[45,48,52],[53,57,60],[55,59,62]]
 for i in range(int(E/(b/4))):
     t0=i*b/4; prog=dark if t0<F else bright; ch=prog[(i//16)%4]
@@ -36,5 +36,5 @@ v,_=sf.read(f"{D}/voice.wav"); vv=np.zeros(N); vv[:min(N,len(v))]=v[:N]; vv/=np.
 vv/=np.abs(vv).max(); vv=np.tanh(vv*2.4)/np.tanh(2.4)   # compressed so every word sits loud
 env=np.convolve(np.abs(vv),np.ones(2400)/2400,"same"); m=out*(1-0.7*np.minimum(1,env/0.08))*0.32+vv*1.5
 m=np.tanh(m*2.2)/np.tanh(2.2)                                       # glue it loud
-m*=np.minimum(1,tt/0.02)*np.minimum(1,(DUR-tt)/0.4); m/=np.abs(m).max()/0.95
+m*=np.minimum(1,tt/0.02)*np.minimum(1,(DUR-tt)/0.4); m/=np.abs(m).max()/0.89   # headroom so the AAC encode never clips
 sf.write(f"{D}/mix.wav",m.astype(np.float32),SR); print("ok")

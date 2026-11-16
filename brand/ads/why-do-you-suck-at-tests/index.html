@@ -270,7 +270,6 @@ function phoneScroll(lt, t) {
   const cur = imgs[i % 4], nxt = imgs[(i + 1) % 4], n = Math.min(9, i + 1 + (f > 0.5 ? 1 : 0));
   const screen = `<div style="position:absolute;inset:0;transform:translateY(${y}%)"><img src="${cur}_px.png" style="position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;image-rendering:pixelated"><img src="${nxt}_px.png" style="position:absolute;left:0;top:100%;width:100%;height:100%;object-fit:cover;image-rendering:pixelated"></div>
     <div style="position:absolute;left:0;right:0;top:0;height:46px;background:linear-gradient(rgba(0,0,0,.55),transparent);display:flex;justify-content:center;align-items:center;font:13px Px;color:#fff">FOR YOU</div>
-    <div style="position:absolute;left:14px;top:52px;font:13px Px;color:#d3f05a;text-shadow:2px 2px 0 #000">TIKTOK ${n}/9</div>
     ${["♥", "💬", "➤"].map((g, j) => `<div style="position:absolute;right:12px;top:${360 + j * 62}px;font:28px sans-serif;color:#fff;text-shadow:0 2px 4px #000">${g}</div>`).join("")}
     <div style="position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.3)"><div style="height:5px;width:${((k % 1) * 1.7 % 1) * 100}%;background:#fff"></div></div>`;
   h += `<div style="position:absolute;left:${330 - W / 2}px;top:${330 + (1 - rise) * 700}px;width:${W}px;height:${Hh}px;transform:rotate(${sway * 0.25}deg)">
@@ -282,7 +281,6 @@ function phoneScroll(lt, t) {
   h += A(380 + fl * -16, 720 - fl * 180, `<div style="width:64px;height:150px;background:#c98f68;border:4px solid #000;border-radius:30px 30px 10px 10px;transform:rotate(-18deg);opacity:${f > 0 && f < 1 ? 1 : 0.0}"><div style="margin:10px auto;width:36px;height:30px;background:#e8b48c;border-radius:12px"></div></div>`);
   // what she just learned, lined up beside the phone
   ["MITOCHONDRIA", "ATP", "DNA TO RNA"].forEach((w, j) => { const kk = (lt - 0.25 - S * 0.8 - j * S) / 0.2; if (kk > 0) h += A([92, 306, 412][j], 960, `<div style="white-space:nowrap;font:13px Px;color:#0f1d18;background:#d3f05a;padding:7px 8px;box-shadow:4px 4px 0 #000;${pop(kk)}">${w} <span style="font:700 18px Ins">✓</span></div>`); });
-  h += label("TONIGHT'S SCREEN TIME", "SAME 4H", lt / 0.3);
   return h;
 }
 function endCard(lc) {
