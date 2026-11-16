@@ -21,7 +21,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = 
 const envTex = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
 const camera = new THREE.PerspectiveCamera(40, W / H, 0.05, 200);
 const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.1) k = i; return k; };
-const st = (n) => lines.find((l) => l.shot === n).s - 0.1;
+const st = (n) => (lines.find((l) => l.shot === n)?.s ?? 1e9) - 0.1;   // a cut line counts as "never"
 const len = (n) => { const i = lines.findIndex((l) => l.shot === n); return (lines[i + 1]?.s ?? DUR) - lines[i].s; };
 const MAYA = { skin: "#c98f68", hair: "#2b1d16", top: "#7c4ad6", pants: "#3d5a9e", style: "pony" };
 const wood = tex(512, 512, (c, w, h) => { c.fillStyle = "#8a5a36"; c.fillRect(0, 0, w, h); for (let i = 0; i < 70; i++) { c.strokeStyle = `rgba(50,25,10,${0.08 + (i % 5) * 0.03})`; c.lineWidth = 2; c.beginPath(); c.moveTo(0, i * 7.3); c.bezierCurveTo(w * 0.3, i * 7.3 + 6, w * 0.6, i * 7.3 - 6, w, i * 7.3 + 3); c.stroke(); } });
@@ -152,9 +152,9 @@ function lowPoly(scene) {
 [bed, desk, pap, cls].forEach(lowPoly);
 // Maya is your VRM character (web/girl.vrm) in every scene she's in; the toy versions only keep their slots and poses
 const VRMS = [];
-for (const t of [maya, mayaD, mayaC]) { const v = await vrmPerson(t, { height: t === mayaC ? 9.2 : 7.4 }); const orig = t.pose; t.pose = (n, k) => { orig(n, k); v.pose(n); }; t.pose(t === mayaC ? "sitsad" : "sitphone"); VRMS.push([t, v]); }
+for (const t of [maya, mayaD, mayaC]) { const v = await vrmPerson(t, { height: t === mayaC ? 10.5 : 8.2 }); const orig = t.pose; t.pose = (n, k) => { orig(n, k); v.pose(n); }; t.pose(t === mayaC ? "sitsad" : "sitphone"); VRMS.push([t, v]); }
 const [, vBed] = VRMS[0], [, vDesk] = VRMS[1];
-dk.scale.y = 1.8; dk.scale.z = 1.5;   // deeper too, so her bigger arms stay on top of it   // she's big now: a taller desk keeps her lap behind it from every front camera
+dk.scale.y = 1.95; dk.scale.z = 1.5;   // deeper too, so her bigger arms stay on top of it   // she's big now: a taller desk keeps her lap behind it from every front camera
 mesh(new THREE.BoxGeometry(3.4, 1.35, 0.06), M("#fff", { map: wood }), v3(0, 0.85, 0.74), dk);
 cls.children.filter((o) => o.isGroup && o.children.length > 5).forEach((d) => mesh(new THREE.BoxGeometry(1.5, 1.0, 0.05), M("#c89a62"), v3(0, 0.92, 1.04), d));
 // Maya drawn again at full resolution over the pixelated scene: everything else only writes depth (so desks still
@@ -314,7 +314,7 @@ window.renderAt = (t) => {
   const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.1);
   if (shot === "count" || shot === "cta" || shot === "end") {
     renderer.render(scene3d("sticks", len("sticks"), t), camera); hi.clear();
-    const lc = t - st("count");
+    const lc = t - Math.min(st("count"), st("cta"));   // the end card starts on "count", or on the CTA once that line is cut
     ov.innerHTML = endCard(lc) + (shot !== "end" && L.text ? shout(L, t).replace("top:870px", "top:990px") : ""); frameShake(t, lt); return; }
   poseVRMs(t); const scene = scene3d(shot, lt, t); poseVRMs(t); renderer.render(scene, camera); sharpMaya(scene);   // twice: the camera follows the phone, which follows her hands
   let h = "";
