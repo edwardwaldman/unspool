@@ -212,8 +212,7 @@ function scene3d(shot, lt, t) {
     const studying = shot === "chapter" || shot === "three"; dPhone.visible = !studying; flip.visible = false;
     if (studying) { mayaD.pose("sitdesk", t); flip.rotation.z = ((lt * 2.4) % 1) * Math.PI; mayaD.mouth.rotation.z = 0; }
     else { mayaD.pose("phone"); mayaD.pose("sitphone"); dPhone.position.set(0.15, 1.75, 0.75); dPhone.rotation.set(-0.7, 0, 0); dPhone.scale.setScalar(0.5); mayaD.mouth.rotation.z = Math.PI; }
-    if (shot === "chapter") camMove(lt, L, v3(0, 4.0, 8.4), v3(0, 3.9, 7.2), v3(0, 3.1, -0.5), v3(0, 3.1, -0.5), 40);
-    else if (shot === "three") { VRMS[1][1].update(t); const f = VRMS[1][1].facePos(), c = v3(f.x, f.y - 0.45, f.z); camMove(lt, L, c.clone().add(v3(0, 0.25, 4.3)), c.clone().add(v3(0, 0.2, 3.5)), c, c, 40); }
+    if (shot === "chapter" || shot === "three") { VRMS[1][1].update(t); const f = VRMS[1][1].facePos(), c = v3(f.x, f.y - 0.45, f.z); camMove(t - Math.min(st("chapter"), st("three")), (st("gone") - Math.min(st("chapter"), st("three"))), c.clone().add(v3(0, 0.25, 4.3)), c.clone().add(v3(0, 0.2, 3.5)), c, c, 40); }
     else cam(v3(0, 4.6, 8.6), v3(0, 3.5, 0), 40);
     return desk; }
   if (shot === "gone" || shot === "sticks") { paper.material.map = shot === "gone" ? paperBlank : paperA; paper.material.needsUpdate = true; camMove(lt, L + 0.4, v3(0.03, 4.4, 0.8), v3(0.03, 4.05, 0.7), v3(0.03, 0, 0.05), v3(0.03, 0, 0.05), 38); return pap; }
@@ -336,7 +335,7 @@ window.renderAt = (t) => {
   if (L.text) h += shout(L, t);
   // a white flash on every cut, a red pulse through the "problem" half, and the whole frame punching in and shaking
   const flash = Math.max(0, 1 - lt / 0.06) * 0.22;
-  if (flash > 0 && i > 0) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${flash}"></div>`;
+  if (flash > 0 && i > 0 && shot !== "three") h += `<div style="position:absolute;inset:0;background:#fff;opacity:${flash}"></div>`;
   if (false) h += `<div style="position:absolute;inset:0;box-shadow:inset 0 0 ${140 + 60 * Math.abs(Math.sin(t * 7))}px rgba(229,48,42,${0.28 + 0.18 * Math.abs(Math.sin(t * 7))})"></div>`;
   ov.innerHTML = h;
   frameShake(t, lt);
