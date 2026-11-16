@@ -59,8 +59,8 @@ export async function vrmPerson(toy, { url = "girl.vrm", height = 2.85 } = {}) {
     }
     if (ex) {
       const smile = Math.abs(toy.mouth.rotation.z - Math.PI) < 0.1;
-      ex.setValue("happy", smile ? 0.55 : 0); ex.setValue("sad", smile ? 0 : 0.45);
-      ex.setValue("blink", (t % 3.3) < 0.12 ? 1 : 0); ex.update();
+      ex.setValue("happy", smile ? 0.55 : 0); ex.setValue("sad", smile ? 0 : 0.25);
+      ex.setValue("blink", (t % 3.3) > 3.0 && (t % 3.3) < 3.12 ? 1 : 0); ex.update();
     }
     vrm.humanoid.update();
     vrm.scene.updateMatrixWorld(true);
