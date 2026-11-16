@@ -20,7 +20,7 @@ const aim = (from, to) => new THREE.Quaternion().setFromUnitVectors(from, to);
 const ARMS = {
   stand: [V(0.2, -1, 0), V(0.1, -1, 0.1)],
   sit: [V(0.2, -1, 0.15), V(0.1, -0.6, 0.8)],
-  sitphone: [V(0.3, -0.45, 0.85), V(-0.35, 0.8, 0.45)],   // phone held up at face height
+  sitphone: [V(0.3, -0.8, 0.5), V(-0.4, 0.35, 0.85)],   // phone held at chest height, below her face
   phone: [V(0.3, -0.45, 0.85), V(-0.35, 0.8, 0.45)],
   sitdesk: [V(0.3, -0.55, 0.78), V(-0.25, -0.12, 1)],
   sitsad: [V(0.3, -0.45, 0.85), V(-0.7, 0.05, 0.7)],
