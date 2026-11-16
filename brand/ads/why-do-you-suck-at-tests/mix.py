@@ -36,5 +36,5 @@ v,_=sf.read(f"{D}/voice.wav"); vv=np.zeros(N); vv[:min(N,len(v))]=v[:N]; vv/=np.
 vv/=np.abs(vv).max(); vv=np.tanh(vv*2.4)/np.tanh(2.4)   # compressed so every word sits loud
 env=np.convolve(np.abs(vv),np.ones(2400)/2400,"same"); m=out*(1-0.7*np.minimum(1,env/0.08))*0.32+vv*1.5
 m=np.tanh(m*2.2)/np.tanh(2.2)                                       # glue it loud
-m*=np.minimum(1,tt/0.02)*np.minimum(1,(DUR-tt)/0.4); m/=np.abs(m).max()/0.89   # headroom so the AAC encode never clips
+m*=np.minimum(1,tt/0.02)*np.minimum(1,(DUR-tt)/0.4); m/=np.abs(m).max()/0.79   # headroom so the AAC encode never clips
 sf.write(f"{D}/mix.wav",m.astype(np.float32),SR); print("ok")
