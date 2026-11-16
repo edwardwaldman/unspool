@@ -209,10 +209,10 @@ function scene3d(shot, lt, t) {
     }
     return bed; }
   if (["chapter", "three", "fix", "snap", "cards", "quiz"].includes(shot)) {
-    const studying = shot === "chapter" || shot === "three"; dPhone.visible = !studying; flip.visible = false;
-    if (studying) { mayaD.pose("sitdesk", t); flip.rotation.z = ((lt * 2.4) % 1) * Math.PI; mayaD.mouth.rotation.z = 0; }
+    const studying = shot === "chapter" || shot === "three"; dPhone.visible = !studying; flip.visible = studying;
+    if (studying) { mayaD.pose("sitdesk", t); { const tt = t - Math.min(st("chapter"), st("three")), k = (tt % 0.55) / 0.55; flip.scale.set(1, 1 / dk.scale.y, 1 / dk.scale.z); flip.rotation.z = ease(clamp(k / 0.7)) * Math.PI * 0.98; } mayaD.mouth.rotation.z = 0; }
     else { mayaD.pose("phone"); mayaD.pose("sitphone"); dPhone.position.set(0.15, 1.75, 0.75); dPhone.rotation.set(-0.7, 0, 0); dPhone.scale.setScalar(0.5); mayaD.mouth.rotation.z = Math.PI; }
-    if (shot === "chapter" || shot === "three") { VRMS[1][1].update(t); const f = VRMS[1][1].facePos(), c = v3(f.x, f.y - 0.45, f.z); camMove(t - Math.min(st("chapter"), st("three")), (st("gone") - Math.min(st("chapter"), st("three"))), c.clone().add(v3(0, 0.25, 4.3)), c.clone().add(v3(0, 0.2, 3.5)), c, c, 40); }
+    if (shot === "chapter" || shot === "three") { VRMS[1][1].update(t); const f = VRMS[1][1].facePos(), c = v3(f.x, f.y - 0.75, f.z + 0.5); camMove(t - Math.min(st("chapter"), st("three")), (st("gone") - Math.min(st("chapter"), st("three"))), c.clone().add(v3(0, 1.9, 4.2)), c.clone().add(v3(0, 1.6, 3.5)), c, c, 40); }
     else cam(v3(0, 4.6, 8.6), v3(0, 3.5, 0), 40);
     return desk; }
   if (shot === "gone" || shot === "sticks") { paper.material.map = shot === "gone" ? paperBlank : paperA; paper.material.needsUpdate = true; camMove(lt, L + 0.4, v3(0.03, 4.4, 0.8), v3(0.03, 4.05, 0.7), v3(0.03, 0, 0.05), v3(0.03, 0, 0.05), 38); return pap; }
