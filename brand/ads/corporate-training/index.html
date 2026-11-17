@@ -1,348 +1,218 @@
-<!doctype html><html><head><meta charset="utf-8"><style>
-@font-face{font-family:Unb;src:url(Unbounded-700.ttf)} @font-face{font-family:Ins;src:url(InstrumentSans-600.ttf)} @font-face{font-family:Ser;src:url(SerifItalic.ttf)} @font-face{font-family:Px;src:url(Pixel.woff2)}
-html,body{margin:0;width:720px;height:1280px;overflow:hidden;background:#0d1430}
-#c{position:absolute;inset:0;width:720px;height:1280px;image-rendering:pixelated} #ov{position:absolute;inset:0;overflow:hidden}
-.cap{position:absolute;left:40px;right:40px;top:1010px;text-align:center;font:44px/1.15 Ser;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.6)}
-.lbl{position:absolute;left:96px;top:220px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.5)}
-.lbl small{display:block;font:14px Px;letter-spacing:1px;opacity:.9} .lbl b{display:block;font:44px/1.1 Px;margin-top:10px;text-shadow:4px 4px 0 #000}
-.stamp{position:absolute;white-space:nowrap;font:40px Px;color:#e5302a;border:6px solid #e5302a;border-radius:10px;padding:6px 18px;letter-spacing:1px;background:rgba(255,255,255,.08)}
-</style></head><body><canvas id="c" width="720" height="1280"></canvas><canvas id="c2" width="240" height="427" style="position:absolute;inset:0;width:720px;height:1280px;image-rendering:pixelated"></canvas><div id="ov"></div>
-<script type="importmap">{ "imports": { "three": "./three/three.module.js" } }</script>
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: Unb; src: url(Unbounded-700.ttf); }
+@font-face { font-family: Ins; src: url(InstrumentSans-600.ttf); }
+html, body { margin: 0; width: 720px; height: 1280px; overflow: hidden; background: #f4f5f7; }
+#s { position: absolute; inset: 0; overflow: hidden; font-family: Ins; color: #101828; }
+.card { position: absolute; background: #fff; border-radius: 28px; box-shadow: 0 24px 60px rgba(16, 24, 40, .14), 0 2px 6px rgba(16, 24, 40, .06); }
+.chip { display: inline-flex; align-items: center; gap: 10px; background: #fff; border-radius: 999px; padding: 12px 20px; font: 600 24px Ins; box-shadow: 0 10px 30px rgba(16, 24, 40, .14); white-space: nowrap; }
+.mono { font-family: Unb; letter-spacing: -0.01em; }
+</style></head>
+<body><div id="s"></div>
 <script type="module">
-import { THREE, clamp, mix, ease, outBack, v3, tex, M, mesh, grp, sunLight, toy, book, pageTex, phone } from "./world.js";
-import { RoomEnvironment } from "./three/RoomEnvironment.js";
-import { vrmPerson } from "./vrmperson.js";
+// Corporate-training ad, business look: light UI, clean type, an illustrated employee, app and phone mock-ups.
+// window.renderAt(t) draws frame t (seconds); timings come from tl.json (the voice lines).
 const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
-await Promise.all([document.fonts.load("700 40px Unb"), document.fonts.load("600 20px Ins"), document.fonts.load("40px Ser"), document.fonts.load("20px Px")]);
-const W = 720, H = 1280;
-const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("c"), antialias: false, preserveDrawingBuffer: true });
-renderer.setSize(W / 4, H / 4, false); renderer.setPixelRatio(1); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
-const envTex = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
-const camera = new THREE.PerspectiveCamera(40, W / H, 0.05, 200);
-const shotIdx = (t) => { let k = 0; for (let i = 0; i < lines.length; i++) if (t >= lines[i].s - 0.1) k = i; return k; };
-const st = (n) => (lines.find((l) => l.shot === n)?.s ?? 1e9) - 0.1;   // a cut line counts as "never"
-const len = (n) => { const i = lines.findIndex((l) => l.shot === n); return (lines[i + 1]?.s ?? DUR) - lines[i].s; };
-const MAYA = { skin: "#c98f68", hair: "#2b1d16", top: "#7c4ad6", pants: "#3d5a9e", style: "pony" };
-const wood = tex(512, 512, (c, w, h) => { c.fillStyle = "#8a5a36"; c.fillRect(0, 0, w, h); for (let i = 0; i < 70; i++) { c.strokeStyle = `rgba(50,25,10,${0.08 + (i % 5) * 0.03})`; c.lineWidth = 2; c.beginPath(); c.moveTo(0, i * 7.3); c.bezierCurveTo(w * 0.3, i * 7.3 + 6, w * 0.6, i * 7.3 - 6, w, i * 7.3 + 3); c.stroke(); } });
-
-// the phone screens: a fun clip (the thing you remember), then an Unspool reel (the thing you'll now remember)
-const clipC = document.createElement("canvas"); clipC.width = 280; clipC.height = 590; const clipTex = new THREE.CanvasTexture(clipC); clipTex.colorSpace = THREE.SRGBColorSpace;
-function drawClip(t) { const c = clipC.getContext("2d"); const g = c.createLinearGradient(0, 0, 0, 590); g.addColorStop(0, "#ff7eb6"); g.addColorStop(1, "#7a5cff"); c.fillStyle = g; c.fillRect(0, 0, 280, 590);
-  c.font = "120px serif"; c.textAlign = "center"; c.save(); c.translate(140, 290); c.rotate(Math.sin(t * 6) * 0.25); c.fillText("🐱", 0, 40); c.restore();
-  c.fillStyle = "#fff"; c.font = "bold 22px Ins"; c.fillText("POV: the cat heard", 140, 110); c.fillText("the treat bag", 140, 138);
-  c.fillStyle = "rgba(255,255,255,.9)"; [0, 1, 2].forEach((i) => { c.beginPath(); c.arc(250, 380 + i * 50, 12, 0, 7); c.fill(); });
-  c.fillStyle = "rgba(255,255,255,.4)"; c.fillRect(0, 580, 280, 6); c.fillStyle = "#fff"; c.fillRect(0, 580, 280 * ((t * 0.3) % 1), 6); clipTex.needsUpdate = true; }
-drawClip(0);
-const reelTex = new THREE.TextureLoader().load("fire.jpg"); reelTex.colorSpace = THREE.SRGBColorSpace;
-const REELS = ["fire", "phish", "lift"].map((n) => { const t = new THREE.TextureLoader().load(`${n}_px.png`); t.colorSpace = THREE.SRGBColorSpace; t.magFilter = THREE.NearestFilter; return t; });
-
-// ================= BEDROOM, 1 AM =================
-const bed = new THREE.Scene(); bed.background = new THREE.Color("#0d1430"); bed.environment = envTex; bed.environmentIntensity = 0.12;
-bed.add(new THREE.HemisphereLight("#3a4a8a", "#0a0a14", 0.5));
-const lampL = new THREE.PointLight("#ffb46a", 9, 7, 1.6); lampL.position.set(-2.3, 2.6, 0.4); lampL.castShadow = true; lampL.shadow.mapSize.set(1024, 1024); bed.add(lampL);
-const clockL = new THREE.PointLight("#ff3b2f", 2.5, 3, 2); clockL.position.set(-2.0, 1.6, 0.9); bed.add(clockL);
-const glow = new THREE.PointLight("#bfe0ff", 3.5, 2.6, 2); bed.add(glow);
-mesh(new THREE.BoxGeometry(12, 7, 12), M("#1b2550", { side: THREE.BackSide, roughness: 1 }), v3(0, 3.5, 0), bed, false).receiveShadow = true;
-mesh(new THREE.PlaneGeometry(12, 12), M("#fff", { map: wood, roughness: 0.8 }), v3(0, 0.01, 0), bed).rotation.x = -Math.PI / 2;
-const nightC = tex(512, 384, (c, w, h) => { const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "#070c22"); g.addColorStop(1, "#1d2a63"); c.fillStyle = g; c.fillRect(0, 0, w, h); c.fillStyle = "#fff"; for (let i = 0; i < 50; i++) c.fillRect((i * 97) % w, (i * 53) % (h * 0.6), 2, 2); c.fillStyle = "#0b1230"; for (let i = 0; i < 9; i++) c.fillRect(i * 58, h - 80 - (i * 37 % 60), 50, 140); c.fillStyle = "#ffd76a"; for (let i = 0; i < 26; i++) c.fillRect((i * 61) % w + 8, h - 50 - (i * 13 % 50), 6, 8); });
-mesh(new THREE.PlaneGeometry(2.6, 2.2), new THREE.MeshBasicMaterial({ map: nightC, toneMapped: false }), v3(1.5, 3.4, -2.48), bed, false);
-[[1.5, 4.55, 2.8, 0.1], [1.5, 2.25, 2.8, 0.1], [0.15, 3.4, 0.1, 2.4], [2.85, 3.4, 0.1, 2.4], [1.5, 3.4, 0.08, 2.3]].forEach(([x, y, w, h]) => mesh(new THREE.BoxGeometry(w, h, 0.08), M("#2c3a74"), v3(x, y, -2.44), bed));
-mesh(new THREE.PlaneGeometry(12, 7), M("#1b2550", { roughness: 1 }), v3(0, 3.5, -2.5), bed);
-const quilt = tex(512, 512, (c, w, h) => { const cols = ["#e5484d", "#2f7de1", "#f2c14e", "#1f9d55", "#7c4ad6", "#ff8b6c", "#16314f", "#e8e2d4"]; for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { c.fillStyle = cols[(x * 3 + y * 5) % 8]; c.fillRect(x * 64, y * 64, 64, 64); c.strokeStyle = "rgba(0,0,0,.25)"; c.strokeRect(x * 64, y * 64, 64, 64); } });
-const bedG = grp(bed, v3(0.2, 0, -0.6));
-mesh(new THREE.BoxGeometry(2.8, 0.6, 4.2), M("#5a3a24"), v3(0, 0.3, 0.6), bedG); mesh(new THREE.BoxGeometry(2.7, 0.35, 4.0), M("#f4efe6"), v3(0, 0.78, 0.6), bedG);
-quilt.wrapS = quilt.wrapT = THREE.RepeatWrapping; quilt.repeat.set(2, 2);
-mesh(new THREE.BoxGeometry(2.74, 0.3, 2.8), M("#fff", { map: quilt, roughness: 0.9 }), v3(0, 0.95, 1.2), bedG);
-mesh(new THREE.BoxGeometry(2.9, 1.8, 0.2), M("#5a3a24"), v3(0, 1.0, -1.45), bedG); mesh(new THREE.BoxGeometry(1.6, 0.35, 0.6), M("#fff"), v3(0, 1.15, -1.05), bedG).rotation.x = -0.4;
-const stand = grp(bed, v3(-2.2, 0, -0.8)); mesh(new THREE.BoxGeometry(1.0, 1.1, 0.9), M("#a8322a"), v3(0, 0.55, 0), stand);
-const clockFace = (txt) => tex(256, 110, (c) => { c.fillStyle = "#111"; c.fillRect(0, 0, 256, 110); c.fillStyle = "#ff3b2f"; c.font = "bold 70px monospace"; c.textAlign = "center"; c.shadowColor = "#ff3b2f"; c.shadowBlur = 18; c.fillText(txt, 128, 82); });
-const clk = mesh(new THREE.BoxGeometry(0.6, 0.28, 0.25), [M("#222"), M("#222"), M("#222"), M("#222"), new THREE.MeshBasicMaterial({ map: clockFace("1:00"), toneMapped: false }), M("#222")], v3(0.15, 1.25, 0.25), stand); clk.rotation.y = 0.5;
-const lampG = grp(stand, v3(-0.25, 1.1, -0.15)); mesh(new THREE.CylinderGeometry(0.06, 0.12, 0.5, 12), M("#e8e2d4"), v3(0, 0.25, 0), lampG); mesh(new THREE.ConeGeometry(0.32, 0.38, 24, 1, true), M("#ffe2b0", { side: THREE.DoubleSide, emissive: "#a8661c" }), v3(0, 0.62, 0), lampG);
-const maya = toy(MAYA); bed.add(maya.g); maya.g.position.set(0.2, 0.66, -0.55); maya.pose("sitphone");
-const mPhone = phone(null, clipTex); maya.g.add(mPhone); mPhone.position.set(0.12, 1.78, 0.78); mPhone.rotation.set(-0.75, 0.05, 0); mPhone.scale.setScalar(0.5);
-
-// ================= POV: her phone, from her eyes =================
-const feedC = document.createElement("canvas"); feedC.width = 270; feedC.height = 480; const feedTex = new THREE.CanvasTexture(feedC); feedTex.colorSpace = THREE.SRGBColorSpace; feedTex.magFilter = THREE.NearestFilter;
-const feedImgs = await Promise.all(["fire", "phish", "lift"].map((n) => new Promise((r) => { const i = new Image(); i.onload = () => r(i); i.src = `${n}_px.png`; })));
-const SWIPE = 0.85;                                           // seconds per reel
-function drawFeed(lt) {
-  const c = feedC.getContext("2d"), k = lt / SWIPE, i = Math.floor(k), f = clamp((k - i - 0.62) / 0.38), y = -480 * (f < 0.5 ? 4 * f * f * f : 1 - Math.pow(-2 * f + 2, 3) / 2);
-  c.fillStyle = "#000"; c.fillRect(0, 0, 270, 480);
-  c.drawImage(feedImgs[i % 3], 0, y, 270, 480); c.drawImage(feedImgs[(i + 1) % 3], 0, y + 480, 270, 480);
-  // the app around it: rail, account row, reel counter
-  c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(0, 0, 270, 28); c.fillStyle = "#fff"; c.font = "bold 12px Ins"; c.textAlign = "center"; c.fillText("This doc   ·   All spools", 135, 18);
-  c.fillStyle = "#d3f05a"; c.textAlign = "left"; c.fillText(`REEL ${Math.min(9, i + 1 + (f > 0.5 ? 1 : 0))} / 9`, 10, 46);
-  ["♥", "💬", "➤"].forEach((g, j) => { c.fillStyle = "#fff"; c.font = "18px sans-serif"; c.fillText(g, 240, 300 + j * 40); });
-  c.fillStyle = "rgba(255,255,255,.35)"; c.fillRect(0, 474, 270, 6); c.fillStyle = "#fff"; c.fillRect(0, 474, 270 * ((k % 1) * 1.6 % 1), 6);
-  feedTex.needsUpdate = true; return f;
-}
-const pov = grp(bed); pov.visible = false;
-const povPhone = grp(pov); mesh(new THREE.BoxGeometry(0.62, 1.24, 0.07), M("#16181d", { roughness: 0.3, metalness: 0.4 }), v3(0, 0, 0), povPhone);
-mesh(new THREE.PlaneGeometry(0.57, 1.14), new THREE.MeshBasicMaterial({ map: feedTex, toneMapped: false }), v3(0, 0, 0.037), povPhone, false);
-const skinM = M(MAYA.skin, { roughness: 0.5 }), sleeveM = M(MAYA.top, { roughness: 0.85 });
-[-1, 1].forEach((sx) => { const h = grp(povPhone, v3(sx * 0.3, -0.32, 0.02));
-  mesh(new THREE.SphereGeometry(0.15, 10, 8), skinM, v3(sx * 0.04, 0, -0.04), h).scale.set(0.8, 1.25, 0.7);
-  [0, 1, 2].forEach((j) => mesh(new THREE.CapsuleGeometry(0.035, 0.12, 2, 6), skinM, v3(sx * 0.03, 0.2 - j * 0.11, -0.07), h).rotation.z = Math.PI / 2);
-  mesh(new THREE.CapsuleGeometry(0.13, 0.7, 2, 8), sleeveM, v3(sx * 0.12, -0.45, -0.12), h).rotation.z = -sx * 0.35; });
-const thumb = grp(povPhone, v3(0.18, -0.25, 0.06)); mesh(new THREE.CapsuleGeometry(0.045, 0.2, 2, 6), skinM, v3(0, 0.1, 0), thumb).rotation.z = 0.5;
-const povLight = new THREE.PointLight("#cfe2ff", 0, 2.2, 2); pov.add(povLight);
-
-// ================= DESK, evening: the chapter you reread =================
-const desk = new THREE.Scene(); desk.background = new THREE.Color("#2a2140"); desk.environment = envTex; desk.environmentIntensity = 0.25;
-desk.add(new THREE.HemisphereLight("#8a7ab0", "#1a1626", 0.6));
-const dLamp = new THREE.PointLight("#ffd9a8", 5, 8, 1.4); { const key = new THREE.DirectionalLight("#f1f3ff", 1.6); key.position.set(1.5, 6, 6); desk.add(key); } dLamp.position.set(-1.0, 2.7, 1.3); dLamp.castShadow = true; dLamp.shadow.mapSize.set(1024, 1024); desk.add(dLamp);
-mesh(new THREE.BoxGeometry(12, 7, 12), M("#3a3060", { side: THREE.BackSide, roughness: 1 }), v3(0, 3.5, 0), desk, false).receiveShadow = true;
-mesh(new THREE.PlaneGeometry(12, 12), M("#fff", { map: wood, roughness: 0.8 }), v3(0, 0.01, 0), desk).rotation.x = -Math.PI / 2;
-const dk = grp(desk, v3(0, 0, 1.4)); mesh(new THREE.BoxGeometry(3.4, 0.14, 1.5), M("#fff", { map: wood }), v3(0, 1.55, 0), dk);
-[[-1.55, -0.6], [1.55, -0.6], [-1.55, 0.6], [1.55, 0.6]].forEach(([x, z]) => mesh(new THREE.BoxGeometry(0.1, 1.5, 0.1), M("#5a3a24"), v3(x, 0.75, z), dk));
-const dl = grp(dk, v3(-1.0, 1.62, -0.3)); mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.08, 20), M("#333"), v3(0, 0, 0), dl); mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.8, 10), M("#333"), v3(0, 0.4, 0), dl); mesh(new THREE.ConeGeometry(0.32, 0.4, 24, 1, true), M("#f2c14e", { side: THREE.DoubleSide, emissive: "#6a4a10" }), v3(0.05, 0.9, 0.05), dl);
-const ob = grp(dk, v3(0.1, 1.63, 0.05)); mesh(new THREE.BoxGeometry(1.6, 0.1, 1.05), M("#1f8a70"), v3(0, 0, 0), ob);
-[-1, 1].forEach((s) => { const p = mesh(new THREE.PlaneGeometry(0.76, 1.0), M("#fff", { map: pageTex(14, { title: "Staff Handbook" }), roughness: 0.9 }), v3(s * 0.39, 0.06, 0), ob); p.rotation.set(-Math.PI / 2, s * -0.06, 0); });
-const flip = grp(ob, v3(0, 0.07, 0)); const fp = mesh(new THREE.PlaneGeometry(0.76, 1.0), M("#fff", { map: pageTex(14), side: THREE.DoubleSide, roughness: 0.9 }), v3(0.38, 0, 0), flip); fp.rotation.x = -Math.PI / 2;
-const stack = book(dk, { title: "POLICIES", w: 1.0, h: 1.3, d: 0.5 }); stack.position.set(1.15, 1.87, -0.2); stack.rotation.y = 0.3;
-const chair = grp(desk, v3(0, 0, -0.2)); mesh(new THREE.BoxGeometry(1.1, 0.12, 1.0), M("#e05a47"), v3(0, 1.0, 0), chair); mesh(new THREE.BoxGeometry(1.1, 1.2, 0.12), M("#e05a47"), v3(0, 1.6, -0.5), chair);
-const mayaD = toy(MAYA); desk.add(mayaD.g); mayaD.g.position.set(0, 0.05, -0.05);
-const dPhone = phone(null, reelTex); mayaD.g.add(dPhone); dPhone.position.set(0.28, 1.66, 0.62); dPhone.rotation.set(-0.45, 0.1, 0); dPhone.scale.setScalar(0.55);
-
-// ================= PAPER close-up =================
-const pap = new THREE.Scene(); pap.background = new THREE.Color("#8a5a36"); pap.environment = envTex; pap.environmentIntensity = 0.5;
-sunLight(pap, { pos: v3(-2, 8, 3), size: 3, intensity: 2.4, hemi: ["#fff7ea", "#8f7556", 0.9] });
-mesh(new THREE.PlaneGeometry(10, 10), M("#fff", { map: wood, roughness: 0.6 }), v3(0, 0, 0), pap).rotation.x = -Math.PI / 2;
-const quizTex = (grade) => tex(512, 680, (c, w, h) => { c.fillStyle = "#fff"; c.fillRect(0, 0, w, h); c.fillStyle = "#16314f"; c.font = "bold 30px Ins"; c.fillText("Safety training quiz", 34, 56); c.fillText("Name: Maya R.", 34, 100);
-  [0, 1, 2, 3].forEach((i) => { c.fillStyle = "#9aa1ad"; c.fillRect(34, 170 + i * 120, 380, 8); c.fillRect(34, 190 + i * 120, 240, 8); c.strokeStyle = "#c8ccd4"; c.lineWidth = 3; c.strokeRect(34, 212 + i * 120, 440, 46);
-    if (grade) { c.fillStyle = "#1a3a8a"; c.font = "italic 30px serif"; c.fillText(["Pull, aim, squeeze, sweep", "Check the sender first", "Bend your knees", "Report it to IT"][i], 48, 246 + i * 120); } });
-  if (grade) { c.strokeStyle = "#1f9d55"; c.lineWidth = 12; c.beginPath(); c.ellipse(410, 80, 70, 60, -0.1, 0, 7); c.stroke(); c.fillStyle = "#1f9d55"; c.font = "bold 30px Unb"; c.textAlign = "center"; c.fillText("PASS", 410, 92); } });
-const paper = mesh(new THREE.PlaneGeometry(1.5, 2.0), M("#fff", { map: quizTex(false), roughness: 0.9 }), v3(0, 0.01, 0), pap); paper.rotation.set(-Math.PI / 2, 0, 0.06);
-const paperBlank = paper.material.map, paperA = quizTex(true);
-
-
-// ================= CLASSROOM: test day, everyone got an A but her =================
-const cls = new THREE.Scene(); cls.background = new THREE.Color("#3b4f6b"); cls.environment = envTex; cls.environmentIntensity = 0.3;
-sunLight(cls, { pos: v3(-3, 8, 5), size: 6, intensity: 2.0, hemi: ["#eef4ff", "#55607a", 0.8] });
-mesh(new THREE.BoxGeometry(14, 7, 14), M("#d9d2c0", { side: THREE.BackSide, roughness: 1 }), v3(0, 3.5, 0), cls, false).receiveShadow = true;
-mesh(new THREE.PlaneGeometry(14, 14), M("#9a7a5a", { roughness: 0.9 }), v3(0, 0.01, 0), cls).rotation.x = -Math.PI / 2;
-const board = tex(512, 220, (c, w, h) => { c.fillStyle = "#24493b"; c.fillRect(0, 0, w, h); c.fillStyle = "rgba(255,255,255,.85)"; c.font = "bold 40px Ins"; c.fillText("BIO TEST 4", 30, 175); c.font = "26px Ins"; c.fillText("results today", 300, 175); c.strokeStyle = "rgba(255,255,255,.5)"; c.lineWidth = 3; c.beginPath(); c.moveTo(300, 150); c.lineTo(470, 150); c.stroke(); });
-mesh(new THREE.PlaneGeometry(6, 2.6), M("#fff", { map: board, roughness: 0.9 }), v3(0, 3.6, -6.9), cls, false);
-mesh(new THREE.BoxGeometry(6.3, 2.9, 0.1), M("#6b4a2e"), v3(0, 3.6, -6.97), cls);
-const gradeTex = (g, col) => tex(256, 320, (c, w, h) => { c.fillStyle = "#fff"; c.fillRect(0, 0, w, h); c.fillStyle = "#9aa1ad"; for (let i = 0; i < 6; i++) c.fillRect(24, 150 + i * 26, 200 - (i % 3) * 40, 9); c.strokeStyle = col; c.lineWidth = 12; c.beginPath(); c.ellipse(128, 76, 62, 54, 0, 0, 7); c.stroke(); c.fillStyle = col; c.font = "bold 84px Unb"; c.textAlign = "center"; c.fillText(g, 128, 106); });
-const aTex = gradeTex("A", "#1f9d55"), cTex = gradeTex("F", "#e5302a");
-const schoolDesk = (x, z) => { const d = grp(cls, v3(x, 0, z)); mesh(new THREE.BoxGeometry(1.5, 0.1, 1.0), M("#c89a62"), v3(0, 1.45, 0.55), d); [[-0.65, 0.15], [0.65, 0.15], [-0.65, 0.95], [0.65, 0.95]].forEach(([a, b]) => mesh(new THREE.BoxGeometry(0.08, 1.45, 0.08), M("#555"), v3(a, 0.72, b), d)); mesh(new THREE.BoxGeometry(1.0, 0.1, 0.9), M("#3d6fb6"), v3(0, 0.95, -0.25), d); return d; };
-const KIDS = [{ skin: "#f1c7a5", hair: "#c9862f", top: "#e5484d", pants: "#33415c", style: "short" }, { skin: "#8d5a3b", hair: "#1a120d", top: "#1f9d55", pants: "#2a2a3a", style: "bun" }, { skin: "#e8b48c", hair: "#5a3a24", top: "#f2c14e", pants: "#3d5a9e", style: "short" }, { skin: "#b07850", hair: "#1a120d", top: "#2f7de1", pants: "#33415c", style: "pony" }];
-const kids = [[-1.7, -1.2], [1.7, -1.2], [-1.0, -3.8], [1.0, -3.8]].map(([x, z], i) => { schoolDesk(x, z); const k = toy({ ...KIDS[i], smile: true }); cls.add(k.g); k.g.position.set(x, 0.05, z - 0.55);
-  const pp = mesh(new THREE.PlaneGeometry(0.85, 1.06), M("#fff", { map: aTex, roughness: 0.9, side: THREE.DoubleSide }), v3(0, 3.35, 0.15), k.g); return { k, pp, ph: i * 1.3 }; });
-const herDesk = schoolDesk(0, 1.2); herDesk.scale.y = 1.35; mesh(new THREE.BoxGeometry(1.5, 1.45, 0.05), M("#c89a62"), v3(0, 0.72, 1.07), herDesk); const mayaC = toy({ ...MAYA, smile: false }); cls.add(mayaC.g); mayaC.g.position.set(0, 0.05, -0.15); mayaC.pose("sitsad");
-const cPaper = mesh(new THREE.PlaneGeometry(0.55, 0.69), M("#fff", { map: cTex, roughness: 0.9 }), v3(0.15, 1.51, 1.95), cls); cPaper.rotation.set(-Math.PI / 2, 0, 0.18);
-
-// ================= shots =================
-function lowPoly(scene) {
-  scene.traverse((o) => {
-    if (!o.isMesh) return;
-    const g = o.geometry, p = g.parameters ?? {}, T = g.type;
-    let n = null;
-    if (T === "SphereGeometry") n = new THREE.SphereGeometry(p.radius, 8, 6, p.phiStart, p.phiLength, p.thetaStart, p.thetaLength);
-    else if (T === "CapsuleGeometry") n = new THREE.CapsuleGeometry(p.radius, p.height ?? p.length, 2, 6);
-    else if (T === "CylinderGeometry") n = new THREE.CylinderGeometry(p.radiusTop, p.radiusBottom, p.height, Math.min(8, p.radialSegments), 1, p.openEnded);
-    else if (T === "ConeGeometry") n = new THREE.ConeGeometry(p.radius, p.height, Math.min(8, p.radialSegments), 1, p.openEnded);
-    else if (T === "TorusGeometry") n = new THREE.TorusGeometry(p.radius, p.tube, 4, 8, p.arc);
-    if (n) { g.dispose(); o.geometry = n; }
-    for (const m of [o.material].flat()) if (m && "flatShading" in m) { m.flatShading = true; m.needsUpdate = true; }
-  });
-}
-[bed, desk, pap, cls].forEach(lowPoly);
-// Maya is your VRM character (web/girl.vrm) in every scene she's in; the toy versions only keep their slots and poses
-const VRMS = [];
-for (const t of [maya, mayaD, mayaC]) { const v = await vrmPerson(t, { height: t === mayaC ? 10.5 : 8.2 }); const orig = t.pose; t.pose = (n, k) => { orig(n, k); v.pose(n); }; t.pose(t === mayaC ? "sitsad" : "sitphone"); VRMS.push([t, v]); }
-const [, vBed] = VRMS[0], [, vDesk] = VRMS[1];
-dk.scale.y = 1.95; dk.scale.z = 1.5;   // deeper too, so her bigger arms stay on top of it   // she's big now: a taller desk keeps her lap behind it from every front camera
-mesh(new THREE.BoxGeometry(3.4, 1.35, 0.06), M("#fff", { map: wood }), v3(0, 0.85, 0.74), dk);
-cls.children.filter((o) => o.isGroup && o.children.length > 5).forEach((d) => mesh(new THREE.BoxGeometry(1.5, 1.0, 0.05), M("#c89a62"), v3(0, 0.92, 1.04), d));
-// Maya drawn again at full resolution over the pixelated scene: everything else only writes depth (so desks still
-// hide her where they should), she writes colour, and the background stays transparent.
-const hi = new THREE.WebGLRenderer({ canvas: document.getElementById("c2"), antialias: false, alpha: true, preserveDrawingBuffer: true });
-hi.setSize(240, 427, false);   // a third of full resolution: pixelated, a little finer than the room (a quarter) hi.setPixelRatio(1); hi.toneMapping = THREE.ACESFilmicToneMapping; hi.outputColorSpace = THREE.SRGBColorSpace; hi.setClearColor(0x000000, 0);
-const vrmMeshes = new Set(); for (const [, v] of VRMS) v.vrm.scene.traverse((o) => o.isMesh && vrmMeshes.add(o));
-function sharpMaya(scene) {
-  let any = false; scene.traverse((o) => { if (vrmMeshes.has(o) && o.visible) { let p = o, vis = true; while (p) { if (p.visible === false) vis = false; p = p.parent; } any ||= vis; } });
-  if (!any) { hi.clear(); return; }
-  const saved = new Map(), bg = scene.background; scene.background = null;   // a Map: shared materials are saved once, so they all come back
-  scene.traverse((o) => { if (o.isMesh && !vrmMeshes.has(o)) for (const m of [o.material].flat()) { if (!saved.has(m)) saved.set(m, m.colorWrite); m.colorWrite = false; } });
-  hi.render(scene, camera);
-  for (const [m, c] of saved) m.colorWrite = c; scene.background = bg;
-}
-function poseVRMs(t) {
-  for (const [, v] of VRMS) v.update(t);
-  // the phone goes in her hands
-  vBed.wrap.visible = false;   // the bed shot is the phone screen alone (the clip she saw once)
-  if (dPhone.visible) { const b = vDesk.handsMid(); dPhone.position.set(b.x, b.y + 0.1, b.z + 0.22); }
-}
-const cam = (p, l, f = 40) => { camera.position.copy(p); camera.lookAt(l); camera.fov = f; camera.updateProjectionMatrix(); };
-const camMove = (lt, d, a, b, la, lb, f = 40) => { const u = ease(clamp(lt / d)); cam(a.clone().lerp(b, u), la.clone().lerp(lb, u), f); };
-function scene3d(shot, lt, t) {
-  const L = len(shot);
-  if (shot === "hook") {
-    dPhone.visible = false; flip.visible = false; mayaD.pose("sitdesk", t); mayaD.mouth.rotation.z = 0;
-    const u = ease(clamp((lt - L * 0.45) / (L * 0.55)));
-    VRMS[1][1].update(t); const f = VRMS[1][1].facePos(), c = v3(f.x, f.y - 0.6, f.z + 0.4);
-    cam(v3(0, 4.9, 9.4).lerp(c.clone().add(v3(0, 1.3, 3.6)), u), v3(0, 3.3, 0).lerp(c, u), 40);
-    return desk; }
-  if (["hook", "every", "scroll"].includes(shot)) {
-    const unspool = shot === "scroll"; mPhone.userData.screen.material.map = unspool ? REELS[Math.floor(lt / 0.7) % 3] : clipTex; mPhone.userData.screen.material.needsUpdate = true; if (!unspool) drawClip(t);
-    glow.position.copy(mPhone.getWorldPosition(v3(0, 0, 0))).add(v3(0, 0.35, 0.5)); glow.intensity = 3.2 + Math.sin(t * 9) * 0.3; maya.head.rotation.x = 0.45 + Math.sin(t * 0.8) * 0.03;
-    if (shot === "hook") { const u = ease(clamp((lt - L * 0.45) / (L * 0.5)));
-      const a = v3(0.65, 3.9, 8.4).lerp(v3(0.55, 3.6, 7.4), clamp(lt / (L * 0.45))), b = v3(-2.6, 2.3, 2.7);
-      cam(a.clone().lerp(b, u), v3(0.3, 2.75, -0.4).lerp(v3(-1.5, 1.9, -0.4), u), 40); }
-    if (shot === "night") camMove(lt, L, v3(-3.2, 2.0, 2.6), v3(-2.8, 1.9, 2.2), v3(-2.1, 1.3, -0.4), v3(-1.6, 1.5, -0.4), 40);
-    if (shot === "every") { const p = mPhone.getWorldPosition(v3(0, 0, 0)); camMove(lt, L, p.clone().add(v3(0.05, 0.05, 1.55)), p.clone().add(v3(0.03, 0.02, 1.2)), p.clone().add(v3(0, -0.05, 0)), p.clone().add(v3(0, -0.05, 0)), 40); }
-    maya.g.visible = shot !== "scroll"; pov.visible = shot === "scroll";
-    if (shot === "scroll") {
-      // her eyes, looking down at the phone over the quilt; the phone rises in, then her thumb flicks reel after reel
-      const rise = ease(lt / 0.35);
-      cam(v3(0.2, 2.95, -0.35), v3(0.25, 0.9, 1.35), 46);
-      const f = v3(0, 0, -1).applyQuaternion(camera.quaternion), r = v3(1, 0, 0).applyQuaternion(camera.quaternion), u = v3(0, 1, 0).applyQuaternion(camera.quaternion);
-      pov.position.copy(camera.position).add(f.multiplyScalar(2.15)).add(r.multiplyScalar(0.03)).add(u.multiplyScalar(-0.04 - (1 - rise) * 1.2 + Math.sin(t * 1.3) * 0.012));
-      pov.quaternion.copy(camera.quaternion); pov.rotateX(0.08);
-      const sw = drawFeed(Math.max(0, lt - 0.3)); thumb.position.y = -0.25 + Math.sin(Math.min(1, sw) * Math.PI) * 0.32; thumb.position.x = 0.18 - Math.sin(Math.min(1, sw) * Math.PI) * 0.04;
-      povLight.intensity = 1.2; povLight.position.set(0, 0, 0.6);
-    }
-    return bed; }
-  if (["chapter", "three", "fix", "snap", "cards", "quiz"].includes(shot)) {
-    const studying = shot === "chapter" || shot === "three"; dPhone.visible = !studying; flip.visible = studying;
-    if (studying) { mayaD.pose("sitdesk", t); { const tt = t - Math.min(st("chapter"), st("three")), k = (tt % 0.55) / 0.55; flip.scale.set(1, 1 / dk.scale.y, 1 / dk.scale.z); flip.rotation.z = ease(clamp(k / 0.7)) * Math.PI * 0.98; } mayaD.mouth.rotation.z = 0; }
-    else { mayaD.pose("phone"); mayaD.pose("sitphone"); dPhone.position.set(0.15, 1.75, 0.75); dPhone.rotation.set(-0.7, 0, 0); dPhone.scale.setScalar(0.5); mayaD.mouth.rotation.z = Math.PI; }
-    if (shot === "chapter" || shot === "three") { VRMS[1][1].update(t); const f = VRMS[1][1].facePos(), c = v3(f.x, f.y - 0.75, f.z + 0.5); camMove(t - Math.min(st("chapter"), st("three")), (st("gone") - Math.min(st("chapter"), st("three"))), c.clone().add(v3(0, 1.9, 4.2)), c.clone().add(v3(0, 1.6, 3.5)), c, c, 40); }
-    else cam(v3(0, 4.6, 8.6), v3(0, 3.5, 0), 40);
-    return desk; }
-  if (shot === "gone" || shot === "sticks") { paper.material.map = shot === "gone" ? paperBlank : paperA; paper.material.needsUpdate = true; camMove(lt, L + 0.4, v3(0.03, 4.4, 0.8), v3(0.03, 4.05, 0.7), v3(0.03, 0, 0.05), v3(0.03, 0, 0.05), 38); return pap; }
-  return bed;
-}
-
-// ================= overlays =================
-const ov = document.getElementById("ov");
+const S = document.getElementById("s");
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const inOut = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const outBack = (x) => { x = clamp(x); const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const mix = (a, b, k) => a + (b - a) * k;
+const st = (n) => lines.find((l) => l.shot === n)?.s ?? 1e9;
+const L = (n) => lines.find((l) => l.shot === n);
 const A = (x, y, inner, extra = "") => `<div style="position:absolute;left:${x}px;top:${y}px;${extra}">${inner}</div>`;
-const pop = (k) => `transform:scale(${outBack(k)});opacity:${clamp(k * 3)}`;
-const label = (small, big, k) => `<div class="lbl" style="opacity:${clamp(k * 3)};transform:translateY(${(1 - ease(k)) * 12}px)"><small>${small}</small><b>${big}</b></div>`;
-const stamp = (txt, x, y, rot, k, col = "#e5302a") => k > 0 ? A(110, y, `<div style="width:500px;text-align:center"><div class="stamp" style="position:relative;display:inline-block;color:${col};border-color:${col};transform:scale(${mix(3.2, 1.15, ease(clamp(k / 0.12)))}) rotate(${rot}deg);opacity:${clamp(k * 8)}">${txt}</div></div>`) : "";
-// the app, floating over the scene like a real screen
-function app(shot, lt) {
-  const card = (inner, k) => A(150, 230, `<div style="width:420px;border-radius:0;border:5px solid #d3f05a;background:#0f1d18;box-shadow:10px 10px 0 #000;padding:22px;box-sizing:border-box;${pop(k)};color:#e9f0e4">${inner}</div>`);
-  if (shot === "fix") { const typed = "Safety handbook.pdf".slice(0, Math.max(0, Math.floor((lt - 0.15) * 32)));
-    return card(`<div style="text-align:center;font:700 26px Unb">unspool</div><div style="text-align:center;font:700 30px/1.1 Unb;margin-top:14px">Drop in a PDF.<br>Get training <span style="color:#d3f05a">TikToks.</span></div>
-    <div style="margin:22px 0 6px;display:flex;align-items:center;gap:8px;border:3px solid #d3f05a;border-radius:40px;padding:10px 10px 10px 18px;font:600 20px Ins;color:#e9f0e4;background:#0b1712"><span style="flex:1;white-space:nowrap;overflow:hidden">${typed || '<span style="color:#6f8a78">e.g. Handbook.pdf</span>'}<span style="display:inline-block;width:2px;height:20px;background:#d3f05a;margin-left:2px;vertical-align:-3px;opacity:${Math.floor(lt * 3) % 2 ? 0 : 1}"></span></span><span style="width:40px;height:40px;border-radius:50%;background:#d3f05a;color:#0f1d18;display:flex;align-items:center;justify-content:center;font:700 22px Ins">→</span></div>`, lt / 0.35); }
-  if (shot === "snap" || shot === "cards") return turnIntoReels(shot, lt);
-  if (shot === "__old_snap") { const k = ease((lt - 0.1) / 0.6);
-    return card(`<div style="font:700 15px Unb;color:#d3f05a;letter-spacing:1px">BIO · CHAPTER 4</div><div style="display:flex;gap:10px;margin-top:14px;justify-content:center">${["fire", "phish", "lift"].map((n, j) => `<div style="width:118px;height:210px;border-radius:14px;overflow:hidden;border:3px solid #000;transform:translateY(${(1 - clamp(k * 3 - j)) * 40}px);opacity:${clamp(k * 3 - j)}"><img src="${n}.jpg" style="width:100%;height:100%;object-fit:cover"></div>`).join("")}</div><div style="text-align:center;font:600 18px Ins;margin-top:14px;color:#8ea595">9 reels ready ✓</div>`, lt / 0.35); }
-  if (shot === "quiz") { const ok = lt > 0.55;
-    return card(`<div style="display:inline-block;background:#d3f05a;color:#0f1d18;font:700 14px Unb;padding:4px 10px">QUICK CHECK</div><div style="font:700 22px/1.3 Ins;margin-top:12px">What do mitochondria make?</div>${["Glucose", "ATP", "Oxygen"].map((o, x) => { const r = ok && x === 1; return `<div style="margin-top:10px;padding:12px 14px;border-radius:12px;border:2px solid ${r ? "#1f9d55" : "#28402f"};background:${r ? "rgba(31,157,85,.2)" : "transparent"};font:600 19px Ins">${String.fromCharCode(65 + x)}. ${o}${r ? " ✓" : ""}</div>`; }).join("")}`, lt / 0.35); }
-  return "";
+const rise = (k, d = 24) => `opacity:${clamp(k * 1.6)};transform:translateY(${(1 - ease(k)) * d}px)`;
+const pop = (k) => `opacity:${clamp(k * 3)};transform:scale(${outBack(k)})`;
+const INK = "#101828", MUTED = "#667085", LIME = "#d3f05a", DARK = "#0f1d18", GREEN = "#12b76a", RED = "#f04438", NAVY = "#1d3557";
+// when a word of a line is said (paced by letters, like the captions)
+const wordAt = (shot, startsWith) => { const l = L(shot), w = l.text.split(" "), i = w.findIndex((x) => x.toLowerCase().startsWith(startsWith)), wl = (x) => x.length + 1;
+  return l.s + w.slice(0, i).reduce((a, x) => a + wl(x), 0) / w.reduce((a, x) => a + wl(x), 0) * (l.e - l.s); };
+
+// ---------- the employee: a flat illustration, at a desk with a laptop, or holding a phone ----------
+function person({ mood = "bored", pose = "desk", t = 0, phoneImg = "" }) {
+  const skin = "#f2c6a0", hair = "#2a1f1a", shirt = NAVY;
+  const blink = (t % 3.1) > 2.98 ? 0.15 : 1;
+  const mouth = mood === "happy" ? `<path d="M182 168 Q200 186 218 168" stroke="#7a3b2e" stroke-width="6" fill="none" stroke-linecap="round"/>`
+    : mood === "confused" ? `<path d="M184 176 Q200 168 216 178" stroke="#7a3b2e" stroke-width="6" fill="none" stroke-linecap="round"/>`
+    : `<path d="M186 174 L214 174" stroke="#7a3b2e" stroke-width="6" stroke-linecap="round"/>`;
+  const brows = mood === "confused" ? `<path d="M168 118 L190 124 M210 126 L232 114" stroke="${hair}" stroke-width="6" stroke-linecap="round"/>` : "";
+  const head = `<g>
+    <rect x="182" y="190" width="36" height="34" fill="${skin}"/>
+    <ellipse cx="200" cy="140" rx="56" ry="62" fill="${skin}"/>
+    <path d="M142 132 Q140 70 200 72 Q262 70 258 134 Q250 100 214 100 Q170 102 148 150 Z" fill="${hair}"/>
+    <ellipse cx="180" cy="142" rx="6" ry="${7 * blink}" fill="${INK}"/><ellipse cx="220" cy="142" rx="6" ry="${7 * blink}" fill="${INK}"/>
+    ${brows}${mouth}</g>`;
+  const torso = `<path d="M110 330 Q110 226 200 220 Q290 226 290 330 L290 420 L110 420 Z" fill="${shirt}"/><path d="M182 222 L200 250 L218 222" fill="#fff"/>`;
+  if (pose === "phone") {
+    const sw = Math.sin(t * 2) * 2;
+    return `<svg width="400" height="460" viewBox="0 0 400 460">${torso}${head}
+      <path d="M130 300 Q150 380 196 360" stroke="${shirt}" stroke-width="40" fill="none" stroke-linecap="round"/>
+      <g transform="rotate(${-8 + sw} 240 330)"><rect x="196" y="250" width="96" height="170" rx="14" fill="#111"/>
+      <foreignObject x="202" y="258" width="84" height="154"><div xmlns="http://www.w3.org/1999/xhtml" style="width:84px;height:154px;border-radius:9px;overflow:hidden;background:#123">${phoneImg}</div></foreignObject></g>
+      <circle cx="214" cy="356" r="20" fill="${skin}"/></svg>`;
+  }
+  const chin = pose === "chin";
+  const arms = chin
+    ? `<path d="M140 330 Q120 300 150 250 Q160 222 172 200" stroke="${shirt}" stroke-width="40" fill="none" stroke-linecap="round"/><circle cx="174" cy="200" r="22" fill="${skin}"/>
+       <path d="M270 330 Q300 370 250 384" stroke="${shirt}" stroke-width="40" fill="none" stroke-linecap="round"/>`
+    : `<path d="M130 330 Q120 380 170 388" stroke="${shirt}" stroke-width="40" fill="none" stroke-linecap="round"/><path d="M270 330 Q280 380 230 388" stroke="${shirt}" stroke-width="40" fill="none" stroke-linecap="round"/>`;
+  return `<svg width="400" height="460" viewBox="0 0 400 460">${torso}${chin ? `<g transform="rotate(-8 200 200) translate(-10 12)">${head}</g>` : head}
+    <rect x="20" y="380" width="360" height="22" rx="6" fill="#d9c3a5"/><rect x="20" y="398" width="360" height="62" fill="#c8ad8a"/>
+    <path d="M118 380 L282 380 L300 330 L136 330 Z" fill="#c9ced6"/><rect x="134" y="250" width="132" height="90" rx="8" fill="#98a2b3" transform="skewX(-8) translate(48 0)"/>
+    ${arms}</svg>`;
 }
-function turnIntoReels(shot, lt) {
-  const t0 = shot === "snap" ? lt : lt + len("snap");
-  const SL = lines.find((l) => l.shot === "snap"), sw = SL.text.split(" "), bi = sw.findIndex((w) => w.startsWith("BOOM")), wl = (w) => w.length + 1;
-  const B = 0.1 + sw.slice(0, bi).reduce((a, w) => a + wl(w), 0) / sw.reduce((a, w) => a + wl(w), 0) * (SL.e - SL.s);   // the burst lands on the spoken "BOOM"
-  let h = "";   // no dimming: the room stays lit
-  const page = (x, y, s, rot, a) => A(x, y, `<div style="width:300px;height:400px;background:#fbf8ef;border:6px solid #000;box-shadow:10px 10px 0 #000;padding:20px;box-sizing:border-box;transform:scale(${s}) rotate(${rot}deg);opacity:${a}"><div style="display:inline-block;background:#1f8a70;color:#fff;font:14px Px;padding:6px 8px">BIO · CH 4</div>${[90, 76, 94, 60, 86, 92, 70, 88, 64, 80].map((w) => `<div style="height:12px;margin:14px 0;background:#9aa1ad;width:${w}%"></div>`).join("")}</div>`);
-  // the page lands, shakes, bursts at "BOOM", and the reels fly out of it
-  const land = outBack(t0 / 0.3), burst = t0 > B, split = ease((t0 - B) / 0.6);
-  if (!burst) { const typed = "SAFETY HANDBOOK.PDF".slice(0, Math.floor(t0 * 24)), shake = 0.04 * Math.sin(t0 * 40) * clamp((t0 - (B - 0.2)) * 4);
-    h += A(100, 560, `<div style="width:520px;box-sizing:border-box;display:flex;align-items:center;gap:12px;background:#fbf8ef;border:6px solid #000;box-shadow:10px 10px 0 #000;padding:18px 18px 18px 24px;transform:scale(${land * (1 + shake)})"><span style="flex:1;font:21px Px;color:#0f1d18;white-space:nowrap;overflow:hidden">${typed}<span style="display:inline-block;width:4px;height:26px;background:#0f1d18;vertical-align:-3px;opacity:${Math.floor(t0 * 4) % 2 ? 0 : 1}"></span></span><span style="width:54px;height:54px;background:#d3f05a;border:4px solid #000;display:flex;align-items:center;justify-content:center;font:700 30px Ins">→</span></div>`)
-      + A(110, 470, `<div style="width:500px;text-align:center;font:18px Px;color:#d3f05a;text-shadow:3px 3px 0 #000">DROP IN ANY PDF</div>`); }
-  if (burst && split < 1) h += A(360 - 380 * split, 580 - 380 * split, `<div style="width:${760 * split}px;height:${760 * split}px;border:14px solid #d3f05a;opacity:${1 - split};box-sizing:border-box"></div>`)
-    + `<div style="position:absolute;inset:0;background:#fff;opacity:${Math.max(0, 1 - (t0 - B) / 0.12) * 0.45}"></div>`;
-  if (burst && t0 < B + 0.5) h += A(110, 250, `<div style="width:500px;text-align:center;font:64px Px;color:#d3f05a;text-shadow:7px 7px 0 #000;transform:scale(${outBack((t0 - B) / 0.15)}) rotate(-6deg)">BOOM!</div>`);
-  const imgs = ["phish", "lift", "fire"], spots = [[-190, -9], [190, 9], [0, 0]];
-  if (burst) spots.forEach(([dx, r], j) => { const k = ease((t0 - B - j * 0.08) / 0.5); if (k <= 0) return;
-    const fan = shot === "cards" ? Math.sin(lt * 2 + j) * 6 : 0, w = j === 2 ? 230 : 190, z = j === 2 ? 2 : 1;
-    h += A(360 + dx * k - w / 2, (j === 2 ? 400 : 440) + fan, `<div style="width:${w}px;height:${w * 16 / 9}px;border:6px solid #000;box-shadow:8px 8px 0 #000;transform:rotate(${r * k}deg) scale(${0.3 + 0.7 * k});z-index:${z};background:#000"><img src="${imgs[j]}_px.png" style="width:100%;height:100%;object-fit:cover;image-rendering:pixelated"></div>`); });
-  if (shot === "cards") h += A(110, 250, `<div style="width:500px;text-align:center;font:34px/1.3 Px;color:#fff;text-shadow:5px 5px 0 #000;${pop(lt / 0.25)}">RESEARCHED<br><span style="color:#d3f05a">FOR YOU</span></div>`);
-  return h;
-}
-// the scroll: just a big phone on a dark backdrop, the feed swiping up reel after reel, a thumb flicking
-function phoneScroll(lt, t) {
-  const S = 0.95, imgs = ["fire", "phish", "lift", "fire"], k = Math.max(0, lt - 0.25) / S, i = Math.floor(k);
-  const f = clamp((k - i - 0.6) / 0.4), y = -(f < 0.5 ? 4 * f * f * f : 1 - Math.pow(-2 * f + 2, 3) / 2) * 100;
-  const rise = ease(lt / 0.18), sway = Math.sin(t * 1.4) * 4;
-  const W = 340, Hh = 604;
-  let h = `<div style="position:absolute;inset:0;background:radial-gradient(75% 60% at 50% 42%,#fff6dc,#f3dfa8 60%,#e2c27a)"></div>`;
-  // soft lime glow behind the phone, pixel grid floor of light
-  h += `<div style="position:absolute;left:110px;top:200px;width:500px;height:640px;border-radius:50%;background:radial-gradient(#d3f05a88,transparent 70%);filter:blur(10px)"></div>`;
-  const cur = imgs[i % 4], nxt = imgs[(i + 1) % 4], n = Math.min(9, i + 1 + (f > 0.5 ? 1 : 0));
-  const screen = `<div style="position:absolute;inset:0;transform:translateY(${y}%)"><img src="${cur}_px.png" style="position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;image-rendering:pixelated"><img src="${nxt}_px.png" style="position:absolute;left:0;top:100%;width:100%;height:100%;object-fit:cover;image-rendering:pixelated"></div>
-    <div style="position:absolute;left:0;right:0;top:0;height:46px;background:linear-gradient(rgba(0,0,0,.55),transparent);display:flex;justify-content:center;align-items:center;font:13px Px;color:#fff">FOR YOU</div>
-    ${["♥", "💬", "➤"].map((g, j) => `<div style="position:absolute;right:12px;top:${360 + j * 62}px;font:28px sans-serif;color:#fff;text-shadow:0 2px 4px #000">${g}</div>`).join("")}
-    <div style="position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.3)"><div style="height:5px;width:${((k % 1) * 1.7 % 1) * 100}%;background:#fff"></div></div>`;
-  h += `<div style="position:absolute;left:${360 - W / 2}px;top:200px;width:${W}px;height:${Hh}px;opacity:${rise};transform:scale(${0.75 + 0.25 * outBack(lt / 0.22)}) rotate(${sway * 0.25}deg)">
-    <div style="position:absolute;inset:-14px;background:#15171d;border:4px solid #000;box-shadow:12px 12px 0 #000"></div>
-    <div style="position:absolute;left:${W / 2 - 50}px;top:-6px;width:100px;height:14px;background:#000;z-index:3"></div>
-    <div style="position:absolute;inset:0;overflow:hidden;background:#000">${screen}</div></div>`;
-  // the thumb flicks up on each swipe
-  const fl = Math.sin(Math.min(1, f * 1.2) * Math.PI);
-  h += A(400 + fl * -16, 640 - fl * 180, `<div style="width:64px;height:150px;background:#c98f68;border:4px solid #000;border-radius:30px 30px 10px 10px;transform:rotate(-18deg);opacity:${f > 0 && f < 1 ? 1 : 0.0}"><div style="margin:10px auto;width:36px;height:30px;background:#e8b48c;border-radius:12px"></div></div>`);
-  // what she just learned, lined up beside the phone
-  h += A(110, 960, `<div style="width:500px;display:flex;justify-content:center;gap:12px">${["FIRE SAFETY", "PHISHING", "LIFTING"].map((w, j) => { const kk = (lt - 0.25 - S * 0.8 - j * 0.55) / 0.2; return kk > 0 ? `<div style="white-space:nowrap;font:13px Px;color:#0f1d18;background:#d3f05a;padding:7px 8px;box-shadow:4px 4px 0 #000;${pop(kk)}">${w} <span style="font:700 18px Ins">✓</span></div>` : ""; }).join("")}</div>`);
-  return h;
-}
-function endCard(lc) {
-  return `<div style="position:absolute;inset:0;background:radial-gradient(90% 60% at 50% 40%,#203a2c,#0f1d18);opacity:${clamp(lc / 0.3)}">
-    ${A(110, 300, `<div style="width:500px;text-align:center;font:30px Px;color:#e9f0e4;opacity:${clamp(lc / 0.3)}">unspool</div>`)}
-    ${A(110, 380, `<div style="width:500px;text-align:center;font:700 18px Ins;letter-spacing:3px;color:#8ea595;opacity:${clamp((lc - 0.3) / 0.3)}">TRAINING YOUR TEAM WILL WATCH.</div>`)}
-    ${A(110, 440, `<div style="width:500px;text-align:center;font:52px/1.25 Px;color:#e9f0e4;text-shadow:6px 6px 0 #000;transform:scale(${outBack((lc - 0.4) / 0.4)})">MAKE<br>TRAINING<br><span style="color:#d3f05a">STICK.</span></div>`)}
-    ${A(110, 830, `<div style="width:500px;text-align:center;transform:scale(${outBack((lc - 1.2) / 0.35)})"><span style="display:inline-block;background:#d3f05a;color:#0f1d18;font:26px Px;padding:18px 28px;border-radius:0;box-shadow:6px 6px 0 #000">UNSPOOL.CC/TEAMS</span></div>`)}</div>`;
-}
-// shouted captions: two words at a time, huge, each chunk slamming in
-function shout(L, t) {
-  // karaoke captions: the line in phrases of up to 3 words; inside a phrase each word pops in as it's said
-  // (paced by its letters), slams in big and tilted, then settles; the word being said is lime, the rest white
-  const chunks = [];
-  for (const ph of L.text.split(/(?<=[.,!?])\s+/)) { const w = ph.split(" "), n = Math.ceil(w.length / 2), per = Math.ceil(w.length / n); for (let k = 0; k < w.length; k += per) chunks.push(w.slice(k, k + per)); }
-  const words = chunks.flat(), wlen = (w) => w.length + 1, tot = words.reduce((a, w) => a + wlen(w), 0), dur = L.e - L.s;
-  const u = clamp((t - L.s) / dur) * tot;
-  let acc = 0, ci = 0, wi = 0; const starts = words.map((w) => { const a = acc; acc += wlen(w); return a; });
-  words.forEach((w, k) => { if (u >= starts[k]) wi = k; });
-  let n = 0; chunks.forEach((c, k) => { if (wi >= n) ci = k; n += c.length; });
-  const first = chunks.slice(0, ci).reduce((a, c) => a + c.length, 0), c = chunks[ci], len = c.join(" ").length;
-  const mctx = (shout.m ||= document.createElement("canvas").getContext("2d")); mctx.font = "100px Px";
-  const wid = mctx.measureText(c.join(" ").toUpperCase()).width / 100 + c.length * 0.52 + 0.3, size = Math.min(46, Math.floor(480 / wid));   // the whole phrase fits the 500px safe column
-  const spans = c.map((w, k) => { const g = first + k; if (g > wi) return "";   // not said yet: not laid out, so the words said so far sit centred
-    const age = (u - starts[g]) / tot * dur, p = clamp(age / 0.11), pop = 1 + 0.28 * (1 - ease(p)), rot = (1 - p) * (g % 2 ? 6 : -6), cur = g === wi;
-    return `<span style="display:inline-block;margin:0 .26em;transform-origin:0 100%;transform:scale(${pop}) rotate(${rot}deg);color:${cur ? "#d3f05a" : "#fff"}">${w}</span>`; }).join("");
-  return `<div style="position:absolute;left:110px;right:110px;top:870px;text-align:center"><div style="display:inline-block;max-width:500px;white-space:nowrap;font:${size}px/1.25 Px;text-transform:uppercase;text-shadow:5px 5px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000">${spans}</div></div>`;
-}
-// moments that hit: stamps and the big lines shake the frame
-const HITS = () => [[st("snap") + 1.0, 1.6], [st("three") + 0.3, 1], [st("gone") + 0.05, 1.4], [st("fix") + 0.05, 0.7], [st("sticks") + 0.45, 1.2], [st("count") + 0.4, 1.2]];
-function frameShake(t, lt) {
-  const punch = t < 0.4 ? 1 : 1 + 0.09 * Math.max(0, 1 - Math.max(0, lt) / 0.2) ** 2;
-  let sh = 0; for (const [ht, a] of HITS()) { const d = t - ht; if (d > 0 && d < 0.35) sh = Math.max(sh, a * (1 - d / 0.35)); }
-  const tf = `translate(${Math.sin(t * 83) * 14 * sh}px,${Math.cos(t * 71) * 11 * sh}px) scale(${punch})`;
-  document.getElementById("c").style.transform = tf; document.getElementById("c2").style.transform = tf; ov.style.transform = tf;
-}
-window.renderAt = (t) => {
-  const i = shotIdx(t), L = lines[i], shot = L.shot, lt = t - (L.s - 0.1);
-  if (shot === "count" || shot === "cta" || shot === "end") {
-    renderer.render(scene3d("sticks", len("sticks"), t), camera); hi.clear();
-    const lc = t - Math.min(st("count"), st("cta"));   // the end card starts on "count", or on the CTA once that line is cut
-    ov.innerHTML = endCard(lc) + (shot !== "end" && L.text ? shout(L, t).replace("top:870px", "top:990px") : ""); frameShake(t, lt); return; }
-  poseVRMs(t); const scene = scene3d(shot, lt, t); poseVRMs(t); renderer.render(scene, camera); sharpMaya(scene);   // twice: the camera follows the phone, which follows her hands
-  let h = "";
-  if (shot === "hook") { // the title, on screen and still from the first frame: no pop, no shake, last word lime, SUCK red
-    const ws = ["NOBODY", "READS", "THE", "TRAINING", "MANUAL."], rows = [[0, 1], [2, 3], [4]];
-    h += A(110, 150, `<div style="width:500px;box-sizing:border-box;padding:14px 0;background:rgba(10,14,30,.62);box-shadow:8px 8px 0 #000;text-align:center;font:38px/1.3 Px;color:#fff;text-shadow:5px 5px 0 #000,-2px -2px 0 #000">${rows.map((r) => r.map((j) => `<span style="display:inline-block;margin:0 9px;color:${j === 0 ? "#ff5a4a" : j === 4 ? "#d3f05a" : "#fff"};font-size:${j === 4 ? 68 : 40}px">${ws[j]}</span>`).join("")).join("<br>")}</div>`); }
-  if (false) h += label("BIO · CHAPTER 4", "32 PAGES", (t - Math.min(st("chapter"), st("three"))) / 0.3);
-  if (shot === "three") h += stamp("SKIMMED", 0, 700, -6, lt - 0.1);
-  if (shot === "gone") h += stamp("FORGOTTEN", 140, 480, -10, lt - 0.05);
-  if (shot === "scroll") h += phoneScroll(lt, t);
-  if (shot === "sticks") h += stamp("IT STUCK", 160, 470, 6, lt - 0.45, "#1f9d55");
-  h += app(shot, lt);
-  // a soft dark band so the serif captions read on any shot (the white test paper swallowed them)
-  if (shot !== "scroll") h += `<div style="position:absolute;left:0;right:0;top:930px;height:260px;background:linear-gradient(transparent,rgba(5,8,20,.55) 45%,rgba(5,8,20,.55) 70%,transparent)"></div>`;
-  if (L.text && shot !== "hook") h += shout(L, t);
-  // a white flash on every cut, a red pulse through the "problem" half, and the whole frame punching in and shaking
-  const flash = Math.max(0, 1 - lt / 0.06) * 0.22;
-  if (flash > 0 && i > 0 && shot !== "three") h += `<div style="position:absolute;inset:0;background:#fff;opacity:${flash}"></div>`;
-  if (false) h += `<div style="position:absolute;inset:0;box-shadow:inset 0 0 ${140 + 60 * Math.abs(Math.sin(t * 7))}px rgba(229,48,42,${0.28 + 0.18 * Math.abs(Math.sin(t * 7))})"></div>`;
-  ov.innerHTML = h;
-  frameShake(t, lt);
+
+// ---------- reusable mock-ups ----------
+const pdfCard = (x, y, w, h, page, of, scroll, title = "Employee_Handbook_v7.pdf") => {
+  const rows = Array.from({ length: 22 }, (_, i) => { const yy = 120 + i * 34 - (scroll % 34) ; const wid = [92, 78, 86, 64, 90, 70, 84][(i + Math.floor(scroll / 34)) % 7];
+    return yy > 100 && yy < h - 40 ? `<div style="position:absolute;left:44px;top:${yy}px;height:12px;width:${wid * (w - 88) / 100}px;border-radius:6px;background:#e4e7ec"></div>` : ""; }).join("");
+  return A(x, y, `<div class="card" style="position:relative;width:${w}px;height:${h}px;overflow:hidden">
+    <div style="height:84px;border-bottom:1px solid #eaecf0;display:flex;align-items:center;gap:14px;padding:0 28px">
+      <div style="width:40px;height:48px;border-radius:6px;background:${RED};color:#fff;font:700 13px Ins;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;box-sizing:border-box">PDF</div>
+      <div style="font:600 22px Ins;color:${INK};flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${title}</div>
+      <div style="font:600 20px Ins;color:${MUTED};white-space:nowrap">${page} / ${of}</div></div>
+    <div style="position:absolute;left:44px;top:104px;height:22px;width:55%;border-radius:8px;background:#cfd4dc"></div>${rows}</div>`);
 };
-await new Promise((r) => { const chk = () => (reelTex.image ? r() : setTimeout(chk, 50)); chk(); });
-window.renderAt(0); setTimeout(() => (window.ready = true), 600);
+const quizCard = (x, y, k, good, lt) => {
+  const qs = ["What does P.A.S.S. stand for?", "First step with a suspicious email?", "How do you lift a heavy box?", "Who do you report a breach to?"];
+  const marks = qs.map((q, i) => { const kk = (lt - 0.25 - i * 0.18) / 0.15; const ok = good;
+    return `<div style="display:flex;align-items:center;gap:16px;padding:18px 0;border-top:${i ? "1px solid #eaecf0" : "none"}">
+      <div style="flex:1;font:600 22px/1.25 Ins;color:${INK}">${q}</div>
+      <div style="width:44px;height:44px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:${ok ? "#ecfdf3" : "#fef3f2"};color:${ok ? GREEN : RED};font:700 26px Ins;${pop(kk)}">${ok ? "✓" : "✕"}</div></div>`; }).join("");
+  const sc = (lt - 1.0) / 0.25;
+  return A(x, y, `<div class="card" style="width:540px;padding:30px 34px;box-sizing:border-box;${rise(k)}">
+    <div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font:600 18px Ins;color:${MUTED};letter-spacing:.08em">TRAINING QUIZ</div><div class="mono" style="font-size:28px;margin-top:6px">Workplace safety</div></div>
+    <div class="mono" style="font-size:44px;color:${good ? GREEN : RED};${pop(sc)}">${good ? "10/10" : "3/10"}</div></div>
+    <div style="margin-top:18px">${marks}</div></div>`);
+};
+const phone = (x, y, w, img, extra = "") => A(x, y, `<div style="width:${w}px;height:${w * 2.05}px;border-radius:${w * 0.13}px;background:#0b0d12;padding:${w * 0.035}px;box-sizing:border-box;box-shadow:0 30px 60px rgba(16,24,40,.28)">
+  <div style="width:100%;height:100%;border-radius:${w * 0.1}px;overflow:hidden;background:#123">${img}</div></div>`, extra);
+const reelImg = (n, y = 0) => `<img src="${n}.png" style="width:100%;height:100%;object-fit:cover;display:block;transform:translateY(${y}%)">`;
+const wordmark = (size, col = "#fff") => `<span class="mono" style="font-size:${size}px;color:${col};letter-spacing:-0.03em">unspool<span style="color:${LIME}">.</span></span>`;
+
+// ---------- scenes ----------
+function hook(t) {
+  const l = L("hook"), lt = t - l.s;
+  const words = ["Nobody", "reads", "the", "training", "manual."];
+  const at = [wordAt("hook", "nobody"), wordAt("hook", "reads"), wordAt("hook", "the"), wordAt("hook", "training"), wordAt("hook", "manual")];
+  // the headline is on screen from the first frame (it's the thumbnail); the highlight sweeps under "manual." as it's said
+  const sweep = ease((t - at[4]) / 0.3);
+  const head = words.map((w, i) => `<span style="display:inline-block;margin:0 7px">${i === 4 ? `<span style="background:linear-gradient(90deg, ${LIME} ${sweep * 100}%, transparent ${sweep * 100}%) 0 72% / 100% 38% no-repeat">${w}</span>` : w}</span>`).join("");
+  const push = 1 + 0.06 * inOut(lt / 1.7);
+  return A(0, 0, `<div style="position:absolute;left:0;top:0;width:720px;height:1280px;transform:scale(${push});transform-origin:50% 60%">
+    ${A(90, 170, `<div style="width:540px;text-align:center;font:700 22px Ins;color:${MUTED};letter-spacing:.12em">BE HONEST…</div>`, `${rise(lt / 0.3)}`)}
+    ${A(80, 215, `<div class="mono" style="width:560px;text-align:center;font-size:64px;line-height:1.08;color:${INK}">${head}</div>`)}
+    ${A(160, 470, person({ mood: "bored", pose: "chin", t }))}
+    ${A(395, 760, `<div style="width:170px;height:96px;border-radius:10px;background:${NAVY};box-shadow:0 10px 20px rgba(0,0,0,.2);transform:rotate(-4deg);display:flex;align-items:center;justify-content:center;color:#fff;font:700 15px/1.2 Ins;text-align:center">EMPLOYEE<br>HANDBOOK</div>`)}
+    ${A(380, 742, `<div style="width:170px;height:20px;border-radius:6px;background:#e9edf2;transform:rotate(-4deg)"></div>`)}</div>`);
+}
+function manual(t) {   // "Forty pages of policy. They skim it in two minutes."
+  const t0 = st("chapter"), lt = t - t0, sk = t - st("three");
+  const page = Math.min(40, Math.max(1, Math.round(1 + 39 * ease((t - t0) / (st("gone") - t0 - 0.15)))));
+  const scroll = Math.max(0, lt) * (sk > 0 ? 900 : 120);
+  let h = pdfCard(110, 150, 500, 640, page, 40, scroll);
+  h += A(90, 820, `<div style="width:540px;display:flex;justify-content:center;gap:14px">
+    <div class="chip" style="${pop((lt - 0.1) / 0.25)}"><span style="color:${RED}">●</span> 40 pages of policy</div></div>`);
+  if (sk > 0) h += A(90, 92, `<div style="width:540px;display:flex;justify-content:center"><div class="chip" style="background:${INK};color:#fff;${pop(sk / 0.25)}">⏱ Skimmed in 2:00</div></div>`);
+  return h;
+}
+function gone(t) {
+  const lt = t - st("gone");
+  return quizCard(90, 200, lt / 0.3, false, lt)
+    + A(90, 760, `<div style="width:540px;display:flex;justify-content:center;align-items:center;gap:18px;${rise((lt - 0.5) / 0.3)}">
+      <div style="width:84px;height:84px;border-radius:50%;background:#e9edf2;overflow:hidden;position:relative">${person({ mood: "confused", pose: "desk", t }).replace('width="400" height="460"', 'width="120" height="138" style="position:absolute;left:-18px;top:4px"')}</div>
+      <div class="chip">Nobody remembers a thing</div></div>`);
+}
+function fix(t) {
+  const lt = t - st("fix"), wipe = ease(lt / 0.25);
+  return `<div style="position:absolute;inset:0;background:${DARK};clip-path:circle(${wipe * 120}% at 50% 50%)"></div>`
+    + A(90, 470, `<div style="width:540px;text-align:center;${pop((lt - 0.1) / 0.35)}">${wordmark(92)}</div>`)
+    + A(90, 610, `<div style="width:540px;text-align:center;font:600 34px Ins;color:#c7d2cc;${rise((lt - 0.4) / 0.3)}">fixes that.</div>`);
+}
+function snap(t) {
+  const lt = t - st("snap"), B = wordAt("snap", "boom"), b = t - B, cap = t - wordAt("snap", "captions"), qz = t - wordAt("snap", "quiz");
+  let h = "";
+  // the app: drop a PDF in
+  const appK = 1 - ease(b / 0.3);
+  if (b < 0.35) {
+    const fly = ease((lt - 0.15) / 0.6), prog = clamp((lt - 0.75) / Math.max(0.2, B - st("snap") - 0.8));
+    h += A(110, 220, `<div class="card" style="width:500px;height:520px;overflow:hidden;opacity:${appK};transform:scale(${mix(1, 0.9, 1 - appK)})">
+      <div style="height:76px;border-bottom:1px solid #eaecf0;display:flex;align-items:center;padding:0 28px">${wordmark(26, INK)}<span style="margin-left:auto;font:600 18px Ins;color:${MUTED}">Training</span></div>
+      <div style="position:absolute;left:36px;right:36px;top:110px;bottom:36px;border:3px dashed ${fly > 0.95 ? GREEN : "#d0d5dd"};border-radius:22px;background:${fly > 0.95 ? "#f6fef9" : "#fafbfc"};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+        <div style="font:600 26px Ins;color:${INK}">${fly > 0.95 ? "Safety_Handbook.pdf" : "Drop a training PDF"}</div>
+        <div style="width:300px;height:12px;border-radius:6px;background:#eaecf0;overflow:hidden"><div style="height:100%;width:${prog * 100}%;background:${GREEN}"></div></div>
+        <div style="font:600 18px Ins;color:${MUTED}">${prog >= 1 ? "Ready" : prog > 0 ? "Making your videos…" : "PDF, slides or docs"}</div></div></div>`);
+    // the file flying in
+    if (fly < 1) h += A(mix(470, 300, fly), mix(80, 430, fly), `<div style="width:110px;height:136px;border-radius:12px;background:#fff;box-shadow:0 16px 40px rgba(16,24,40,.22);position:relative;transform:rotate(${mix(10, 0, fly)}deg)">
+      <div style="position:absolute;left:16px;top:18px;right:16px;height:10px;border-radius:5px;background:#e4e7ec"></div><div style="position:absolute;left:16px;top:38px;right:30px;height:10px;border-radius:5px;background:#e4e7ec"></div>
+      <div style="position:absolute;left:16px;bottom:16px;padding:4px 10px;border-radius:6px;background:${RED};color:#fff;font:700 16px Ins">PDF</div></div>`);
+  }
+  // BOOM: three short videos fan out
+  if (b > 0) {
+    const flash = Math.max(0, 1 - b / 0.15) * 0.5;
+    [["phish", -190, -8, 0], ["lift", 190, 8, 0.06], ["fire", 0, 0, 0.12]].forEach(([n, dx, r, d]) => { const k = ease((b - d) / 0.45);
+      h += phone(360 - 105 + dx * k, 230 + (1 - k) * 120, 210, reelImg(n), `opacity:${clamp(k * 2)};transform:rotate(${r * k}deg) scale(${mix(0.6, n === "fire" ? 1.08 : 0.94, k)});z-index:${n === "fire" ? 3 : 2}`); });
+    if (cap > 0) h += A(70, 700, `<div class="chip" style="${pop(cap / 0.25)}">💬 Captions</div>`, "z-index:4");
+    if (qz > 0) h += A(470, 700, `<div class="chip" style="${pop(qz / 0.25)}">✅ Quiz</div>`, "z-index:4");
+    h += A(90, 140, `<div style="width:540px;text-align:center;font:600 22px Ins;color:${MUTED};letter-spacing:.1em;${rise(b / 0.3)}">SHORT TIKTOK-STYLE VIDEOS</div>`);
+    if (flash > 0) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${flash}"></div>`;
+  }
+  return h;
+}
+function scroll(t) {
+  const lt = t - st("scroll"), per = 0.75, i = Math.floor(lt / per), f = clamp((lt / per - i - 0.6) / 0.4);
+  const imgs = ["fire", "phish", "lift", "fire"], y = -inOut(f) * 100;
+  const scr = `<div style="width:100%;height:100%;position:relative;overflow:hidden"><div style="position:absolute;inset:0;transform:translateY(${y}%)">${reelImg(imgs[i % 4])}<div style="position:absolute;left:0;top:100%;width:100%;height:100%">${reelImg(imgs[(i + 1) % 4])}</div></div></div>`;
+  let h = A(160, 250, person({ mood: "happy", pose: "phone", t, phoneImg: scr }).replace('width="400" height="460"', 'width="400" height="460" style="transform:scale(1.25);transform-origin:50% 0"'), rise(lt / 0.25));
+  h += A(90, 140, `<div style="width:540px;text-align:center;font:600 22px Ins;color:${MUTED};letter-spacing:.1em;${rise(lt / 0.3)}">THEY SCROLL. IT STICKS.</div>`);
+  h += A(90, 850, `<div style="width:540px;display:flex;justify-content:center;gap:12px">${["Fire safety", "Phishing", "Safe lifting"].map((w, j) => { const k = (lt - 0.35 - j * 0.45) / 0.25;
+    return `<div class="chip" style="font-size:20px;padding:10px 16px;${pop(k)}"><span style="color:${GREEN}">✓</span> ${w}</div>`; }).join("")}</div>`);
+  return h;
+}
+function sticks(t) {
+  const lt = t - st("sticks");
+  return quizCard(90, 200, lt / 0.3, true, lt)
+    + A(90, 760, `<div style="width:540px;display:flex;justify-content:center"><div class="chip" style="background:#ecfdf3;color:#027a48;${pop((lt - 1.05) / 0.3)}">They actually know it</div></div>`);
+}
+function endCard(t) {
+  const lt = t - st("cta");
+  return `<div style="position:absolute;inset:0;background:radial-gradient(90% 60% at 50% 35%,#1c3a2c,${DARK})"></div>`
+    + A(90, 300, `<div style="width:540px;text-align:center;${rise(lt / 0.3)}">${wordmark(46)}</div>`)
+    + A(90, 400, `<div class="mono" style="width:540px;text-align:center;font-size:62px;line-height:1.1;color:#fff;${rise((lt - 0.15) / 0.35)}">Make training<br><span style="color:${LIME}">stick.</span></div>`)
+    + A(90, 600, `<div style="width:540px;text-align:center;font:600 26px/1.4 Ins;color:#b8c7bf;${rise((lt - 0.35) / 0.35)}">Turn any training PDF into short videos<br>with captions and a quiz.</div>`)
+    + A(90, 740, `<div style="width:540px;text-align:center;${pop((lt - 0.6) / 0.35)}"><span style="display:inline-block;background:${LIME};color:${DARK};font:700 32px Ins;padding:22px 40px;border-radius:999px">unspool.cc/teams</span></div>`)
+    + A(90, 850, `<div style="width:540px;text-align:center;font:600 20px Ins;color:#8ea595;${rise((lt - 0.8) / 0.3)}">First reel free · No card needed</div>`);
+}
+
+// ---------- subtitles: the line in short phrases, each word lighting up as it's said ----------
+function subtitle(l, t) {
+  const chunks = []; for (const ph of l.text.split(/(?<=[.,!?])\s+/)) { const w = ph.split(" "); for (let k = 0; k < w.length; k += 4) chunks.push(w.slice(k, k + 4)); }
+  const words = chunks.flat(), wl = (w) => w.length + 1, tot = words.reduce((a, w) => a + wl(w), 0), u = clamp((t - l.s) / (l.e - l.s)) * tot;
+  let acc = 0; const starts = words.map((w) => { const a = acc; acc += wl(w); return a; });
+  let wi = 0; words.forEach((w, k) => { if (u >= starts[k]) wi = k; });
+  let n = 0, ci = 0; chunks.forEach((c, k) => { if (wi >= n) ci = k; n += c.length; });
+  const first = chunks.slice(0, ci).reduce((a, c) => a + c.length, 0);
+  const txt = chunks[ci].map((w, k) => { const g = first + k; return `<span style="color:${g === wi ? LIME : g < wi ? "#fff" : "rgba(255,255,255,.45)"}">${w}</span>`; }).join(" ");
+  return A(90, 960, `<div style="width:540px;text-align:center"><span style="display:inline-block;max-width:540px;background:rgba(16,24,40,.88);border-radius:18px;padding:14px 24px;font:600 32px/1.3 Ins;color:#fff">${txt}</span></div>`);
+}
+
+window.renderAt = (t) => {
+  let h = "";
+  if (t < st("chapter")) h = hook(t);
+  else if (t < st("gone")) h = manual(t);
+  else if (t < st("fix")) h = gone(t);
+  else if (t < st("snap")) h = fix(t);
+  else if (t < st("scroll")) h = snap(t);
+  else if (t < st("sticks")) h = scroll(t);
+  else if (t < st("cta")) h = sticks(t);
+  else h = endCard(t);
+  const l = lines.find((x) => t >= x.s - 0.05 && t < x.e + 0.25 && x.text);
+  if (l && !["hook", "fix", "cta"].includes(l.shot)) h += subtitle(l, t);
+  S.innerHTML = h;
+};
+await document.fonts.load("40px Unb"); await document.fonts.load("40px Ins");
+await Promise.all(["fire", "phish", "lift"].map((n) => new Promise((r) => { const i = new Image(); i.onload = r; i.src = `${n}.png`; })));
+window.renderAt(0); setTimeout(() => (window.ready = true), 300);
 </script></body></html>
