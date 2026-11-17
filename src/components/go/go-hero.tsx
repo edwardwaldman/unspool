@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Wordmark } from "../ui/icons";
 import { PROMPT_MAX_CHARS, isPastedDocument } from "@/lib/prompt-text";
 import { promptFile, usePendingUpload } from "../upload/upload-store";
@@ -17,7 +17,7 @@ const FADE = "linear-gradient(to bottom, #000 78%, transparent)";
 const LOOP_S = 4.2;
 
 /** The ads' document → reels animation, looping, scaled to the width it's given. */
-function AdAnimation() {
+function AdAnimation({ docTitle = "My notes", reels = ["/go/mito", "/go/dna", "/go/r1"] }: { docTitle?: string; reels?: string[] }) {
   const box = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const [k, setK] = useState(0.5);
@@ -33,7 +33,7 @@ function AdAnimation() {
     const draw = (t: number) => {
       if (!stage.current) return;
       // The ads name their fonts Unb and Ins; on the site the same fonts live in next/font variables.
-      stage.current.innerHTML = docToReels(t, { title: "", reels: ["/go/mito", "/go/dna", "/go/r1"], docTitle: "My notes", badge: "PDF" })
+      stage.current.innerHTML = docToReels(t, { title: "", reels, docTitle, badge: "PDF" })
         .replace(/ Unb\b/g, " var(--font-unbounded)")
         .replace(/ Ins\b/g, " var(--font-instrument-sans)");
     };
@@ -48,7 +48,7 @@ function AdAnimation() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [docTitle, reels]);
   return (
     <div ref={box} className="relative w-full overflow-hidden" style={{ height: CROP_H * k, maskImage: FADE, WebkitMaskImage: FADE }} aria-hidden>
       <div ref={stage} className="absolute left-0" style={{ width: FRAME_W, height: 1280, top: -CROP_TOP * k, transform: `scale(${k})`, transformOrigin: "0 0" }} />
@@ -57,7 +57,7 @@ function AdAnimation() {
 }
 
 /** One big + button. Phones offer "Take Photo" alongside files in the same picker. Sign-up (if needed) comes after the file. */
-function PlusUpload() {
+function PlusUpload({ label = "Snap a photo", sub = "or upload a PDF, slides or notes" }: { label?: string; sub?: string }) {
   const file = useRef<HTMLInputElement>(null);
   const upload = useUploader();
   const pending = usePendingUpload();
@@ -78,7 +78,7 @@ function PlusUpload() {
         type="button"
         onClick={() => file.current?.click()}
         disabled={Boolean(pending)}
-        aria-label="Snap a photo or upload a document"
+        aria-label={`${label}: ${sub}`}
         className="group relative flex h-[96px] w-[96px] items-center justify-center rounded-full bg-thread text-paper shadow-[0_0_0_10px_rgba(211,240,90,0.12),0_18px_50px_rgba(211,240,90,0.25)] transition-transform hover:scale-105 active:scale-95 disabled:opacity-60"
       >
         {!pending && <span className="absolute inset-0 animate-ping rounded-full bg-thread/30 [animation-duration:2.2s]" aria-hidden />}
@@ -90,8 +90,8 @@ function PlusUpload() {
           )}
         </svg>
       </button>
-      <div className="mt-3 text-[17px] font-semibold">{pending ? "Opening your reels…" : "Snap a photo"}</div>
-      <div className="mt-0.5 text-[13px] text-muted">or upload a PDF, slides or notes</div>
+      <div className="mt-3 text-[17px] font-semibold">{pending ? "Opening your reels…" : label}</div>
+      <div className="mt-0.5 text-[13px] text-muted">{sub}</div>
     </div>
   );
 }
@@ -138,7 +138,7 @@ function useTypewriter(words: string[], on: boolean) {
 }
 
 /** "or type a prompt": a topic instead of a file. Unspool researches it and makes the reels. */
-export function PromptBox({ className = "mt-4" }: { className?: string }) {
+export function PromptBox({ className = "mt-4", topics = EXAMPLE_TOPICS }: { className?: string; topics?: string[] }) {
   const [text, setText] = useState("");
   const upload = useUploader();
   const pending = usePendingUpload();
@@ -146,7 +146,7 @@ export function PromptBox({ className = "mt-4" }: { className?: string }) {
   const multi = text.includes("\n") || text.length > 60;
   const pasted = isPastedDocument(text);
   const [focused, setFocused] = useState(false);
-  const example = useTypewriter(EXAMPLE_TOPICS, !text && !focused);
+  const example = useTypewriter(topics, !text && !focused);
   return (
     <form
       className={`w-full ${className}`}
@@ -185,7 +185,7 @@ export function PromptBox({ className = "mt-4" }: { className?: string }) {
           aria-label="Type a topic, or paste your notes"
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder={focused ? "e.g. Photosynthesis, AP Bio" : ""}
+          placeholder={focused ? `e.g. ${topics[0]}` : ""}
           className="min-w-0 flex-1 resize-none self-center bg-transparent py-2 text-[16px] leading-snug text-ink outline-none placeholder:text-muted/70"
         />
         </div>
@@ -205,28 +205,46 @@ export function PromptBox({ className = "mt-4" }: { className?: string }) {
   );
 }
 
-/** /go: the landing page for TikTok and ads. Same look and animation as the videos, one job, no exits. */
-export function GoHero() {
+/** What changes between ad landing pages: the students' /go and the corporate-training /teams. */
+export type GoCopy = {
+  headline: ReactNode;
+  subline: string;
+  docTitle: string;
+  topics?: string[];
+  ticks: string[];
+  /** the three cards in the animation: left, right, centre (jpgs in public/, no extension) */
+  reels?: string[];
+  /** the + button's label and the line under it */
+  plus?: { label: string; sub: string };
+};
+
+const STUDENT_COPY: GoCopy = {
+  headline: <>Snap a photo. Get study <span className="text-thread">TikToks.</span></>,
+  subline: "Short TikToks with a voiceover, captions and a quiz.",
+  docTitle: "My notes",
+  ticks: ["First reel free", "No card needed", "Your files stay private"],
+};
+
+/** /go (and /teams): the landing page for TikTok and ads. Same look and animation as the videos, one job, no exits. */
+export function GoHero({ copy = STUDENT_COPY }: { copy?: GoCopy }) {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center bg-paper px-4 pb-24 pt-3 text-ink">
       <div className="flex w-full max-w-[460px] flex-col items-center">
         <Wordmark size={24} />
         <h1 className="mt-3 text-center font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em]">
-          Snap a photo. Get study <span className="text-thread">TikToks.</span>
+          {copy.headline}
         </h1>
         <p className="mt-2 text-center text-[14.5px] leading-[1.4] text-muted">
-          Short TikToks with a voiceover, captions and a quiz.
+          {copy.subline}
         </p>
         {/* Kept small so the + and the topic box fit above in-app browser toolbars (TikTok, Instagram) */}
         <div className="mt-1 w-full max-w-[300px]">
-          <AdAnimation />
+          <AdAnimation docTitle={copy.docTitle} reels={copy.reels} />
         </div>
-        <PlusUpload />
-        <PromptBox />
+        <PlusUpload label={copy.plus?.label} sub={copy.plus?.sub} />
+        <PromptBox topics={copy.topics} />
         <ul className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13.5px] text-muted">
-          <li>✓ First reel free</li>
-          <li>✓ No card needed</li>
-          <li>✓ Your files stay private</li>
+          {copy.ticks.map((t) => <li key={t}>✓ {t}</li>)}
         </ul>
         <Link href="/s/demo" className="mt-5 text-[14.5px] text-muted underline underline-offset-4 hover:text-ink">
           Watch a sample reel first

@@ -1,0 +1,71 @@
+{
+ "voice": "ElevenLabs Charlie (IKne3meq5aSn9XLyUdCD), eleven_v4, exasperated TikTok rant, clean (no swearing); one take cut into lines at the word timings from Scribe",
+ "speed": 1.12,
+ "lead": 0.06,
+ "tail": 0,
+ "gap": 0.04,
+ "lines": [
+  [
+   "hook",
+   "Be honest. Nobody reads the training manual.",
+   0.04,
+   "Be honest. Nobody reads the training manual."
+  ],
+  [
+   "chapter",
+   "Forty pages of policy.",
+   0.04,
+   "Forty pages of policy."
+  ],
+  [
+   "three",
+   "They skim it in two minutes.",
+   0.04,
+   "They skim it in two minutes."
+  ],
+  [
+   "gone",
+   "Then the quiz comes back... and nobody remembers a thing!",
+   0.04,
+   "Then the quiz comes back... and nobody remembers a thing!"
+  ],
+  [
+   "fix",
+   "Unspool fixes that.",
+   0.04,
+   "Unspool fixes that."
+  ],
+  [
+   "snap",
+   "Drop in the PDF, and BOOM! It turns into short TikTok-style videos, with captions and a quiz.",
+   0.04,
+   "Drop in the PDF, and BOOM! It turns into short TikTok-style videos, with captions and a quiz."
+  ],
+  [
+   "scroll",
+   "So they scroll, like they already do, and it actually sticks.",
+   0.04,
+   "So they scroll, like they already do, and it actually sticks."
+  ],
+  [
+   "sticks",
+   "Next quiz? They actually know it.",
+   0.04,
+   "Next quiz? They actually know it."
+  ],
+  [
+   "cta",
+   "Try it free at unspool.cc/teams.",
+   0.04,
+   "Try it free at unspool.cc/teams."
+  ],
+  [
+   "end",
+   "",
+   0.3,
+   ""
+  ]
+ ],
+ "engine": "files",
+ "files_tempo": 1.6
+}
