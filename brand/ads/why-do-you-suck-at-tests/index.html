@@ -240,18 +240,20 @@ function app(shot, lt) {
 }
 function turnIntoReels(shot, lt) {
   const t0 = shot === "snap" ? lt : lt + len("snap");
+  const SL = lines.find((l) => l.shot === "snap"), sw = SL.text.split(" "), bi = sw.findIndex((w) => w.startsWith("BOOM")), wl = (w) => w.length + 1;
+  const B = 0.1 + sw.slice(0, bi).reduce((a, w) => a + wl(w), 0) / sw.reduce((a, w) => a + wl(w), 0) * (SL.e - SL.s);   // the burst lands on the spoken "BOOM"
   let h = `<div style="position:absolute;inset:0;background:rgba(10,14,30,${Math.min(0.82, t0 * 2)})"></div>`;
   const page = (x, y, s, rot, a) => A(x, y, `<div style="width:300px;height:400px;background:#fbf8ef;border:6px solid #000;box-shadow:10px 10px 0 #000;padding:20px;box-sizing:border-box;transform:scale(${s}) rotate(${rot}deg);opacity:${a}"><div style="display:inline-block;background:#1f8a70;color:#fff;font:14px Px;padding:6px 8px">BIO · CH 4</div>${[90, 76, 94, 60, 86, 92, 70, 88, 64, 80].map((w) => `<div style="height:12px;margin:14px 0;background:#9aa1ad;width:${w}%"></div>`).join("")}</div>`);
   // the page lands, shakes, bursts at "BOOM", and the reels fly out of it
-  const land = outBack(t0 / 0.3), burst = t0 > 1.0, split = ease((t0 - 1.0) / 0.6);
-  if (!burst) { const typed = "CELL RESPIRATION".slice(0, Math.floor(t0 * 20)), shake = 0.04 * Math.sin(t0 * 40) * clamp((t0 - 0.8) * 4);
+  const land = outBack(t0 / 0.3), burst = t0 > B, split = ease((t0 - B) / 0.6);
+  if (!burst) { const typed = "CELL RESPIRATION".slice(0, Math.floor(t0 * 20)), shake = 0.04 * Math.sin(t0 * 40) * clamp((t0 - (B - 0.2)) * 4);
     h += A(100, 560, `<div style="width:520px;box-sizing:border-box;display:flex;align-items:center;gap:12px;background:#fbf8ef;border:6px solid #000;box-shadow:10px 10px 0 #000;padding:18px 18px 18px 24px;transform:scale(${land * (1 + shake)})"><span style="flex:1;font:21px Px;color:#0f1d18;white-space:nowrap;overflow:hidden">${typed}<span style="display:inline-block;width:4px;height:26px;background:#0f1d18;vertical-align:-3px;opacity:${Math.floor(t0 * 4) % 2 ? 0 : 1}"></span></span><span style="width:54px;height:54px;background:#d3f05a;border:4px solid #000;display:flex;align-items:center;justify-content:center;font:700 30px Ins">→</span></div>`)
       + A(110, 470, `<div style="width:500px;text-align:center;font:18px Px;color:#d3f05a;text-shadow:3px 3px 0 #000">TYPE ANY TOPIC</div>`); }
   if (burst && split < 1) h += A(360 - 380 * split, 580 - 380 * split, `<div style="width:${760 * split}px;height:${760 * split}px;border:14px solid #d3f05a;opacity:${1 - split};box-sizing:border-box"></div>`)
-    + `<div style="position:absolute;inset:0;background:#fff;opacity:${Math.max(0, 1 - (t0 - 1.0) / 0.12) * 0.8}"></div>`;
-  if (burst && t0 < 1.5) h += A(110, 250, `<div style="width:500px;text-align:center;font:64px Px;color:#d3f05a;text-shadow:7px 7px 0 #000;transform:scale(${outBack((t0 - 1.0) / 0.15)}) rotate(-6deg)">BOOM!</div>`);
+    + `<div style="position:absolute;inset:0;background:#fff;opacity:${Math.max(0, 1 - (t0 - B) / 0.12) * 0.8}"></div>`;
+  if (burst && t0 < B + 0.5) h += A(110, 250, `<div style="width:500px;text-align:center;font:64px Px;color:#d3f05a;text-shadow:7px 7px 0 #000;transform:scale(${outBack((t0 - B) / 0.15)}) rotate(-6deg)">BOOM!</div>`);
   const imgs = ["resp", "dna", "mito"], spots = [[-190, -9], [190, 9], [0, 0]];
-  if (burst) spots.forEach(([dx, r], j) => { const k = ease((t0 - 1.0 - j * 0.08) / 0.5); if (k <= 0) return;
+  if (burst) spots.forEach(([dx, r], j) => { const k = ease((t0 - B - j * 0.08) / 0.5); if (k <= 0) return;
     const fan = shot === "cards" ? Math.sin(lt * 2 + j) * 6 : 0, w = j === 2 ? 230 : 190, z = j === 2 ? 2 : 1;
     h += A(360 + dx * k - w / 2, (j === 2 ? 400 : 440) + fan, `<div style="width:${w}px;height:${w * 16 / 9}px;border:6px solid #000;box-shadow:8px 8px 0 #000;transform:rotate(${r * k}deg) scale(${0.3 + 0.7 * k});z-index:${z};background:#000"><img src="${imgs[j]}_px.png" style="width:100%;height:100%;object-fit:cover;image-rendering:pixelated"></div>`); });
   if (shot === "cards") h += A(110, 250, `<div style="width:500px;text-align:center;font:34px/1.3 Px;color:#fff;text-shadow:5px 5px 0 #000;${pop(lt / 0.25)}">RESEARCHED<br><span style="color:#d3f05a">FOR YOU</span></div>`);
@@ -302,7 +304,7 @@ function shout(L, t) {
   let n = 0; chunks.forEach((c, k) => { if (wi >= n) ci = k; n += c.length; });
   const first = chunks.slice(0, ci).reduce((a, c) => a + c.length, 0), c = chunks[ci], len = c.join(" ").length;
   const mctx = (shout.m ||= document.createElement("canvas").getContext("2d")); mctx.font = "100px Px";
-  const wid = mctx.measureText(c.join(" ").toUpperCase()).width / 100 + c.length * 0.52 + 0.3, size = Math.min(48, Math.floor(480 / wid));   // the whole phrase fits the 500px safe column
+  const wid = Math.max(...chunks.map((q) => mctx.measureText(q.join(" ").toUpperCase()).width / 100 + q.length * 0.52 + 0.3)), size = Math.min(48, Math.floor(480 / wid));   // one size for the whole line   // the whole phrase fits the 500px safe column
   const spans = c.map((w, k) => { const g = first + k; if (g > wi) return "";   // not said yet: not laid out, so the words said so far sit centred
     const age = (u - starts[g]) / tot * dur, p = clamp(age / 0.11), pop = 1 + 0.28 * (1 - ease(p)), rot = (1 - p) * (g % 2 ? 6 : -6), cur = g === wi;
     return `<span style="display:inline-block;margin:0 .26em;transform-origin:0 100%;transform:scale(${pop}) rotate(${rot}deg);color:${cur ? "#d3f05a" : "#fff"}">${w}</span>`; }).join("");
@@ -328,7 +330,7 @@ window.renderAt = (t) => {
     const ws = ["WHY", "DO", "YOU", "SUCK", "AT", "TESTS?"], rows = [[0, 1, 2], [3], [4, 5]];
     h += A(110, 150, `<div style="width:500px;box-sizing:border-box;padding:14px 0;background:rgba(10,14,30,.62);box-shadow:8px 8px 0 #000;text-align:center;font:38px/1.3 Px;color:#fff;text-shadow:5px 5px 0 #000,-2px -2px 0 #000">${rows.map((r) => r.map((j) => `<span style="display:inline-block;margin:0 9px;color:${j === 3 ? "#ff5a4a" : j === 5 ? "#d3f05a" : "#fff"};font-size:${j === 3 ? 92 : 44}px">${ws[j]}</span>`).join("")).join("<br>")}</div>`); }
   if (false) h += label("BIO · CHAPTER 4", "32 PAGES", (t - Math.min(st("chapter"), st("three"))) / 0.3);
-  if (shot === "three") h += stamp("READ 3X", 0, 730, -8, lt - 0.1, "#ffffff");
+  if (shot === "three") h += stamp("READ 3X", 0, 740, -6, lt - 0.1);
   if (shot === "gone") h += stamp("FORGOTTEN", 140, 480, -10, lt - 0.05);
   if (shot === "scroll") h += phoneScroll(lt, t);
   if (shot === "sticks") h += stamp("IT STUCK", 160, 470, 6, lt - 0.45, "#1f9d55");
