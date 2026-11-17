@@ -242,7 +242,7 @@ function turnIntoReels(shot, lt) {
   const t0 = shot === "snap" ? lt : lt + len("snap");
   const SL = lines.find((l) => l.shot === "snap"), sw = SL.text.split(" "), bi = sw.findIndex((w) => w.startsWith("BOOM")), wl = (w) => w.length + 1;
   const B = 0.1 + sw.slice(0, bi).reduce((a, w) => a + wl(w), 0) / sw.reduce((a, w) => a + wl(w), 0) * (SL.e - SL.s);   // the burst lands on the spoken "BOOM"
-  let h = `<div style="position:absolute;inset:0;background:rgba(10,14,30,${Math.min(0.82, t0 * 2)})"></div>`;
+  let h = "";   // no dimming: the room stays lit
   const page = (x, y, s, rot, a) => A(x, y, `<div style="width:300px;height:400px;background:#fbf8ef;border:6px solid #000;box-shadow:10px 10px 0 #000;padding:20px;box-sizing:border-box;transform:scale(${s}) rotate(${rot}deg);opacity:${a}"><div style="display:inline-block;background:#1f8a70;color:#fff;font:14px Px;padding:6px 8px">BIO · CH 4</div>${[90, 76, 94, 60, 86, 92, 70, 88, 64, 80].map((w) => `<div style="height:12px;margin:14px 0;background:#9aa1ad;width:${w}%"></div>`).join("")}</div>`);
   // the page lands, shakes, bursts at "BOOM", and the reels fly out of it
   const land = outBack(t0 / 0.3), burst = t0 > B, split = ease((t0 - B) / 0.6);
@@ -250,7 +250,7 @@ function turnIntoReels(shot, lt) {
     h += A(100, 560, `<div style="width:520px;box-sizing:border-box;display:flex;align-items:center;gap:12px;background:#fbf8ef;border:6px solid #000;box-shadow:10px 10px 0 #000;padding:18px 18px 18px 24px;transform:scale(${land * (1 + shake)})"><span style="flex:1;font:21px Px;color:#0f1d18;white-space:nowrap;overflow:hidden">${typed}<span style="display:inline-block;width:4px;height:26px;background:#0f1d18;vertical-align:-3px;opacity:${Math.floor(t0 * 4) % 2 ? 0 : 1}"></span></span><span style="width:54px;height:54px;background:#d3f05a;border:4px solid #000;display:flex;align-items:center;justify-content:center;font:700 30px Ins">→</span></div>`)
       + A(110, 470, `<div style="width:500px;text-align:center;font:18px Px;color:#d3f05a;text-shadow:3px 3px 0 #000">TYPE ANY TOPIC</div>`); }
   if (burst && split < 1) h += A(360 - 380 * split, 580 - 380 * split, `<div style="width:${760 * split}px;height:${760 * split}px;border:14px solid #d3f05a;opacity:${1 - split};box-sizing:border-box"></div>`)
-    + `<div style="position:absolute;inset:0;background:#fff;opacity:${Math.max(0, 1 - (t0 - B) / 0.12) * 0.8}"></div>`;
+    + `<div style="position:absolute;inset:0;background:#fff;opacity:${Math.max(0, 1 - (t0 - B) / 0.12) * 0.45}"></div>`;
   if (burst && t0 < B + 0.5) h += A(110, 250, `<div style="width:500px;text-align:center;font:64px Px;color:#d3f05a;text-shadow:7px 7px 0 #000;transform:scale(${outBack((t0 - B) / 0.15)}) rotate(-6deg)">BOOM!</div>`);
   const imgs = ["resp", "dna", "mito"], spots = [[-190, -9], [190, 9], [0, 0]];
   if (burst) spots.forEach(([dx, r], j) => { const k = ease((t0 - B - j * 0.08) / 0.5); if (k <= 0) return;
@@ -263,25 +263,25 @@ function turnIntoReels(shot, lt) {
 function phoneScroll(lt, t) {
   const S = 0.95, imgs = ["mito", "resp", "dna", "mito"], k = Math.max(0, lt - 0.25) / S, i = Math.floor(k);
   const f = clamp((k - i - 0.6) / 0.4), y = -(f < 0.5 ? 4 * f * f * f : 1 - Math.pow(-2 * f + 2, 3) / 2) * 100;
-  const rise = ease(lt / 0.35), sway = Math.sin(t * 1.4) * 4;
-  const W = 290, Hh = 516;
-  let h = `<div style="position:absolute;inset:0;background:radial-gradient(70% 55% at 50% 48%,#26305e,#0b0f22 70%,#05070f)"></div>`;
+  const rise = ease(lt / 0.18), sway = Math.sin(t * 1.4) * 4;
+  const W = 340, Hh = 604;
+  let h = `<div style="position:absolute;inset:0;background:radial-gradient(75% 60% at 50% 42%,#fff6dc,#f3dfa8 60%,#e2c27a)"></div>`;
   // soft lime glow behind the phone, pixel grid floor of light
-  h += `<div style="position:absolute;left:110px;top:300px;width:500px;height:600px;border-radius:50%;background:radial-gradient(#d3f05a33,transparent 70%);filter:blur(10px)"></div>`;
+  h += `<div style="position:absolute;left:110px;top:200px;width:500px;height:640px;border-radius:50%;background:radial-gradient(#d3f05a88,transparent 70%);filter:blur(10px)"></div>`;
   const cur = imgs[i % 4], nxt = imgs[(i + 1) % 4], n = Math.min(9, i + 1 + (f > 0.5 ? 1 : 0));
   const screen = `<div style="position:absolute;inset:0;transform:translateY(${y}%)"><img src="${cur}_px.png" style="position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;image-rendering:pixelated"><img src="${nxt}_px.png" style="position:absolute;left:0;top:100%;width:100%;height:100%;object-fit:cover;image-rendering:pixelated"></div>
     <div style="position:absolute;left:0;right:0;top:0;height:46px;background:linear-gradient(rgba(0,0,0,.55),transparent);display:flex;justify-content:center;align-items:center;font:13px Px;color:#fff">FOR YOU</div>
     ${["♥", "💬", "➤"].map((g, j) => `<div style="position:absolute;right:12px;top:${360 + j * 62}px;font:28px sans-serif;color:#fff;text-shadow:0 2px 4px #000">${g}</div>`).join("")}
     <div style="position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.3)"><div style="height:5px;width:${((k % 1) * 1.7 % 1) * 100}%;background:#fff"></div></div>`;
-  h += `<div style="position:absolute;left:${330 - W / 2}px;top:${330 + (1 - rise) * 700}px;width:${W}px;height:${Hh}px;transform:rotate(${sway * 0.25}deg)">
+  h += `<div style="position:absolute;left:${360 - W / 2}px;top:200px;width:${W}px;height:${Hh}px;opacity:${rise};transform:scale(${0.75 + 0.25 * outBack(lt / 0.22)}) rotate(${sway * 0.25}deg)">
     <div style="position:absolute;inset:-14px;background:#15171d;border:4px solid #000;box-shadow:12px 12px 0 #000"></div>
     <div style="position:absolute;left:${W / 2 - 50}px;top:-6px;width:100px;height:14px;background:#000;z-index:3"></div>
     <div style="position:absolute;inset:0;overflow:hidden;background:#000">${screen}</div></div>`;
   // the thumb flicks up on each swipe
   const fl = Math.sin(Math.min(1, f * 1.2) * Math.PI);
-  h += A(380 + fl * -16, 720 - fl * 180, `<div style="width:64px;height:150px;background:#c98f68;border:4px solid #000;border-radius:30px 30px 10px 10px;transform:rotate(-18deg);opacity:${f > 0 && f < 1 ? 1 : 0.0}"><div style="margin:10px auto;width:36px;height:30px;background:#e8b48c;border-radius:12px"></div></div>`);
+  h += A(400 + fl * -16, 640 - fl * 180, `<div style="width:64px;height:150px;background:#c98f68;border:4px solid #000;border-radius:30px 30px 10px 10px;transform:rotate(-18deg);opacity:${f > 0 && f < 1 ? 1 : 0.0}"><div style="margin:10px auto;width:36px;height:30px;background:#e8b48c;border-radius:12px"></div></div>`);
   // what she just learned, lined up beside the phone
-  ["MITOCHONDRIA", "ATP", "DNA TO RNA"].forEach((w, j) => { const kk = (lt - 0.25 - S * 0.8 - j * S) / 0.2; if (kk > 0) h += A([92, 306, 412][j], 960, `<div style="white-space:nowrap;font:13px Px;color:#0f1d18;background:#d3f05a;padding:7px 8px;box-shadow:4px 4px 0 #000;${pop(kk)}">${w} <span style="font:700 18px Ins">✓</span></div>`); });
+  h += A(110, 960, `<div style="width:500px;display:flex;justify-content:center;gap:12px">${["MITOCHONDRIA", "ATP", "DNA TO RNA"].map((w, j) => { const kk = (lt - 0.25 - S * 0.8 - j * 0.55) / 0.2; return kk > 0 ? `<div style="white-space:nowrap;font:13px Px;color:#0f1d18;background:#d3f05a;padding:7px 8px;box-shadow:4px 4px 0 #000;${pop(kk)}">${w} <span style="font:700 18px Ins">✓</span></div>` : ""; }).join("")}</div>`);
   return h;
 }
 function endCard(lc) {
@@ -336,7 +336,7 @@ window.renderAt = (t) => {
   if (shot === "sticks") h += stamp("IT STUCK", 160, 470, 6, lt - 0.45, "#1f9d55");
   h += app(shot, lt);
   // a soft dark band so the serif captions read on any shot (the white test paper swallowed them)
-  h += `<div style="position:absolute;left:0;right:0;top:930px;height:260px;background:linear-gradient(transparent,rgba(5,8,20,.55) 45%,rgba(5,8,20,.55) 70%,transparent)"></div>`;
+  if (shot !== "scroll") h += `<div style="position:absolute;left:0;right:0;top:930px;height:260px;background:linear-gradient(transparent,rgba(5,8,20,.55) 45%,rgba(5,8,20,.55) 70%,transparent)"></div>`;
   if (L.text && shot !== "hook") h += shout(L, t);
   // a white flash on every cut, a red pulse through the "problem" half, and the whole frame punching in and shaking
   const flash = Math.max(0, 1 - lt / 0.06) * 0.22;
