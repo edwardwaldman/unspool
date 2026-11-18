@@ -31,39 +31,56 @@ const wordAt = (shot, startsWith) => { const l = L(shot), w = l.text.split(" "),
   return l.s + w.slice(0, i).reduce((a, x) => a + wl(x), 0) / w.reduce((a, x) => a + wl(x), 0) * (l.e - l.s); };
 
 // ---------- the employee: a flat illustration, at a desk with a laptop, or holding a phone ----------
-function person({ mood = "bored", pose = "desk", t = 0, phoneImg = "" }) {
-  const skin = "#f2c6a0", hair = "#2a1f1a", shirt = NAVY;
+function person({ mood = "bored", pose = "desk", t = 0, phoneImg = "", bare = false }) {
+  // flat illustration with dark outlines so every part reads on its own: skin, hair, navy jacket, lighter sleeves, white shirt, lanyard
+  const O = "#101828", skin = "#f2c6a0", skinD = "#e2a97f", hair = "#2a1f1a", jacket = "#24406e", sleeve = "#3a5f99";
   const blink = (t % 3.1) > 2.98 ? 0.15 : 1;
-  const mouth = mood === "happy" ? `<path d="M182 168 Q200 186 218 168" stroke="#7a3b2e" stroke-width="6" fill="none" stroke-linecap="round"/>`
-    : mood === "confused" ? `<path d="M184 176 Q200 168 216 178" stroke="#7a3b2e" stroke-width="6" fill="none" stroke-linecap="round"/>`
-    : `<path d="M186 174 L214 174" stroke="#7a3b2e" stroke-width="6" stroke-linecap="round"/>`;
-  const brows = mood === "confused" ? `<path d="M168 118 L190 124 M210 126 L232 114" stroke="${hair}" stroke-width="6" stroke-linecap="round"/>` : "";
+  const ln = (d, w, c) => `<path d="${d}" stroke="${O}" stroke-width="${w + 8}" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" stroke="${c}" stroke-width="${w}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const hand = (x, y, r = 19) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${skin}" stroke="${O}" stroke-width="4"/>`;
+  const mouth = mood === "happy" ? `<path d="M182 170 Q200 190 218 170 Z" fill="#7a2e2e" stroke="${O}" stroke-width="4" stroke-linejoin="round"/>`
+    : mood === "confused" ? `<path d="M186 178 Q200 168 214 180" stroke="${O}" stroke-width="5" fill="none" stroke-linecap="round"/>`
+    : `<path d="M188 176 L212 174" stroke="${O}" stroke-width="5" stroke-linecap="round"/>`;
+  const brows = mood === "confused" ? `<path d="M166 116 L188 122 M212 124 L234 112" stroke="${O}" stroke-width="6" stroke-linecap="round"/>`
+    : mood === "bored" ? `<path d="M168 124 L190 124 M210 124 L232 124" stroke="${O}" stroke-width="5" stroke-linecap="round"/>`
+    : `<path d="M168 118 Q179 112 190 118 M210 118 Q221 112 232 118" stroke="${O}" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+  const lids = mood === "bored" ? `<path d="M171 138 L189 138 M211 138 L229 138" stroke="${skin}" stroke-width="7"/>` : "";
   const head = `<g>
-    <rect x="182" y="190" width="36" height="34" fill="${skin}"/>
-    <ellipse cx="200" cy="140" rx="56" ry="62" fill="${skin}"/>
-    <path d="M142 132 Q140 70 200 72 Q262 70 258 134 Q250 100 214 100 Q170 102 148 150 Z" fill="${hair}"/>
-    <ellipse cx="180" cy="142" rx="6" ry="${7 * blink}" fill="${INK}"/><ellipse cx="220" cy="142" rx="6" ry="${7 * blink}" fill="${INK}"/>
+    <rect x="183" y="186" width="34" height="40" fill="${skinD}" stroke="${O}" stroke-width="4"/>
+    <ellipse cx="143" cy="146" rx="11" ry="16" fill="${skin}" stroke="${O}" stroke-width="4"/><ellipse cx="257" cy="146" rx="11" ry="16" fill="${skin}" stroke="${O}" stroke-width="4"/>
+    <ellipse cx="200" cy="140" rx="56" ry="62" fill="${skin}" stroke="${O}" stroke-width="4"/>
+    <path d="M142 138 Q134 70 200 70 Q266 70 258 138 Q252 104 222 98 Q206 116 160 112 Q146 120 142 138 Z" fill="${hair}" stroke="${O}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M176 84 Q196 76 222 82" stroke="#5a4636" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="180" cy="142" rx="6.5" ry="${7.5 * blink}" fill="${O}"/><ellipse cx="220" cy="142" rx="6.5" ry="${7.5 * blink}" fill="${O}"/>${lids}
+    <path d="M200 146 Q196 160 204 162" stroke="${skinD}" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <circle cx="168" cy="164" r="8" fill="#f4a3a3" opacity=".55"/><circle cx="232" cy="164" r="8" fill="#f4a3a3" opacity=".55"/>
     ${brows}${mouth}</g>`;
-  const torso = `<path d="M110 330 Q110 226 200 220 Q290 226 290 330 L290 420 L110 420 Z" fill="${shirt}"/><path d="M182 222 L200 250 L218 222" fill="#fff"/>`;
+  const torso = `<path d="M104 420 L106 320 Q110 232 200 222 Q290 232 294 320 L296 420 Z" fill="${jacket}" stroke="${O}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M176 226 L200 268 L224 226 Z" fill="#fff" stroke="${O}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M176 226 L196 300 M224 226 L204 300" stroke="${O}" stroke-width="3" opacity=".5"/>
+    <path d="M186 232 L238 330" stroke="${LIME}" stroke-width="6"/><rect x="226" y="322" width="34" height="44" rx="5" fill="#fff" stroke="${O}" stroke-width="3"/><rect x="226" y="322" width="34" height="12" rx="4" fill="${LIME}" stroke="${O}" stroke-width="3"/>`;
+  const backdrop = bare ? "" : `<circle cx="200" cy="250" r="176" fill="#e3ebf8"/>`;
+  const chair = `<rect x="112" y="216" width="176" height="210" rx="40" fill="#667085" stroke="${O}" stroke-width="4"/>`;
   if (pose === "phone") {
     const sw = Math.sin(t * 2) * 2;
-    return `<svg width="400" height="460" viewBox="0 0 400 460">${torso}${head}
-      <path d="M130 300 Q150 380 196 360" stroke="${shirt}" stroke-width="40" fill="none" stroke-linecap="round"/>
-      <g transform="rotate(${-8 + sw} 240 330)"><rect x="196" y="250" width="96" height="170" rx="14" fill="#111"/>
-      <foreignObject x="202" y="258" width="84" height="154"><div xmlns="http://www.w3.org/1999/xhtml" style="width:84px;height:154px;border-radius:9px;overflow:hidden;background:#123">${phoneImg}</div></foreignObject></g>
-      <circle cx="214" cy="356" r="20" fill="${skin}"/></svg>`;
+    return `<svg width="400" height="460" viewBox="0 0 400 460">${backdrop}${torso}${head}
+      ${ln("M126 300 Q132 382 190 372", 34, sleeve)}${ln("M274 300 Q282 380 246 384", 34, sleeve)}
+      <g transform="rotate(${-6 + sw} 240 330)"><rect x="192" y="244" width="100" height="176" rx="16" fill="#0b0d12" stroke="${O}" stroke-width="4"/>
+      <foreignObject x="199" y="252" width="86" height="160"><div xmlns="http://www.w3.org/1999/xhtml" style="width:86px;height:160px;border-radius:10px;overflow:hidden;background:#123">${phoneImg}</div></foreignObject></g>
+      ${hand(198, 370)}${hand(250, 382)}</svg>`;
   }
   const chin = pose === "chin";
   const arms = chin
-    ? `<path d="M140 330 Q120 300 150 250 Q160 222 172 200" stroke="${shirt}" stroke-width="40" fill="none" stroke-linecap="round"/><circle cx="174" cy="200" r="22" fill="${skin}"/>
-       <path d="M270 330 Q300 370 250 384" stroke="${shirt}" stroke-width="40" fill="none" stroke-linecap="round"/>`
-    : `<path d="M130 330 Q120 380 170 388" stroke="${shirt}" stroke-width="40" fill="none" stroke-linecap="round"/><path d="M270 330 Q280 380 230 388" stroke="${shirt}" stroke-width="40" fill="none" stroke-linecap="round"/>`;
-  return `<svg width="400" height="460" viewBox="0 0 400 460">${torso}${chin ? `<g transform="rotate(-8 200 200) translate(-10 12)">${head}</g>` : head}
-    <rect x="20" y="380" width="360" height="22" rx="6" fill="#d9c3a5"/><rect x="20" y="398" width="360" height="62" fill="#c8ad8a"/>
-    <path d="M118 380 L282 380 L300 330 L136 330 Z" fill="#c9ced6"/><rect x="134" y="250" width="132" height="90" rx="8" fill="#98a2b3" transform="skewX(-8) translate(48 0)"/>
-    ${arms}</svg>`;
+    ? `${ln("M128 300 Q118 352 150 372 Q168 300 176 214", 34, sleeve)}${hand(178, 206, 21)}${ln("M272 300 Q290 360 262 378", 34, sleeve)}${hand(250, 380)}`
+    : `${ln("M126 300 Q116 372 168 384", 34, sleeve)}${ln("M274 300 Q284 372 232 384", 34, sleeve)}${hand(170, 384)}${hand(230, 384)}`;
+  return `<svg width="400" height="460" viewBox="0 0 400 460">${backdrop}${chair}${torso}${chin ? `<g transform="rotate(-8 200 200) translate(-8 12)">${head}</g>` : head}
+    ${arms}
+    <path d="M128 386 L272 386 L262 300 Q260 292 252 292 L148 292 Q140 292 138 300 Z" fill="#d0d5dd" stroke="${O}" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="200" cy="338" r="9" fill="${LIME}" stroke="${O}" stroke-width="3"/>
+    <rect x="16" y="382" width="368" height="24" rx="6" fill="#e9d6b8" stroke="${O}" stroke-width="4"/><rect x="28" y="404" width="344" height="56" fill="#d4b88f" stroke="${O}" stroke-width="4"/>
+    ${bare ? "" : `<g transform="rotate(-5 320 360)"><rect x="276" y="352" width="92" height="28" rx="4" fill="#fff" stroke="${O}" stroke-width="4"/>
+      <rect x="270" y="318" width="98" height="38" rx="5" fill="#0e7c66" stroke="${O}" stroke-width="4"/>
+      <text x="319" y="343" text-anchor="middle" font-family="Ins" font-size="15" font-weight="600" fill="#fff">HANDBOOK</text></g>`}</svg>`;
 }
-
 // ---------- reusable mock-ups ----------
 const pdfCard = (x, y, w, h, page, of, scroll, title = "Employee_Handbook_v7.pdf") => {
   const rows = Array.from({ length: 22 }, (_, i) => { const yy = 120 + i * 34 - (scroll % 34) ; const wid = [92, 78, 86, 64, 90, 70, 84][(i + Math.floor(scroll / 34)) % 7];
@@ -105,8 +122,7 @@ function hook(t) {
     ${A(90, 170, `<div style="width:540px;text-align:center;font:700 22px Ins;color:${MUTED};letter-spacing:.12em">BE HONEST…</div>`, `${rise(lt / 0.3)}`)}
     ${A(80, 215, `<div class="mono" style="width:560px;text-align:center;font-size:64px;line-height:1.08;color:${INK}">${head}</div>`)}
     ${A(160, 470, person({ mood: "bored", pose: "chin", t }))}
-    ${A(395, 760, `<div style="width:170px;height:96px;border-radius:10px;background:${NAVY};box-shadow:0 10px 20px rgba(0,0,0,.2);transform:rotate(-4deg);display:flex;align-items:center;justify-content:center;color:#fff;font:700 15px/1.2 Ins;text-align:center">EMPLOYEE<br>HANDBOOK</div>`)}
-    ${A(380, 742, `<div style="width:170px;height:20px;border-radius:6px;background:#e9edf2;transform:rotate(-4deg)"></div>`)}</div>`);
+</div>`);
 }
 function manual(t) {   // "Forty pages of policy. They skim it in two minutes."
   const t0 = st("chapter"), lt = t - t0, sk = t - st("three");
@@ -122,7 +138,7 @@ function gone(t) {
   const lt = t - st("gone");
   return quizCard(90, 200, lt / 0.3, false, lt)
     + A(90, 760, `<div style="width:540px;display:flex;justify-content:center;align-items:center;gap:18px;${rise((lt - 0.5) / 0.3)}">
-      <div style="width:84px;height:84px;border-radius:50%;background:#e9edf2;overflow:hidden;position:relative">${person({ mood: "confused", pose: "desk", t }).replace('width="400" height="460"', 'width="120" height="138" style="position:absolute;left:-18px;top:4px"')}</div>
+      <div style="width:84px;height:84px;border-radius:50%;background:#e9edf2;overflow:hidden;position:relative">${person({ mood: "confused", pose: "desk", t, bare: true }).replace('width="400" height="460"', 'width="120" height="138" style="position:absolute;left:-18px;top:4px"')}</div>
       <div class="chip">Nobody remembers a thing</div></div>`);
 }
 function fix(t) {
