@@ -2,30 +2,28 @@
 # No voice yet (ElevenLabs needs a sign-in), so each line gets a natural narration length: ~2.9 words/s.
 import json, re, sys
 L = [
- ("hook",     "What would you do if you woke up *tomorrow*..."),
- ("book",     "and your forty-page *textbook* chapter..."),
- ("turn",     "turned into *TikToks*?"),
- ("alarm",    "Imagine. It's *7 AM*. Bio test. *Today*."),
- ("open",     "You open the chapter, and your brain goes *blank*."),
- ("panic",    "Total *panic*."),
- ("memory",   "Memory search: chapter four. Absolutely *nothing*."),
- ("buzz",     "Then your phone *buzzes*."),
- ("itsit",    "Wait. It's the *chapter*!"),
- ("before",   "Same facts. Same diagrams. Somehow *transformed* overnight."),
- ("gimmick",  "At first, you think it's a *gimmick*."),
- ("quiz",     "But every reel ends with a *quiz*. And you *get it*."),
- ("breakfast","So you scroll at *breakfast*. Mom thinks nothing's *unusual*."),
+ ("hook",     "What would you do if your *homeboy* woke up tomorrow..."),
+ ("turn",     "and turned into a *girl*?"),
+ ("mirror",   "Like, a full *girl*."),
+ ("call",     "Imagine. *7 AM*. A call from your *best friend*."),
+ ("answer",   "You answer, and a girl is *screaming* your name."),
+ ("memory",   "Memory search: absolutely *no idea* who this is."),
+ ("itsit",    "Then she says your nickname. It's *him*!"),
+ ("before",   "Same cap. Same hoodie. Same chain. Somehow *transformed* overnight."),
+ ("prank",    "At first, you think it's a *prank*. But it's *real*."),
+ ("today",    "And the bio test is *today*."),
+ ("mission",  "Your homeboy has one *mission*: turn back."),
  ("funny",    "But the *funniest* part?"),
- ("couch",    "You still act exactly the *same*. Same couch. Same snacks. Same *scrolling*."),
- ("couch2",   "Except now, you actually *remember* it."),
- ("test",     "Then the test comes back, and everyone treats you *differently*."),
- ("roof",     "Your best friend has one *question*."),
- ("roof2",    "Would you share it with your *best friend*?"),
- ("end",      "What would *you* do? Try it *free* at unspool dot cc."),
+ ("couch",    "He still acts exactly the *same*. Same couch. Same snacks. Same *scrolling*."),
+ ("couch2",   "Except now, the scroll is his bio chapter, on *Unspool*."),
+ ("test",     "The test comes back, and he *aces* it."),
+ ("roof",     "And when it's all over..."),
+ ("roof2",    "Would you treat your homeboy *exactly* the same?"),
+ ("end",      "What would *you* do? Try Unspool *free* at unspool dot cc."),
 ]
 t, out = 0.25, []
 for shot, text in L:
-    n = len(text.split()); d = max(1.1, n / 2.9 + 0.15) + (0.6 if shot in ("panic", "funny", "itsit") else 0)
+    n = len(text.split()); d = max(1.1, n / 2.9 + 0.15) + (0.6 if shot in ("funny", "itsit", "turn") else 0) + (1.0 if shot in ("couch2", "roof") else 0)
     out.append({"shot": shot, "text": text, "s": round(t, 3), "e": round(t + d - 0.2, 3)}); t += d
 dur = round(t + 1.2, 2)
 json.dump({"dur": dur, "lines": out}, open(sys.argv[1], "w"), indent=1)

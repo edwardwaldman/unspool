@@ -1,6 +1,7 @@
 # What would you do? (stick-figure story ad)
 
-"What would you do if you woke up tomorrow and your textbook chapter turned into TikToks?"
+"What would you do if your homeboy woke up tomorrow... and turned into a girl?" The bio test is today, he still
+scrolls exactly the same, but now the scroll is his bio chapter on Unspool, and he aces it.
 A "what would you do" story in stick figures: flat rooms, one or two words of caption at a time,
 comic sound bubbles, memory-search and before/after cards, a "WHAT WOULD YOU DO?" end card.
 

@@ -44,7 +44,8 @@ function arm(sx, sy, a1, a2, side, len = 60) {
 }
 // who: you | friend | mom | teacher | kid2
 function stick({ x, y, s = 1, who = "you", face = "neutral", la = [10, 10], ra = [10, 10], legs = "stand", t = 0, lean = 0, hold = "" }) {
-  const hood = { you: "#1d1b26", friend: "#5b6170", mom: "#f08a3c", teacher: "#2f5d8a", kid2: "#c0392b" }[who];
+  const hood = { you: "#1d1b26", friend: "#5b6170", mom: "#f08a3c", teacher: "#2f5d8a", kid2: "#c0392b", homeboy: "#d9412f", girl: "#d9412f" }[who];
+  const capped = who === "friend" || who === "homeboy" || who === "girl", capCol = who === "friend" ? "#c0392b" : "#1d1b26";
   const sit = legs === "sit", hipY = sit ? -70 : -120;
   let legP;
   if (sit) legP = `M-14 ${hipY} L-34 ${hipY + 26} L-34 0 M14 ${hipY} L34 ${hipY + 26} L34 0`;
@@ -58,11 +59,13 @@ function stick({ x, y, s = 1, who = "you", face = "neutral", la = [10, 10], ra =
        ${who === "you" || who === "friend" ? `<path d="M-6 ${top + 8} L-8 ${top + 40} M6 ${top + 8} L8 ${top + 40}" stroke="#fff" stroke-width="3" opacity=".7"/><path d="M-22 ${hipY - 30} L22 ${hipY - 30}" stroke="#000" stroke-width="3" opacity=".35"/>` : ""}`;
   const hy = top - 58;
   const hair = who === "mom" ? `<path d="M-56 ${hy + 40} Q-62 ${hy - 50} 0 ${hy - 56} Q62 ${hy - 50} 56 ${hy + 40} L44 ${hy + 46} Q46 ${hy - 20} 0 ${hy - 30} Q-46 ${hy - 20} -44 ${hy + 46} Z" fill="#1d1b26"/>`
-    : who === "friend" ? `<path d="M-50 ${hy - 14} Q-48 ${hy - 62} 0 ${hy - 62} Q48 ${hy - 62} 50 ${hy - 14} Z" fill="#c0392b" stroke="${O}" stroke-width="5"/><path d="M40 ${hy - 20} L76 ${hy - 12} L44 ${hy - 4}" fill="#c0392b" stroke="${O}" stroke-width="5" stroke-linejoin="round"/>`
+    : capped ? `<path d="M-50 ${hy - 14} Q-48 ${hy - 62} 0 ${hy - 62} Q48 ${hy - 62} 50 ${hy - 14} Z" fill="${capCol}" stroke="${O}" stroke-width="5"/><path d="M40 ${hy - 20} L76 ${hy - 12} L44 ${hy - 4}" fill="${capCol}" stroke="${O}" stroke-width="5" stroke-linejoin="round"/>${who !== "friend" ? `<circle cx="-8" cy="${hy - 38}" r="7" fill="#fff"/>` : ""}`
     : who === "teacher" ? `<path d="M-40 ${hy - 30} Q0 ${hy - 70} 40 ${hy - 30}" stroke="#8a8f99" stroke-width="10" fill="none" stroke-linecap="round"/>`
     : `<path d="M-4 ${hy - 50} Q-2 ${hy - 82} 18 ${hy - 76} Q2 ${hy - 70} 6 ${hy - 50}" fill="${O}"/>`;
   const glasses = who === "teacher" ? `<g transform="translate(0 ${hy})"><circle cx="-17" cy="-4" r="14" fill="none" stroke="${O}" stroke-width="4"/><circle cx="17" cy="-4" r="14" fill="none" stroke="${O}" stroke-width="4"/><path d="M-3 -4 L3 -4" stroke="${O}" stroke-width="4"/></g>` : "";
-  return `<g transform="translate(${x} ${y}) scale(${s}) rotate(${lean})">
+  // her long hair hangs behind the head and shoulders, so it's drawn first
+  const hairBack = who === "girl" ? `<path d="M-58 ${hy - 4} Q-74 ${hy + 60} -60 ${hy + 92} Q-40 ${hy + 100} -30 ${hy + 70} L30 ${hy + 70} Q40 ${hy + 100} 60 ${hy + 92} Q74 ${hy + 60} 58 ${hy - 4} Z" fill="#7a4a2a" stroke="${O}" stroke-width="5" stroke-linejoin="round"/>` : "";
+  return `<g transform="translate(${x} ${y}) scale(${s}) rotate(${lean})">${hairBack}
     <path d="${legP}" stroke="${O}" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="${L1.path}" stroke="${O}" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     ${body}
@@ -70,7 +73,8 @@ function stick({ x, y, s = 1, who = "you", face = "neutral", la = [10, 10], ra =
     ${who === "mom" ? hair : ""}
     <circle cx="0" cy="${hy}" r="54" fill="#fff" stroke="${O}" stroke-width="6"/>
     ${who === "mom" ? `<path d="M-50 ${hy - 10} Q-30 ${hy - 60} 30 ${hy - 50} Q50 ${hy - 40} 52 ${hy - 10} Q20 ${hy - 40} -50 ${hy - 10} Z" fill="#1d1b26"/>` : hair}
-    <g transform="translate(0 ${hy})" fill="${O}">${FACES[face]}</g>${glasses}
+    <g transform="translate(0 ${hy})" fill="${O}">${FACES[face]}${who === "girl" ? `<path d="M-26 -14 L-32 -20 M-20 -17 L-23 -24 M26 -14 L32 -20 M20 -17 L23 -24" stroke="${O}" stroke-width="3" stroke-linecap="round"/><circle cx="-30" cy="14" r="7" fill="#f4a3a3" opacity=".7"/><circle cx="30" cy="14" r="7" fill="#f4a3a3" opacity=".7"/>` : ""}</g>${glasses}
+    ${who === "homeboy" || who === "girl" ? `<path d="M-20 ${top + 4} Q0 ${top + 34} 20 ${top + 4}" stroke="#e3b04b" stroke-width="6" fill="none"/><circle cx="0" cy="${top + 26}" r="7" fill="#e3b04b" stroke="${O}" stroke-width="2"/>` : ""}
     ${hold ? `<g transform="translate(${hold === "L" ? L1.hx : R1.hx} ${hold === "L" ? L1.hy : R1.hy})">${PHONE_SMALL}</g>` : ""}
     <circle cx="${L1.hx}" cy="${L1.hy}" r="8" fill="${O}"/><circle cx="${R1.hx}" cy="${R1.hy}" r="8" fill="${O}"/></g>`;
 }
@@ -160,119 +164,125 @@ function phoneBig(x, y, w, inner, rot = 0, extra = "") {
 const reel = (n) => `<img src="${n}.png" style="width:100%;height:100%;object-fit:cover;display:block">`;
 
 // ---------------- shots ----------------
-// drawn above the zooming layer (the GPU renderer duplicated this stamp when it sat inside it)
-const OVER = { gimmick: (t, lt) => svg(stamp(360, 300, "GIMMICK?", lt - 0.4)) };
+// drawn above the zooming layer (the GPU renderer duplicated stamps when they sat inside it)
+const OVER = {
+  prank: (t, lt) => svg(stamp(360, 260, "PRANK?", lt - 0.3) + (t > wordAt("prank", "real") ? stamp(360, 400, "100% REAL", t - wordAt("prank", "real"), "#22c55e", 5) : "")),
+};
+const HB = (o) => stick({ who: "homeboy", ...o }), GIRL = (o) => stick({ who: "girl", ...o });
+const mirrorAt = (x, y, inner) => `<g transform="translate(${x} ${y})"><ellipse rx="120" ry="230" fill="#e9b949" stroke="${O}" stroke-width="6"/><ellipse rx="100" ry="210" fill="#cfe9f5" stroke="${O}" stroke-width="4"/>
+  <clipPath id="mclip"><ellipse rx="100" ry="210"/></clipPath><g clip-path="url(#mclip)">${inner}</g><path d="M-70 -120 L-30 -170 M-60 -60 L0 -140" stroke="#fff" stroke-width="10" opacity=".6"/>
+  <path d="M-60 228 L-90 300 M60 228 L90 300" stroke="${O}" stroke-width="10"/></g>`;
 const SHOTS = {
-  hook(t, lt) { // night, he's asleep, the textbook on the nightstand
-    return svg(bedroom(t) + stick({ x: 340, y: 800, s: 0.66, face: "sleep", lean: -90, la: [5, 5], ra: [5, 5] }) + blanket + textbook(615, 852, 0.8) + zzz(150, 700, t)); },
-  book(t, lt) { // the book starts to glow
-    const g = clamp(lt / 1.2);
-    return svg(bedroom(t) + stick({ x: 340, y: 800, s: 0.66, face: "sleep", lean: -90, la: [5, 5], ra: [5, 5] }) + blanket + textbook(615, 852, 0.8 + 0.15 * g, g) + sparkles(615, 830, t, 22, 150, g)); },
-  turn(t, lt) { // FWOOMP: it turns into a phone full of reels
-    const f = clamp(lt / 0.25), k = ease((lt - 0.2) / 0.4);
-    return `<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%, #e9fffa 0%, ${TEAL} 30%, #12335a 75%)"></div>`
-      + svg(Array.from({ length: 24 }, (_, i) => { const a = (i / 24) * Math.PI * 2 + lt * 0.4; return `<path d="M360 560 L${360 + Math.cos(a) * 900} ${560 + Math.sin(a) * 900} L${360 + Math.cos(a + 0.08) * 900} ${560 + Math.sin(a + 0.08) * 900} Z" fill="#fff" opacity=".18"/>`; }).join("") + sparkles(360, 560, t, 30, 300))
-      + phoneBig(250, 330, 220, reel("mito"), mix(-20, -4, k), `transform:scale(${mix(0.2, 1, outBack(k))});transform-origin:50% 50%`)
-      + sfx(220, 180, "FWOOMP", (lt - 0.05) / 0.2, "#fff", -6, 60)
-      + `<div style="position:absolute;inset:0;background:#fff;opacity:${(1 - f) * 0.9}"></div>`; },
-  alarm(t, lt) { // 7:00 AM, BIO TEST TODAY
-    const ring = Math.sin(t * 60) * 4 * (lt < 1.4 ? 1 : 0);
-    return svg(bedroom(t, { dawn: 1 }) + stick({ x: 340, y: 800, s: 0.66, face: "sleep", lean: -90, la: [5, 5], ra: [5, 5] }) + blanket + phoneSmallOnStand())
-      + A(150, 120, `<div style="background:#1a1220;border:6px solid ${O};border-radius:18px;padding:10px 26px;font:800 110px Arc;color:#ff4d4d;text-shadow:0 0 18px rgba(255,77,77,.6);transform:rotate(${ring * 0.5 - 2}deg)">7:00<span style="font-size:36px">AM</span></div>`, pop(lt / 0.25))
-      + A(230, 330, `<div style="background:#fff;border:5px solid ${O};border-radius:10px;width:250px;text-align:center;overflow:hidden;transform:rotate(3deg)"><div style="background:#e23b3b;color:#fff;font:800 24px Arc;padding:6px">TODAY</div><div style="font:800 40px/1.1 Arc;color:${O};padding:12px">BIO<br>TEST</div></div>`, pop((t - wordAt("alarm", "bio")) / 0.25))
-      + sfx(440, 760, "BRRRING", (lt - 0.1) / 0.2, "#ffd23f", 8, 40); },
-  open(t, lt) { // sitting up in bed, the book open, blank stare
-    const look = lt > 1.5 ? "blank" : "neutral";
-    return svg(bedroom(t, { dawn: 1 }) + stick({ x: 300, y: 900, s: 0.95, face: look, legs: "sit", la: [40, 70], ra: [40, 70] }) + blanketLow
-      + `<g transform="translate(300 690)"><path d="M-110 0 L0 20 L110 0 L110 120 L0 140 L-110 120 Z" fill="#fff" stroke="${O}" stroke-width="6" stroke-linejoin="round"/><path d="M0 20 L0 140" stroke="${O}" stroke-width="5"/>
-        ${[0, 1, 2, 3, 4].map((i) => `<path d="M-95 ${30 + i * 18} L-15 ${40 + i * 18} M15 ${40 + i * 18} L95 ${30 + i * 18}" stroke="#bbb" stroke-width="5"/>`).join("")}</g>`)
-      + A(470, 360, `<div style="font:800 30px Arc;color:#fff;background:#e23b3b;border:4px solid ${O};border-radius:10px;padding:6px 14px;transform:rotate(6deg)">PAGE 1 / 40</div>`, pop((lt - 0.3) / 0.25))
-      + (lt > 1.5 ? speech(80, 330, "...huh?", (lt - 1.5) / 0.2, 160) : ""); },
-  panic(t, lt) { // AAAAH
-    const sh = Math.sin(t * 70) * 6;
-    return svg(bedroom(t, { dawn: 1 }) + `<g transform="translate(${sh} 0)">${stick({ x: 360, y: 980, s: 1.25, face: "panic", la: [150, 20], ra: [150, 20] })}</g>`
-      + burst(360, 300, "AAAAH!!", (lt - 0.05) / 0.25, "#ffd23f", 66)); },
-  memory(t, lt) { // MEMORY SEARCH: chapter 4 → 0 matches
-    const items = [["CLASS NOTES?", "📒"], ["LECTURE?", "🧑‍🏫"], ["TEXTBOOK?", "📕"]];
+  hook(t, lt) { // night: your homeboy asleep; sparkles gather
+    const g = clamp((lt - 1.4) / 1.4);
+    return svg(bedroom(t) + HB({ x: 340, y: 800, s: 0.66, face: "sleep", lean: -90, la: [5, 5], ra: [5, 5] }) + blanket + zzz(150, 700, t) + sparkles(250, 760, t, 26, 200, g))
+      + A(470, 520, `<div style="background:#d9412f;color:#fff;border:4px solid ${O};border-radius:12px;padding:6px 14px;font:800 26px Arc;transform:rotate(-4deg)">HOMEBOY</div>`, pop((lt - 0.4) / 0.25)); },
+  turn(t, lt) { // a glowing silhouette swaps from him to her
+    const f = clamp(lt / 0.2), sw = lt > 0.9, sil = lt < 1.5;
+    return `<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 48%, #f2fffb 0%, ${TEAL} 28%, #12335a 75%)"></div>`
+      + svg(Array.from({ length: 24 }, (_, i) => { const a = (i / 24) * Math.PI * 2 + lt * 0.4; return `<path d="M360 600 L${360 + Math.cos(a) * 900} ${600 + Math.sin(a) * 900} L${360 + Math.cos(a + 0.08) * 900} ${600 + Math.sin(a + 0.08) * 900} Z" fill="#fff" opacity=".18"/>`; }).join("") + sparkles(360, 600, t, 30, 300))
+      + `<div style="position:absolute;inset:0;${sil ? "filter:brightness(0) invert(1) drop-shadow(0 0 30px #fff)" : ""}">${svg((sw ? GIRL : HB)({ x: 360, y: 1060, s: 1.5, face: sw ? "shock" : "sleep", la: [60, 20], ra: [60, 20] }))}</div>`
+      + sfx(230, 170, "FWOOMP", (lt - 0.85) / 0.2, "#fff", -6, 60)
+      + `<div style="position:absolute;inset:0;background:#fff;opacity:${(1 - f) * 0.9 + (Math.max(0, 1 - Math.abs(lt - 0.9) / 0.12)) * 0.8}"></div>`; },
+  mirror(t, lt) { // she sees herself in the mirror
+    return svg(bedroom(t, { dawn: 1 }) + GIRL({ x: 230, y: 1000, s: 1.0, face: "shock", la: [160, 20], ra: [150, 30] })
+      + mirrorAt(520, 700, `<g transform="scale(-1 1) translate(-30 0)">${GIRL({ x: 0, y: 300, s: 0.9, face: "shock", la: [160, 20], ra: [150, 30] })}</g>`))
+      + sfx(160, 330, "?!", (lt - 0.2) / 0.2, "#ffd23f", -8, 80); },
+  call(t, lt) { // 7 AM, your phone rings: HOMEBOY
+    const v = Math.sin(t * 80) * 4;
+    return svg(bedroom(t, { dawn: 1 }) + stick({ x: 340, y: 800, s: 0.66, face: "sleep", lean: -90, la: [5, 5], ra: [5, 5] }) + blanket)
+      + A(150, 110, `<div style="background:#1a1220;border:6px solid ${O};border-radius:18px;padding:8px 24px;font:800 96px Arc;color:#ff4d4d;text-shadow:0 0 18px rgba(255,77,77,.6)">7:00<span style="font-size:32px">AM</span></div>`, pop(lt / 0.25))
+      + phoneBig(440, 420, 210, `<div style="position:absolute;inset:0;background:linear-gradient(#2a3350,#151a2c);display:flex;flex-direction:column;align-items:center;padding-top:40px;font:800 18px Arc;color:#cfd6f0">incoming call
+        <div style="width:90px;height:90px;border-radius:50%;background:#fff;border:4px solid ${O};margin:18px 0 10px;position:relative;overflow:hidden"><svg width="90" height="90" viewBox="-60 -70 120 120">${`<circle r="44" fill="#fff"/><path d="M-44 -10 Q-42 -52 0 -52 Q42 -52 44 -10 Z" fill="#1d1b26"/><circle cx="-14" cy="0" r="5"/><circle cx="14" cy="0" r="5"/><path d="M-10 18 Q0 26 10 18" stroke="${O}" stroke-width="4" fill="none"/>`}</svg></div>
+        <div style="font-size:26px;color:#fff">HOMEBOY</div><div style="display:flex;gap:40px;margin-top:auto;margin-bottom:40px"><div style="width:52px;height:52px;border-radius:50%;background:#e23b3b"></div><div style="width:52px;height:52px;border-radius:50%;background:#22c55e"></div></div></div>`, v * 0.4)
+      + sfx(430, 330, "RING RING", (lt - 0.1) / 0.2, "#ffd23f", 6, 40); },
+  answer(t, lt) { // "...hello?" then: a girl SCREAMING your name
+    const cut = t > wordAt("answer", "girl") - 0.1;
+    if (!cut) return svg(bedroom(t, { dawn: 1 }) + stick({ x: 300, y: 960, s: 1.0, face: "sleep", legs: "sit", la: [30, 20], ra: [150, 120], hold: "R" }) + blanketLow) + speech(380, 380, "...hello?", (lt - 0.2) / 0.2, 180, true);
+    const k = t - wordAt("answer", "girl"), sh = Math.sin(t * 70) * 6;
+    return svg(bedroom(t, { dawn: 1 }) + `<g transform="translate(${sh} 0)">${GIRL({ x: 360, y: 1000, s: 1.25, face: "panic", la: [150, 20], ra: [160, 60], hold: "R" })}</g>` + burst(360, 300, "AAAAH!!", k / 0.25, "#ffd23f", 66)); },
+  memory(t, lt) { // MEMORY SEARCH: who is this? → 0 matches
+    const face = (hat) => `<svg width="110" height="110" viewBox="-60 -64 120 120"><circle r="44" fill="#fff" stroke="${O}" stroke-width="5"/>${hat}<circle cx="-14" cy="0" r="5"/><circle cx="14" cy="0" r="5"/><path d="M-10 18 L10 18" stroke="${O}" stroke-width="4"/></svg>`;
+    const items = [["TEACHER?", face(`<circle cx="-14" cy="0" r="12" fill="none" stroke="${O}" stroke-width="3"/><circle cx="14" cy="0" r="12" fill="none" stroke="${O}" stroke-width="3"/>`)], ["COUSIN?", face(`<path d="M-40 -16 Q-30 -52 0 -50 Q30 -52 40 -16" fill="#7a4a2a"/>`)], ["CASHIER?", face(`<rect x="-46" y="-48" width="92" height="20" fill="#2e8b57"/>`)]];
     const bar = clamp(lt / 1.6);
     return svg(darkUI(t) + stick({ x: 360, y: 1180, s: 1.1, face: "blank", la: [20, 140], ra: [10, 10] }))
-      + A(70, 210, `<div style="width:580px;background:#0f1530;border:4px solid ${TEAL};border-radius:22px;padding:22px;box-sizing:border-box;box-shadow:0 0 30px rgba(94,242,196,.35)">
-        <div style="font:800 26px Arc;color:${TEAL};text-align:center;letter-spacing:2px">MEMORY SEARCH: CHAPTER 4</div>
-        <div style="display:flex;justify-content:space-around;margin-top:20px">${items.map(([n, e], i) => { const x = (lt - 0.4 - i * 0.45) / 0.2;
-          return `<div style="text-align:center;width:160px"><div style="width:120px;height:120px;margin:0 auto;border-radius:18px;background:#1e2850;border:3px solid #3a4a80;position:relative;font-size:64px;line-height:120px">${e}
-            <svg width="120" height="120" style="opacity:${clamp(x * 3)}"><path d="M20 20 L100 100 M100 20 L20 100" stroke="#ff4d4d" stroke-width="14" stroke-linecap="round"/></svg></div>
+      + A(70, 200, `<div style="width:580px;background:#0f1530;border:4px solid ${TEAL};border-radius:22px;padding:22px;box-sizing:border-box;box-shadow:0 0 30px rgba(94,242,196,.35)">
+        <div style="font:800 26px Arc;color:${TEAL};text-align:center;letter-spacing:2px">MEMORY SEARCH</div>
+        <div style="display:flex;justify-content:space-around;margin-top:20px">${items.map(([n, f], i) => { const x = (lt - 0.4 - i * 0.45) / 0.2;
+          return `<div style="text-align:center;width:160px"><div style="width:120px;height:120px;margin:0 auto;border-radius:18px;background:#1e2850;border:3px solid #3a4a80;position:relative;display:flex;align-items:center;justify-content:center">${f}
+            <svg width="120" height="120" style="position:absolute;left:0;top:0;opacity:${clamp(x * 3)}"><path d="M20 20 L100 100 M100 20 L20 100" stroke="#ff4d4d" stroke-width="14" stroke-linecap="round"/></svg></div>
             <div style="font:800 18px Arc;color:#cfd6f0;margin-top:10px">${n}</div></div>`; }).join("")}</div>
         <div style="margin-top:22px;height:16px;border-radius:8px;background:#26305a;overflow:hidden"><div style="height:100%;width:${bar * 100}%;background:${TEAL}"></div></div></div>`)
       + A(210, 560, `<div style="background:#e23b3b;border:4px solid ${O};border-radius:12px;padding:10px 24px;font:800 36px Arc;color:#fff;transform:rotate(-3deg)">0 MATCHES</div>`, pop((lt - 1.7) / 0.25)); },
-  buzz(t, lt) { // the phone on the nightstand buzzes
-    const v = Math.sin(t * 80) * 5;
-    return svg(bedroom(t, { dawn: 1 }) + stick({ x: 230, y: 960, s: 0.95, face: "neutral", legs: "sit", la: [40, 70], ra: [30, 20] }) + blanketLow)
-      + phoneBig(400, 300, 240, `<div style="position:absolute;left:10px;right:10px;top:60px;background:#fff;border-radius:16px;padding:14px;font:800 22px/1.25 Arc;color:${O}"><div style="color:#2e8b57">unspool</div>Your chapter is ready: 9 reels</div>`, v * 0.4)
-      + sfx(380, 220, "BZZT BZZT", (lt - 0.05) / 0.2, "#ffd23f", -4, 38); },
-  itsit(t, lt) { // lightbulb: it's the chapter!
-    const lines24 = Array.from({ length: 30 }, (_, i) => { const a = (i / 30) * Math.PI * 2; return `<path d="M360 600 L${360 + Math.cos(a) * 900} ${600 + Math.sin(a) * 900}" stroke="#fff" stroke-width="${3 + (i % 3) * 3}" opacity=".35"/>`; }).join("");
+  itsit(t, lt) { // your nickname: it's HIM
+    const rays = Array.from({ length: 30 }, (_, i) => { const a = (i / 30) * Math.PI * 2; return `<path d="M360 600 L${360 + Math.cos(a) * 900} ${600 + Math.sin(a) * 900}" stroke="#fff" stroke-width="${3 + (i % 3) * 3}" opacity=".35"/>`; }).join("");
+    const him = t > wordAt("itsit", "it's");
     return `<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 46%, #2d4aa8, #0d1438 70%)"></div>`
-      + svg(lines24 + stick({ x: 360, y: 1140, s: 1.6, face: "shock", la: [10, 10], ra: [160, 30] })
-        + `<g transform="translate(510 300) scale(${outBack((lt - 0.2) / 0.3)})"><circle r="44" fill="#ffe36a" stroke="${O}" stroke-width="6"/><rect x="-18" y="40" width="36" height="26" fill="#bbb" stroke="${O}" stroke-width="5"/>${[0, 1, 2, 3, 4].map((i) => { const a = -Math.PI / 2 + (i - 2) * 0.55; return `<path d="M${Math.cos(a) * 60} ${Math.sin(a) * 60} L${Math.cos(a) * 84} ${Math.sin(a) * 84}" stroke="#ffe36a" stroke-width="8" stroke-linecap="round"/>`; }).join("")}</g>`)
-      + sfx(150, 230, "!!", (lt - 0.1) / 0.2, "#ffd23f", 0, 80); },
-  before(t, lt) { // BEFORE / AFTER card
-    const tags = [["SAME FACTS", wordAt("before", "same")], ["SAME DIAGRAMS", wordAt("before", "diagrams")], ["SAME CHAPTER", wordAt("before", "somehow")]];
+      + svg(rays + stick({ x: 360, y: 1140, s: 1.6, face: him ? "shock" : "neutral", la: [10, 10], ra: [160, 30] })
+        + (him ? `<g transform="translate(510 300) scale(${outBack((t - wordAt("itsit", "it's")) / 0.3)})"><circle r="44" fill="#ffe36a" stroke="${O}" stroke-width="6"/><rect x="-18" y="40" width="36" height="26" fill="#bbb" stroke="${O}" stroke-width="5"/>${[0, 1, 2, 3, 4].map((i) => { const a = -Math.PI / 2 + (i - 2) * 0.55; return `<path d="M${Math.cos(a) * 60} ${Math.sin(a) * 60} L${Math.cos(a) * 84} ${Math.sin(a) * 84}" stroke="#ffe36a" stroke-width="8" stroke-linecap="round"/>`; }).join("")}</g>` : ""))
+      + speech(70, 200, "bro... it's me. TUNA.", (lt - 0.1) / 0.25, 300)
+      + (him ? sfx(560, 170, "!!", (t - wordAt("itsit", "it's")) / 0.2, "#ffd23f", 0, 80) : ""); },
+  before(t, lt) { // BEFORE / AFTER: same cap, same hoodie, same chain
+    const tags = [["SAME CAP", wordAt("before", "same")], ["SAME HOODIE", wordAt("before", "hoodie")], ["SAME CHAIN", wordAt("before", "chain")]];
     const tr = clamp((t - wordAt("before", "transformed")) / 0.8);
     const card = (label, col, inner, k) => `<div style="width:250px;height:440px;background:${col};border:5px solid ${O};border-radius:22px;position:relative;overflow:hidden;${pop(k)}">
-      <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#fff;border:3px solid ${O};border-radius:10px;padding:4px 14px;font:800 20px Arc;color:${O}">${label}</div>${inner}</div>`;
+      <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#fff;border:3px solid ${O};border-radius:10px;padding:4px 14px;font:800 20px Arc;color:${O};z-index:2">${label}</div>${inner}</div>`;
     return svg(darkUI(t))
-      + A(90, 150, `<div style="display:flex;gap:40px">${card("BEFORE", "#2b3150", `<svg width="250" height="440">${textbook(125, 260, 1.3)}<text x="125" y="380" text-anchor="middle" font-family="Arc" font-size="26" fill="#cfd6f0">40 PAGES</text></svg>`, lt / 0.3)}
-        ${card("AFTER", "#1f6f68", `<div style="position:absolute;left:55px;top:70px;width:140px;height:280px;border-radius:18px;border:4px solid ${O};overflow:hidden;background:#111">${reel("mito")}</div><div style="position:absolute;bottom:26px;width:100%;text-align:center;font:800 26px Arc;color:#fff">9 REELS</div>`, (lt - 0.2) / 0.3)}</div>`)
-      + A(90, 620, `<div style="width:540px;display:flex;flex-wrap:wrap;justify-content:center;gap:10px">${tags.map(([w, at]) => `<div style="background:#fff;border:3px solid ${O};border-radius:999px;padding:6px 18px;font:800 22px Arc;color:${O};${pop((t - at) / 0.25)}">✓ ${w}</div>`).join("")}</div>`)
+      + A(90, 150, `<div style="display:flex;gap:40px">${card("BEFORE", "#2b3150", `<svg width="250" height="440" viewBox="0 0 250 440">${HB({ x: 125, y: 420, s: 0.95, face: "smug", la: [20, 20], ra: [20, 20] })}</svg>`, lt / 0.3)}
+        ${card("AFTER", "#1f6f68", `<svg width="250" height="440" viewBox="0 0 250 440">${GIRL({ x: 125, y: 420, s: 0.95, face: "happy", la: [20, 20], ra: [20, 20] })}</svg>`, (lt - 0.2) / 0.3)}</div>`)
+      + A(60, 620, `<div style="width:600px;display:flex;flex-wrap:wrap;justify-content:center;gap:10px">${tags.map(([w, at]) => `<div style="background:#fff;border:3px solid ${O};border-radius:999px;padding:6px 18px;font:800 22px Arc;color:${O};${pop((t - at) / 0.25)}">✓ ${w}</div>`).join("")}</div>`)
       + A(140, 760, `<div style="width:440px;height:26px;border-radius:13px;background:#26305a;border:3px solid ${O};overflow:hidden;position:relative"><div style="height:100%;width:${tr * 100}%;background:linear-gradient(90deg,${TEAL},#7f8cff)"></div><div style="position:absolute;inset:0;text-align:center;font:800 15px/22px Arc;color:#fff">TRANSFORMED ${Math.round(tr * 100)}%</div></div>`, `opacity:${tr > 0 ? 1 : 0}`); },
-  gimmick(t, lt) { // GIMMICK? with a magnifying glass
-    return svg(bedroom(t, { dawn: 1 }) + stick({ x: 330, y: 1000, s: 1.15, face: "smug", la: [30, 120], ra: [60, 100], hold: "L" })
-      + `<g transform="translate(470 560)"><circle r="44" fill="#bfe4f6" opacity=".6" stroke="${O}" stroke-width="10"/><path d="M30 32 L80 86" stroke="#7b5440" stroke-width="16" stroke-linecap="round"/></g>`); },
-  quiz(t, lt) { // the reel's quiz, then 100% REAL
-    const q = t - wordAt("quiz", "quiz"), ok = t - wordAt("quiz", "get");
-    return svg(darkUI(t))
-      + phoneBig(190, 190, 340, `<div style="position:absolute;inset:0;background:linear-gradient(#1f3b48,#122229);padding:40px 22px;box-sizing:border-box">
-        <div style="font:800 22px Arc;color:${LIME};letter-spacing:1px">QUICK CHECK</div><div style="font:800 30px/1.2 Arc;color:#fff;margin-top:14px">What do mitochondria make?</div>
-        ${["Glucose", "ATP", "DNA"].map((a, i) => { const right = i === 1 && ok > 0; return `<div style="margin-top:16px;border:3px solid ${right ? TEAL : "#3d5a66"};background:${right ? "rgba(94,242,196,.18)" : "transparent"};border-radius:14px;padding:14px 18px;font:800 26px Arc;color:#fff;display:flex;justify-content:space-between;${pop((q - i * 0.12) / 0.25)}">${a}${right ? `<span style="color:${TEAL}">✓</span>` : ""}</div>`; }).join("")}</div>`)
-      + (ok > 0.2 ? svg(stamp(360, 140, "100% REAL", ok - 0.2, "#22c55e", -6)) : ""); },
-  breakfast(t, lt) { // mom: "morning, champ." you: scrolling
-    return svg(kitchen() + stick({ x: 150, y: 1010, s: 1.0, who: "mom", face: "happy", la: [20, 30], ra: [60, 80] }) + stick({ x: 520, y: 1010, s: 0.95, face: "happy", legs: "sit", la: [30, 120], ra: [20, 140], hold: "R" }))
-      + speech(60, 420, "morning, champ.", (lt - 0.2) / 0.25, 230)
-      + (t > wordAt("breakfast", "mom") ? A(400, 560, `<div style="font:800 28px Arc;color:${O};background:#fff;border:3px solid ${O};border-radius:10px;padding:6px 14px;transform:rotate(-4deg)">nothing unusual</div>`, pop((t - wordAt("breakfast", "mom")) / 0.25)) : ""); },
-  funny(t, lt) { // the funniest part: laughing on a yellow burst
+  prank(t, lt) { // PRANK? ... no: 100% REAL (she shows up at the door)
+    const real = t > wordAt("prank", "real");
+    return svg(bedroom(t, { dawn: 1 }) + stick({ x: 250, y: 1000, s: 1.1, face: real ? "shock" : "smug", la: [30, 120], ra: [60, 100], hold: "L" })
+      + (real ? GIRL({ x: 520, y: 1000, s: 1.0, face: "happy", la: [20, 20], ra: [150, 30] }) : `<g transform="translate(470 560)"><circle r="44" fill="#bfe4f6" opacity=".6" stroke="${O}" stroke-width="10"/><path d="M30 32 L80 86" stroke="#7b5440" stroke-width="16" stroke-linecap="round"/></g>`))
+      + (real ? speech(400, 520, "yo bro, what's good?", (t - wordAt("prank", "real") - 0.2) / 0.25, 250, true) : ""); },
+  today(t, lt) { // and the bio test is TODAY
+    return svg(bedroom(t, { dawn: 1 }) + GIRL({ x: 360, y: 1020, s: 1.15, face: "panic", la: [150, 20], ra: [150, 20] }))
+      + A(200, 200, `<div style="background:#fff;border:6px solid ${O};border-radius:14px;width:320px;text-align:center;overflow:hidden;transform:rotate(-3deg)"><div style="background:#e23b3b;color:#fff;font:800 34px Arc;padding:8px">TODAY</div><div style="font:800 64px/1.05 Arc;color:${O};padding:16px">BIO<br>TEST</div></div>`, pop(lt / 0.25)); },
+  mission(t, lt) { // MISSION: TURN BACK → no results
+    const q = "how to turn back into a guy", typed = q.slice(0, Math.floor(Math.max(0, lt - 0.6) * 22));
+    return svg(darkUI(t) + GIRL({ x: 360, y: 1190, s: 1.05, face: "blank", la: [30, 150], ra: [10, 10] }))
+      + A(150, 150, `<div style="background:#14121c;border:4px solid #e23b3b;border-radius:12px;padding:10px 22px;font:800 34px Arc;color:#fff">MISSION: <span style="color:#ff6b5b">TURN BACK</span></div>`, pop(lt / 0.25))
+      + A(80, 300, `<div style="width:560px;background:#fff;border:5px solid ${O};border-radius:18px;padding:20px;box-sizing:border-box">
+        <div style="border:3px solid #ccd;border-radius:999px;padding:12px 18px;font:800 24px Arc;color:${O}">🔍 ${typed}<span style="opacity:${Math.floor(lt * 3) % 2}">|</span></div>
+        <div style="text-align:center;font:800 30px Arc;color:#8a90a8;margin:34px 0 14px;opacity:${typed.length === q.length ? 1 : 0}">No results found :(</div></div>`, pop((lt - 0.2) / 0.25)); },
+  funny(t, lt) { // the funniest part
     const rays = Array.from({ length: 20 }, (_, i) => { const a = (i / 20) * Math.PI * 2 + lt * 0.5; return `<path d="M360 640 L${360 + Math.cos(a) * 900} ${640 + Math.sin(a) * 900} L${360 + Math.cos(a + 0.14) * 900} ${640 + Math.sin(a + 0.14) * 900} Z" fill="#ffe36a"/>`; }).join("");
     const shake = Math.sin(t * 30) * 4;
     return `<div style="position:absolute;inset:0;background:#f9c933"></div>` + svg(rays + `<g transform="translate(0 ${shake})">${stick({ x: 360, y: 1180, s: 1.7, face: "laugh", la: [40, 120], ra: [40, 120] })}</g>`)
       + sfx(90, 260, "HA", (lt - 0.1) / 0.2, "#fff", -12, 56) + sfx(520, 330, "HA", (lt - 0.3) / 0.2, "#fff", 10, 56) + sfx(470, 820, "HA", (lt - 0.5) / 0.2, "#fff", -6, 48); },
-  couch(t, lt) { // same couch, same snacks, same scrolling
+  couch(t, lt) { // he still acts exactly the same
     const chip = (w, k) => `<div style="background:#fff;border:3px solid ${O};border-radius:999px;padding:8px 18px;font:800 26px Arc;color:${O};${pop(k)}">${w}</div>`;
-    return svg(living() + stick({ x: 250, y: 990, s: 0.95, face: "smug", legs: "sit", la: [30, 120], ra: [20, 130], hold: "R" }) + stick({ x: 500, y: 990, s: 0.95, who: "friend", face: "neutral", legs: "sit", la: [20, 30], ra: [30, 110] })
-      + `<g transform="translate(520 860)"><path d="M-40 -60 L40 -60 L30 20 L-30 20 Z" fill="#e23b3b" stroke="${O}" stroke-width="5"/><text y="-20" text-anchor="middle" font-family="Arc" font-size="18" fill="#fff">CHIPS</text></g>` + couchFront)
+    return svg(living() + stick({ x: 230, y: 990, s: 0.95, face: "smug", legs: "sit", la: [20, 30], ra: [30, 110] }) + GIRL({ x: 490, y: 990, s: 0.92, face: "happy", legs: "sit", la: [30, 120], ra: [20, 130], hold: "R" })
+      + `<g transform="translate(330 880)"><path d="M-40 -60 L40 -60 L30 20 L-30 20 Z" fill="#e23b3b" stroke="${O}" stroke-width="5"/><text y="-20" text-anchor="middle" font-family="Arc" font-size="18" fill="#fff">CHIPS</text></g>` + couchFront)
       + A(60, 450, `<div style="width:600px;display:flex;flex-wrap:wrap;justify-content:center;gap:10px">${chip("same couch", (t - wordAt("couch", "couch")) / 0.25)}${chip("same snacks", (t - wordAt("couch", "snacks")) / 0.25)}${chip("same scrolling", (t - wordAt("couch", "scrolling")) / 0.25)}</div>`); },
-  couch2(t, lt) { // ayo, powerhouse of the cell? mitochondria, bro.
-    return svg(living() + stick({ x: 250, y: 990, s: 0.95, face: "smug", legs: "sit", la: [30, 120], ra: [20, 130], hold: "R" }) + stick({ x: 500, y: 990, s: 0.95, who: "friend", face: "shock", legs: "sit", la: [20, 30], ra: [30, 110] }) + couchFront)
-      + speech(390, 470, "ayo... powerhouse of the cell?", lt / 0.25, 260, true)
-      + speech(70, 600, "mitochondria, bro.", (lt - 0.8) / 0.25, 230); },
-  test(t, lt) { // teacher hands back an A; everyone: HOW??
-    const d = t - wordAt("test", "everyone");
-    return svg(classroom() + stick({ x: 170, y: 1020, s: 1.0, who: "teacher", face: "happy", la: [10, 10], ra: [70, 40] }) + stick({ x: 420, y: 1020, s: 1.0, face: "grin", la: [60, 60], ra: [20, 10] })
-      + (d > 0 ? stick({ x: 600, y: 1030, s: 0.85, who: "friend", face: "shock", la: [150, 20], ra: [150, 20] }) : "")
-      + `<g transform="translate(320 620) rotate(-6)"><rect x="-60" y="-80" width="120" height="160" fill="#fff" stroke="${O}" stroke-width="5"/><text y="20" text-anchor="middle" font-family="Arc" font-size="90" fill="#22c55e">A</text></g>`)
-      + (d > 0 ? burst(520, 520, "HOW??", d / 0.25, "#ffd23f", 50, 6) : ""); },
-  roof(t, lt) { // sunset: "you're sending me the link... right?"
-    return svg(rooftop(t) + stick({ x: 250, y: 1000, s: 1.0, face: "happy", la: [20, 20], ra: [20, 20] }) + stick({ x: 470, y: 1000, s: 1.0, who: "friend", face: "neutral", la: [20, 20], ra: [40, 90] }))
-      + speech(380, 470, "you're sending me the link... right?", (lt - 0.2) / 0.25, 270, true); },
-  roof2(t, lt) { // "always, bro."
-    return svg(rooftop(t) + stick({ x: 250, y: 1000, s: 1.0, face: "grin", la: [20, 20], ra: [70, 60] }) + stick({ x: 470, y: 1000, s: 1.0, who: "friend", face: "happy", la: [60, 60], ra: [40, 90] }))
-      + speech(70, 520, "always, bro.", (lt - 0.1) / 0.25, 200)
-      + sfx(560, 360, "?", (lt - 0.9) / 0.2, "#fff", 8, 70) + sfx(130, 330, "?", (lt - 1.2) / 0.2, "#ffd23f", -8, 60); },
+  couch2(t, lt) { // ...but the scroll is his bio chapter on Unspool
+    const ph = (t - wordAt("couch2", "scroll")) / 0.3;
+    return svg(living() + stick({ x: 230, y: 990, s: 0.95, face: lt > 2.6 ? "shock" : "neutral", legs: "sit", la: [20, 30], ra: [30, 110] }) + GIRL({ x: 490, y: 990, s: 0.92, face: "smug", legs: "sit", la: [30, 120], ra: [20, 130], hold: "R" }) + couchFront)
+      + phoneBig(250, 120, 200, `${reel("mito")}<div style="position:absolute;left:0;right:0;top:0;background:rgba(0,0,0,.6);color:#fff;font:800 13px Arc;text-align:center;padding:6px">unspool · BIO CH 4 · reel 3 of 9</div>`, -4, pop(ph))
+      + speech(40, 560, "ayo... powerhouse of the cell?", (lt - 1.9) / 0.25, 260)
+      + speech(400, 600, "mitochondria, bro.", (lt - 2.6) / 0.25, 230, true); },
+  test(t, lt) { // the test comes back: she aces it; you: HOW??
+    const d = t - wordAt("test", "aces");
+    return svg(classroom() + stick({ x: 150, y: 1020, s: 1.0, who: "teacher", face: "happy", la: [10, 10], ra: [70, 40] }) + GIRL({ x: 390, y: 1020, s: 0.95, face: "grin", la: [60, 60], ra: [150, 20] })
+      + stick({ x: 600, y: 1030, s: 0.85, face: d > 0 ? "shock" : "neutral", la: d > 0 ? [150, 20] : [10, 10], ra: d > 0 ? [150, 20] : [10, 10] })
+      + `<g transform="translate(${d > 0 ? 470 : 300} ${d > 0 ? 560 : 640}) rotate(${d > 0 ? 8 : -6})"><rect x="-60" y="-80" width="120" height="160" fill="#fff" stroke="${O}" stroke-width="5"/><text y="20" text-anchor="middle" font-family="Arc" font-size="90" fill="#22c55e">A</text></g>`)
+      + (d > 0 ? burst(540, 330, "HOW??", d / 0.25, "#ffd23f", 50, 6) : ""); },
+  roof(t, lt) { // sunset: "we still bros... right?"
+    return svg(rooftop(t) + stick({ x: 250, y: 1000, s: 1.0, face: "happy", la: [20, 20], ra: [20, 20] }) + GIRL({ x: 470, y: 1000, s: 0.95, face: "neutral", la: [20, 20], ra: [40, 90] }))
+      + speech(390, 480, "we still bros... right?", (lt - 0.2) / 0.25, 250, true)
+      + speech(60, 560, "always, bro.", (lt - 1.6) / 0.25, 200); },
+  roof2(t, lt) {
+    return svg(rooftop(t) + stick({ x: 250, y: 1000, s: 1.0, face: "grin", la: [20, 20], ra: [70, 60] }) + GIRL({ x: 470, y: 1000, s: 0.95, face: "happy", la: [60, 60], ra: [40, 90] }))
+      + sfx(560, 360, "?", (lt - 0.5) / 0.2, "#fff", 8, 70) + sfx(130, 330, "?", (lt - 0.8) / 0.2, "#ffd23f", -8, 60); },
   end(t, lt) { // WHAT WOULD YOU DO?
-    return svg(rooftop(t) + stick({ x: 250, y: 1000, s: 1.0, face: "grin", la: [20, 20], ra: [70, 60] }) + stick({ x: 470, y: 1000, s: 1.0, who: "friend", face: "happy", la: [60, 60], ra: [40, 90] }))
+    return svg(rooftop(t) + stick({ x: 250, y: 1000, s: 1.0, face: "grin", la: [20, 20], ra: [70, 60] }) + GIRL({ x: 470, y: 1000, s: 0.95, face: "happy", la: [60, 60], ra: [40, 90] }))
       + `<div style="position:absolute;inset:0;background:rgba(20,10,30,${0.72 * ease(lt / 0.4)})"></div>`
       + A(90, 300, `<div style="width:540px;text-align:center;font:800 64px/1.05 Arc;color:#fff;-webkit-text-stroke:4px ${O};paint-order:stroke">WHAT WOULD<br><span style="color:${TEAL}">YOU DO?</span></div>`, pop((lt - 0.1) / 0.35))
-      + A(90, 500, `<div style="width:540px;text-align:center;font:800 26px Arc;color:#fff">Tell me in the comments ↓</div>`, pop((lt - 0.4) / 0.3))
-      + A(90, 600, `<div style="width:540px;text-align:center"><span style="display:inline-block;background:${LIME};color:#0f1d18;border:4px solid ${O};border-radius:999px;padding:16px 34px;font:800 34px Arc">Try it free · unspool.cc</span></div>`, pop((lt - 0.8) / 0.3))
-      + A(90, 700, `<div style="width:540px;text-align:center;font:600 22px Arc;color:#e6dff0">Turn any chapter into TikToks with a quiz.</div>`, pop((lt - 1.1) / 0.3)); },
+      + A(90, 470, `<div style="width:540px;text-align:center;font:800 26px Arc;color:#fff">Tell me in the comments ↓</div>`, pop((lt - 0.4) / 0.3))
+      + A(90, 570, `<div style="width:540px;text-align:center"><span style="display:inline-block;background:${LIME};color:#0f1d18;border:4px solid ${O};border-radius:999px;padding:16px 34px;font:800 34px Arc">Try it free · unspool.cc</span></div>`, pop((lt - 0.8) / 0.3))
+      + A(90, 670, `<div style="width:540px;text-align:center;font:600 22px Arc;color:#e6dff0">Turn any chapter into TikToks with a quiz.</div>`, pop((lt - 1.1) / 0.3)); },
 };
 function phoneSmallOnStand() { return `<g transform="translate(615 850)"><rect x="-22" y="-14" width="44" height="18" rx="4" fill="#111"/></g>`; }
 function wordAt(shot, w0) { const l = L(shot), w = l.text.replace(/\*/g, "").split(" "), i = w.findIndex((x) => x.toLowerCase().startsWith(w0)), wl = (x) => x.length + 1;
@@ -293,9 +303,9 @@ function caption(l, t) {
 window.renderAt = (t) => {
   let i = 0; lines.forEach((l, j) => { if (t >= l.s - 0.12) i = j; });
   const l = lines[i], lt = t - (l.s - 0.12);
-  const base = { hook: 1.16, book: 1.16, alarm: 1.15, open: 1.12, buzz: 1.1, gimmick: 1.08, breakfast: 1.06, couch: 1.1, couch2: 1.18, test: 1.08, roof: 1.05, roof2: 1.12 }[l.shot] ?? 1;
+  const base = { hook: 1.16, call: 1.1, answer: 1.08, mirror: 1.05, prank: 1.06, today: 1.05, breakfast: 1.06, couch: 1.1, couch2: 1.0, test: 1.08, roof: 1.05, roof2: 1.12 }[l.shot] ?? 1;
   const zoom = base * (1 + 0.035 * inOut(lt / Math.max(1, l.e - l.s + 0.4)));   // a slow push in on every shot
-  let h = `<div style="position:absolute;inset:0;transform:scale(${zoom});transform-origin:${['hook','book'].includes(l.shot) ? '50% 66%' : '50% 60%'}">${SHOTS[l.shot](t, lt)}</div>`;
+  let h = `<div style="position:absolute;inset:0;transform:scale(${zoom});transform-origin:${['hook','call'].includes(l.shot) ? '50% 66%' : '50% 60%'}">${SHOTS[l.shot](t, lt)}</div>`;
   if (OVER[l.shot]) h += OVER[l.shot](t, lt);
   const flash = Math.max(0, 1 - lt / 0.07) * 0.25; if (i > 0 && flash > 0) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${flash}"></div>`;
   if (t <= l.e + 0.1 && t >= l.s && l.shot !== "end") h += caption(l, t);

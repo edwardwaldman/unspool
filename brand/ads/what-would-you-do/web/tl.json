@@ -1,125 +1,113 @@
 {
- "dur": 54.79,
+ "dur": 56.92,
  "lines": [
   {
    "shot": "hook",
-   "text": "What would you do if you woke up *tomorrow*...",
+   "text": "What would you do if your *homeboy* woke up tomorrow...",
    "s": 0.25,
-   "e": 3.303
-  },
-  {
-   "shot": "book",
-   "text": "and your forty-page *textbook* chapter...",
-   "s": 3.503,
-   "e": 5.178
+   "e": 3.648
   },
   {
    "shot": "turn",
-   "text": "turned into *TikToks*?",
-   "s": 5.378,
-   "e": 6.362
+   "text": "and turned into a *girl*?",
+   "s": 3.848,
+   "e": 6.122
   },
   {
-   "shot": "alarm",
-   "text": "Imagine. It's *7 AM*. Bio test. *Today*.",
-   "s": 6.562,
-   "e": 8.926
+   "shot": "mirror",
+   "text": "Like, a full *girl*.",
+   "s": 6.322,
+   "e": 7.652
   },
   {
-   "shot": "open",
-   "text": "You open the chapter, and your brain goes *blank*.",
-   "s": 9.126,
-   "e": 12.179
+   "shot": "call",
+   "text": "Imagine. *7 AM*. A call from your *best friend*.",
+   "s": 7.852,
+   "e": 10.905
   },
   {
-   "shot": "panic",
-   "text": "Total *panic*.",
-   "s": 12.379,
-   "e": 13.879
+   "shot": "answer",
+   "text": "You answer, and a girl is *screaming* your name.",
+   "s": 11.105,
+   "e": 14.159
   },
   {
    "shot": "memory",
-   "text": "Memory search: chapter four. Absolutely *nothing*.",
-   "s": 14.079,
-   "e": 16.098
-  },
-  {
-   "shot": "buzz",
-   "text": "Then your phone *buzzes*.",
-   "s": 16.298,
-   "e": 17.628
+   "text": "Memory search: absolutely *no idea* who this is.",
+   "s": 14.359,
+   "e": 17.067
   },
   {
    "shot": "itsit",
-   "text": "Wait. It's the *chapter*!",
-   "s": 17.828,
-   "e": 19.757
+   "text": "Then she says your nickname. It's *him*!",
+   "s": 17.267,
+   "e": 20.231
   },
   {
    "shot": "before",
-   "text": "Same facts. Same diagrams. Somehow *transformed* overnight.",
-   "s": 19.957,
-   "e": 22.321
+   "text": "Same cap. Same hoodie. Same chain. Somehow *transformed* overnight.",
+   "s": 20.431,
+   "e": 23.484
   },
   {
-   "shot": "gimmick",
-   "text": "At first, you think it's a *gimmick*.",
-   "s": 22.521,
-   "e": 24.884
+   "shot": "prank",
+   "text": "At first, you think it's a *prank*. But it's *real*.",
+   "s": 23.684,
+   "e": 27.083
   },
   {
-   "shot": "quiz",
-   "text": "But every reel ends with a *quiz*. And you *get it*.",
-   "s": 25.084,
-   "e": 28.828
+   "shot": "today",
+   "text": "And the bio test is *today*.",
+   "s": 27.283,
+   "e": 29.302
   },
   {
-   "shot": "breakfast",
-   "text": "So you scroll at *breakfast*. Mom thinks nothing's *unusual*.",
-   "s": 29.028,
-   "e": 32.081
+   "shot": "mission",
+   "text": "Your homeboy has one *mission*: turn back.",
+   "s": 29.502,
+   "e": 31.866
   },
   {
    "shot": "funny",
    "text": "But the *funniest* part?",
-   "s": 32.281,
-   "e": 34.21
+   "s": 32.066,
+   "e": 33.995
   },
   {
    "shot": "couch",
-   "text": "You still act exactly the *same*. Same couch. Same snacks. Same *scrolling*.",
-   "s": 34.41,
-   "e": 38.498
+   "text": "He still acts exactly the *same*. Same couch. Same snacks. Same *scrolling*.",
+   "s": 34.195,
+   "e": 38.283
   },
   {
    "shot": "couch2",
-   "text": "Except now, you actually *remember* it.",
-   "s": 38.698,
-   "e": 40.717
+   "text": "Except now, the scroll is his bio chapter, on *Unspool*.",
+   "s": 38.483,
+   "e": 42.881
   },
   {
    "shot": "test",
-   "text": "Then the test comes back, and everyone treats you *differently*.",
-   "s": 40.917,
-   "e": 44.316
+   "text": "The test comes back, and he *aces* it.",
+   "s": 43.081,
+   "e": 45.79
   },
   {
    "shot": "roof",
-   "text": "Your best friend has one *question*.",
-   "s": 44.516,
-   "e": 46.534
+   "text": "And when it's all over...",
+   "s": 45.99,
+   "e": 48.664
   },
   {
    "shot": "roof2",
-   "text": "Would you share it with your *best friend*?",
-   "s": 46.734,
-   "e": 49.443
+   "text": "Would you treat your homeboy *exactly* the same?",
+   "s": 48.864,
+   "e": 51.572
   },
   {
    "shot": "end",
-   "text": "What would *you* do? Try it *free* at unspool dot cc.",
-   "s": 49.643,
-   "e": 53.386
+   "text": "What would *you* do? Try Unspool *free* at unspool dot cc.",
+   "s": 51.772,
+   "e": 55.516
   }
  ]
 }
