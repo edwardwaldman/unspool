@@ -239,7 +239,7 @@ const SHOTS = {
       + (real ? speech(400, 520, "yo bro, what's good?", (t - wordAt("prank", "real") - 0.2) / 0.25, 250, true) : ""); },
   today(t, lt) { // and the bio test is TODAY
     return svg(bedroom(t, { dawn: 1 }) + GIRL({ x: 360, y: 1020, s: 1.15, face: "panic", la: [150, 20], ra: [150, 20] }))
-      + A(200, 200, `<div style="background:#fff;border:6px solid ${O};border-radius:14px;width:320px;text-align:center;overflow:hidden;transform:rotate(-3deg)"><div style="background:#e23b3b;color:#fff;font:800 34px Arc;padding:8px">TODAY</div><div style="font:800 64px/1.05 Arc;color:${O};padding:16px">BIO<br>TEST</div></div>`, pop(lt / 0.25)); },
+      + A(200, 200, `<div style="background:#fff;border:6px solid ${O};border-radius:14px;width:320px;text-align:center;overflow:hidden;transform:rotate(-3deg)"><div style="background:#e23b3b;color:#fff;font:800 34px Arc;padding:8px">IN 1 HOUR</div><div style="font:800 64px/1.05 Arc;color:${O};padding:16px">BIO<br>TEST</div></div>`, pop(lt / 0.25)); },
   mission(t, lt) { // MISSION: TURN BACK → no results
     const q = "how to turn back into a guy", typed = q.slice(0, Math.floor(Math.max(0, lt - 0.6) * 22));
     return svg(darkUI(t) + GIRL({ x: 360, y: 1190, s: 1.05, face: "blank", la: [30, 150], ra: [10, 10] }))

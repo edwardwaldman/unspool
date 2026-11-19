@@ -1,113 +1,113 @@
 {
- "dur": 56.92,
+ "dur": 58.98,
  "lines": [
   {
    "shot": "hook",
-   "text": "What would you do if your *homeboy* woke up tomorrow...",
+   "text": "What would you do if your *homeboy* woke up as a *girl*?!",
    "s": 0.25,
-   "e": 3.648
+   "e": 4.338
   },
   {
    "shot": "turn",
-   "text": "and turned into a *girl*?",
-   "s": 3.848,
-   "e": 6.122
+   "text": "Like, a FULL *girl*!",
+   "s": 4.538,
+   "e": 6.467
   },
   {
    "shot": "mirror",
-   "text": "Like, a full *girl*.",
-   "s": 6.322,
-   "e": 7.652
+   "text": "On the morning of the bio *test*!",
+   "s": 6.667,
+   "e": 9.031
   },
   {
    "shot": "call",
    "text": "Imagine. *7 AM*. A call from your *best friend*.",
-   "s": 7.852,
-   "e": 10.905
+   "s": 9.231,
+   "e": 12.284
   },
   {
    "shot": "answer",
    "text": "You answer, and a girl is *screaming* your name.",
-   "s": 11.105,
-   "e": 14.159
+   "s": 12.484,
+   "e": 15.538
   },
   {
    "shot": "memory",
    "text": "Memory search: absolutely *no idea* who this is.",
-   "s": 14.359,
-   "e": 17.067
+   "s": 15.738,
+   "e": 18.447
   },
   {
    "shot": "itsit",
    "text": "Then she says your nickname. It's *him*!",
-   "s": 17.267,
-   "e": 20.231
+   "s": 18.647,
+   "e": 21.61
   },
   {
    "shot": "before",
    "text": "Same cap. Same hoodie. Same chain. Somehow *transformed* overnight.",
-   "s": 20.431,
-   "e": 23.484
+   "s": 21.81,
+   "e": 24.864
   },
   {
    "shot": "prank",
    "text": "At first, you think it's a *prank*. But it's *real*.",
-   "s": 23.684,
-   "e": 27.083
+   "s": 25.064,
+   "e": 28.462
   },
   {
    "shot": "today",
-   "text": "And the bio test is *today*.",
-   "s": 27.283,
-   "e": 29.302
+   "text": "And the bio test is in one *hour*!",
+   "s": 28.662,
+   "e": 31.371
   },
   {
    "shot": "mission",
    "text": "Your homeboy has one *mission*: turn back.",
-   "s": 29.502,
-   "e": 31.866
+   "s": 31.571,
+   "e": 33.934
   },
   {
    "shot": "funny",
    "text": "But the *funniest* part?",
-   "s": 32.066,
-   "e": 33.995
+   "s": 34.134,
+   "e": 36.064
   },
   {
    "shot": "couch",
    "text": "He still acts exactly the *same*. Same couch. Same snacks. Same *scrolling*.",
-   "s": 34.195,
-   "e": 38.283
+   "s": 36.264,
+   "e": 40.352
   },
   {
    "shot": "couch2",
    "text": "Except now, the scroll is his bio chapter, on *Unspool*.",
-   "s": 38.483,
-   "e": 42.881
+   "s": 40.552,
+   "e": 44.95
   },
   {
    "shot": "test",
    "text": "The test comes back, and he *aces* it.",
-   "s": 43.081,
-   "e": 45.79
+   "s": 45.15,
+   "e": 47.859
   },
   {
    "shot": "roof",
    "text": "And when it's all over...",
-   "s": 45.99,
-   "e": 48.664
+   "s": 48.059,
+   "e": 50.733
   },
   {
    "shot": "roof2",
    "text": "Would you treat your homeboy *exactly* the same?",
-   "s": 48.864,
-   "e": 51.572
+   "s": 50.933,
+   "e": 53.641
   },
   {
    "shot": "end",
    "text": "What would *you* do? Try Unspool *free* at unspool dot cc.",
-   "s": 51.772,
-   "e": 55.516
+   "s": 53.841,
+   "e": 57.584
   }
  ]
 }

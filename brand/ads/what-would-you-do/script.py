@@ -2,16 +2,16 @@
 # No voice yet (ElevenLabs needs a sign-in), so each line gets a natural narration length: ~2.9 words/s.
 import json, re, sys
 L = [
- ("hook",     "What would you do if your *homeboy* woke up tomorrow..."),
- ("turn",     "and turned into a *girl*?"),
- ("mirror",   "Like, a full *girl*."),
+ ("hook",     "What would you do if your *homeboy* woke up as a *girl*?!"),
+ ("turn",     "Like, a FULL *girl*!"),
+ ("mirror",   "On the morning of the bio *test*!"),
  ("call",     "Imagine. *7 AM*. A call from your *best friend*."),
  ("answer",   "You answer, and a girl is *screaming* your name."),
  ("memory",   "Memory search: absolutely *no idea* who this is."),
  ("itsit",    "Then she says your nickname. It's *him*!"),
  ("before",   "Same cap. Same hoodie. Same chain. Somehow *transformed* overnight."),
  ("prank",    "At first, you think it's a *prank*. But it's *real*."),
- ("today",    "And the bio test is *today*."),
+ ("today",    "And the bio test is in one *hour*!"),
  ("mission",  "Your homeboy has one *mission*: turn back."),
  ("funny",    "But the *funniest* part?"),
  ("couch",    "He still acts exactly the *same*. Same couch. Same snacks. Same *scrolling*."),
