@@ -1,0 +1,125 @@
+{
+ "dur": 54.79,
+ "lines": [
+  {
+   "shot": "hook",
+   "text": "What would you do if you woke up *tomorrow*...",
+   "s": 0.25,
+   "e": 3.303
+  },
+  {
+   "shot": "book",
+   "text": "and your forty-page *textbook* chapter...",
+   "s": 3.503,
+   "e": 5.178
+  },
+  {
+   "shot": "turn",
+   "text": "turned into *TikToks*?",
+   "s": 5.378,
+   "e": 6.362
+  },
+  {
+   "shot": "alarm",
+   "text": "Imagine. It's *7 AM*. Bio test. *Today*.",
+   "s": 6.562,
+   "e": 8.926
+  },
+  {
+   "shot": "open",
+   "text": "You open the chapter, and your brain goes *blank*.",
+   "s": 9.126,
+   "e": 12.179
+  },
+  {
+   "shot": "panic",
+   "text": "Total *panic*.",
+   "s": 12.379,
+   "e": 13.879
+  },
+  {
+   "shot": "memory",
+   "text": "Memory search: chapter four. Absolutely *nothing*.",
+   "s": 14.079,
+   "e": 16.098
+  },
+  {
+   "shot": "buzz",
+   "text": "Then your phone *buzzes*.",
+   "s": 16.298,
+   "e": 17.628
+  },
+  {
+   "shot": "itsit",
+   "text": "Wait. It's the *chapter*!",
+   "s": 17.828,
+   "e": 19.757
+  },
+  {
+   "shot": "before",
+   "text": "Same facts. Same diagrams. Somehow *transformed* overnight.",
+   "s": 19.957,
+   "e": 22.321
+  },
+  {
+   "shot": "gimmick",
+   "text": "At first, you think it's a *gimmick*.",
+   "s": 22.521,
+   "e": 24.884
+  },
+  {
+   "shot": "quiz",
+   "text": "But every reel ends with a *quiz*. And you *get it*.",
+   "s": 25.084,
+   "e": 28.828
+  },
+  {
+   "shot": "breakfast",
+   "text": "So you scroll at *breakfast*. Mom thinks nothing's *unusual*.",
+   "s": 29.028,
+   "e": 32.081
+  },
+  {
+   "shot": "funny",
+   "text": "But the *funniest* part?",
+   "s": 32.281,
+   "e": 34.21
+  },
+  {
+   "shot": "couch",
+   "text": "You still act exactly the *same*. Same couch. Same snacks. Same *scrolling*.",
+   "s": 34.41,
+   "e": 38.498
+  },
+  {
+   "shot": "couch2",
+   "text": "Except now, you actually *remember* it.",
+   "s": 38.698,
+   "e": 40.717
+  },
+  {
+   "shot": "test",
+   "text": "Then the test comes back, and everyone treats you *differently*.",
+   "s": 40.917,
+   "e": 44.316
+  },
+  {
+   "shot": "roof",
+   "text": "Your best friend has one *question*.",
+   "s": 44.516,
+   "e": 46.534
+  },
+  {
+   "shot": "roof2",
+   "text": "Would you share it with your *best friend*?",
+   "s": 46.734,
+   "e": 49.443
+  },
+  {
+   "shot": "end",
+   "text": "What would *you* do? Try it *free* at unspool dot cc.",
+   "s": 49.643,
+   "e": 53.386
+  }
+ ]
+}

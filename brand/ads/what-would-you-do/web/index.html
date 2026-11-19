@@ -1,0 +1,309 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: Arc; src: url(Archivo-ExtraBold.ttf); }
+@font-face { font-family: Unb; src: url(Unbounded-700.ttf); }
+html, body { margin: 0; width: 720px; height: 1280px; overflow: hidden; background: #1b1830; }
+#s { position: absolute; inset: 0; overflow: hidden; font-family: Arc; }
+svg { position: absolute; left: 0; top: 0; }
+</style></head>
+<body><div id="s"></div>
+<script type="module">
+// "What would you do if your textbook turned into TikToks?" A stick-figure story ad in the
+// "what would you do" format: flat rooms, one or two words of caption at a time, comic sound bubbles.
+const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
+const S = document.getElementById("s");
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const inOut = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const outBack = (x) => { x = clamp(x); const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const mix = (a, b, k) => a + (b - a) * k;
+const L = (n) => lines.find((l) => l.shot === n), st = (n) => L(n).s;
+const O = "#14121c", TEAL = "#5ef2c4", LIME = "#d3f05a";
+const pop = (k) => `opacity:${clamp(k * 3)};transform:scale(${outBack(k)})`;
+const A = (x, y, inner, extra = "") => `<div style="position:absolute;left:${x}px;top:${y}px;${extra}">${inner}</div>`;
+const svg = (inner) => `<svg width="720" height="1280" viewBox="0 0 720 1280">${inner}</svg>`;
+
+// ---------------- stick figures ----------------
+// origin at the feet; arms are [shoulder angle, elbow bend] in degrees (0 = straight down, + = outwards)
+const FACES = {
+  neutral: `<circle cx="-16" cy="-4" r="5"/><circle cx="16" cy="-4" r="5"/><path d="M-10 18 L10 18" stroke="${O}" stroke-width="5" stroke-linecap="round"/>`,
+  happy: `<circle cx="-16" cy="-6" r="5"/><circle cx="16" cy="-6" r="5"/><path d="M-14 12 Q0 28 14 12" stroke="${O}" stroke-width="5" fill="none" stroke-linecap="round"/>`,
+  grin: `<path d="M-22 -4 Q-16 -12 -10 -4 M10 -4 Q16 -12 22 -4" stroke="${O}" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M-18 10 Q0 34 18 10 Z" fill="#7a2230"/>`,
+  shock: `<circle cx="-17" cy="-8" r="11" fill="#fff" stroke="${O}" stroke-width="4"/><circle cx="17" cy="-8" r="11" fill="#fff" stroke="${O}" stroke-width="4"/><circle cx="-17" cy="-8" r="4"/><circle cx="17" cy="-8" r="4"/><ellipse cx="0" cy="20" rx="8" ry="11" fill="#7a2230"/>`,
+  panic: `<circle cx="-17" cy="-8" r="12" fill="#fff" stroke="${O}" stroke-width="4"/><circle cx="17" cy="-8" r="12" fill="#fff" stroke="${O}" stroke-width="4"/><circle cx="-17" cy="-6" r="3"/><circle cx="17" cy="-6" r="3"/><path d="M-16 12 Q0 4 16 12 L14 28 Q0 36 -14 28 Z" fill="#7a2230" stroke="${O}" stroke-width="3"/><path d="M-12 14 L12 14" stroke="#fff" stroke-width="5"/>`,
+  sleep: `<path d="M-24 -4 Q-16 4 -8 -4 M8 -4 Q16 4 24 -4" stroke="${O}" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="0" cy="18" r="5"/>`,
+  smug: `<path d="M-24 -8 L-8 -8 M8 -8 L24 -8" stroke="${O}" stroke-width="5" stroke-linecap="round"/><circle cx="-16" cy="-3" r="4"/><circle cx="16" cy="-3" r="4"/><path d="M-10 16 Q4 22 14 12" stroke="${O}" stroke-width="5" fill="none" stroke-linecap="round"/>`,
+  blank: `<circle cx="-16" cy="-4" r="7" fill="none" stroke="${O}" stroke-width="4"/><circle cx="16" cy="-4" r="7" fill="none" stroke="${O}" stroke-width="4"/><path d="M-8 20 L8 20" stroke="${O}" stroke-width="5" stroke-linecap="round"/>`,
+  laugh: `<path d="M-24 -2 Q-16 -14 -8 -2 M8 -2 Q16 -14 24 -2" stroke="${O}" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M-20 8 Q0 44 20 8 Z" fill="#7a2230" stroke="${O}" stroke-width="3"/>`,
+};
+function arm(sx, sy, a1, a2, side, len = 60) {
+  const r = (d) => (d * Math.PI) / 180, d1 = r(a1) * side, ex = sx + Math.sin(d1) * len, ey = sy + Math.cos(d1) * len;
+  const d2 = d1 + r(a2) * side, hx = ex + Math.sin(d2) * len, hy = ey + Math.cos(d2) * len;
+  return { path: `M${sx} ${sy} L${ex} ${ey} L${hx} ${hy}`, hx, hy };
+}
+// who: you | friend | mom | teacher | kid2
+function stick({ x, y, s = 1, who = "you", face = "neutral", la = [10, 10], ra = [10, 10], legs = "stand", t = 0, lean = 0, hold = "" }) {
+  const hood = { you: "#1d1b26", friend: "#5b6170", mom: "#f08a3c", teacher: "#2f5d8a", kid2: "#c0392b" }[who];
+  const sit = legs === "sit", hipY = sit ? -70 : -120;
+  let legP;
+  if (sit) legP = `M-14 ${hipY} L-34 ${hipY + 26} L-34 0 M14 ${hipY} L34 ${hipY + 26} L34 0`;
+  else if (legs === "walk") { const w = Math.sin(t * 9) * 16; legP = `M-12 ${hipY} L${-14 + w} 0 M12 ${hipY} L${14 - w} 0`; }
+  else legP = `M-14 ${hipY} L-20 0 M14 ${hipY} L20 0`;
+  const top = hipY - 110, sh = top + 18;
+  const L1 = arm(-34, sh, la[0], la[1], -1), R1 = arm(34, sh, ra[0], ra[1], 1);
+  const body = who === "mom"
+    ? `<path d="M-30 ${top} L30 ${top} L56 ${hipY + 40} L-56 ${hipY + 40} Z" fill="${hood}" stroke="${O}" stroke-width="5" stroke-linejoin="round"/>`
+    : `<path d="M-36 ${top + 6} Q-38 ${top - 4} -24 ${top} L24 ${top} Q38 ${top - 4} 36 ${top + 6} L42 ${hipY + 4} L-42 ${hipY + 4} Z" fill="${hood}" stroke="${O}" stroke-width="5" stroke-linejoin="round"/>
+       ${who === "you" || who === "friend" ? `<path d="M-6 ${top + 8} L-8 ${top + 40} M6 ${top + 8} L8 ${top + 40}" stroke="#fff" stroke-width="3" opacity=".7"/><path d="M-22 ${hipY - 30} L22 ${hipY - 30}" stroke="#000" stroke-width="3" opacity=".35"/>` : ""}`;
+  const hy = top - 58;
+  const hair = who === "mom" ? `<path d="M-56 ${hy + 40} Q-62 ${hy - 50} 0 ${hy - 56} Q62 ${hy - 50} 56 ${hy + 40} L44 ${hy + 46} Q46 ${hy - 20} 0 ${hy - 30} Q-46 ${hy - 20} -44 ${hy + 46} Z" fill="#1d1b26"/>`
+    : who === "friend" ? `<path d="M-50 ${hy - 14} Q-48 ${hy - 62} 0 ${hy - 62} Q48 ${hy - 62} 50 ${hy - 14} Z" fill="#c0392b" stroke="${O}" stroke-width="5"/><path d="M40 ${hy - 20} L76 ${hy - 12} L44 ${hy - 4}" fill="#c0392b" stroke="${O}" stroke-width="5" stroke-linejoin="round"/>`
+    : who === "teacher" ? `<path d="M-40 ${hy - 30} Q0 ${hy - 70} 40 ${hy - 30}" stroke="#8a8f99" stroke-width="10" fill="none" stroke-linecap="round"/>`
+    : `<path d="M-4 ${hy - 50} Q-2 ${hy - 82} 18 ${hy - 76} Q2 ${hy - 70} 6 ${hy - 50}" fill="${O}"/>`;
+  const glasses = who === "teacher" ? `<g transform="translate(0 ${hy})"><circle cx="-17" cy="-4" r="14" fill="none" stroke="${O}" stroke-width="4"/><circle cx="17" cy="-4" r="14" fill="none" stroke="${O}" stroke-width="4"/><path d="M-3 -4 L3 -4" stroke="${O}" stroke-width="4"/></g>` : "";
+  return `<g transform="translate(${x} ${y}) scale(${s}) rotate(${lean})">
+    <path d="${legP}" stroke="${O}" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${L1.path}" stroke="${O}" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    ${body}
+    <path d="${R1.path}" stroke="${O}" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    ${who === "mom" ? hair : ""}
+    <circle cx="0" cy="${hy}" r="54" fill="#fff" stroke="${O}" stroke-width="6"/>
+    ${who === "mom" ? `<path d="M-50 ${hy - 10} Q-30 ${hy - 60} 30 ${hy - 50} Q50 ${hy - 40} 52 ${hy - 10} Q20 ${hy - 40} -50 ${hy - 10} Z" fill="#1d1b26"/>` : hair}
+    <g transform="translate(0 ${hy})" fill="${O}">${FACES[face]}</g>${glasses}
+    ${hold ? `<g transform="translate(${hold === "L" ? L1.hx : R1.hx} ${hold === "L" ? L1.hy : R1.hy})">${PHONE_SMALL}</g>` : ""}
+    <circle cx="${L1.hx}" cy="${L1.hy}" r="8" fill="${O}"/><circle cx="${R1.hx}" cy="${R1.hy}" r="8" fill="${O}"/></g>`;
+}
+const PHONE_SMALL = `<rect x="-20" y="-58" width="40" height="70" rx="7" fill="#111" stroke="${O}" stroke-width="3"/><rect x="-15" y="-52" width="30" height="56" rx="4" fill="#1f3b48"/><rect x="-11" y="-46" width="22" height="6" rx="2" fill="${LIME}"/><circle cx="0" cy="-20" r="8" fill="#e8743b"/>`;
+
+// ---------------- rooms ----------------
+function stars(n, seed, x0, y0, w, h, t) { let s = seed, o = ""; const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < n; i++) { const x = x0 + r() * w, y = y0 + r() * h, tw = 0.5 + 0.5 * Math.sin(t * 3 + i); o += `<circle cx="${x}" cy="${y}" r="${1 + r() * 2}" fill="#fff" opacity="${0.3 + 0.6 * tw}"/>`; } return o; }
+function skyline(x0, y0, w, col, seed = 3) { let s = seed, o = "", x = x0; const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  while (x < x0 + w) { const bw = 30 + r() * 40, bh = 40 + r() * 120; o += `<rect x="${x}" y="${y0 - bh}" width="${bw}" height="${bh + 2}" fill="${col}"/>`;
+    for (let wy = y0 - bh + 12; wy < y0 - 10; wy += 22) for (let wx = x + 8; wx < x + bw - 10; wx += 16) if (r() > 0.55) o += `<rect x="${wx}" y="${wy}" width="7" height="9" fill="#ffd27a" opacity=".75"/>`; x += bw + 4; } return o; }
+function bedroom(t, { dawn = 0, glow = 0 } = {}) {
+  const sky = dawn ? ["#f7a55a", "#7b3f7a"] : ["#0e1433", "#22306b"];
+  let h = `<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[1]}"/><stop offset="1" stop-color="${sky[0]}"/></linearGradient>
+    <pattern id="wp" width="36" height="36" patternUnits="userSpaceOnUse"><rect width="36" height="36" fill="#2c2645"/><rect width="14" height="36" fill="#312a4d"/></pattern></defs>
+    <rect width="720" height="1280" fill="url(#wp)"/><rect y="1010" width="720" height="270" fill="#3a2a24"/><rect y="1004" width="720" height="10" fill="#22181a"/>
+    <rect x="404" y="140" width="250" height="330" fill="url(#sky)" stroke="#1a1528" stroke-width="12"/>${dawn ? `<circle cx="560" cy="400" r="46" fill="#ffd27a"/>` : stars(30, 7, 410, 146, 238, 200, t) + `<circle cx="600" cy="200" r="22" fill="#f4f1d0"/>`}
+    ${skyline(404, 470, 250, dawn ? "#3b2547" : "#141a38")}<path d="M529 140 L529 470 M404 305 L654 305" stroke="#1a1528" stroke-width="10"/><rect x="392" y="466" width="274" height="16" fill="#1a1528"/>
+    <rect x="70" y="170" width="180" height="230" fill="#e8743b" stroke="#1a1528" stroke-width="8" transform="rotate(-3 160 285)"/>
+    <text x="160" y="232" text-anchor="middle" font-family="Arc" font-size="34" fill="#fff" transform="rotate(-3 160 285)">BIO</text>
+    <g transform="translate(160 305) rotate(-3)" stroke="#fff" stroke-width="5" fill="none"><ellipse rx="52" ry="18"/><ellipse rx="52" ry="18" transform="rotate(60)"/><ellipse rx="52" ry="18" transform="rotate(-60)"/></g><circle cx="160" cy="305" r="8" fill="#fff"/>
+    <rect x="30" y="840" width="470" height="160" rx="10" fill="#6b4a35" stroke="#1a1528" stroke-width="6"/><rect x="30" y="760" width="40" height="240" rx="8" fill="#6b4a35" stroke="#1a1528" stroke-width="6"/>
+    <rect x="70" y="806" width="420" height="60" rx="14" fill="#e9e4f2" stroke="#1a1528" stroke-width="5"/><rect x="80" y="752" width="130" height="60" rx="26" fill="#fff" stroke="#1a1528" stroke-width="5"/>
+    <rect x="540" y="860" width="150" height="150" rx="8" fill="#7b5440" stroke="#1a1528" stroke-width="6"/><circle cx="615" cy="935" r="7" fill="#e3b04b"/>`;
+  return h;
+}
+const blanketLow = `<path d="M150 860 Q320 830 496 852 L500 920 Q320 940 150 925 Z" fill="#2f4c8a" stroke="#1a1528" stroke-width="5"/>`;
+const blanket = `<path d="M210 790 Q340 760 496 790 L500 900 Q340 920 210 905 Z" fill="#2f4c8a" stroke="#1a1528" stroke-width="5"/><path d="M230 830 Q340 810 480 826" stroke="#3f62ad" stroke-width="8" fill="none"/>`;
+function textbook(x, y, s = 1, glow = 0, label = "BIOLOGY") {
+  return `<g transform="translate(${x} ${y}) scale(${s})">${glow ? `<circle r="${90 + 20 * glow}" fill="${TEAL}" opacity="${0.25 * glow}"/>` : ""}
+    <rect x="-70" y="-30" width="140" height="44" rx="6" fill="#fff" stroke="${O}" stroke-width="5"/><rect x="-74" y="-52" width="148" height="30" rx="6" fill="#2e8b57" stroke="${O}" stroke-width="5"/>
+    <text x="0" y="-31" text-anchor="middle" font-family="Arc" font-size="16" fill="#fff">${label}</text><path d="M-60 -6 L60 -6 M-60 4 L60 4" stroke="#ccc" stroke-width="3"/></g>`;
+}
+function kitchen() {
+  return `<rect width="720" height="1280" fill="#f3e6c9"/><rect y="1010" width="720" height="270" fill="#a26b45"/>
+    <rect x="40" y="200" width="300" height="170" rx="6" fill="#3f8f86" stroke="${O}" stroke-width="6"/><path d="M190 200 L190 370" stroke="${O}" stroke-width="5"/><circle cx="175" cy="290" r="6"/><circle cx="205" cy="290" r="6"/>
+    <rect x="420" y="170" width="240" height="210" fill="#bfe4f6" stroke="${O}" stroke-width="10"/><path d="M540 170 L540 380" stroke="${O}" stroke-width="8"/><circle cx="470" cy="240" r="30" fill="#ffd27a"/>
+    <path d="M300 90 L300 150" stroke="${O}" stroke-width="4"/><path d="M270 170 L330 170 L316 150 L284 150 Z" fill="#e3b04b" stroke="${O}" stroke-width="4"/>
+    <rect x="0" y="640" width="260" height="370" fill="#3f8f86" stroke="${O}" stroke-width="6"/><rect x="0" y="626" width="270" height="22" fill="#e9e4dc" stroke="${O}" stroke-width="5"/>
+    <rect x="330" y="840" width="380" height="24" rx="6" fill="#c98a5a" stroke="${O}" stroke-width="5"/><path d="M360 864 L360 1010 M680 864 L680 1010" stroke="${O}" stroke-width="10"/>
+    <rect x="380" y="818" width="60" height="26" rx="6" fill="#fff" stroke="${O}" stroke-width="4"/><circle cx="560" cy="830" r="18" fill="#fff" stroke="${O}" stroke-width="4"/><circle cx="560" cy="830" r="9" fill="#ffd27a"/>`;
+}
+function living() {
+  return `<defs><pattern id="wp2" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="#ecdcb9"/><rect width="16" height="40" fill="#e4d1aa"/></pattern></defs>
+    <rect width="720" height="1280" fill="url(#wp2)"/><rect y="1020" width="720" height="260" fill="#8a5a3b"/><ellipse cx="360" cy="1110" rx="300" ry="60" fill="#b84b3c" stroke="${O}" stroke-width="5"/>
+    <rect x="120" y="230" width="130" height="150" fill="#9fd3ea" stroke="${O}" stroke-width="8"/><rect x="330" y="250" width="200" height="140" fill="#e6c98a" stroke="${O}" stroke-width="8"/><rect x="350" y="270" width="160" height="100" fill="none" stroke="#b89150" stroke-width="5"/>
+    <rect x="40" y="760" width="640" height="150" rx="40" fill="#2f8f86" stroke="${O}" stroke-width="6"/><rect x="40" y="880" width="640" height="110" rx="24" fill="#2a7f77" stroke="${O}" stroke-width="6"/>
+    <rect x="18" y="820" width="60" height="180" rx="24" fill="#2f8f86" stroke="${O}" stroke-width="6"/><rect x="642" y="820" width="60" height="180" rx="24" fill="#2f8f86" stroke="${O}" stroke-width="6"/>`;
+}
+const couchFront = `<rect x="40" y="880" width="640" height="110" rx="24" fill="#2a7f77" stroke="${O}" stroke-width="6"/><rect x="18" y="820" width="60" height="180" rx="24" fill="#2f8f86" stroke="${O}" stroke-width="6"/><rect x="642" y="820" width="60" height="180" rx="24" fill="#2f8f86" stroke="${O}" stroke-width="6"/>`;
+function classroom() {
+  return `<rect width="720" height="1280" fill="#d4e6da"/><rect y="1020" width="720" height="260" fill="#9a7a5a"/>
+    <rect x="70" y="170" width="580" height="290" rx="8" fill="#2e5a46" stroke="#5a3e2b" stroke-width="16"/>
+    <text x="110" y="250" font-family="Arc" font-size="40" fill="#f4f1e6" opacity=".9">BIO TEST — RESULTS</text><path d="M110 290 L430 290 M110 340 L360 340" stroke="#f4f1e6" stroke-width="5" opacity=".5"/>
+    <rect x="80" y="840" width="560" height="26" rx="6" fill="#c98a5a" stroke="${O}" stroke-width="5"/><path d="M120 866 L120 1020 M600 866 L600 1020" stroke="${O}" stroke-width="10"/>`;
+}
+function rooftop(t) {
+  return `<defs><linearGradient id="sun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b2a6b"/><stop offset=".55" stop-color="#e8743b"/><stop offset="1" stop-color="#f7c35a"/></linearGradient></defs>
+    <rect width="720" height="1280" fill="url(#sun)"/><circle cx="360" cy="760" r="120" fill="#ffd98a" opacity=".9"/>
+    ${skyline(-10, 900, 760, "#4a2a5a", 11)}<path d="M-20 520 Q360 640 740 520" stroke="${O}" stroke-width="3" fill="none"/>
+    ${Array.from({ length: 12 }, (_, i) => { const x = i * 64 + 10, y = 520 + Math.sin((x / 720) * Math.PI) * 120 * 0.75; return `<circle cx="${x}" cy="${y + 10}" r="8" fill="#ffe7a0" opacity="${0.6 + 0.4 * Math.sin(t * 4 + i)}"/>`; }).join("")}
+    <rect y="1010" width="720" height="270" fill="#7a4a3a"/><rect y="990" width="720" height="26" fill="#a0634a" stroke="${O}" stroke-width="5"/>`;
+}
+function darkUI(t) { return `<rect width="720" height="1280" fill="#141a2e"/><circle cx="360" cy="560" r="420" fill="#1f2c52" opacity=".55"/>${stars(26, 5, 0, 0, 720, 1280, t)}`; }
+
+// ---------------- comic bits ----------------
+function burst(x, y, text, k, col = "#ffd23f", size = 54, rot = -8) {
+  const pts = Array.from({ length: 22 }, (_, i) => { const a = (i / 22) * Math.PI * 2, r = i % 2 ? 1 : 0.72; return `${Math.cos(a) * 170 * r},${Math.sin(a) * 90 * r}`; }).join(" ");
+  return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${outBack(k)})" opacity="${clamp(k * 3)}"><polygon points="${pts}" fill="${col}" stroke="${O}" stroke-width="6"/>
+    <text y="${size * 0.35}" text-anchor="middle" font-family="Arc" font-size="${size}" fill="#e23b3b" stroke="${O}" stroke-width="2">${text}</text></g>`;
+}
+const speech = (x, y, text, k, w = 260, flip = false) => A(x, y, `<div style="position:relative;background:#fff;border:4px solid ${O};border-radius:22px;padding:12px 16px;font:800 26px/1.2 Arc;color:${O};text-align:center;width:${w}px;box-sizing:border-box">${text}
+  <div style="position:absolute;${flip ? "right" : "left"}:34px;bottom:-20px;width:0;height:0;border:12px solid transparent;border-top:16px solid ${O}"></div></div>`, pop(k));
+const sfx = (x, y, text, k, col = "#fff", rot = -6, size = 44) => A(x, y, `<div style="font:800 ${size}px Arc;color:${col};-webkit-text-stroke:3px ${O};paint-order:stroke;transform:rotate(${rot}deg)">${text}</div>`, pop(k));
+// stamps are drawn in SVG (scaled with an SVG transform): CSS-scaled stamps left ghost copies in the renderer's screenshots
+const stamp = (cx, cy, text, k, col = "#e23b3b", rot = -8) => { if (k <= 0) return ""; const w = text.length * 36 + 50, sc = mix(2.4, 1, ease(k / 0.6));
+  return `<g transform="translate(${cx} ${cy}) rotate(${rot}) scale(${sc})" opacity="${clamp(k * 5)}">
+    <rect x="${-w / 2}" y="-44" width="${w}" height="88" rx="12" fill="rgba(255,255,255,.1)" stroke="${col}" stroke-width="7"/>
+    <text y="19" text-anchor="middle" font-family="Arc" font-size="54" fill="${col}">${text}</text></g>`; };
+const zzz = (x, y, t) => [0, 1, 2].map((i) => { const k = ((t * 0.8 + i / 3) % 1); return `<text x="${x + k * 40 + i * 6}" y="${y - k * 90}" font-family="Arc" font-size="${26 + i * 6}" fill="#fff" opacity="${1 - k}">z</text>`; }).join("");
+function sparkles(cx, cy, t, n = 18, r = 140, k = 1) { let o = ""; for (let i = 0; i < n; i++) { const a = i * 2.4 + t * 1.6, rr = r * (0.4 + 0.6 * ((i * 37) % 10) / 10) * (0.7 + 0.3 * Math.sin(t * 3 + i));
+  const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr * 0.8; o += `<path d="M${x} ${y - 9} L${x + 3} ${y - 3} L${x + 9} ${y} L${x + 3} ${y + 3} L${x} ${y + 9} L${x - 3} ${y + 3} L${x - 9} ${y} L${x - 3} ${y - 3} Z" fill="${i % 3 ? TEAL : "#fff"}" opacity="${k * (0.5 + 0.5 * Math.sin(t * 6 + i))}"/>`; } return o; }
+function phoneBig(x, y, w, inner, rot = 0, extra = "") {
+  return A(x, y, `<div style="width:${w}px;height:${w * 2}px;border-radius:${w * 0.14}px;background:#111;border:5px solid ${O};padding:${w * 0.04}px;box-sizing:border-box;transform:rotate(${rot}deg);box-shadow:8px 10px 0 rgba(0,0,0,.35)">
+    <div style="width:100%;height:100%;border-radius:${w * 0.1}px;overflow:hidden;position:relative;background:#173041">${inner}</div></div>`, extra);
+}
+const reel = (n) => `<img src="${n}.png" style="width:100%;height:100%;object-fit:cover;display:block">`;
+
+// ---------------- shots ----------------
+// drawn above the zooming layer (the GPU renderer duplicated this stamp when it sat inside it)
+const OVER = { gimmick: (t, lt) => svg(stamp(360, 300, "GIMMICK?", lt - 0.4)) };
+const SHOTS = {
+  hook(t, lt) { // night, he's asleep, the textbook on the nightstand
+    return svg(bedroom(t) + stick({ x: 340, y: 800, s: 0.66, face: "sleep", lean: -90, la: [5, 5], ra: [5, 5] }) + blanket + textbook(615, 852, 0.8) + zzz(150, 700, t)); },
+  book(t, lt) { // the book starts to glow
+    const g = clamp(lt / 1.2);
+    return svg(bedroom(t) + stick({ x: 340, y: 800, s: 0.66, face: "sleep", lean: -90, la: [5, 5], ra: [5, 5] }) + blanket + textbook(615, 852, 0.8 + 0.15 * g, g) + sparkles(615, 830, t, 22, 150, g)); },
+  turn(t, lt) { // FWOOMP: it turns into a phone full of reels
+    const f = clamp(lt / 0.25), k = ease((lt - 0.2) / 0.4);
+    return `<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%, #e9fffa 0%, ${TEAL} 30%, #12335a 75%)"></div>`
+      + svg(Array.from({ length: 24 }, (_, i) => { const a = (i / 24) * Math.PI * 2 + lt * 0.4; return `<path d="M360 560 L${360 + Math.cos(a) * 900} ${560 + Math.sin(a) * 900} L${360 + Math.cos(a + 0.08) * 900} ${560 + Math.sin(a + 0.08) * 900} Z" fill="#fff" opacity=".18"/>`; }).join("") + sparkles(360, 560, t, 30, 300))
+      + phoneBig(250, 330, 220, reel("mito"), mix(-20, -4, k), `transform:scale(${mix(0.2, 1, outBack(k))});transform-origin:50% 50%`)
+      + sfx(220, 180, "FWOOMP", (lt - 0.05) / 0.2, "#fff", -6, 60)
+      + `<div style="position:absolute;inset:0;background:#fff;opacity:${(1 - f) * 0.9}"></div>`; },
+  alarm(t, lt) { // 7:00 AM, BIO TEST TODAY
+    const ring = Math.sin(t * 60) * 4 * (lt < 1.4 ? 1 : 0);
+    return svg(bedroom(t, { dawn: 1 }) + stick({ x: 340, y: 800, s: 0.66, face: "sleep", lean: -90, la: [5, 5], ra: [5, 5] }) + blanket + phoneSmallOnStand())
+      + A(150, 120, `<div style="background:#1a1220;border:6px solid ${O};border-radius:18px;padding:10px 26px;font:800 110px Arc;color:#ff4d4d;text-shadow:0 0 18px rgba(255,77,77,.6);transform:rotate(${ring * 0.5 - 2}deg)">7:00<span style="font-size:36px">AM</span></div>`, pop(lt / 0.25))
+      + A(230, 330, `<div style="background:#fff;border:5px solid ${O};border-radius:10px;width:250px;text-align:center;overflow:hidden;transform:rotate(3deg)"><div style="background:#e23b3b;color:#fff;font:800 24px Arc;padding:6px">TODAY</div><div style="font:800 40px/1.1 Arc;color:${O};padding:12px">BIO<br>TEST</div></div>`, pop((t - wordAt("alarm", "bio")) / 0.25))
+      + sfx(440, 760, "BRRRING", (lt - 0.1) / 0.2, "#ffd23f", 8, 40); },
+  open(t, lt) { // sitting up in bed, the book open, blank stare
+    const look = lt > 1.5 ? "blank" : "neutral";
+    return svg(bedroom(t, { dawn: 1 }) + stick({ x: 300, y: 900, s: 0.95, face: look, legs: "sit", la: [40, 70], ra: [40, 70] }) + blanketLow
+      + `<g transform="translate(300 690)"><path d="M-110 0 L0 20 L110 0 L110 120 L0 140 L-110 120 Z" fill="#fff" stroke="${O}" stroke-width="6" stroke-linejoin="round"/><path d="M0 20 L0 140" stroke="${O}" stroke-width="5"/>
+        ${[0, 1, 2, 3, 4].map((i) => `<path d="M-95 ${30 + i * 18} L-15 ${40 + i * 18} M15 ${40 + i * 18} L95 ${30 + i * 18}" stroke="#bbb" stroke-width="5"/>`).join("")}</g>`)
+      + A(470, 360, `<div style="font:800 30px Arc;color:#fff;background:#e23b3b;border:4px solid ${O};border-radius:10px;padding:6px 14px;transform:rotate(6deg)">PAGE 1 / 40</div>`, pop((lt - 0.3) / 0.25))
+      + (lt > 1.5 ? speech(80, 330, "...huh?", (lt - 1.5) / 0.2, 160) : ""); },
+  panic(t, lt) { // AAAAH
+    const sh = Math.sin(t * 70) * 6;
+    return svg(bedroom(t, { dawn: 1 }) + `<g transform="translate(${sh} 0)">${stick({ x: 360, y: 980, s: 1.25, face: "panic", la: [150, 20], ra: [150, 20] })}</g>`
+      + burst(360, 300, "AAAAH!!", (lt - 0.05) / 0.25, "#ffd23f", 66)); },
+  memory(t, lt) { // MEMORY SEARCH: chapter 4 → 0 matches
+    const items = [["CLASS NOTES?", "📒"], ["LECTURE?", "🧑‍🏫"], ["TEXTBOOK?", "📕"]];
+    const bar = clamp(lt / 1.6);
+    return svg(darkUI(t) + stick({ x: 360, y: 1180, s: 1.1, face: "blank", la: [20, 140], ra: [10, 10] }))
+      + A(70, 210, `<div style="width:580px;background:#0f1530;border:4px solid ${TEAL};border-radius:22px;padding:22px;box-sizing:border-box;box-shadow:0 0 30px rgba(94,242,196,.35)">
+        <div style="font:800 26px Arc;color:${TEAL};text-align:center;letter-spacing:2px">MEMORY SEARCH: CHAPTER 4</div>
+        <div style="display:flex;justify-content:space-around;margin-top:20px">${items.map(([n, e], i) => { const x = (lt - 0.4 - i * 0.45) / 0.2;
+          return `<div style="text-align:center;width:160px"><div style="width:120px;height:120px;margin:0 auto;border-radius:18px;background:#1e2850;border:3px solid #3a4a80;position:relative;font-size:64px;line-height:120px">${e}
+            <svg width="120" height="120" style="opacity:${clamp(x * 3)}"><path d="M20 20 L100 100 M100 20 L20 100" stroke="#ff4d4d" stroke-width="14" stroke-linecap="round"/></svg></div>
+            <div style="font:800 18px Arc;color:#cfd6f0;margin-top:10px">${n}</div></div>`; }).join("")}</div>
+        <div style="margin-top:22px;height:16px;border-radius:8px;background:#26305a;overflow:hidden"><div style="height:100%;width:${bar * 100}%;background:${TEAL}"></div></div></div>`)
+      + A(210, 560, `<div style="background:#e23b3b;border:4px solid ${O};border-radius:12px;padding:10px 24px;font:800 36px Arc;color:#fff;transform:rotate(-3deg)">0 MATCHES</div>`, pop((lt - 1.7) / 0.25)); },
+  buzz(t, lt) { // the phone on the nightstand buzzes
+    const v = Math.sin(t * 80) * 5;
+    return svg(bedroom(t, { dawn: 1 }) + stick({ x: 230, y: 960, s: 0.95, face: "neutral", legs: "sit", la: [40, 70], ra: [30, 20] }) + blanketLow)
+      + phoneBig(400, 300, 240, `<div style="position:absolute;left:10px;right:10px;top:60px;background:#fff;border-radius:16px;padding:14px;font:800 22px/1.25 Arc;color:${O}"><div style="color:#2e8b57">unspool</div>Your chapter is ready: 9 reels</div>`, v * 0.4)
+      + sfx(380, 220, "BZZT BZZT", (lt - 0.05) / 0.2, "#ffd23f", -4, 38); },
+  itsit(t, lt) { // lightbulb: it's the chapter!
+    const lines24 = Array.from({ length: 30 }, (_, i) => { const a = (i / 30) * Math.PI * 2; return `<path d="M360 600 L${360 + Math.cos(a) * 900} ${600 + Math.sin(a) * 900}" stroke="#fff" stroke-width="${3 + (i % 3) * 3}" opacity=".35"/>`; }).join("");
+    return `<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 46%, #2d4aa8, #0d1438 70%)"></div>`
+      + svg(lines24 + stick({ x: 360, y: 1140, s: 1.6, face: "shock", la: [10, 10], ra: [160, 30] })
+        + `<g transform="translate(510 300) scale(${outBack((lt - 0.2) / 0.3)})"><circle r="44" fill="#ffe36a" stroke="${O}" stroke-width="6"/><rect x="-18" y="40" width="36" height="26" fill="#bbb" stroke="${O}" stroke-width="5"/>${[0, 1, 2, 3, 4].map((i) => { const a = -Math.PI / 2 + (i - 2) * 0.55; return `<path d="M${Math.cos(a) * 60} ${Math.sin(a) * 60} L${Math.cos(a) * 84} ${Math.sin(a) * 84}" stroke="#ffe36a" stroke-width="8" stroke-linecap="round"/>`; }).join("")}</g>`)
+      + sfx(150, 230, "!!", (lt - 0.1) / 0.2, "#ffd23f", 0, 80); },
+  before(t, lt) { // BEFORE / AFTER card
+    const tags = [["SAME FACTS", wordAt("before", "same")], ["SAME DIAGRAMS", wordAt("before", "diagrams")], ["SAME CHAPTER", wordAt("before", "somehow")]];
+    const tr = clamp((t - wordAt("before", "transformed")) / 0.8);
+    const card = (label, col, inner, k) => `<div style="width:250px;height:440px;background:${col};border:5px solid ${O};border-radius:22px;position:relative;overflow:hidden;${pop(k)}">
+      <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#fff;border:3px solid ${O};border-radius:10px;padding:4px 14px;font:800 20px Arc;color:${O}">${label}</div>${inner}</div>`;
+    return svg(darkUI(t))
+      + A(90, 150, `<div style="display:flex;gap:40px">${card("BEFORE", "#2b3150", `<svg width="250" height="440">${textbook(125, 260, 1.3)}<text x="125" y="380" text-anchor="middle" font-family="Arc" font-size="26" fill="#cfd6f0">40 PAGES</text></svg>`, lt / 0.3)}
+        ${card("AFTER", "#1f6f68", `<div style="position:absolute;left:55px;top:70px;width:140px;height:280px;border-radius:18px;border:4px solid ${O};overflow:hidden;background:#111">${reel("mito")}</div><div style="position:absolute;bottom:26px;width:100%;text-align:center;font:800 26px Arc;color:#fff">9 REELS</div>`, (lt - 0.2) / 0.3)}</div>`)
+      + A(90, 620, `<div style="width:540px;display:flex;flex-wrap:wrap;justify-content:center;gap:10px">${tags.map(([w, at]) => `<div style="background:#fff;border:3px solid ${O};border-radius:999px;padding:6px 18px;font:800 22px Arc;color:${O};${pop((t - at) / 0.25)}">✓ ${w}</div>`).join("")}</div>`)
+      + A(140, 760, `<div style="width:440px;height:26px;border-radius:13px;background:#26305a;border:3px solid ${O};overflow:hidden;position:relative"><div style="height:100%;width:${tr * 100}%;background:linear-gradient(90deg,${TEAL},#7f8cff)"></div><div style="position:absolute;inset:0;text-align:center;font:800 15px/22px Arc;color:#fff">TRANSFORMED ${Math.round(tr * 100)}%</div></div>`, `opacity:${tr > 0 ? 1 : 0}`); },
+  gimmick(t, lt) { // GIMMICK? with a magnifying glass
+    return svg(bedroom(t, { dawn: 1 }) + stick({ x: 330, y: 1000, s: 1.15, face: "smug", la: [30, 120], ra: [60, 100], hold: "L" })
+      + `<g transform="translate(470 560)"><circle r="44" fill="#bfe4f6" opacity=".6" stroke="${O}" stroke-width="10"/><path d="M30 32 L80 86" stroke="#7b5440" stroke-width="16" stroke-linecap="round"/></g>`); },
+  quiz(t, lt) { // the reel's quiz, then 100% REAL
+    const q = t - wordAt("quiz", "quiz"), ok = t - wordAt("quiz", "get");
+    return svg(darkUI(t))
+      + phoneBig(190, 190, 340, `<div style="position:absolute;inset:0;background:linear-gradient(#1f3b48,#122229);padding:40px 22px;box-sizing:border-box">
+        <div style="font:800 22px Arc;color:${LIME};letter-spacing:1px">QUICK CHECK</div><div style="font:800 30px/1.2 Arc;color:#fff;margin-top:14px">What do mitochondria make?</div>
+        ${["Glucose", "ATP", "DNA"].map((a, i) => { const right = i === 1 && ok > 0; return `<div style="margin-top:16px;border:3px solid ${right ? TEAL : "#3d5a66"};background:${right ? "rgba(94,242,196,.18)" : "transparent"};border-radius:14px;padding:14px 18px;font:800 26px Arc;color:#fff;display:flex;justify-content:space-between;${pop((q - i * 0.12) / 0.25)}">${a}${right ? `<span style="color:${TEAL}">✓</span>` : ""}</div>`; }).join("")}</div>`)
+      + (ok > 0.2 ? svg(stamp(360, 140, "100% REAL", ok - 0.2, "#22c55e", -6)) : ""); },
+  breakfast(t, lt) { // mom: "morning, champ." you: scrolling
+    return svg(kitchen() + stick({ x: 150, y: 1010, s: 1.0, who: "mom", face: "happy", la: [20, 30], ra: [60, 80] }) + stick({ x: 520, y: 1010, s: 0.95, face: "happy", legs: "sit", la: [30, 120], ra: [20, 140], hold: "R" }))
+      + speech(60, 420, "morning, champ.", (lt - 0.2) / 0.25, 230)
+      + (t > wordAt("breakfast", "mom") ? A(400, 560, `<div style="font:800 28px Arc;color:${O};background:#fff;border:3px solid ${O};border-radius:10px;padding:6px 14px;transform:rotate(-4deg)">nothing unusual</div>`, pop((t - wordAt("breakfast", "mom")) / 0.25)) : ""); },
+  funny(t, lt) { // the funniest part: laughing on a yellow burst
+    const rays = Array.from({ length: 20 }, (_, i) => { const a = (i / 20) * Math.PI * 2 + lt * 0.5; return `<path d="M360 640 L${360 + Math.cos(a) * 900} ${640 + Math.sin(a) * 900} L${360 + Math.cos(a + 0.14) * 900} ${640 + Math.sin(a + 0.14) * 900} Z" fill="#ffe36a"/>`; }).join("");
+    const shake = Math.sin(t * 30) * 4;
+    return `<div style="position:absolute;inset:0;background:#f9c933"></div>` + svg(rays + `<g transform="translate(0 ${shake})">${stick({ x: 360, y: 1180, s: 1.7, face: "laugh", la: [40, 120], ra: [40, 120] })}</g>`)
+      + sfx(90, 260, "HA", (lt - 0.1) / 0.2, "#fff", -12, 56) + sfx(520, 330, "HA", (lt - 0.3) / 0.2, "#fff", 10, 56) + sfx(470, 820, "HA", (lt - 0.5) / 0.2, "#fff", -6, 48); },
+  couch(t, lt) { // same couch, same snacks, same scrolling
+    const chip = (w, k) => `<div style="background:#fff;border:3px solid ${O};border-radius:999px;padding:8px 18px;font:800 26px Arc;color:${O};${pop(k)}">${w}</div>`;
+    return svg(living() + stick({ x: 250, y: 990, s: 0.95, face: "smug", legs: "sit", la: [30, 120], ra: [20, 130], hold: "R" }) + stick({ x: 500, y: 990, s: 0.95, who: "friend", face: "neutral", legs: "sit", la: [20, 30], ra: [30, 110] })
+      + `<g transform="translate(520 860)"><path d="M-40 -60 L40 -60 L30 20 L-30 20 Z" fill="#e23b3b" stroke="${O}" stroke-width="5"/><text y="-20" text-anchor="middle" font-family="Arc" font-size="18" fill="#fff">CHIPS</text></g>` + couchFront)
+      + A(60, 450, `<div style="width:600px;display:flex;flex-wrap:wrap;justify-content:center;gap:10px">${chip("same couch", (t - wordAt("couch", "couch")) / 0.25)}${chip("same snacks", (t - wordAt("couch", "snacks")) / 0.25)}${chip("same scrolling", (t - wordAt("couch", "scrolling")) / 0.25)}</div>`); },
+  couch2(t, lt) { // ayo, powerhouse of the cell? mitochondria, bro.
+    return svg(living() + stick({ x: 250, y: 990, s: 0.95, face: "smug", legs: "sit", la: [30, 120], ra: [20, 130], hold: "R" }) + stick({ x: 500, y: 990, s: 0.95, who: "friend", face: "shock", legs: "sit", la: [20, 30], ra: [30, 110] }) + couchFront)
+      + speech(390, 470, "ayo... powerhouse of the cell?", lt / 0.25, 260, true)
+      + speech(70, 600, "mitochondria, bro.", (lt - 0.8) / 0.25, 230); },
+  test(t, lt) { // teacher hands back an A; everyone: HOW??
+    const d = t - wordAt("test", "everyone");
+    return svg(classroom() + stick({ x: 170, y: 1020, s: 1.0, who: "teacher", face: "happy", la: [10, 10], ra: [70, 40] }) + stick({ x: 420, y: 1020, s: 1.0, face: "grin", la: [60, 60], ra: [20, 10] })
+      + (d > 0 ? stick({ x: 600, y: 1030, s: 0.85, who: "friend", face: "shock", la: [150, 20], ra: [150, 20] }) : "")
+      + `<g transform="translate(320 620) rotate(-6)"><rect x="-60" y="-80" width="120" height="160" fill="#fff" stroke="${O}" stroke-width="5"/><text y="20" text-anchor="middle" font-family="Arc" font-size="90" fill="#22c55e">A</text></g>`)
+      + (d > 0 ? burst(520, 520, "HOW??", d / 0.25, "#ffd23f", 50, 6) : ""); },
+  roof(t, lt) { // sunset: "you're sending me the link... right?"
+    return svg(rooftop(t) + stick({ x: 250, y: 1000, s: 1.0, face: "happy", la: [20, 20], ra: [20, 20] }) + stick({ x: 470, y: 1000, s: 1.0, who: "friend", face: "neutral", la: [20, 20], ra: [40, 90] }))
+      + speech(380, 470, "you're sending me the link... right?", (lt - 0.2) / 0.25, 270, true); },
+  roof2(t, lt) { // "always, bro."
+    return svg(rooftop(t) + stick({ x: 250, y: 1000, s: 1.0, face: "grin", la: [20, 20], ra: [70, 60] }) + stick({ x: 470, y: 1000, s: 1.0, who: "friend", face: "happy", la: [60, 60], ra: [40, 90] }))
+      + speech(70, 520, "always, bro.", (lt - 0.1) / 0.25, 200)
+      + sfx(560, 360, "?", (lt - 0.9) / 0.2, "#fff", 8, 70) + sfx(130, 330, "?", (lt - 1.2) / 0.2, "#ffd23f", -8, 60); },
+  end(t, lt) { // WHAT WOULD YOU DO?
+    return svg(rooftop(t) + stick({ x: 250, y: 1000, s: 1.0, face: "grin", la: [20, 20], ra: [70, 60] }) + stick({ x: 470, y: 1000, s: 1.0, who: "friend", face: "happy", la: [60, 60], ra: [40, 90] }))
+      + `<div style="position:absolute;inset:0;background:rgba(20,10,30,${0.72 * ease(lt / 0.4)})"></div>`
+      + A(90, 300, `<div style="width:540px;text-align:center;font:800 64px/1.05 Arc;color:#fff;-webkit-text-stroke:4px ${O};paint-order:stroke">WHAT WOULD<br><span style="color:${TEAL}">YOU DO?</span></div>`, pop((lt - 0.1) / 0.35))
+      + A(90, 500, `<div style="width:540px;text-align:center;font:800 26px Arc;color:#fff">Tell me in the comments ↓</div>`, pop((lt - 0.4) / 0.3))
+      + A(90, 600, `<div style="width:540px;text-align:center"><span style="display:inline-block;background:${LIME};color:#0f1d18;border:4px solid ${O};border-radius:999px;padding:16px 34px;font:800 34px Arc">Try it free · unspool.cc</span></div>`, pop((lt - 0.8) / 0.3))
+      + A(90, 700, `<div style="width:540px;text-align:center;font:600 22px Arc;color:#e6dff0">Turn any chapter into TikToks with a quiz.</div>`, pop((lt - 1.1) / 0.3)); },
+};
+function phoneSmallOnStand() { return `<g transform="translate(615 850)"><rect x="-22" y="-14" width="44" height="18" rx="4" fill="#111"/></g>`; }
+function wordAt(shot, w0) { const l = L(shot), w = l.text.replace(/\*/g, "").split(" "), i = w.findIndex((x) => x.toLowerCase().startsWith(w0)), wl = (x) => x.length + 1;
+  return l.s + w.slice(0, Math.max(0, i)).reduce((a, x) => a + wl(x), 0) / w.reduce((a, x) => a + wl(x), 0) * (l.e - l.s); }
+
+// ---------------- captions: one or two words at a time, the *marked* word in teal ----------------
+function caption(l, t) {
+  const raw = l.text.split(" "), words = raw.map((w) => w.replace(/\*/g, "")), key = raw.map((w) => w.includes("*"));
+  const chunks = []; for (let k = 0; k < words.length;) { const n = words[k].length > 7 || (words[k + 1] && words[k + 1].length > 7) || /[.,!?]$/.test(words[k]) ? 1 : 2; chunks.push([k, Math.min(words.length, k + n)]); k += n; }
+  const wl = (w) => w.length + 1, tot = words.reduce((a, w) => a + wl(w), 0), u = clamp((t - l.s) / (l.e - l.s)) * tot;
+  let acc = 0; const starts = words.map((w) => { const a = acc; acc += wl(w); return a; }); let wi = 0; words.forEach((w, k) => { if (u >= starts[k]) wi = k; });
+  const [a, b] = chunks.find(([a, b]) => wi >= a && wi < b);
+  const age = (u - starts[a]) / tot * (l.e - l.s), k = clamp(age / 0.12);
+  const txt = words.slice(a, b).map((w, j) => `<span style="color:${key[a + j] ? TEAL : "#fff"}">${w}</span>`).join(" ");
+  return A(60, 860, `<div style="width:600px;text-align:center;font:800 58px Arc;letter-spacing:-0.5px;-webkit-text-stroke:9px ${O};paint-order:stroke;text-shadow:0 6px 0 ${O};transform:scale(${1 + 0.18 * (1 - ease(k))})">${txt}</div>`);
+}
+
+window.renderAt = (t) => {
+  let i = 0; lines.forEach((l, j) => { if (t >= l.s - 0.12) i = j; });
+  const l = lines[i], lt = t - (l.s - 0.12);
+  const base = { hook: 1.16, book: 1.16, alarm: 1.15, open: 1.12, buzz: 1.1, gimmick: 1.08, breakfast: 1.06, couch: 1.1, couch2: 1.18, test: 1.08, roof: 1.05, roof2: 1.12 }[l.shot] ?? 1;
+  const zoom = base * (1 + 0.035 * inOut(lt / Math.max(1, l.e - l.s + 0.4)));   // a slow push in on every shot
+  let h = `<div style="position:absolute;inset:0;transform:scale(${zoom});transform-origin:${['hook','book'].includes(l.shot) ? '50% 66%' : '50% 60%'}">${SHOTS[l.shot](t, lt)}</div>`;
+  if (OVER[l.shot]) h += OVER[l.shot](t, lt);
+  const flash = Math.max(0, 1 - lt / 0.07) * 0.25; if (i > 0 && flash > 0) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${flash}"></div>`;
+  if (t <= l.e + 0.1 && t >= l.s && l.shot !== "end") h += caption(l, t);
+  // a full repaint every frame: reusing the page between frames left stale tiles (ghost stamps) in the screenshots
+  S.innerHTML = ""; void S.offsetHeight; S.style.background = (Math.round(t * 30) % 2) ? "#1b1830" : "#1b1831";
+  S.innerHTML = h; void S.offsetHeight;
+};
+await document.fonts.load("40px Arc"); await document.fonts.load("40px Unb");
+await Promise.all(["mito"].map((n) => new Promise((r) => { const i = new Image(); i.onload = r; i.onerror = r; i.src = `${n}.png`; })));
+window.renderAt(0); setTimeout(() => (window.ready = true), 60);
+</script></body></html>
