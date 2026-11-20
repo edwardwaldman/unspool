@@ -1,29 +1,23 @@
-# Music + sound for the pause challenge: an upbeat loop, a whoosh as each thing flies past, a freeze "click"
-# and a sting on each near miss, a big whoosh for the one that flies at you, and a win jingle.
+# A seamless 3-second loop: 120 bpm (exactly 6 beats), a rising whoosh into the pass, a swoosh past the camera,
+# a click + wah-wah on SO CLOSE. Nothing rings past the loop point, so it loops cleanly.
 import json, sys, numpy as np, soundfile as sf
-D = sys.argv[1]; DUR = json.load(open(f"{D}/web/tl.json"))["dur"]; SR = 24000; N = int(SR * DUR); out = np.zeros(N); rng = np.random.default_rng(4); tt = np.arange(N) / SR
+D = sys.argv[1]; DUR = 3.0; SR = 24000; N = int(SR * DUR); out = np.zeros(N); rng = np.random.default_rng(2)
 note = lambda m: 440 * 2 ** ((m - 69) / 12)
 def add(t0, x, g):
-    a = int(t0 * SR); b = min(N, a + len(x))
-    if 0 <= a < N: out[a:b] += x[:b - a] * g
-def tone(f, d, dec=5, h=(1, .5, .25)): t = np.arange(int(SR * d)) / SR; return sum(a * np.sin(2 * np.pi * f * (i + 1) * t) for i, a in enumerate(h)) * np.exp(-t * dec)
+    a = int(t0 * SR); x = x[:max(0, N - a)]; out[a:a + len(x)] += x * g
+def tone(f, d, dec=6, h=(1, .4)): t = np.arange(int(SR * d)) / SR; return sum(a * np.sin(2 * np.pi * f * (i + 1) * t) for i, a in enumerate(h)) * np.exp(-t * dec)
 def noise(d, dec=6): t = np.arange(int(SR * d)) / SR; return rng.standard_normal(len(t)) * np.exp(-t * dec)
-def kick(): k = np.arange(int(SR * .2)) / SR; return np.sin(2 * np.pi * (50 + 90 * np.exp(-k * 30)) * k) * np.exp(-k * 12)
-def whoosh(d, up=True): x = noise(d, 0.1) * (np.linspace(0, 1, int(SR * d)) ** 2 if up else np.sin(np.linspace(0, np.pi, int(SR * d))) ** 2); return np.convolve(x, np.ones(5) / 5, "same")
-B = 60 / 124; ch = [[60, 64, 67], [57, 60, 64], [65, 69, 72], [67, 71, 74]]
-for i in range(int(8.3 / (B / 2))):
-    t0 = i * B / 2; c = ch[(i // 8) % 4]
-    add(t0, tone(note(c[[0, 1, 2, 1][i % 4]] + 12), B / 2, 9, (1, .4)), 0.06)
-    if i % 4 == 0: add(t0, kick(), 0.4); add(t0, tone(note(c[0] - 24), B * 1.8, 3, (1, .5)), 0.12)
-    if i % 4 == 2: add(t0, noise(.12, 26), 0.12)
+def kick(): k = np.arange(int(SR * .18)) / SR; return np.sin(2 * np.pi * (50 + 90 * np.exp(-k * 30)) * k) * np.exp(-k * 14)
+B = 0.5
+for i in range(12):
+    t0 = i * B / 2; ch = [60, 64, 67, 72] if i < 8 else [57, 60, 64, 69]
+    add(t0, tone(note(ch[i % 4] + 12), 0.24, 14), 0.07)
+    if i % 2 == 0: add(t0, kick(), 0.45); add(t0, tone(note(ch[0] - 24), 0.45, 6, (1, .5)), 0.12)
+    if i % 2 == 1: add(t0, noise(.1, 30), 0.1)
     add(t0, noise(.02, 160), 0.03)
-for tc in (1.5, 4.0, 6.5):
-    add(tc - 0.7, whoosh(0.75), 0.22)                                     # flying in
-    add(tc + 0.08, noise(0.04, 80), 0.3)                                   # the "pause" click
-for tc in (1.5, 4.0):
-    for j, m in enumerate([67, 63]): add(tc + 0.1 + j * 0.12, tone(note(m), 0.35, 6, (1, .4)), 0.12)   # so close (wah-wah)
-add(4.35, whoosh(0.4), 0.4); add(4.72, kick(), 0.6); add(4.72, noise(0.3, 8), 0.25)                   # straight at you
-for j, m in enumerate([72, 76, 79, 84, 88]): add(6.6 + j * 0.07, tone(note(m), 1.2, 2.5, (1, .3)), 0.12)  # you did it
-for j, m in enumerate([67, 72, 76, 79]): add(8.35 + j * 0.06, tone(note(m), 1.2, 2, (1, .3)), 0.1)      # outro
-m = np.tanh(out * 1.8) / np.tanh(1.8); m *= np.minimum(1, tt / 0.02) * np.minimum(1, (DUR - tt) / 0.5); m /= np.abs(m).max() / 0.79
+r = np.linspace(0, 1, int(SR * 0.7)); add(0.3, np.convolve(rng.standard_normal(len(r)) * r ** 3, np.ones(5) / 5, "same"), 0.25)   # incoming
+w = np.sin(np.linspace(0, np.pi, int(SR * 0.3))) ** 2; add(1.0, np.convolve(rng.standard_normal(len(w)) * w, np.ones(4) / 4, "same"), 0.4)  # past you
+add(1.36, noise(0.04, 80), 0.35)                                                                        # pause click
+for j, m in enumerate([67, 63]): add(1.42 + j * 0.16, tone(note(m), 0.4, 6), 0.14)                      # so close
+m = np.tanh(out * 1.7) / np.tanh(1.7); m /= np.abs(m).max() / 0.79
 sf.write(f"{D}/mix.wav", m.astype(np.float32), SR); print("ok")

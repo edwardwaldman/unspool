@@ -1,8 +1,10 @@
-# Pause challenge ("Only 1% can pause all 3 in the frame!")
+# Pause challenge ("Only 1% can pause it in the frame!")
 
-Three study things (an Unspool reel on a phone, a BIO textbook, an A+ test) fly past a hand-drawn red frame.
-Each is dead centre for exactly one frame (frames 45, 120 and 195 at 30 fps), so pausing really can catch them.
-Near misses freeze with "SO CLOSE"; the last one lands with "YOU DID IT!", then "Comment UNSPOOL + screenshot it".
+A 3-second 3D loop (three.js). One phone flies past fast, spinning. On exactly one frame (frame 30 of 90, at 1.0 s)
+it is upright and lined up inside the red outline, which is drawn from the phone's own projected silhouette at
+that frame, so it fits exactly. Only on that frame its screen shows an Unspool ad ("YOU GOT IT! · unspool ·
+unspool.cc · First reel free"); every other frame shows a normal reel. After each pass a "SO CLOSE · 1 frame off!"
+freeze shows it one frame late. Frame 0 and frame 89 match, so the video loops cleanly.
 
-- `mix.py <dir>` makes `mix.wav` (music and sound, no voice).
-- Render with `node brand/ads/tools/render-fresh.mjs <dir> 6`, then `bash brand/ads/tools/encode.sh <dir> pause-challenge`.
+- `mix.py <dir>` makes `mix.wav` (a seamless 120 bpm loop, whooshes, the SO CLOSE sting).
+- Render with WebGL on: `node brand/ads/tools/render-fresh.mjs <dir> 6 --gl`, then `bash brand/ads/tools/encode.sh <dir> pause-challenge`.
