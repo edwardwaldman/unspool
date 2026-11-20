@@ -32,7 +32,14 @@ frame by frame (`index.html`), the voiceover script (`lines.json` or `tts.py`) a
 
 1. Post to **TikTok**, **Instagram Reels** and **YouTube Shorts** (Shorts title = a searchable topic, e.g.
    "Why you blank on tests | study tips"; Shorts also show up in Google video results).
-2. Caption: one comment-bait question + 3–5 study hashtags (#studytok #studytips #college …), never #fyp/#xyzbca.
+2. Caption: one comment-bait question + 3–5 hashtags, never #fyp/#xyzbca. Pick from what recent high-performing study
+   videos use (checked November 20, 2026 on Toklytics hashtag stats and ContentScout's weekly study-niche sample):
+   - Always: **#learnontiktok** (≈990K avg views/video; in that week's top study posts at ≈4M) + **#highschool** (≈1.6M avg,
+     13% viral) or **#college** (≈830K); keep **#studytok** as the niche label.
+   - Study science / explainers: + #activerecall, #edutok. Test panic: + #examseason. Product demos: + #studyhacks #schoolhacks.
+     Stories and skits: + #storytime. Challenges: + #satisfying #challenge. Learn-anything topics: #learnontiktok #edutok + the topic.
+   - Avoid: #studytips (≈455K, lowest viral rate), #studywithme, #collegetips, #studyroutine, #pausechallenge (dead, ≈11K).
+   - YouTube Shorts: #shorts #learning #education #studyhacks #highschool. Re-check these every month or two; tags go stale.
 3. Pin your own comment: "try it free at unspool.cc". Reply to every comment in the first hour.
 4. Post 1–2 a day in study season, roughly the same time of day, so results are comparable.
 
