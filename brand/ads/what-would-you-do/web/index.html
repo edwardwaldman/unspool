@@ -42,8 +42,49 @@ function arm(sx, sy, a1, a2, side, len = 60) {
   const d2 = d1 + r(a2) * side, hx = ex + Math.sin(d2) * len, hy = ey + Math.cos(d2) * len;
   return { path: `M${sx} ${sy} L${ex} ${ey} L${hx} ${hy}`, hx, hy };
 }
-// who: you | friend | mom | teacher | kid2
-function stick({ x, y, s = 1, who = "you", face = "neutral", la = [10, 10], ra = [10, 10], legs = "stand", t = 0, lean = 0, hold = "" }) {
+// the girl he wakes up as: a chibi anime girl in his same cap, hoodie, chain and band-aid
+function animeGirl({ x, y, s = 1, face = "neutral", la = [10, 10], ra = [10, 10], legs = "stand", lean = 0, hold = "" }) {
+  const sit = legs === "sit", hipY = sit ? -70 : -116, top = hipY - 104, hy = top - 66, R = 62;
+  const legP = sit ? `M-16 ${hipY} L-30 ${hipY + 26} L-30 0 M16 ${hipY} L30 ${hipY + 26} L30 0` : `M-14 ${hipY} L-18 0 M14 ${hipY} L18 0`;
+  const sh = top + 20, L1 = arm(-36, sh, la[0], la[1], -1, 54), R1 = arm(36, sh, ra[0], ra[1], 1, 54);
+  const sleeve = (P) => `<path d="${P.path}" stroke="${O}" stroke-width="30" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="${P.path}" stroke="#d9412f" stroke-width="21" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+  // long spiky hair, pink to violet
+  const locks = (side) => { const d = side; return `<path d="M${d * 40} ${hy - 30} Q${d * 78} ${hy + 20} ${d * 70} ${hy + 120} L${d * 84} ${hy + 160} L${d * 62} ${hy + 150} L${d * 70} ${hy + 205} L${d * 48} ${hy + 180} L${d * 50} ${hy + 236} L${d * 30} ${hy + 196} Q${d * 34} ${hy + 60} ${d * 30} ${hy}" fill="url(#hairG)" stroke="${O}" stroke-width="5" stroke-linejoin="round"/>`; };
+  const EYE = { // big glossy anime eyes
+    open: (cx) => `<ellipse cx="${cx}" cy="0" rx="13" ry="17" fill="#fff" stroke="${O}" stroke-width="3.5"/><ellipse cx="${cx}" cy="3" rx="9.5" ry="13" fill="#8b5cf6"/><ellipse cx="${cx}" cy="5" rx="5" ry="7" fill="${O}"/><circle cx="${cx - 4}" cy="-4" r="4" fill="#fff"/><circle cx="${cx + 4}" cy="8" r="2" fill="#fff"/>`,
+    shock: (cx) => `<ellipse cx="${cx}" cy="0" rx="15" ry="19" fill="#fff" stroke="${O}" stroke-width="3.5"/><circle cx="${cx}" cy="2" r="5" fill="#8b5cf6"/><circle cx="${cx}" cy="2" r="2.5" fill="${O}"/>`,
+    closed: (cx) => `<path d="M${cx - 13} 2 Q${cx} -12 ${cx + 13} 2" stroke="${O}" stroke-width="5" fill="none" stroke-linecap="round"/>`,
+    smug: (cx) => `<ellipse cx="${cx}" cy="3" rx="12" ry="12" fill="#fff" stroke="${O}" stroke-width="3.5"/><ellipse cx="${cx}" cy="5" rx="9" ry="10" fill="#8b5cf6"/><circle cx="${cx}" cy="6" r="4.5" fill="${O}"/><path d="M${cx - 15} -6 L${cx + 15} -6" stroke="${O}" stroke-width="6" stroke-linecap="round"/>`,
+  };
+  const look = { shock: "shock", panic: "shock", blank: "shock", laugh: "closed", grin: "closed", sleep: "closed", smug: "smug" }[face] || "open";
+  const mouth = { shock: `<ellipse cx="0" cy="30" rx="9" ry="11" fill="#e85a7a" stroke="${O}" stroke-width="3"/>`, panic: `<path d="M-15 22 Q0 16 15 22 L12 40 Q0 46 -12 40 Z" fill="#e85a7a" stroke="${O}" stroke-width="3"/>`,
+    happy: `<path d="M-10 24 Q0 36 10 24 Z" fill="#e85a7a" stroke="${O}" stroke-width="3"/>`, grin: `<path d="M-14 22 Q0 42 14 22 Z" fill="#e85a7a" stroke="${O}" stroke-width="3"/>`, laugh: `<path d="M-16 20 Q0 46 16 20 Z" fill="#e85a7a" stroke="${O}" stroke-width="3"/>`,
+    smug: `<path d="M-8 28 Q4 32 12 24" stroke="${O}" stroke-width="4" fill="none" stroke-linecap="round"/>`, blank: `<path d="M-6 30 L6 30" stroke="${O}" stroke-width="4"/>`, sleep: `<path d="M-6 30 L6 30" stroke="${O}" stroke-width="4"/>` }[face] || `<path d="M-7 28 Q0 33 7 28" stroke="${O}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+  const lashes = look === "open" || look === "smug" ? `<path d="M-32 -12 L-38 -18 M-28 -16 L-31 -23 M32 -12 L38 -18 M28 -16 L31 -23" stroke="${O}" stroke-width="3.5" stroke-linecap="round"/>` : "";
+  return `<g transform="translate(${x} ${y}) scale(${s}) rotate(${lean})">
+    <defs><linearGradient id="hairG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff86c1"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
+    ${locks(-1)}${locks(1)}
+    <path d="${legP}" stroke="#3a3a48" stroke-width="15" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    ${sleeve(L1)}
+    <path d="M-38 ${top + 8} Q-40 ${top - 4} -26 ${top} L26 ${top} Q40 ${top - 4} 38 ${top + 8} L44 ${hipY + 6} L-44 ${hipY + 6} Z" fill="#d9412f" stroke="${O}" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M-26 ${hipY - 34} L26 ${hipY - 34} L22 ${hipY - 6} L-22 ${hipY - 6} Z" fill="#c23525" stroke="${O}" stroke-width="3"/>
+    <path d="M-30 ${top + 2} Q0 ${top + 22} 30 ${top + 2}" fill="#c23525" stroke="${O}" stroke-width="4"/>
+    <path d="M-20 ${top + 8} Q0 ${top + 40} 20 ${top + 8}" stroke="#e3b04b" stroke-width="5" fill="none"/><circle cx="0" cy="${top + 32}" r="8" fill="#e3b04b" stroke="${O}" stroke-width="2.5"/>
+    ${sleeve(R1)}
+    <circle cx="0" cy="${hy}" r="${R}" fill="#fff3ea" stroke="${O}" stroke-width="6"/>
+    <g transform="translate(0 ${hy + 16})">${EYE[look](-24)}${EYE[look](24)}${lashes}
+      <path d="M-40 18 L-30 14 M-36 22 L-26 18" stroke="#f08aa0" stroke-width="3" stroke-linecap="round"/><path d="M26 14 L36 18 M30 18 L40 22" stroke="#f08aa0" stroke-width="3" stroke-linecap="round"/>
+      ${mouth}<g transform="translate(34 6) rotate(-30)"><rect x="-14" y="-6" width="28" height="12" rx="5" fill="#f2c08a" stroke="${O}" stroke-width="2.5"/><path d="M-3 -2 L-3 2 M3 -2 L3 2" stroke="${O}" stroke-width="2"/></g></g>
+    <path d="M-58 ${hy - 26} L-46 ${hy - 10} L-40 ${hy - 30} L-26 ${hy - 8} L-18 ${hy - 32} L-4 ${hy - 10} L4 ${hy - 34} L16 ${hy - 12} L24 ${hy - 32} L38 ${hy - 10} L44 ${hy - 30} L58 ${hy - 18} Q50 ${hy - 66} 0 ${hy - 68} Q-50 ${hy - 66} -58 ${hy - 26} Z" fill="url(#hairG)" stroke="${O}" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M-56 ${hy - 36} Q-54 ${hy - 82} 0 ${hy - 82} Q54 ${hy - 82} 56 ${hy - 36} Z" fill="#1d1b26" stroke="${O}" stroke-width="5"/>
+    <path d="M-22 ${hy - 40} L22 ${hy - 40}" stroke="#fff" stroke-width="4" stroke-dasharray="5 6"/><path d="M-48 ${hy - 38} L-84 ${hy - 30} L-50 ${hy - 24}" fill="#1d1b26" stroke="${O}" stroke-width="5" stroke-linejoin="round"/>
+    ${hold ? `<g transform="translate(${hold === "L" ? L1.hx : R1.hx} ${hold === "L" ? L1.hy : R1.hy})">${PHONE_SMALL}</g>` : ""}
+    <circle cx="${L1.hx}" cy="${L1.hy}" r="9" fill="#fff3ea" stroke="${O}" stroke-width="3"/><circle cx="${R1.hx}" cy="${R1.hy}" r="9" fill="#fff3ea" stroke="${O}" stroke-width="3"/></g>`;
+}
+// who: you | friend | mom | teacher | kid2 | homeboy | girl
+function stick(o) {
+  if (o.who === "girl") return animeGirl(o);
+  const { x, y, s = 1, who = "you", face = "neutral", la = [10, 10], ra = [10, 10], legs = "stand", t = 0, lean = 0, hold = "" } = o;
   const hood = { you: "#1d1b26", friend: "#5b6170", mom: "#f08a3c", teacher: "#2f5d8a", kid2: "#c0392b", homeboy: "#d9412f", girl: "#d9412f" }[who];
   const capped = who === "friend" || who === "homeboy" || who === "girl", capCol = who === "friend" ? "#c0392b" : "#1d1b26";
   const sit = legs === "sit", hipY = sit ? -70 : -120;
@@ -73,7 +114,7 @@ function stick({ x, y, s = 1, who = "you", face = "neutral", la = [10, 10], ra =
     ${who === "mom" ? hair : ""}
     <circle cx="0" cy="${hy}" r="54" fill="#fff" stroke="${O}" stroke-width="6"/>
     ${who === "mom" ? `<path d="M-50 ${hy - 10} Q-30 ${hy - 60} 30 ${hy - 50} Q50 ${hy - 40} 52 ${hy - 10} Q20 ${hy - 40} -50 ${hy - 10} Z" fill="#1d1b26"/>` : hair}
-    <g transform="translate(0 ${hy})" fill="${O}">${FACES[face]}${who === "girl" ? `<path d="M-26 -14 L-32 -20 M-20 -17 L-23 -24 M26 -14 L32 -20 M20 -17 L23 -24" stroke="${O}" stroke-width="3" stroke-linecap="round"/><circle cx="-30" cy="14" r="7" fill="#f4a3a3" opacity=".7"/><circle cx="30" cy="14" r="7" fill="#f4a3a3" opacity=".7"/>` : ""}</g>${glasses}
+    <g transform="translate(0 ${hy})" fill="${O}">${FACES[face]}${who === "homeboy" ? `<g transform="translate(30 10) rotate(-30)"><rect x="-13" y="-5" width="26" height="11" rx="5" fill="#f2c08a" stroke="${O}" stroke-width="2.5"/></g>` : ""}${who === "girl" ? `<path d="M-26 -14 L-32 -20 M-20 -17 L-23 -24 M26 -14 L32 -20 M20 -17 L23 -24" stroke="${O}" stroke-width="3" stroke-linecap="round"/><circle cx="-30" cy="14" r="7" fill="#f4a3a3" opacity=".7"/><circle cx="30" cy="14" r="7" fill="#f4a3a3" opacity=".7"/>` : ""}</g>${glasses}
     ${who === "homeboy" || who === "girl" ? `<path d="M-20 ${top + 4} Q0 ${top + 34} 20 ${top + 4}" stroke="#e3b04b" stroke-width="6" fill="none"/><circle cx="0" cy="${top + 26}" r="7" fill="#e3b04b" stroke="${O}" stroke-width="2"/>` : ""}
     ${hold ? `<g transform="translate(${hold === "L" ? L1.hx : R1.hx} ${hold === "L" ? L1.hy : R1.hy})">${PHONE_SMALL}</g>` : ""}
     <circle cx="${L1.hx}" cy="${L1.hy}" r="8" fill="${O}"/><circle cx="${R1.hx}" cy="${R1.hy}" r="8" fill="${O}"/></g>`;
@@ -200,7 +241,7 @@ const SHOTS = {
     const cut = t > wordAt("answer", "girl") - 0.1;
     if (!cut) return svg(bedroom(t, { dawn: 1 }) + stick({ x: 300, y: 960, s: 1.0, face: "sleep", legs: "sit", la: [30, 20], ra: [150, 120], hold: "R" }) + blanketLow) + speech(380, 380, "...hello?", (lt - 0.2) / 0.2, 180, true);
     const k = t - wordAt("answer", "girl"), sh = Math.sin(t * 70) * 6;
-    return svg(bedroom(t, { dawn: 1 }) + `<g transform="translate(${sh} 0)">${GIRL({ x: 360, y: 1000, s: 1.25, face: "panic", la: [150, 20], ra: [160, 60], hold: "R" })}</g>` + burst(360, 300, "AAAAH!!", k / 0.25, "#ffd23f", 66)); },
+    return svg(bedroom(t, { dawn: 1 }) + `<g transform="translate(${sh} 0)">${GIRL({ x: 360, y: 1000, s: 1.25, face: "panic", la: [150, 20], ra: [110, 130], hold: "R" })}</g>` + burst(360, 300, "AAAAH!!", k / 0.25, "#ffd23f", 66)); },
   memory(t, lt) { // MEMORY SEARCH: who is this? → 0 matches
     const face = (hat) => `<svg width="110" height="110" viewBox="-60 -64 120 120"><circle r="44" fill="#fff" stroke="${O}" stroke-width="5"/>${hat}<circle cx="-14" cy="0" r="5"/><circle cx="14" cy="0" r="5"/><path d="M-10 18 L10 18" stroke="${O}" stroke-width="4"/></svg>`;
     const items = [["TEACHER?", face(`<circle cx="-14" cy="0" r="12" fill="none" stroke="${O}" stroke-width="3"/><circle cx="14" cy="0" r="12" fill="none" stroke="${O}" stroke-width="3"/>`)], ["COUSIN?", face(`<path d="M-40 -16 Q-30 -52 0 -50 Q30 -52 40 -16" fill="#7a4a2a"/>`)], ["CASHIER?", face(`<rect x="-46" y="-48" width="92" height="20" fill="#2e8b57"/>`)]];
@@ -223,7 +264,7 @@ const SHOTS = {
       + speech(70, 200, "bro... it's me. TUNA.", (lt - 0.1) / 0.25, 300)
       + (him ? sfx(560, 170, "!!", (t - wordAt("itsit", "it's")) / 0.2, "#ffd23f", 0, 80) : ""); },
   before(t, lt) { // BEFORE / AFTER: same cap, same hoodie, same chain
-    const tags = [["SAME CAP", wordAt("before", "same")], ["SAME HOODIE", wordAt("before", "hoodie")], ["SAME CHAIN", wordAt("before", "chain")]];
+    const tags = [["SAME CAP", wordAt("before", "same")], ["SAME HOODIE", wordAt("before", "hoodie")], ["SAME CHAIN", wordAt("before", "chain")], ["SAME BAND-AID", wordAt("before", "somehow")]];
     const tr = clamp((t - wordAt("before", "transformed")) / 0.8);
     const card = (label, col, inner, k) => `<div style="width:250px;height:440px;background:${col};border:5px solid ${O};border-radius:22px;position:relative;overflow:hidden;${pop(k)}">
       <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#fff;border:3px solid ${O};border-radius:10px;padding:4px 14px;font:800 20px Arc;color:${O};z-index:2">${label}</div>${inner}</div>`;
