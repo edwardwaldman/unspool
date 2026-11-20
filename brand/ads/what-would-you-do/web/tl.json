@@ -1,113 +1,295 @@
 {
- "dur": 58.98,
+ "dur": 49.07,
  "lines": [
   {
    "shot": "hook",
    "text": "What would you do if your *homeboy* woke up as a *girl*?!",
-   "s": 0.25,
-   "e": 4.338
+   "s": 0.339,
+   "e": 2.732,
+   "ws": [
+    0.339,
+    0.464,
+    0.714,
+    0.929,
+    1.071,
+    1.179,
+    1.393,
+    1.839,
+    2.054,
+    2.161,
+    2.268,
+    2.411
+   ]
   },
   {
    "shot": "turn",
-   "text": "Like, a FULL *girl*!",
-   "s": 4.538,
-   "e": 6.467
+   "text": "Like, a FULL *girl*",
+   "s": 3.0,
+   "e": 4.161,
+   "ws": [
+    3.0,
+    3.339,
+    3.589,
+    3.893
+   ]
   },
   {
    "shot": "mirror",
-   "text": "On the morning of the bio *test*!",
-   "s": 6.667,
-   "e": 9.031
+   "text": "on the morning of the bio *test*!",
+   "s": 4.393,
+   "e": 5.893,
+   "ws": [
+    4.393,
+    4.5,
+    4.625,
+    4.893,
+    5.0,
+    5.196,
+    5.589
+   ]
   },
   {
    "shot": "call",
-   "text": "Imagine. *7 AM*. A call from your *best friend*.",
-   "s": 9.231,
-   "e": 12.284
+   "text": "Imagine. *Seven AM*. A call from your *best friend*.",
+   "s": 6.179,
+   "e": 8.75,
+   "ws": [
+    6.179,
+    6.946,
+    7.196,
+    7.625,
+    7.75,
+    7.964,
+    8.107,
+    8.268,
+    8.518
+   ]
   },
   {
    "shot": "answer",
-   "text": "You answer, and a girl is *screaming* your name.",
-   "s": 12.484,
-   "e": 15.538
+   "text": "You answer, and a girl is *screaming* your name!",
+   "s": 9.071,
+   "e": 11.411,
+   "ws": [
+    9.071,
+    9.196,
+    9.661,
+    9.768,
+    9.893,
+    10.179,
+    10.375,
+    10.964,
+    11.107
+   ]
   },
   {
    "shot": "memory",
    "text": "Memory search: absolutely *no idea* who this is.",
-   "s": 15.738,
-   "e": 18.447
+   "s": 11.821,
+   "e": 14.286,
+   "ws": [
+    11.821,
+    12.125,
+    12.679,
+    13.321,
+    13.554,
+    13.804,
+    13.946,
+    14.125
+   ]
   },
   {
    "shot": "itsit",
    "text": "Then she says your nickname. It's *him*!",
-   "s": 18.647,
-   "e": 21.61
+   "s": 14.696,
+   "e": 16.482,
+   "ws": [
+    14.696,
+    14.893,
+    15.054,
+    15.232,
+    15.357,
+    16.054,
+    16.232
+   ]
   },
   {
    "shot": "before",
-   "text": "Same cap. Same hoodie. Same chain. Somehow *transformed* overnight.",
-   "s": 21.81,
-   "e": 24.864
+   "text": "Same cap. Same hoodie. Same chain. Somehow *transformed* overnight!",
+   "s": 16.875,
+   "e": 20.661,
+   "ws": [
+    16.875,
+    17.125,
+    17.518,
+    17.732,
+    18.161,
+    18.446,
+    19.054,
+    19.464,
+    20.179
+   ]
   },
   {
    "shot": "prank",
-   "text": "At first, you think it's a *prank*. But it's *real*.",
-   "s": 25.064,
-   "e": 28.462
+   "text": "At first, you think it's a *prank*. But it's *real*!",
+   "s": 21.107,
+   "e": 23.393,
+   "ws": [
+    21.107,
+    21.286,
+    21.732,
+    21.821,
+    21.964,
+    22.089,
+    22.196,
+    22.714,
+    22.821,
+    23.089
+   ]
   },
   {
    "shot": "today",
    "text": "And the bio test is in one *hour*!",
-   "s": 28.662,
-   "e": 31.371
+   "s": 23.661,
+   "e": 25.518,
+   "ws": [
+    23.661,
+    23.75,
+    23.911,
+    24.232,
+    24.464,
+    24.571,
+    24.804,
+    25.232
+   ]
   },
   {
    "shot": "mission",
-   "text": "Your homeboy has one *mission*: turn back.",
-   "s": 31.571,
-   "e": 33.934
+   "text": "Your homeboy has one *mission*: turn back!",
+   "s": 26.0,
+   "e": 28.411,
+   "ws": [
+    26.0,
+    26.161,
+    26.589,
+    26.875,
+    27.071,
+    27.714,
+    28.161
+   ]
   },
   {
    "shot": "funny",
    "text": "But the *funniest* part?",
-   "s": 34.134,
-   "e": 36.064
+   "s": 28.839,
+   "e": 29.607,
+   "ws": [
+    28.839,
+    28.928,
+    29.071,
+    29.393
+   ]
   },
   {
    "shot": "couch",
    "text": "He still acts exactly the *same*. Same couch. Same snacks. Same *scrolling*.",
-   "s": 36.264,
-   "e": 40.352
+   "s": 29.964,
+   "e": 34.125,
+   "ws": [
+    29.964,
+    30.161,
+    30.357,
+    30.643,
+    31.232,
+    31.375,
+    32.054,
+    32.286,
+    32.714,
+    32.964,
+    33.464,
+    33.732
+   ]
   },
   {
    "shot": "couch2",
-   "text": "Except now, the scroll is his bio chapter, on *Unspool*.",
-   "s": 40.552,
-   "e": 44.95
+   "text": "Except now, the scroll is his bio chapter, on *Unspool*!",
+   "s": 34.446,
+   "e": 37.554,
+   "ws": [
+    34.446,
+    34.768,
+    35.214,
+    35.375,
+    35.714,
+    35.821,
+    36.054,
+    36.411,
+    36.875,
+    37.0
+   ]
   },
   {
    "shot": "test",
-   "text": "The test comes back, and he *aces* it.",
-   "s": 45.15,
-   "e": 47.859
+   "text": "The test comes back, and he *aces* it!",
+   "s": 38.054,
+   "e": 39.964,
+   "ws": [
+    38.054,
+    38.196,
+    38.429,
+    38.661,
+    39.018,
+    39.179,
+    39.518,
+    39.857
+   ]
   },
   {
    "shot": "roof",
    "text": "And when it's all over...",
-   "s": 48.059,
-   "e": 50.733
+   "s": 40.357,
+   "e": 41.071,
+   "ws": [
+    40.357,
+    40.464,
+    40.571,
+    40.732,
+    40.911
+   ]
   },
   {
    "shot": "roof2",
-   "text": "Would you treat your homeboy *exactly* the same?",
-   "s": 50.933,
-   "e": 53.641
+   "text": "Would you treat your homeboy *exactly* the same?!",
+   "s": 41.518,
+   "e": 43.571,
+   "ws": [
+    41.518,
+    41.714,
+    41.857,
+    42.071,
+    42.214,
+    42.661,
+    43.196,
+    43.321
+   ]
   },
   {
    "shot": "end",
-   "text": "What would *you* do? Try Unspool *free* at unspool dot cc.",
-   "s": 53.841,
-   "e": 57.584
+   "text": "What would *you* do? Try Unspool *free* at *unspool.cc*",
+   "s": 43.946,
+   "e": 47.268,
+   "ws": [
+    43.946,
+    44.071,
+    44.304,
+    44.5,
+    45.179,
+    45.429,
+    45.893,
+    46.268,
+    46.464
+   ]
   }
  ]
 }

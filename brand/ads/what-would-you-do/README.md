@@ -10,6 +10,6 @@ comic sound bubbles, memory-search and before/after cards, a "WHAT WOULD YOU DO?
 - `mix.py <dir>` makes `mix.wav` (music and sound effects; it mixes in `voice.wav` when present).
 - Render with `node brand/ads/tools/render-fresh.mjs <dir> 6`, then `bash brand/ads/tools/encode.sh <dir> what-would-you-do`.
 
-Voiceover (to do): `vo-prompt.txt` is the yelled script for ElevenLabs (Charlie, eleven_v4). Record it,
-cut it into lines at the word timings (Scribe), set each line's `s`/`e` in `web/tl.json` from them, save the
-take as `voice.wav` next to `mix.py`, then re-run `mix.py` and re-render.
+Voiceover: `voice-take.mp3` is the yelled take (ElevenLabs Charlie, eleven_v4, from `vo-prompt.txt`). `words.py` holds
+its word timings (Scribe); `timing.py <this dir> web/tl.json` times every line and caption word to it, sped up 1.12x.
+Make `voice.wav` with `ffmpeg -i voice-take.mp3 -af "atempo=1.12,adelay=250:all=1" -ar 24000 -ac 1 voice.wav`, then run `mix.py`.

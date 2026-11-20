@@ -32,19 +32,19 @@ add(st["turn"] + 0.6, whoosh(0.4), 0.3); add(st["turn"] + 0.95, sweep(200, 1400,
 add(st["mirror"] + 0.2, tone(note(88), 0.3, 6, (1, .3)), 0.1)
 for k in range(2):                                                                                                  # ring ring
     for q in range(8): add(st["call"] + 0.2 + k * 0.9 + q * 0.06, tone(1400 if q % 2 else 1700, 0.06, 20, (1,)), 0.1)
-add(st["answer"] + 1.6, sweep(900, 300, 0.6, 1.5), 0.2); add(st["answer"] + 1.6, thud(), 0.4)                        # AAAAH
+add(st["answer"] + 1.3, sweep(900, 300, 0.6, 1.5), 0.2); add(st["answer"] + 1.3, thud(), 0.4)                        # AAAAH
 for k in range(3): add(st["memory"] + 0.4 + k * 0.45, sweep(220, 160, 0.18, 6), 0.25)                             # error buzzes
 add(st["memory"] + 1.7, tone(180, 0.5, 4, (1, .8, .6)), 0.2)                                                       # 0 matches
-for j, m in enumerate([76, 83, 88]): add(st["itsit"] + 1.6 + j * 0.06, tone(note(m), 0.8, 3, (1, .3)), 0.12)        # ding!
+for j, m in enumerate([76, 83, 88]): add(st["itsit"] + 1.35 + j * 0.06, tone(note(m), 0.8, 3, (1, .3)), 0.12)        # ding!
 add(st["before"], whoosh(), 0.25)
-add(st["prank"] + 0.42, thud(), 0.5); add(st["prank"] + 2.3, thud(), 0.5); add(st["prank"] + 2.35, tone(note(84), 0.5, 4, (1, .3)), 0.1)   # stamps
+add(st["prank"] + 0.42, thud(), 0.5); add(st["prank"] + 2.0, thud(), 0.5); add(st["prank"] + 2.05, tone(note(84), 0.5, 4, (1, .3)), 0.1)   # stamps
 add(st["today"] + 0.05, thud(), 0.4)
-for k in range(20): add(st["mission"] + 0.6 + k * 0.045, noise(0.02, 120), 0.08)                                  # typing
+for k in range(20): add(st["mission"] + 0.3 + k * 0.035, noise(0.02, 120), 0.08)                                  # typing
 add(st["mission"] + 1.9, sweep(300, 200, 0.4, 4), 0.15)
 for k in range(3): add(st["funny"] + 0.22 + k * 0.2, tone(note(72 + k * 4), 0.15, 12, (1, .3)), 0.12)               # HA HA HA pops
 for k in range(3): add(st["couch"] + 0.6 + k * 1.0, tone(note(79), 0.12, 15, (1, .3)), 0.1)                         # chip pops
 add(st["couch2"] + 0.8, whoosh(0.25), 0.15)
-for j, m in enumerate([72, 76, 79, 84]): add(st["test"] + 1.0 + j * 0.08, tone(note(m), 0.9, 3, (1, .3)), 0.1)      # the A
+for j, m in enumerate([72, 76, 79, 84]): add(st["test"] + 1.45 + j * 0.08, tone(note(m), 0.9, 3, (1, .3)), 0.1)      # the A
 for s in st:                                                                                                        # a soft swoosh on every cut
     if s not in ("hook", "turn"): add(st[s], whoosh(0.22), 0.1)
 for j, m in enumerate([67, 72, 76, 79, 84]): add(st["end"] + 0.15 + j * 0.07, tone(note(m), 1.4, 2, (1, .3)), 0.1)  # end jingle
