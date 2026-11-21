@@ -11,7 +11,7 @@ canvas { position: absolute; left: 0; top: 0; }
 // it is upright and lined up inside the red outline (drawn from its own projected outline, so it fits exactly),
 // and only on that frame its screen shows an Unspool ad. After each pass: a "SO CLOSE" freeze one frame off.
 import * as THREE from "./three/three.module.js";
-const FPS = 30, LOOP = 3.0, TC = 1.0, TCF = Math.round(TC * FPS);   // the one frame that counts
+const FPS = 30, LOOP = 2.0, TC = 1.0, TCF = Math.round(TC * FPS);   // the one frame that counts
 window.DUR = LOOP;
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
@@ -115,18 +115,16 @@ function stick(g, t, mood) {   // a watcher in the corner
 window.renderAt = (t) => {
   t = ((t % LOOP) + LOOP) % LOOP; const f = Math.round(t * FPS);
   clouds.forEach((c, i) => { c.position.x = c.userData.base + Math.sin((t / LOOP) * Math.PI * 2 + i) * 0.8; });   // loops cleanly
-  const freezeK = t - (TC + 0.36);                 // after the pass: SO CLOSE, frozen one frame off
-  const frozen = freezeK > 0 && freezeK < 1.0;
-  if (frozen) { const q = pose(TC + 1 / FPS); phone.position.copy(q.p); phone.rotation.copy(q.r); phone.visible = true; screen.material.map = reelTex; }
-  else { const q = pose(t); phone.position.copy(q.p); phone.rotation.copy(q.r); phone.visible = visible(t); screen.material.map = f === TCF ? adTex : reelTex; }
+  // no freeze: the phone just flies; frame 30 is the prize, and only the frames right around it say how close you were
+  const off = f - TCF;
+  { const q = pose(t); phone.position.copy(q.p); phone.rotation.copy(q.r); phone.visible = visible(t); screen.material.map = off === 0 ? adTex : reelTex; }
   renderer.render(scene, camera);
   const g = ui; g.clearRect(0, 0, 720, 1280);
   heading(g); outline(g, t);
-  if (frozen) { const k = freezeK;
-    g.fillStyle = `rgba(255,255,255,${Math.max(0, 1 - k / 0.1) * 0.6})`; g.fillRect(0, 0, 720, 1280);
-    const s = outBack(k / 0.25), a = clamp(k * 4) * clamp((1.0 - k) / 0.12);
-    g.save(); g.globalAlpha = a; g.translate(360, OB + 92); g.scale(s, s); strokeText(g, "SO CLOSE 😬", 0, 0, 72, "#fff", 10, -0.08); strokeText(g, "1 frame off!", 0, 64, 40, "#ffd23f", 8, -0.08); g.restore(); }
-  stick(g, t, frozen ? "close" : "watch");
+  // printed only on the near-miss frames, so you only see it if you pause a frame or two off
+  const NEAR = { 1: ["SO CLOSE 😬", "1 frame off!"], 2: ["SO CLOSE 😬", "2 frames off!"], 3: ["Almost…", "3 frames off"] }[Math.abs(off)];
+  if (NEAR) { strokeText(g, NEAR[0], 360, OB + 96, 70, "#fff", 10, -0.08); strokeText(g, NEAR[1], 360, OB + 152, 40, "#ffd23f", 8, -0.08); }
+  stick(g, t, Math.abs(off) <= 6 ? "close" : "watch");
 };
 window.renderAt(0); setTimeout(() => (window.ready = true), 60);
 </script></body></html>
