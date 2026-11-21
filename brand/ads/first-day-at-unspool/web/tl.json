@@ -1,0 +1,418 @@
+{
+ "dur": 78.2,
+ "lines": [
+  {
+   "shot": "omg",
+   "text": "Oh my goooood.",
+   "ws": [
+    0.3,
+    0.6,
+    1.08
+   ],
+   "s": 0.3,
+   "e": 2.51
+  },
+  {
+   "shot": "firstday",
+   "text": "My first day at Unspool support,",
+   "ws": [
+    2.56,
+    2.82,
+    3.12,
+    3.26,
+    3.42,
+    3.82
+   ],
+   "s": 2.56,
+   "e": 4.49
+  },
+  {
+   "shot": "msg",
+   "text": "a student messaged, \"My bio test is tomorrow and my notes are 40 pages.\"",
+   "ws": [
+    4.54,
+    4.66,
+    4.98,
+    5.56,
+    5.8,
+    6.08,
+    6.3,
+    6.46,
+    7.04,
+    7.18,
+    7.32,
+    7.56,
+    7.78,
+    8.2
+   ],
+   "s": 4.54,
+   "e": 8.85
+  },
+  {
+   "shot": "onereel",
+   "text": "I said, \"No tension. I am making you one reel.\"",
+   "ws": [
+    8.9,
+    9.0,
+    9.3,
+    9.52,
+    10.12,
+    10.2,
+    10.34,
+    10.68,
+    10.92,
+    11.16
+   ],
+   "s": 8.9,
+   "e": 11.63
+  },
+  {
+   "shot": "slipped",
+   "text": "My finger slipped.",
+   "ws": [
+    11.68,
+    11.86,
+    12.18
+   ],
+   "s": 11.68,
+   "e": 12.67
+  },
+  {
+   "shot": "textbook",
+   "text": "I turned her whole textbook into reels, 400 pages, 38 reels.",
+   "ws": [
+    12.72,
+    12.84,
+    13.08,
+    13.36,
+    13.64,
+    14.04,
+    14.26,
+    15.08,
+    15.44,
+    16.239,
+    16.6
+   ],
+   "s": 12.72,
+   "e": 17.07
+  },
+  {
+   "shot": "aiyo",
+   "text": "Aiyooo.",
+   "ws": [
+    17.12
+   ],
+   "s": 17.12,
+   "e": 18.09
+  },
+  {
+   "shot": "mistake",
+   "text": "I messaged, \"Small mistake. Please do not watch it.\"",
+   "ws": [
+    18.14,
+    18.24,
+    18.78,
+    19.08,
+    19.64,
+    19.88,
+    20.02,
+    20.24,
+    20.46
+   ],
+   "s": 18.14,
+   "e": 20.79
+  },
+  {
+   "shot": "watchwhat",
+   "text": "She said, \"Watch what?\" Aiyooo!",
+   "ws": [
+    20.84,
+    21.0,
+    21.36,
+    21.66,
+    22.22
+   ],
+   "s": 20.84,
+   "e": 23.03
+  },
+  {
+   "shot": "onereel2",
+   "text": "She watched one reel. Okay, one reel only.",
+   "ws": [
+    23.08,
+    23.24,
+    23.58,
+    23.82,
+    24.22,
+    24.62,
+    24.84,
+    25.02
+   ],
+   "s": 23.08,
+   "e": 25.55
+  },
+  {
+   "shot": "quiz",
+   "text": "Then she did the quiz, full marks.",
+   "ws": [
+    25.6,
+    25.82,
+    25.96,
+    26.12,
+    26.28,
+    26.92,
+    27.16
+   ],
+   "s": 25.6,
+   "e": 27.75
+  },
+  {
+   "shot": "supervisor",
+   "text": "Supervisor came, stood behind my chair.",
+   "ws": [
+    27.8,
+    28.36,
+    28.8,
+    29.0,
+    29.28,
+    29.48
+   ],
+   "s": 27.8,
+   "e": 29.99
+  },
+  {
+   "shot": "spread",
+   "text": "Then her friend watched, then the whole class, then the whole school!",
+   "ws": [
+    30.04,
+    30.2,
+    30.42,
+    30.72,
+    31.2,
+    31.36,
+    31.54,
+    31.84,
+    32.4,
+    32.54,
+    32.68,
+    32.98
+   ],
+   "s": 30.04,
+   "e": 33.61
+  },
+  {
+   "shot": "aiyo3",
+   "text": "Aiyo, aiyo, aiyo!",
+   "ws": [
+    33.66,
+    34.08,
+    34.36
+   ],
+   "s": 33.66,
+   "e": 35.05
+  },
+  {
+   "shot": "manager",
+   "text": "Now the manager is standing behind the supervisor.",
+   "ws": [
+    35.1,
+    35.26,
+    35.46,
+    35.86,
+    36.0,
+    36.32,
+    36.56,
+    36.68
+   ],
+   "s": 35.1,
+   "e": 37.49
+  },
+  {
+   "shot": "dontshare",
+   "text": "Supervisor said, \"Please do not share it.\"",
+   "ws": [
+    37.54,
+    38.04,
+    38.5,
+    39.0,
+    39.22,
+    39.5,
+    39.74
+   ],
+   "s": 37.54,
+   "e": 40.13
+  },
+  {
+   "shot": "city",
+   "text": "Too late! the whole city is scrolling biology.",
+   "ws": [
+    40.18,
+    40.34,
+    40.82,
+    41.02,
+    41.38,
+    41.66,
+    41.8,
+    42.16
+   ],
+   "s": 40.18,
+   "e": 42.93
+  },
+  {
+   "shot": "principal",
+   "text": "The principal came holding his chest. Every student passed!",
+   "ws": [
+    42.98,
+    43.12,
+    43.66,
+    44.02,
+    44.34,
+    44.58,
+    45.3,
+    45.7,
+    46.12
+   ],
+   "s": 42.98,
+   "e": 46.77
+  },
+  {
+   "shot": "mother",
+   "text": "My mother called. She said, \"Beta, very good! First day only, and the whole country is studying!\"",
+   "ws": [
+    46.82,
+    47.0,
+    47.28,
+    47.72,
+    47.86,
+    48.24,
+    48.76,
+    49.06,
+    49.54,
+    49.88,
+    50.08,
+    50.48,
+    50.6,
+    50.8,
+    51.12,
+    51.48,
+    51.6
+   ],
+   "s": 46.82,
+   "e": 52.27
+  },
+  {
+   "shot": "minister",
+   "text": "The education minister was whispering behind the manager, \"How much textbook is left?\"",
+   "ws": [
+    52.32,
+    52.48,
+    52.98,
+    53.36,
+    53.56,
+    54.0,
+    54.26,
+    54.36,
+    55.06,
+    55.26,
+    55.48,
+    55.84,
+    56.0
+   ],
+   "s": 52.32,
+   "e": 56.53
+  },
+  {
+   "shot": "ninepages",
+   "text": "\"Only nine pages, sir.\"",
+   "ws": [
+    56.58,
+    56.9,
+    57.16,
+    57.5
+   ],
+   "s": 56.58,
+   "e": 58.13
+  },
+  {
+   "shot": "samosa",
+   "text": "Finally, with nine pages, we made one samosa recipe reel.",
+   "ws": [
+    58.18,
+    58.78,
+    59.06,
+    59.36,
+    59.86,
+    60.02,
+    60.26,
+    60.56,
+    60.98,
+    61.36
+   ],
+   "s": 58.18,
+   "e": 61.85
+  },
+  {
+   "shot": "promote",
+   "text": "Then the owner promoted the manager, the manager promoted the supervisor, and the supervisor promoted me.",
+   "ws": [
+    61.9,
+    62.08,
+    62.28,
+    62.54,
+    62.94,
+    63.08,
+    63.72,
+    63.86,
+    64.239,
+    64.66,
+    64.819,
+    65.58,
+    65.68,
+    65.86,
+    66.48,
+    67.1
+   ],
+   "s": 61.9,
+   "e": 67.71
+  },
+  {
+   "shot": "nextmorning",
+   "text": "Next morning, a student messaged, \"My notes are 40 pages.\" I said, \"I am making you one reel.\" My finger...",
+   "ws": [
+    67.76,
+    68.02,
+    68.44,
+    68.56,
+    68.86,
+    69.52,
+    69.74,
+    70.02,
+    70.42,
+    70.66,
+    71.4,
+    71.5,
+    71.94,
+    72.12,
+    72.26,
+    72.6,
+    72.84,
+    73.08,
+    73.58,
+    73.8
+   ],
+   "s": 67.76,
+   "e": 74.67
+  },
+  {
+   "shot": "omg2",
+   "text": "Oh my goooood.",
+   "ws": [
+    74.72,
+    75.02,
+    75.48
+   ],
+   "s": 74.72,
+   "e": 76.55
+  }
+ ]
+}

@@ -1,0 +1,250 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: Arc; src: url(Archivo-ExtraBold.ttf); }
+html, body { margin: 0; width: 720px; height: 1280px; overflow: hidden; background: #000; }
+canvas { position: absolute; left: 0; top: 0; }
+#ov { position: absolute; inset: 0; font-family: Arc; }
+.bub { position: absolute; max-width: 470px; padding: 14px 20px; border-radius: 22px; font: 800 30px/1.25 Arc; box-shadow: 0 6px 16px rgba(0,0,0,.25); }
+</style></head>
+<body><canvas id="gl" width="720" height="1280"></canvas><div id="ov"></div>
+<script type="module">
+// "First day at Unspool support": a blocky-3D comedy story told by an Indian narrator (the "my finger slipped"
+// call-centre format). One slip turns one reel into a whole textbook of reels, and it escalates from one student
+// to the whole country. Ends on the same slip, so it loops. One yellow word of caption at a time.
+import * as THREE from "./three/three.module.js";
+const TL = await (await fetch("tl.json")).json(); const lines = TL.lines, DUR = TL.dur; window.DUR = DUR;
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const outBack = (x) => { x = clamp(x); const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const mix = (a, b, k) => a + (b - a) * k;
+const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+await document.fonts.load("40px Arc");
+
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("gl"), antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(720, 1280, false); renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const camera = new THREE.PerspectiveCamera(42, 720 / 1280, 0.1, 300);
+const M = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.8, ...o });
+const box = (w, h, d, mat, x, y, z, parent) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; parent.add(m); return m; };
+const canvasTex = (w, h, draw) => { const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d"); draw(g, w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.userData = { c, g }; return t; };
+const lights = (scene, warm = false) => { scene.add(new THREE.HemisphereLight("#ffffff", warm ? "#b08a6a" : "#8090a8", 1.5)); const d = new THREE.DirectionalLight(warm ? "#ffe2b8" : "#ffffff", 2.2); d.position.set(4, 9, 7); d.castShadow = true; d.shadow.mapSize.set(1024, 1024); Object.assign(d.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12 }); scene.add(d); };
+
+// ---------------- faces (drawn on a canvas, swapped per beat) ----------------
+const FACE = {};
+const drawFace = (name) => canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = "rgba(0,0,0,0)"; g.clearRect(0, 0, w, h);
+  g.lineCap = "round"; g.strokeStyle = "#1a1210"; g.fillStyle = "#1a1210";
+  const eye = (x, y, r = 14, open = 1) => { g.save(); g.beginPath(); g.ellipse(x, y, r, r * 1.25 * open, 0, 0, 7); g.fill(); g.fillStyle = "#fff"; g.beginPath(); g.arc(x - 4, y - 6 * open, 4.5, 0, 7); g.fill(); g.restore(); };
+  const brow = (x, y, a) => { g.lineWidth = 9; g.beginPath(); g.moveTo(x - 20, y + a); g.lineTo(x + 20, y - a); g.stroke(); };
+  const tears = () => { g.fillStyle = "#5ab8ff"; for (const x of [78, 178]) { g.beginPath(); g.moveTo(x, 132); g.quadraticCurveTo(x - 12, 175, x, 200); g.quadraticCurveTo(x + 12, 175, x, 132); g.fill(); } g.fillStyle = "#1a1210"; };
+  const sweat = () => { g.fillStyle = "#7ccfff"; g.beginPath(); g.moveTo(214, 40); g.quadraticCurveTo(196, 80, 214, 92); g.quadraticCurveTo(232, 80, 214, 40); g.fill(); g.fillStyle = "#1a1210"; };
+  const blush = () => { g.fillStyle = "rgba(240,110,110,.35)"; g.beginPath(); g.ellipse(62, 150, 22, 12, 0, 0, 7); g.ellipse(194, 150, 22, 12, 0, 0, 7); g.fill(); g.fillStyle = "#1a1210"; };
+  switch (name) {
+    case "happy": eye(88, 110); eye(168, 110); brow(88, 70, 0); brow(168, 70, 0); g.lineWidth = 9; g.beginPath(); g.arc(128, 150, 34, 0.15 * Math.PI, 0.85 * Math.PI); g.stroke(); blush(); break;
+    case "grin": g.lineWidth = 9; for (const x of [88, 168]) { g.beginPath(); g.arc(x, 116, 18, Math.PI, 0); g.stroke(); } g.beginPath(); g.moveTo(84, 150); g.quadraticCurveTo(128, 214, 172, 150); g.closePath(); g.fill(); g.fillStyle = "#fff"; g.fillRect(96, 150, 64, 12); blush(); break;
+    case "shock": g.fillStyle = "#fff"; g.lineWidth = 6; for (const x of [88, 168]) { g.beginPath(); g.arc(x, 108, 26, 0, 7); g.fill(); g.stroke(); } g.fillStyle = "#1a1210"; eye(88, 110, 9); eye(168, 110, 9); brow(88, 58, -6); brow(168, 58, 6); g.beginPath(); g.ellipse(128, 176, 18, 26, 0, 0, 7); g.fill(); sweat(); break;
+    case "cry": g.lineWidth = 9; for (const x of [88, 168]) { g.beginPath(); g.moveTo(x - 22, 104); g.quadraticCurveTo(x, 122, x + 22, 104); g.stroke(); } brow(88, 72, 8); brow(168, 72, -8); g.beginPath(); g.moveTo(80, 184); g.quadraticCurveTo(128, 136, 176, 184); g.closePath(); g.fill(); tears(); break;
+    case "worried": eye(88, 112, 13); eye(168, 112, 13); brow(88, 74, 9); brow(168, 74, -9); g.lineWidth = 8; g.beginPath(); g.moveTo(96, 178); g.quadraticCurveTo(112, 164, 128, 178); g.quadraticCurveTo(144, 192, 160, 178); g.stroke(); sweat(); break;
+    case "angry": eye(88, 116, 12); eye(168, 116, 12); brow(88, 80, -10); brow(168, 80, 10); g.lineWidth = 9; g.beginPath(); g.moveTo(92, 182); g.quadraticCurveTo(128, 160, 164, 182); g.stroke(); break;
+    case "smug": g.lineWidth = 9; for (const x of [88, 168]) { g.beginPath(); g.moveTo(x - 20, 112); g.lineTo(x + 20, 112); g.stroke(); } eye(88, 120, 10, 0.7); eye(168, 120, 10, 0.7); g.beginPath(); g.moveTo(98, 170); g.quadraticCurveTo(140, 186, 164, 160); g.stroke(); break;
+    case "whisper": eye(88, 112, 11); eye(168, 112, 11); brow(88, 76, 4); brow(168, 76, -4); g.beginPath(); g.ellipse(150, 176, 10, 8, 0, 0, 7); g.fill(); break;
+    default: eye(88, 110); eye(168, 110); brow(88, 72, 0); brow(168, 72, 0); g.lineWidth = 9; g.beginPath(); g.moveTo(104, 172); g.lineTo(152, 172); g.stroke();
+  } });
+for (const n of ["neutral", "happy", "grin", "shock", "cry", "worried", "angry", "smug", "whisper"]) FACE[n] = drawFace(n);
+
+// ---------------- blocky characters ----------------
+function blocky({ skin = "#8d5a3b", shirt = "#d9b53a", pants = "#3a3f4b", hair = "#1d1612", style = "short", headset = false, lanyard = false, glasses = false, tie = null, scale = 1 } = {}) {
+  const g = new THREE.Group(), mSkin = M(skin), mShirt = M(shirt), mPants = M(pants), mHair = M(hair, { roughness: 0.6 });
+  const hip = new THREE.Group(); hip.position.y = 1.1; g.add(hip);
+  const legs = [-1, 1].map((s) => { const p = new THREE.Group(); p.position.set(s * 0.24, 0, 0); hip.add(p); box(0.42, 1.1, 0.46, mPants, 0, -0.55, 0, p); box(0.44, 0.16, 0.56, M("#2a2a2a"), 0, -1.05, 0.05, p); return p; });
+  const torso = box(1.1, 1.15, 0.6, mShirt, 0, 1.7, 0, g);
+  if (lanyard) { box(0.06, 0.5, 0.02, M("#2f6fe0"), -0.16, 1.95, 0.31, g); box(0.06, 0.5, 0.02, M("#2f6fe0"), 0.16, 1.95, 0.31, g); box(0.3, 0.38, 0.03, M("#ffffff"), 0, 1.58, 0.32, g); }
+  if (tie) box(0.16, 0.7, 0.03, M(tie), 0, 1.8, 0.31, g);
+  const arms = [-1, 1].map((s) => { const p = new THREE.Group(); p.position.set(s * 0.72, 2.18, 0); g.add(p); box(0.36, 1.05, 0.42, mShirt, 0, -0.45, 0, p); box(0.32, 0.26, 0.36, mSkin, 0, -1.05, 0, p); return p; });
+  const head = new THREE.Group(); head.position.y = 2.82; g.add(head);
+  box(1.0, 1.0, 0.92, mSkin, 0, 0.42, 0, head);
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(0.98, 0.98), new THREE.MeshBasicMaterial({ map: FACE.neutral, transparent: true })); face.position.set(0, 0.42, 0.465); head.add(face);
+  if (style === "short" || style === "long" || style === "bun") { box(1.08, 0.34, 1.0, mHair, 0, 0.98, -0.02, head); box(1.08, 0.7, 0.2, mHair, 0, 0.62, -0.42, head); [-1, 1].forEach((s) => box(0.12, 0.5, 0.9, mHair, s * 0.54, 0.72, -0.05, head)); }
+  if (style === "long") { box(1.12, 1.4, 0.24, mHair, 0, 0.0, -0.44, head); [-1, 1].forEach((s) => box(0.16, 1.1, 0.5, mHair, s * 0.56, 0.2, -0.2, head)); }
+  if (style === "bun") box(0.4, 0.4, 0.4, mHair, 0, 1.3, -0.2, head);
+  if (style === "white") { box(1.1, 0.42, 1.02, M("#e8e8e8"), 0, 0.98, -0.02, head); box(1.1, 0.5, 0.2, M("#e8e8e8"), 0, 0.66, -0.44, head); }
+  if (glasses) { const mg = M("#111", { roughness: 0.3 }); for (const s of [-1, 1]) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.025, 8, 24), mg); r.position.set(s * 0.2, 0.5, 0.48); head.add(r); } box(0.14, 0.03, 0.03, mg, 0, 0.5, 0.48, head); }
+  if (headset) { const mh = M("#222", { roughness: 0.4 }); const band = new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.05, 8, 30, Math.PI), mh); band.position.set(0, 0.5, 0); head.add(band);
+    for (const s of [-1, 1]) box(0.14, 0.34, 0.34, mh, s * 0.57, 0.42, 0, head); const mic = box(0.04, 0.04, 0.42, mh, -0.5, 0.16, 0.25, head); mic.rotation.y = 0.5; box(0.1, 0.1, 0.1, mh, -0.36, 0.14, 0.45, head); }
+  g.scale.setScalar(scale);
+  const P = { g, head, face, arms, legs, hip, torso };
+  P.setFace = (n) => { face.material.map = FACE[n] || FACE.neutral; };
+  P.pose = ({ la = [0, 0.08], ra = [0, -0.08], sit = false, headTilt = 0, headTurn = 0 } = {}) => {
+    arms[0].rotation.set(la[0], 0, la[1]); arms[1].rotation.set(ra[0], 0, ra[1]);
+    legs.forEach((l) => (l.rotation.x = sit ? -Math.PI / 2 : 0)); hip.position.y = 1.1; g.userData.sit = sit;
+    head.rotation.set(0, headTurn, headTilt); };
+  P.pose(); g.traverse((o) => { if (o.isMesh && o.material.isMeshStandardMaterial) o.castShadow = true; });
+  return P;
+}
+// a phone a character can hold
+const phoneTex = canvasTex(200, 400, () => {});
+function drawPhone(kind) { const { g } = phoneTex.userData; g.fillStyle = "#123"; g.fillRect(0, 0, 200, 400);
+  if (kind === "reel") g.drawImage(REEL, 0, 0, 200, 400);
+  if (kind === "chat") { g.fillStyle = "#e9edef"; g.fillRect(0, 0, 200, 400); g.fillStyle = "#25d366"; g.fillRect(0, 0, 200, 40); g.fillStyle = "#fff"; g.fillRect(14, 70, 150, 50); g.fillStyle = "#dcf8c6"; g.fillRect(40, 140, 146, 40); }
+  if (kind === "quiz") { g.fillStyle = "#fff"; g.fillRect(0, 0, 200, 400); g.fillStyle = "#12b76a"; g.font = "800 40px Arc"; g.textAlign = "center"; g.fillText("10/10", 100, 160); g.font = "800 24px Arc"; g.fillText("FULL MARKS", 100, 200); g.fillText("✓ ✓ ✓", 100, 250); }
+  if (kind === "samosa") { g.fillStyle = "#1f3b48"; g.fillRect(0, 0, 200, 400); g.fillStyle = "#e8a33d"; g.beginPath(); g.moveTo(100, 120); g.lineTo(160, 240); g.lineTo(40, 240); g.closePath(); g.fill(); g.strokeStyle = "#a8661e"; g.lineWidth = 4; g.stroke(); g.fillStyle = "#d3f05a"; g.font = "800 22px Arc"; g.textAlign = "center"; g.fillText("SAMOSA RECIPE", 100, 80); g.fillStyle = "#fff"; g.font = "800 16px Arc"; g.fillText("reel 1 of 1", 100, 300); }
+  phoneTex.needsUpdate = true; }
+const REEL = await new Promise((r) => { const i = new Image(); i.onload = () => r(i); i.src = "mito.jpg"; });
+const makePhone = () => { const p = new THREE.Group(); box(0.42, 0.8, 0.06, M("#111", { roughness: 0.3 }), 0, 0, 0, p); const s = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.72), new THREE.MeshBasicMaterial({ map: phoneTex })); s.position.z = 0.035; p.add(s); return p; };
+
+// ---------------- sets ----------------
+const mkScene = (bg) => { const s = new THREE.Scene(); s.background = new THREE.Color(bg); return s; };
+// OFFICE
+const office = mkScene("#dfe7ef"); lights(office);
+box(30, 0.1, 30, M("#4f6a8f"), 0, -0.05, 0, office);
+const wall = box(30, 10, 0.3, M("#eef2f6"), 0, 5, -4, office);
+const cityTex = canvasTex(512, 256, (g, w, h) => { g.fillStyle = "#9fd0f5"; g.fillRect(0, 0, w, h); for (let i = 0; i < 18; i++) { const bw = 20 + (i * 37) % 30, bh = 60 + (i * 53) % 140; g.fillStyle = ["#7f9bb8", "#6d88a5", "#93acc6"][i % 3]; g.fillRect(i * 30, h - bh, bw, bh); g.fillStyle = "#cfe3f4"; for (let y = h - bh + 8; y < h - 6; y += 14) for (let x = i * 30 + 4; x < i * 30 + bw - 4; x += 8) g.fillRect(x, y, 4, 6); } });
+for (const x of [-6, 0, 6]) { const win = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 3.2), new THREE.MeshBasicMaterial({ map: cityTex })); win.position.set(x, 5.6, -3.84); office.add(win); box(4.8, 0.2, 0.3, M("#fff"), x, 3.95, -3.8, office); }
+const clockTex = canvasTex(128, 128, (g) => { g.fillStyle = "#fff"; g.beginPath(); g.arc(64, 64, 60, 0, 7); g.fill(); g.lineWidth = 6; g.strokeStyle = "#333"; g.stroke(); g.beginPath(); g.moveTo(64, 64); g.lineTo(64, 24); g.moveTo(64, 64); g.lineTo(94, 64); g.stroke(); });
+const clock = new THREE.Mesh(new THREE.CircleGeometry(0.6, 30), new THREE.MeshBasicMaterial({ map: clockTex })); clock.position.set(3.2, 7.9, -3.84); office.add(clock);
+const signTex = canvasTex(512, 128, (g) => { g.fillStyle = "#0f1d18"; g.fillRect(0, 0, 512, 128); g.fillStyle = "#d3f05a"; g.font = "800 52px Arc"; g.textAlign = "center"; g.fillText("UNSPOOL SUPPORT", 256, 84); });
+const sign = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 1.1), new THREE.MeshBasicMaterial({ map: signTex })); sign.position.set(-3.1, 8.3, -3.84); office.add(sign);
+const desk = (x, z, parent) => { const d = new THREE.Group(); d.position.set(x, 0, z); parent.add(d); box(3.2, 0.14, 1.6, M("#f4f4f2"), 0, 1.75, 0, d); for (const s of [-1, 1]) box(0.12, 1.75, 1.4, M("#c9ced6"), s * 1.5, 0.87, 0, d); return d; };
+const heroDesk = desk(0, 0, office);
+const monTex = canvasTex(512, 320, () => {});
+function drawMonitor(kind, k = 1) { const { g } = monTex.userData; g.fillStyle = "#0b1712"; g.fillRect(0, 0, 512, 320); g.textAlign = "center"; g.strokeStyle = "#3df0a0"; g.lineWidth = 8; g.strokeRect(14, 14, 484, 292);
+  g.fillStyle = "#3df0a0"; g.shadowColor = "#3df0a0"; g.shadowBlur = 18;
+  if (kind === "one") { g.font = "800 120px Arc"; g.fillText("1 REEL", 256, 200); }
+  if (kind === "whole") { g.font = "800 50px Arc"; g.fillText("WHOLE TEXTBOOK", 256, 120); g.font = "800 96px Arc"; g.fillText("38 REELS", 256, 240); }
+  if (kind === "nine") { g.font = "800 46px Arc"; g.fillText("TEXTBOOK LEFT", 256, 120); g.font = "800 110px Arc"; g.fillText("9 PAGES", 256, 250); }
+  if (kind === "chat") { g.shadowBlur = 0; g.fillStyle = "#13261f"; g.fillRect(22, 22, 468, 276); g.fillStyle = "#d3f05a"; g.font = "800 30px Arc"; g.fillText("unspool support", 256, 66); g.fillStyle = "#e9f0e4"; g.fillRect(50, 96, 300, 54); g.fillStyle = "#3df0a0"; g.fillRect(170, 176, 300, 54); }
+  g.shadowBlur = 0; monTex.needsUpdate = true; }
+const mon = new THREE.Group(); mon.position.set(0, 1.82, -0.4); heroDesk.add(mon);
+box(2.0, 1.3, 0.12, M("#1b1b1f", { roughness: 0.4 }), 0, 0.95, 0, mon); box(0.14, 0.4, 0.14, M("#333"), 0, 0.2, 0, mon); box(0.7, 0.05, 0.4, M("#333"), 0, 0.02, 0, mon);
+const monScreen = new THREE.Mesh(new THREE.PlaneGeometry(1.86, 1.16), new THREE.MeshBasicMaterial({ map: monTex })); monScreen.position.set(0, 0.95, 0.065); mon.add(monScreen);
+const kb = box(1.4, 0.06, 0.45, M("#e9ecef"), 0, 1.85, 0.3, heroDesk);
+const keyHi = box(0.22, 0.06, 0.14, M("#3df0a0", { emissive: "#1a8a5a" }), 0.45, 1.9, 0.33, heroDesk);
+box(0.4, 0.5, 0.4, M("#c46a3a"), 1.2, 2.05, -0.3, heroDesk); { const pl = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 0), M("#3f9a4a", { flatShading: true })); pl.position.set(1.2, 2.6, -0.3); heroDesk.add(pl); }
+const finger = new THREE.Group(); heroDesk.add(finger); box(0.16, 0.5, 0.18, M("#7b4a2e"), 0, 0.25, 0, finger); box(0.2, 0.3, 0.22, M("#d9b53a"), 0, 0.62, 0.02, finger); finger.visible = false;
+const backWall = box(30, 10, 0.3, M("#e6ecf2"), 0, 5, 9, office); { const w2 = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 3.2), new THREE.MeshBasicMaterial({ map: cityTex })); w2.position.set(0, 5.6, 8.84); w2.rotation.y = Math.PI; office.add(w2); }
+const chair = new THREE.Group(); chair.position.set(0, 0, 1.45); office.add(chair); box(1.1, 0.16, 1.0, M("#2a2f3a"), 0, 1.15, 0, chair); box(1.1, 1.3, 0.16, M("#2a2f3a"), 0, 1.9, 0.45, chair); box(0.12, 1.1, 0.12, M("#555"), 0, 0.55, 0, chair);
+for (const [x, z] of [[-6.5, -1.5], [6.5, -1.5]]) desk(x, z, office);
+const hero = blocky({ skin: "#7b4a2e", shirt: "#d9b53a", headset: true, lanyard: true }); hero.g.position.set(0, 0, 1.35); hero.g.rotation.y = Math.PI; office.add(hero.g);   // faces the monitor (away from camera by default)
+const coworkers = [blocky({ skin: "#9a6440", shirt: "#4f7fd0", headset: true }), blocky({ skin: "#6b3f26", shirt: "#d0574f", headset: true, style: "long" })];
+coworkers[0].g.position.set(-6.5, 0, -0.3); coworkers[1].g.position.set(6.5, 0, -0.3); coworkers.forEach((c) => { c.pose({ sit: true, la: [-1.2, 0], ra: [-1.2, 0] }); c.g.position.y = 0.0; office.add(c.g); });
+const supervisor = blocky({ skin: "#8a5636", shirt: "#ffffff", tie: "#c0392b", pants: "#2c3e50" });
+const manager = blocky({ skin: "#7a4a2c", shirt: "#2c3e50", tie: "#d3a72a", pants: "#1f2a36", glasses: true });
+const minister = blocky({ skin: "#8f5b3a", shirt: "#f4f1e6", pants: "#e8e2cc", style: "white", glasses: true });
+const owner = blocky({ skin: "#7a4a2c", shirt: "#d4a72c", tie: "#0f1d18", style: "white" });
+[supervisor, manager, minister, owner].forEach((c) => office.add(c.g));
+// BEDROOM (the student)
+const bedroom = mkScene("#f6d9e4"); lights(bedroom, true);
+box(30, 0.1, 30, M("#c99a74"), 0, -0.05, 0, bedroom); box(30, 10, 0.3, M("#f3c9d8"), 0, 5, -4, bedroom);
+box(4.4, 0.8, 2.6, M("#ffffff"), -1.2, 0.6, -1.8, bedroom); box(4.4, 0.4, 2.6, M("#8b5cf6"), -1.2, 1.15, -1.6, bedroom); box(1.2, 0.5, 0.9, M("#fff"), -2.6, 1.3, -2.6, bedroom);
+{ const p = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.8), new THREE.MeshBasicMaterial({ map: canvasTex(128, 160, (g) => { g.fillStyle = "#2e8b57"; g.fillRect(0, 0, 128, 160); g.fillStyle = "#fff"; g.font = "800 30px Arc"; g.textAlign = "center"; g.fillText("BIO", 64, 70); g.font = "800 18px Arc"; g.fillText("TEST", 64, 100); g.fillText("FRIDAY", 64, 124); }) })); p.position.set(2.4, 5.2, -3.84); bedroom.add(p); }
+const student = blocky({ skin: "#9c6542", shirt: "#ff8fb1", pants: "#4d5d7a", style: "long", hair: "#1a1210" }); student.g.position.set(-0.6, 0.55, -0.6); bedroom.add(student.g);
+const friend = blocky({ skin: "#7a4a2c", shirt: "#5bc0eb", style: "bun" }); friend.g.position.set(1.4, 0.55, -0.6); bedroom.add(friend.g);
+const sPhone = makePhone(); bedroom.add(sPhone); const fPhone = makePhone(); bedroom.add(fPhone);
+// CLASSROOM
+const classroom = mkScene("#e3efe6"); lights(classroom);
+box(30, 0.1, 30, M("#a9876a"), 0, -0.05, 0, classroom); box(30, 10, 0.3, M("#dfece2"), 0, 5, -6, classroom);
+{ const b = new THREE.Mesh(new THREE.PlaneGeometry(8, 3), new THREE.MeshBasicMaterial({ map: canvasTex(512, 192, (g) => { g.fillStyle = "#2e5a46"; g.fillRect(0, 0, 512, 192); g.fillStyle = "#fff"; g.font = "800 40px Arc"; g.textAlign = "center"; g.fillText("BIO TEST TODAY", 256, 110); }) })); b.position.set(0, 5.4, -5.84); classroom.add(b); }
+const classKids = [];
+for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) { const x = -4.5 + c * 3, z = -3 + r * 2.6; box(1.8, 0.1, 1.0, M("#d9b48a"), x, 1.6, z, classroom); for (const s of [-1, 1]) box(0.1, 1.6, 0.9, M("#8a6a4a"), x + s * 0.8, 0.8, z, classroom);
+  const k = blocky({ skin: ["#7b4a2e", "#9c6542", "#6b3f26", "#a8744f"][(r + c) % 4], shirt: ["#ff8fb1", "#5bc0eb", "#ffd23f", "#8b5cf6", "#3df0a0"][(r * 4 + c) % 5], style: ["short", "long", "bun"][(r + c) % 3], scale: 0.8 });
+  k.g.position.set(x, 0.0, z + 0.9); k.g.rotation.y = Math.PI; k.pose({ sit: true, la: [-1.1, 0.2], ra: [-1.1, -0.2] }); k.setFace("happy"); classroom.add(k.g); classKids.push(k); }
+// SCHOOL + CITY (outside)
+const outside = mkScene("#8fd0ff"); lights(outside);
+box(80, 0.1, 80, M("#9fd17a"), 0, -0.05, 0, outside); box(80, 0.12, 6, M("#5a5f66"), 0, 0.0, 6, outside);
+const school = new THREE.Group(); outside.add(school); box(14, 6, 4, M("#f2c6a0"), 0, 3, -8, school); box(15, 0.6, 4.6, M("#c0392b"), 0, 6.3, -8, school);
+{ const t = new THREE.Mesh(new THREE.PlaneGeometry(8, 1.2), new THREE.MeshBasicMaterial({ map: canvasTex(512, 80, (g) => { g.fillStyle = "#1d3557"; g.fillRect(0, 0, 512, 80); g.fillStyle = "#fff"; g.font = "800 46px Arc"; g.textAlign = "center"; g.fillText("CITY HIGH SCHOOL", 256, 58); }) })); t.position.set(0, 5.2, -5.98); school.add(t); }
+const city = new THREE.Group(); outside.add(city);
+for (let i = 0; i < 12; i++) { const x = -26 + i * 4.6, h = 8 + (i * 7) % 10; box(4, h, 4, M(["#c9b8a6", "#a9b8c9", "#d8c3a5", "#b6c7b0"][i % 4]), x, h / 2, -20, city); }
+{ const bb = new THREE.Mesh(new THREE.PlaneGeometry(9, 4), new THREE.MeshBasicMaterial({ map: canvasTex(512, 228, (g) => { g.fillStyle = "#0f1d18"; g.fillRect(0, 0, 512, 228); g.fillStyle = "#d3f05a"; g.font = "800 64px Arc"; g.textAlign = "center"; g.fillText("BIOLOGY 🔥", 256, 110); g.fillStyle = "#fff"; g.font = "800 30px Arc"; g.fillText("trending in your city", 256, 170); }) })); bb.position.set(6, 12, -17.9); city.add(bb); }
+const crowd = [];
+for (let i = 0; i < 16; i++) { const c = blocky({ skin: ["#7b4a2e", "#9c6542", "#6b3f26", "#a8744f"][i % 4], shirt: ["#ff8fb1", "#5bc0eb", "#ffd23f", "#8b5cf6", "#3df0a0", "#e8743b"][i % 6], style: ["short", "long", "bun", "white"][i % 4], scale: 0.9 });
+  c.g.position.set(-12 + (i % 8) * 3.3, 0, (i < 8 ? 2 : 9) + (i % 3)); c.pose({ la: [-1.3, 0.1], ra: [-1.3, -0.1], headTilt: 0 }); c.setFace("happy"); const p = makePhone(); p.position.set(0, 2.4, 0.7); p.rotation.x = -0.5; c.g.add(p); outside.add(c.g); crowd.push(c); }
+// PRINCIPAL'S OFFICE + KITCHEN (warm rooms)
+const room = mkScene("#f3e3c6"); lights(room, true);
+box(30, 0.1, 30, M("#a26b45"), 0, -0.05, 0, room); const roomWall = box(30, 10, 0.3, M("#f1dcb5"), 0, 5, -4, room);
+const principal = blocky({ skin: "#8a5636", shirt: "#3b4d6b", tie: "#c0392b", style: "white", glasses: true }); principal.g.position.set(-1.6, 0, 0); room.add(principal.g);
+const mother = blocky({ skin: "#8f5b3a", shirt: "#e84a8a", pants: "#e84a8a", style: "bun" }); mother.g.position.set(1.8, 0, 0); room.add(mother.g);
+const mPhone = makePhone(); room.add(mPhone);
+const report = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.0), new THREE.MeshBasicMaterial({ map: canvasTex(160, 200, (g) => { g.fillStyle = "#fff"; g.fillRect(0, 0, 160, 200); g.fillStyle = "#16314f"; g.font = "800 18px Arc"; g.textAlign = "center"; g.fillText("RESULTS", 80, 30); g.fillStyle = "#12b76a"; g.font = "800 34px Arc"; g.fillText("ALL", 80, 100); g.fillText("PASSED", 80, 140); }) }));
+report.position.set(-3.6, 4.6, -3.84); room.add(report);
+const stove = box(3, 2, 1.2, M("#cfd6dd"), 4.6, 1, -2.6, room);
+
+// ---------------- shots ----------------
+const cam = (p, l, fov = 42) => { camera.position.copy(p); camera.lookAt(l); camera.fov = fov; camera.updateProjectionMatrix(); };
+const push = (lt, a, b, la, lb, d = 2.5, fov = 42) => { const k = ease(lt / d); cam(a.clone().lerp(b, k), la.clone().lerp(lb, k), fov); };
+const heroFront = () => { hero.g.rotation.y = 0; };   // turn round to the camera
+const heroHead = () => v3(0, 3.6, 1.35);
+function stackBehind(n) { // supervisor, manager, minister line up behind the hero's chair
+  [supervisor, manager, minister].forEach((c, i) => { c.g.visible = i < n; c.g.position.set([1.35, -1.35, 2.7][i], 0, [2.8, 3.4, 4.4][i]); c.g.rotation.y = Math.PI; c.pose({ la: [0, 0.1], ra: [0, -0.1] }); c.setFace(i === 0 ? "angry" : i === 1 ? "worried" : "whisper"); }); }
+const SHOT = {
+  omg: (lt) => { heroFront(); hero.pose({ sit: true, la: [-2.6, 0.5], ra: [-2.6, -0.5], headTilt: Math.sin(lt * 9) * 0.08 }); hero.setFace("cry"); push(lt, v3(0.4, 3.9, 5.6), v3(0.1, 3.7, 4.4), heroHead(), heroHead(), 2, 40); return office; },
+  firstday: (lt) => { heroFront(); hero.pose({ sit: true, la: [-0.3, 0.3], ra: [-2.8, -0.3] }); hero.setFace("grin"); push(lt, v3(4.2, 5.4, 8.4), v3(3.2, 4.9, 7.4), v3(0, 3.4, 0), v3(0, 3.4, 0), 2, 50); return office; },
+  msg: (lt) => { student.pose({ sit: true, la: [-1.4, 0.3], ra: [-1.4, -0.3] }); student.setFace("worried"); friend.g.visible = false; fPhone.visible = false;
+    sPhone.position.set(-0.6, 2.6, 0.25); sPhone.rotation.set(-0.3, 0, 0); drawPhone("chat"); push(lt, v3(0.6, 4, 5.6), v3(0.2, 3.8, 4.6), v3(-0.6, 3.4, -0.4), v3(-0.6, 3.5, -0.4), 4, 42); return bedroom; },
+  onereel: (lt) => { hero.g.rotation.y = Math.PI; hero.pose({ sit: true, la: [-1.3, 0.2], ra: [-1.3, -0.2] }); hero.setFace("smug"); drawMonitor(lt > 1.4 ? "one" : "chat"); cam(v3(2.5, 3.7, 2.6), v3(0, 2.85, -0.4), 44); return office; },
+  slipped: (lt) => { hero.g.visible = false; finger.visible = true; finger.position.set(0.45, 1.93 + Math.max(0, 0.35 - lt * 0.9), 0.33); finger.rotation.x = 0.3; keyHi.material.emissiveIntensity = lt > 0.38 ? 2.5 : 0.3; cam(v3(1.7, 3.3, 1.9), v3(0.45, 2.0, 0.33), 34); return office; },
+  textbook: (lt) => { drawMonitor("whole"); hero.g.visible = false; cam(v3(0, 2.85, 4.6 - lt * 0.15), v3(0, 2.77, -0.4), 40); return office; },
+  aiyo: (lt) => { heroFront(); hero.pose({ sit: true, la: [-2.1, 0.95], ra: [-2.1, -0.95] }); hero.setFace("shock"); cam(v3(0, 3.7, 3.6), heroHead(), 40); return office; },
+  mistake: (lt) => { hero.g.rotation.y = Math.PI; hero.pose({ sit: true, la: [-1.2 - Math.abs(Math.sin(lt * 22)) * 0.2, 0.2], ra: [-1.2 - Math.abs(Math.cos(lt * 22)) * 0.2, -0.2] }); hero.setFace("worried"); drawMonitor("chat"); cam(v3(2.5, 3.7, 2.6), v3(0, 2.85, -0.4), 44); return office; },
+  watchwhat: (lt) => { student.pose({ sit: true, la: [-1.4, 0.3], ra: [-1.4, -0.3], headTilt: 0.2 }); student.setFace("neutral"); sPhone.position.set(-0.6, 2.6, 0.25); drawPhone("chat");
+    if (lt > 1.2) { heroFront(); hero.pose({ sit: true, la: [-2.6, 0.5], ra: [-2.6, -0.5] }); hero.setFace("cry"); cam(v3(0, 3.7, 3.8), heroHead(), 40); return office; }
+    cam(v3(-0.2, 3.7, 3.3), v3(-0.6, 3.4, -0.4), 40); return bedroom; },
+  onereel2: (lt) => { student.pose({ sit: true, la: [-1.5, 0.3], ra: [-1.5, -0.3] }); student.setFace("happy"); drawPhone("reel"); sPhone.position.set(-0.6, 2.75, 0.3); sPhone.rotation.set(0.1, Math.PI, 0);
+    cam(v3(-0.45, 2.9, -0.2), v3(-0.6, 2.75, 0.3), 74); return bedroom; },
+  quiz: (lt) => { drawPhone("quiz"); student.setFace("grin"); student.pose({ sit: true, la: [-2.8, 0.4], ra: [-1.5, -0.3] }); sPhone.position.set(-0.6, 2.75, 0.3); sPhone.rotation.set(0.1, Math.PI, 0);
+    if (lt < 0.9) cam(v3(-0.45, 2.9, -0.2), v3(-0.6, 2.75, 0.3), 74); else { sPhone.rotation.set(-0.2, 0, 0); sPhone.position.set(-0.2, 2.9, 0.4); cam(v3(0.4, 3.8, 4.6), v3(-0.6, 3.3, -0.4), 42); } return bedroom; },
+  supervisor: (lt) => { hero.g.rotation.y = Math.PI; hero.pose({ sit: true, la: [-0.2, 0.2], ra: [-0.2, -0.2] }); hero.setFace("worried"); stackBehind(1); supervisor.g.position.z = mix(6, 2.8, ease(lt / 0.8)); supervisor.pose({ la: [-0.4, 1.0], ra: [-0.4, -1.0] });
+    heroDesk.visible = false; cam(v3(0.5, 4.3, -3.6), v3(0, 4.0, 3.0), 62); return office; },
+  spread: (lt, t) => { const L = lines.find((l) => l.shot === "spread"), w = L.ws;
+    if (t < w[4]) { student.pose({ sit: true, la: [-1.5, 0.3], ra: [-1.5, -0.3] }); friend.g.visible = true; fPhone.visible = true; friend.pose({ sit: true, la: [-1.5, 0.3], ra: [-1.5, -0.3] }); friend.setFace("shock");
+      sPhone.position.set(-0.6, 2.6, 0.25); sPhone.rotation.set(-0.3, 0, 0); fPhone.position.set(1.4, 2.6, 0.25); fPhone.rotation.set(-0.3, 0, 0); drawPhone("reel"); cam(v3(0.4, 3.9, 5.4), v3(0.4, 3.3, -0.4), 44); return bedroom; }
+    if (t < w[8]) { classKids.forEach((k, i) => k.head.rotation.x = 0.35 + Math.sin(t * 5 + i) * 0.05); cam(v3(0, 6, 9), v3(0, 2, -1), 46); return classroom; }
+    school.visible = true; city.visible = false; crowd.forEach((c, i) => c.g.visible = i < 8); cam(v3(0, 4, 16), v3(0, 4, -4), 50); return outside; },
+  aiyo3: (lt) => { heroFront(); stackBehind(0); hero.pose({ sit: true, la: [-2.9, 0.6 + Math.sin(lt * 14) * 0.2], ra: [-2.9, -0.6 - Math.sin(lt * 14) * 0.2] }); hero.setFace("cry"); cam(v3(0, 3.7, 3.6), heroHead(), 40); return office; },
+  manager: (lt) => { hero.g.rotation.y = Math.PI; hero.pose({ sit: true }); hero.setFace("worried"); stackBehind(2); manager.g.position.z = mix(8, 3.4, ease(lt / 0.9)); heroDesk.visible = false; cam(v3(0.5, 4.3, -3.6), v3(0, 4.0, 3.0), 62); return office; },
+  dontshare: (lt) => { hero.g.rotation.y = Math.PI; hero.setFace("worried"); stackBehind(2); supervisor.setFace("worried"); supervisor.pose({ la: [-1.6, 0.4], ra: [-1.6, -0.4] }); heroDesk.visible = false; cam(v3(1.9, 4.5, -0.9), v3(1.35, 4.3, 2.8), 40); return office; },
+  city: (lt) => { school.visible = false; city.visible = true; crowd.forEach((c) => (c.g.visible = true)); push(lt, v3(-2, 5, 22), v3(2, 6, 18), v3(0, 4, 0), v3(2, 6, -8), 2.6, 50); return outside; },
+  principal: (lt) => { principal.g.visible = true; mother.g.visible = false; mPhone.visible = false; principal.pose({ la: [-2.0, -0.9], ra: [0, -0.1], headTilt: Math.sin(lt * 4) * 0.05 }); principal.setFace(lt > 1.8 ? "grin" : "shock"); principal.g.position.set(-1.6, 0, 0); cam(v3(-1.2, 4, 6.2), v3(-2.2, 3.6, -1), 44); return room; },
+  mother: (lt) => { principal.g.visible = false; mother.g.visible = true; mPhone.visible = true; mother.pose({ la: [0, 0.1], ra: [-2.6, -0.4] }); mother.setFace(lt > 1.4 ? "grin" : "happy"); mPhone.position.set(2.6, 3.3, 0.2); mPhone.rotation.set(0, -0.6, 0.2); drawPhone("chat");
+    push(lt, v3(2.4, 4, 6.4), v3(2, 3.9, 5.2), v3(1.8, 3.5, 0), v3(1.8, 3.6, 0), 4, 42); return room; },
+  minister: (lt) => { hero.g.rotation.y = Math.PI; hero.pose({ sit: true }); hero.setFace("worried"); stackBehind(3); minister.g.position.z = mix(9, 4.4, ease(lt / 1)); minister.head.rotation.z = 0.25; heroDesk.visible = false; cam(v3(0.6, 4.6, -3.7), v3(0.4, 4.2, 3.4), 64); return office; },
+  ninepages: (lt) => { drawMonitor("nine"); hero.g.visible = false; cam(v3(0, 2.85, 4.6), v3(0, 2.77, -0.4), 40); return office; },
+  samosa: (lt) => { student.setFace("happy"); drawPhone("samosa"); sPhone.position.set(-0.6, 2.75, 0.3); sPhone.rotation.set(0.1, Math.PI, 0); cam(v3(-0.45, 2.9, -0.15), v3(-0.6, 2.75, 0.3), 74); return bedroom; },
+  promote: (lt) => { hero.g.rotation.y = Math.PI; stackBehind(3); owner.g.visible = true; owner.g.position.set(2.4, 0, 3.0); owner.g.rotation.y = Math.PI + 0.5; owner.setFace("grin"); owner.pose({ la: [0, 0.1], ra: [-2.6, -0.3] });
+    [supervisor, manager, minister].forEach((c) => { c.setFace("grin"); c.pose({ la: [-2.8, 0.4], ra: [-2.8, -0.4] }); }); hero.setFace("grin"); hero.pose({ sit: true, la: [-2.8, 0.4], ra: [-2.8, -0.4] }); hero.g.position.y = Math.abs(Math.sin(lt * 8)) * 0.3;
+    heroDesk.visible = false; cam(v3(0.8, 4.6, -3.8), v3(0.6, 4.1, 3.2), 66); return office; },
+  nextmorning: (lt, t) => { const L = lines.find((l) => l.shot === "nextmorning"), w = L.ws; owner.g.visible = false; stackBehind(0); hero.g.position.y = 0;
+    if (t >= w[18]) { const lt2 = t - w[18]; hero.g.visible = false; finger.visible = true; finger.position.set(0.45, 1.93 + Math.max(0, 0.35 - lt2 * 0.9), 0.33); finger.rotation.x = 0.3; keyHi.material.emissiveIntensity = lt2 > 0.38 ? 2.5 : 0.3; cam(v3(1.7, 3.3, 1.9), v3(0.45, 2.0, 0.33), 34); return office; }
+    heroFront(); hero.pose({ sit: true, la: [-0.3, 0.3], ra: [-2.8, -0.3] }); hero.setFace("smug"); drawMonitor("chat"); cam(v3(4, 5.2, 9), v3(0, 3.6, 0), 44); return office; },
+  omg2: (lt) => SHOT.omg(lt),
+};
+// chat bubbles (the messages, on screen as overlays)
+const BUBBLES = { msg: ["in", "my bio test is tomorrow 😭 my notes are 40 pages"], onereel: ["out", "no tension, I am making you one reel 👍"], mistake: ["out", "small mistake 🙏 please do NOT watch it"], watchwhat: ["in", "watch what? 🤔"], dontshare: ["out", "please do not share it 😭"], nextmorning: ["in", "my notes are 40 pages 😭"] };
+
+// ---------------- captions: one yellow word at a time ----------------
+const ov = document.getElementById("ov");
+function caption(l, t) {
+  const words = l.text.split(" "); let wi = -1; l.ws.forEach((s, k) => { if (t >= s - 0.03) wi = k; }); if (wi < 0) return "";
+  const w = words[wi].replace(/[",.!?:]/g, "").replace(/^"/, ""), k = clamp((t - l.ws[wi]) / 0.1);
+  return `<div style="position:absolute;left:0;right:0;top:790px;text-align:center;transform:scale(${1 + 0.25 * (1 - ease(k))})"><span style="font:800 66px Arc;color:#ffd400;-webkit-text-stroke:9px #000;paint-order:stroke;text-shadow:0 6px 0 #000">${w.toLowerCase()}</span></div>`;
+}
+window.renderAt = (t) => {
+  let i = 0; lines.forEach((l, j) => { if (t >= l.s - 0.08) i = j; });
+  const l = lines[i], lt = t - (l.s - 0.08);
+  [supervisor, manager, minister, owner].forEach((c) => (c.g.visible = false)); hero.g.position.y = 0; hero.g.visible = true; heroDesk.visible = true; finger.visible = false; friend.g.visible = false; fPhone.visible = false;
+  if (t > DUR - 1.6) { const scene = SHOT.omg(2); renderer.render(scene, camera); }
+  else { const scene = SHOT[l.shot](lt, t); renderer.render(scene, camera); }
+  let h = "";
+  const b = BUBBLES[l.shot];
+  if (b && t < (l.shot === "nextmorning" ? l.ws[13] : 99)) { const k = clamp((lt - 0.25) / 0.2), inn = b[0] === "in";
+    h += `<div class="bub" style="${inn ? "left:40px;background:#fff;color:#111;border-bottom-left-radius:6px" : "right:40px;background:#25d366;color:#fff;border-bottom-right-radius:6px"};top:250px;opacity:${k};transform:scale(${outBack(k)})">${b[1]}</div>`; }
+  if (l.shot === "promote" && lt > 0.3) h += `<div style="position:absolute;left:0;right:0;top:220px;text-align:center;transform:rotate(-6deg) scale(${outBack((lt - 0.3) / 0.3)})"><span style="font:800 64px Arc;color:#d3f05a;-webkit-text-stroke:8px #0f1d18;paint-order:stroke">PROMOTED ⭐</span></div>`;
+  if (t > DUR - 1.6) h += `<div style="position:absolute;inset:0;background:rgba(15,29,24,${0.85 * ease((t - (DUR - 1.6)) / 0.3)})"></div><div style="position:absolute;left:0;right:0;top:520px;text-align:center;color:#fff;font:800 40px Arc">turn your notes into reels</div><div style="position:absolute;left:0;right:0;top:590px;text-align:center"><span style="display:inline-block;background:#d3f05a;color:#0f1d18;font:800 46px Arc;border-radius:999px;padding:16px 34px">unspool.cc</span></div>`;
+  else if (t <= l.e + 0.2) h += caption(l, t);
+  // a little punch on every cut
+  const fl = Math.max(0, 1 - lt / 0.07); if (i > 0 && fl > 0) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${fl * 0.3}"></div>`;
+  ov.innerHTML = h;
+};
+drawMonitor("chat"); drawPhone("chat");
+window.renderAt(0); setTimeout(() => (window.ready = true), 80);
+</script></body></html>
