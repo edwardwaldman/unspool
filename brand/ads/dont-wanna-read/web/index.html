@@ -1,0 +1,101 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: Ins; src: url(InstrumentSans-600.ttf); }
+html, body { margin: 0; width: 720px; height: 1280px; overflow: hidden; background: #000; }
+#s { position: absolute; inset: 0; overflow: hidden; font-family: Ins; }
+.box { display: inline-block; background: #fff; color: #111; font: 600 40px/1.22 Ins; padding: 10px 18px; border-radius: 12px; text-align: center; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+</style></head>
+<body><div id="s"></div>
+<script type="module">
+// "oh you don't wanna read all that??" An 11-second, voice-free, beat-cut app demo in the format that is winning
+// for study apps right now: a relatable question hook in TikTok's own white text box, a green-screen creator
+// (Maya), a beat drop, the product working, the payoff, and "app: unspool.cc". Cuts land on a 120 bpm beat.
+const DUR = 11.0; window.DUR = DUR;
+const S = document.getElementById("s");
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const inOut = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const outBack = (x) => { x = clamp(x); const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const mix = (a, b, k) => a + (b - a) * k;
+const A = (x, y, inner, extra = "") => `<div style="position:absolute;left:${x}px;top:${y}px;${extra}">${inner}</div>`;
+const DROP = 2.0, B = 0.5;
+// TikTok's native text: a white rounded box, black text, centred
+const say = (txt, y, k = 1) => A(40, y, `<div style="width:640px;text-align:center"><span class="box">${txt}</span></div>`, `opacity:${clamp(k * 6)};transform:scale(${mix(0.92, 1, ease(k * 3))})`);
+const maya = (pose, x, y, h, extra = "") => A(x, y, `<img src="maya-${pose}.png" style="height:${h}px;display:block;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35))">`, extra);
+
+// the 47-page chapter, scrolling forever
+function pdf(t, y0 = 0, scale = 1, extra = "") {
+  const sc = (t * 1500) % 1180, pageN = Math.min(47, 1 + Math.floor(t * 9));
+  const page = (n, top) => `<div style="position:absolute;left:44px;top:${top}px;width:632px;height:1140px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.25)">
+    <div style="position:absolute;left:46px;top:50px;font:600 30px Ins;color:#16314f">${n === 1 ? "Chapter 4: Cellular Respiration" : "4." + n + " " + ["Glycolysis", "The Krebs Cycle", "Electron Transport", "ATP Synthase", "Fermentation", "Review Questions"][n % 6]}</div>
+    ${Array.from({ length: 30 }, (_, i) => `<div style="position:absolute;left:46px;top:${110 + i * 33}px;height:11px;border-radius:5px;background:#d4d8df;width:${[520, 480, 540, 410, 500, 530, 360][(i + n) % 7]}px"></div>`).join("")}
+    <div style="position:absolute;right:40px;bottom:24px;font:600 18px Ins;color:#9aa1ad">${n}</div></div>`;
+  const base = Math.floor((t * 1500) / 1180);
+  return `<div style="position:absolute;inset:0;background:#5f6670;transform:translateY(${y0}px) scale(${scale});transform-origin:50% 45%;${extra}">
+    ${[0, 1, 2].map((k) => page(base + k + 1, 120 + k * 1180 - sc)).join("")}
+    <div style="position:absolute;left:0;right:0;top:0;height:96px;background:#f5f6f8;border-bottom:1px solid #ccd;display:flex;align-items:center;justify-content:center;font:600 26px Ins;color:#222">BIO_Ch4_Cellular_Respiration.pdf</div>
+    <div style="position:absolute;right:26px;top:118px;background:rgba(0,0,0,.65);color:#fff;font:600 22px Ins;border-radius:12px;padding:6px 12px">${pageN} / 47</div></div>`;
+}
+// the reels, full screen like the app, swiping up on the beat
+const REELS = ["mito", "resp", "dna", "r1"];
+function feed(t, t0) {
+  const lt = t - t0, i = Math.floor(lt / 1.0), f = clamp((lt - i * 1.0 - 0.82) / 0.18), y = -inOut(f) * 100;
+  const cur = REELS[Math.min(i, 3)], nxt = REELS[Math.min(i + 1, 3)];
+  return `<div style="position:absolute;inset:0;overflow:hidden;background:#000"><div style="position:absolute;inset:0;transform:translateY(${i >= 3 ? 0 : y}%)">
+    <img src="${cur}.jpg" style="position:absolute;left:0;top:0;width:720px;height:1280px;object-fit:cover">
+    <img src="${nxt}.jpg" style="position:absolute;left:0;top:1280px;width:720px;height:1280px;object-fit:cover"></div>
+    <div style="position:absolute;left:0;right:0;top:0;height:120px;background:linear-gradient(rgba(0,0,0,.55),transparent);display:flex;justify-content:center;gap:34px;padding-top:58px;box-sizing:border-box;font:600 26px Ins;color:rgba(255,255,255,.7)"><span>Following</span><span style="color:#fff;border-bottom:3px solid #fff;padding-bottom:4px">For You</span></div></div>`;
+}
+
+window.renderAt = (t) => {
+  let h = "";
+  const beatPunch = (t0) => 1 + 0.05 * Math.max(0, 1 - (t - t0) / 0.18);
+  if (t < DROP) {   // the hook
+    h += pdf(t, 0, 1.0 + 0.04 * (t / DROP));
+    h += maya("facepalm", -70, 600, 720);
+    h += say("oh you don't wanna read<br>all that?? 🤨", 330, (t + 0.2) / 0.3);
+  } else if (t < 3.4) {   // say less: the chapter drops into Unspool
+    const k = (t - DROP) / 0.45;
+    h += `<div style="position:absolute;inset:0;background:#0f1d18"></div>`;
+    h += `<div style="position:absolute;inset:0;opacity:${1 - ease(k)};transform:scale(${mix(1, 0.35, ease(k))});transform-origin:50% 55%">${pdf(DROP)}</div>`;
+    const p = clamp((t - 2.5) / 0.75);
+    h += A(150, 330, `<div style="width:420px;background:#13261f;border:2px solid #2c4a3d;border-radius:36px;padding:34px 30px;box-sizing:border-box;text-align:center;color:#e9f0e4;transform:scale(${outBack((t - 2.3) / 0.3)})">
+      <div style="font:600 34px Ins;letter-spacing:-.5px">unspool<span style="color:#d3f05a">.</span></div>
+      <div style="margin:26px auto 14px;width:120px;height:150px;border-radius:12px;background:#fff;position:relative"><div style="position:absolute;left:14px;right:14px;top:20px;height:10px;border-radius:5px;background:#d4d8df"></div><div style="position:absolute;left:14px;right:34px;top:40px;height:10px;border-radius:5px;background:#d4d8df"></div><div style="position:absolute;left:14px;bottom:14px;background:#e5484d;color:#fff;font:600 16px Ins;padding:3px 8px;border-radius:5px">PDF</div></div>
+      <div style="font:600 22px Ins;color:#cfe0d4">${p < 1 ? "Unspooling your chapter…" : "9 reels ready ✓"}</div>
+      <div style="margin-top:14px;height:12px;border-radius:6px;background:#26402f;overflow:hidden"><div style="height:100%;width:${p * 100}%;background:#d3f05a"></div></div></div>`, `opacity:${clamp((t - 2.3) * 8)}`);
+    h += say("say less 🤫", 200, (t - DROP) / 0.1);
+    h += maya("lookup", 470, 840, 420);
+  } else if (t < 7.4) {   // the reels, swiping on the beat
+    h += `<div style="position:absolute;inset:0;transform:scale(${beatPunch(3.4)})">${feed(t, 3.4)}</div>`;
+    h += t < 5.4 ? say("it turned my whole bio<br>chapter into tiktoks 😭", 430, (t - 3.4) / 0.1) : say("with a quiz after<br>every single one??", 430, (t - 5.4) / 0.1);
+    h += maya("phone", -30, 900, 400);
+  } else if (t < 9.0) {   // the quiz
+    const tap = t > 8.0;
+    h += `<div style="position:absolute;inset:0;filter:blur(14px) brightness(.5);transform:scale(1.1)">${feed(7.39, 3.4)}</div>`;
+    h += A(70, 330, `<div style="width:580px;background:#fff;border-radius:28px;padding:30px 30px 24px;box-sizing:border-box;transform:scale(${outBack((t - 7.4) / 0.3)})">
+      <div style="display:inline-block;background:#d3f05a;color:#0f1d18;font:600 20px Ins;border-radius:8px;padding:5px 12px">QUICK CHECK</div>
+      <div style="font:600 34px/1.2 Ins;color:#111;margin:16px 0 18px">What do mitochondria make?</div>
+      ${["Glucose", "ATP", "DNA"].map((a, i) => { const ok = tap && i === 1; return `<div style="border:3px solid ${ok ? "#12b76a" : "#e4e7ec"};background:${ok ? "#ecfdf3" : "#fff"};border-radius:16px;padding:16px 20px;margin-top:12px;font:600 30px Ins;color:#111;display:flex;justify-content:space-between">${a}${ok ? '<span style="color:#12b76a">✓</span>' : ""}</div>`; }).join("")}
+      <div style="height:44px;margin-top:14px;text-align:center;font:600 30px Ins;color:#12b76a">${tap ? "Correct! 🔥" : ""}</div></div>`);
+    if (!tap) { const fx = mix(560, 360, ease((t - 7.6) / 0.35)), fy = mix(1100, 690, ease((t - 7.6) / 0.35)); h += A(fx, fy, `<div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.55);border:3px solid #fff"></div>`); }
+    h += say("and i actually remember it", 200, (t - 7.4) / 0.1);
+  } else {   // the payoff + app name
+    h += `<div style="position:absolute;inset:0;background:linear-gradient(#fdf6e7,#f3e3bf)"></div>`;
+    h += A(330, 380, `<div style="width:300px;height:390px;background:#fff;border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.18);transform:rotate(6deg) scale(${outBack((t - 9.0) / 0.3)});position:relative">
+      <div style="position:absolute;left:24px;top:26px;font:600 22px Ins;color:#16314f">Bio Test · Ch. 4</div>
+      ${[0, 1, 2, 3, 4].map((i) => `<div style="position:absolute;left:24px;top:${150 + i * 40}px;height:10px;border-radius:5px;background:#d4d8df;width:${[220, 180, 240, 160, 200][i]}px"></div>`).join("")}
+      <div style="position:absolute;right:22px;top:20px;width:104px;height:104px;border-radius:50%;border:8px solid #12b76a;color:#12b76a;font:600 64px/88px Ins;text-align:center">A</div></div>`);
+    h += maya("cheer", 20, 640, 600, `transform:translateY(${-Math.abs(Math.sin((t - 9) * 7)) * 18}px)`);
+    h += t < 10.2 ? say("bio test came back 🫶", 200, (t - 9.0) / 0.1) : say("app: unspool.cc", 200, (t - 10.2) / 0.1);
+  }
+  // a quick white flash on the drop and every hard cut
+  const cuts = [DROP, 3.4, 7.4, 9.0], fl = Math.max(0, ...cuts.map((c) => (t >= c ? 1 - (t - c) / 0.08 : 0)));
+  if (fl > 0) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${fl * 0.5}"></div>`;
+  S.innerHTML = h;
+};
+await document.fonts.load("40px Ins");
+await Promise.all(["maya-facepalm.png", "maya-lookup.png", "maya-phone.png", "maya-cheer.png", "mito.jpg", "resp.jpg", "dna.jpg", "r1.jpg"].map((src) => new Promise((r) => { const i = new Image(); i.onload = r; i.onerror = r; i.src = src; })));
+window.renderAt(0); setTimeout(() => (window.ready = true), 60);
+</script></body></html>
