@@ -4,8 +4,9 @@ import { GoHero, type GoCopy } from "@/components/go/go-hero";
 import { Toaster } from "@/components/ui/toast";
 import { ResumeStashedUpload } from "@/components/upload/use-uploader";
 
-// The landing page for the corporate-training ads (link it as /teams?utm_source=tiktok-teams).
-// Same one-job page as /go, worded for training managers. Kept out of search: it exists for ad clicks.
+// EXPERIMENTAL: the landing page for the corporate-training ads (link it as /teams?utm_source=tiktok-teams).
+// Same one-job page as /go, worded for training managers, and labelled "Experimental" on the page while we test
+// whether teams want this. Kept out of search and out of the site's navigation and sitemap: it exists for ad clicks.
 export const metadata: Metadata = {
   title: "Turn training docs into TikToks your team will watch",
   description: "Upload a handbook, SOP or policy PDF. Get short TikTok-style videos with a voiceover, captions and a quiz. Your first reel is free.",
@@ -30,6 +31,7 @@ const TEAMS_COPY: GoCopy = {
   ticks: ["First reel free", "No card needed", "Your files stay private"],
   reels: ["/go/phish", "/go/lift", "/go/fire"],
   plus: { label: "Upload a training PDF", sub: "a handbook, SOP, policy or slides" },
+  badge: "Experimental · for teams",
 };
 
 export default function TeamsPage() {
