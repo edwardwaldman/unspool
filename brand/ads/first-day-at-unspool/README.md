@@ -17,3 +17,5 @@ everyone gets promoted. It ends on the same slip, so it loops. One yellow word o
 - `web/tl.json` has the word timings (ElevenLabs Scribe) grouped into the 25 shots.
 - `mix.py <dir>` makes `mix.wav` (comedy bed + effects under the voice; needs `voice.wav`).
 - Render: `node brand/ads/tools/render-fresh.mjs <dir> 6 --gl`, then `bash brand/ads/tools/encode.sh <dir> first-day-at-unspool`.
+- **Quicker cut (79 s):** the opening moan (first 5.85 s) is untouched; after it every pause longer than 0.2 s is cut
+  down to 0.2 s and the rest plays at 1.12x. `web/tl.json` holds the timings after that.
