@@ -83,12 +83,23 @@ function blocky({ skin = "#8d5a3b", shirt = "#d9b53a", pants = "#3a3f4b", hair =
 }
 // a phone a character can hold
 const phoneTex = canvasTex(200, 400, () => {});
-function drawPhone(kind) { const { g } = phoneTex.userData; g.fillStyle = "#123"; g.fillRect(0, 0, 200, 400);
+// the scrolling feed: reel cards stacked vertically; pos = how many reels have been swiped (fractions mid-swipe)
+const CARDS = [null, ["PHOTOSYNTHESIS", "#1f6f43", "Plants turn light", "into sugar.", "☀️"], ["DNA", "#3a2f7a", "The code that", "builds you.", "🧬"], ["CELL MEMBRANE", "#7a2f4f", "The cell's", "bouncer.", "🛡️"], ["OSMOSIS", "#1f4f7a", "Water moves to", "where it's salty.", "💧"], ["ENZYMES", "#7a5a1f", "Speed up", "reactions.", "⚡"]];
+function drawCard(g, i, y) { g.save(); g.translate(0, y); const c = CARDS[i % CARDS.length];
+  if (!c) g.drawImage(REEL, 0, 0, 200, 400);
+  else { g.fillStyle = c[1]; g.fillRect(0, 0, 200, 400); g.fillStyle = "rgba(255,255,255,.12)"; g.beginPath(); g.arc(100, 150, 70, 0, 7); g.fill(); g.fillStyle = "#fff"; g.font = "64px sans-serif"; g.textAlign = "center"; g.fillText(c[4], 100, 172);
+    g.fillStyle = "#d3f05a"; g.font = "800 20px Arc"; g.fillText(c[0], 100, 50); g.fillStyle = "#fff"; g.font = "800 18px Arc"; g.fillText(c[2], 100, 270); g.fillText(c[3], 100, 294); }
+  if (!c) { g.restore(); return; }
+  g.fillStyle = "rgba(0,0,0,.45)"; g.fillRect(0, 352, 200, 48); g.fillStyle = "#fff"; g.font = "800 12px Arc"; g.textAlign = "center"; g.fillText(`unspool · Reel ${12 + i} of 38`, 100, 372); g.fillStyle = "#d3f05a"; g.fillRect(20, 384, 160 * ((12 + i) / 38), 4);
+  g.fillStyle = "#fff"; for (const [k, yy] of [["♥", 220], ["💬", 252], ["➤", 284]]) { g.font = "16px sans-serif"; g.fillText(k, 184, yy); } g.restore(); }
+function drawPhone(kind, pos = 0) { const { g } = phoneTex.userData; g.fillStyle = "#123"; g.fillRect(0, 0, 200, 400);
+  if (kind === "scroll") { const i = Math.floor(pos), f = pos - i; drawCard(g, i, -f * 400); drawCard(g, i + 1, 400 - f * 400); }
   if (kind === "reel") g.drawImage(REEL, 0, 0, 200, 400);
   if (kind === "chat") { g.fillStyle = "#e9edef"; g.fillRect(0, 0, 200, 400); g.fillStyle = "#25d366"; g.fillRect(0, 0, 200, 40); g.fillStyle = "#fff"; g.fillRect(14, 70, 150, 50); g.fillStyle = "#dcf8c6"; g.fillRect(40, 140, 146, 40); }
   if (kind === "quiz") { g.fillStyle = "#fff"; g.fillRect(0, 0, 200, 400); g.fillStyle = "#12b76a"; g.font = "800 40px Arc"; g.textAlign = "center"; g.fillText("10/10", 100, 160); g.font = "800 24px Arc"; g.fillText("FULL MARKS", 100, 200); g.fillText("✓ ✓ ✓", 100, 250); }
   if (kind === "samosa") { g.fillStyle = "#1f3b48"; g.fillRect(0, 0, 200, 400); g.fillStyle = "#e8a33d"; g.beginPath(); g.moveTo(100, 120); g.lineTo(160, 240); g.lineTo(40, 240); g.closePath(); g.fill(); g.strokeStyle = "#a8661e"; g.lineWidth = 4; g.stroke(); g.fillStyle = "#d3f05a"; g.font = "800 22px Arc"; g.textAlign = "center"; g.fillText("SAMOSA RECIPE", 100, 80); g.fillStyle = "#fff"; g.font = "800 16px Arc"; g.fillText("reel 1 of 1", 100, 300); }
   phoneTex.needsUpdate = true; }
+const swipes = (x, hold = 0.8, every = 0.55) => { if (x < hold) return 0; const u = (x - hold) / every, n = Math.floor(u), f = u - n; return n + ease(Math.min(1, f / 0.45)); };
 const REEL = await new Promise((r) => { const i = new Image(); i.onload = () => r(i); i.src = "mito.jpg"; });
 const makePhone = () => { const p = new THREE.Group(); box(0.42, 0.8, 0.06, M("#111", { roughness: 0.3 }), 0, 0, 0, p); const s = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.72), new THREE.MeshBasicMaterial({ map: phoneTex })); s.position.z = 0.035; p.add(s); return p; };
 
@@ -189,7 +200,7 @@ const SHOT = {
   watchwhat: (lt) => { student.pose({ sit: true, la: [-1.4, 0.3], ra: [-1.4, -0.3], headTilt: 0.2 }); student.setFace("neutral"); sPhone.position.set(-0.6, 2.6, 0.25); drawPhone("chat");
     if (lt > 1.2) { heroFront(); hero.pose({ sit: true, la: [-2.6, 0.5], ra: [-2.6, -0.5] }); hero.setFace("cry"); cam(v3(0.2, 4.0, -1.05), v3(0, 3.28, 1.35), 40); return office; }
     cam(v3(-0.2, 3.7, 3.3), v3(-0.6, 3.4, -0.4), 40); return bedroom; },
-  onereel2: (lt) => { student.pose({ sit: true, la: [-1.5, 0.3], ra: [-1.5, -0.3] }); student.setFace("happy"); drawPhone("reel"); sPhone.position.set(-0.6, 2.75, 0.3); sPhone.rotation.set(0.1, Math.PI, 0);
+  onereel2: (lt) => { student.pose({ sit: true, la: [-1.5, 0.3], ra: [-1.5, -0.3] }); student.setFace("happy"); drawPhone("scroll", swipes(lt, 0.9, 0.5)); sPhone.position.set(-0.6, 2.75, 0.3); sPhone.rotation.set(0.1, Math.PI, 0);
     cam(v3(-0.45, 2.9, -0.2), v3(-0.6, 2.75, 0.3), 74); return bedroom; },
   quiz: (lt) => { drawPhone("quiz"); student.setFace("grin"); student.pose({ sit: true, la: [-2.8, 0.4], ra: [-1.5, -0.3] }); sPhone.position.set(-0.6, 2.75, 0.3); sPhone.rotation.set(0.1, Math.PI, 0);
     if (lt < 0.9) cam(v3(-0.45, 2.9, -0.2), v3(-0.6, 2.75, 0.3), 74); else { sPhone.rotation.set(-0.2, 0, 0); sPhone.position.set(-0.2, 2.9, 0.4); cam(v3(0.4, 3.8, 4.6), v3(-0.6, 3.3, -0.4), 42); } return bedroom; },
@@ -197,7 +208,7 @@ const SHOT = {
     heroDesk.visible = false; cam(v3(0.5, 4.3, -3.6), v3(0, 4.0, 3.0), 62); return office; },
   spread: (lt, t) => { const L = lines.find((l) => l.shot === "spread"), w = L.ws;
     if (t < w[4]) { student.pose({ sit: true, la: [-1.5, 0.3], ra: [-1.5, -0.3] }); friend.g.visible = true; fPhone.visible = true; friend.pose({ sit: true, la: [-1.5, 0.3], ra: [-1.5, -0.3] }); friend.setFace("shock");
-      sPhone.position.set(-0.6, 2.6, 0.25); sPhone.rotation.set(-0.3, 0, 0); fPhone.position.set(1.4, 2.6, 0.25); fPhone.rotation.set(-0.3, 0, 0); drawPhone("reel"); cam(v3(0.4, 3.9, 5.4), v3(0.4, 3.3, -0.4), 44); return bedroom; }
+      sPhone.position.set(-0.6, 2.6, 0.25); sPhone.rotation.set(-0.3, 0, 0); fPhone.position.set(1.4, 2.6, 0.25); fPhone.rotation.set(-0.3, 0, 0); drawPhone("scroll", swipes(lt, 0.2, 0.45)); cam(v3(0.4, 3.9, 5.4), v3(0.4, 3.3, -0.4), 44); return bedroom; }
     if (t < w[8]) { classKids.forEach((k, i) => k.head.rotation.x = 0.35 + Math.sin(t * 5 + i) * 0.05); cam(v3(0, 6, 9), v3(0, 2, -1), 46); return classroom; }
     school.visible = true; city.visible = false; crowd.forEach((c, i) => c.g.visible = i < 8); cam(v3(0, 4, 16), v3(0, 4, -4), 50); return outside; },
   aiyo3: (lt) => { heroFront(); stackBehind(0); hero.pose({ sit: true, la: [-2.9, 0.6 + Math.sin(lt * 14) * 0.2], ra: [-2.9, -0.6 - Math.sin(lt * 14) * 0.2] }); hero.setFace("cry"); cam(v3(0.2, 4.0, -1.05), v3(0, 3.28, 1.35), 40); return office; },

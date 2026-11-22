@@ -22,3 +22,5 @@ everyone gets promoted. It ends on the same slip, so it loops. One yellow word o
   slip, whole textbook = 38 reels, "aiyooo", she watches one reel and aces the quiz, friend → class → school, the whole
   city scrolling biology, end card. Lines come from the 79 s quick version (pauses at 0.2 s, 1.12x); `web/tl.json` holds
   the final timings. `mix.py` skips the effects of lines that are not in the cut.
+- **Scrolling feed:** on "She watched one reel. Okay, one reel only." her phone swipes through reels (Mitochondria →
+  Photosynthesis → DNA → Cell membrane…, "Reel 12/13/14 of 38"), and the friend's phone scrolls too when it spreads.
