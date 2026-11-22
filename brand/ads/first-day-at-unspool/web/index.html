@@ -245,6 +245,8 @@ window.renderAt = (t) => {
   if (l.shot === "promote" && lt > 0.3) h += `<div style="position:absolute;left:0;right:0;top:220px;text-align:center;transform:rotate(-6deg) scale(${outBack((lt - 0.3) / 0.3)})"><span style="font:800 64px Arc;color:#d3f05a;-webkit-text-stroke:8px #0f1d18;paint-order:stroke">PROMOTED ⭐</span></div>`;
   if (t > DUR - 1.6) h += `<div style="position:absolute;inset:0;background:rgba(15,29,24,${0.85 * ease((t - (DUR - 1.6)) / 0.3)})"></div><div style="position:absolute;left:0;right:0;top:520px;text-align:center;color:#fff;font:800 40px Arc">turn your notes into reels</div><div style="position:absolute;left:0;right:0;top:590px;text-align:center"><span style="display:inline-block;background:#d3f05a;color:#0f1d18;font:800 46px Arc;border-radius:999px;padding:16px 34px">unspool.cc</span></div>`;
   else if (t <= l.e + 0.2) h += caption(l, t);
+  // unspool.cc in the top-left corner the whole time (inside the TikTok safe zone, above the chat bubbles)
+  if (t <= DUR - 1.6) h += `<div style="position:absolute;left:90px;top:168px;background:rgba(15,29,24,0.72);border-radius:999px;padding:7px 16px;font:800 26px Arc;color:#d3f05a;letter-spacing:0.5px">unspool.cc</div>`;
   // a little punch on every cut
   const fl = Math.max(0, 1 - lt / 0.07); if (i > 0 && fl > 0) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${fl * 0.3}"></div>`;
   ov.innerHTML = h;
