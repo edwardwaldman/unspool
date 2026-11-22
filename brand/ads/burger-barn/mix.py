@@ -1,4 +1,4 @@
-# A bouncy party groove (four-on-the-floor kick, offbeat hats, plucked chords) ducked under the deadpan voice. It plays
+# A quirky D-minor groove at the reference video's tempo (77 BPM, double-time feel) with a held bassline and a plucked lead, ducked under the deadpan voice. It plays
 # full in the party shots and muffled (low-passed, quieter) when we are inside with him, like music through a window.
 # Every "HUSS!" gets a paper whoosh + a table thump; folds get a crinkle; the clock ticks; a ding for the quiz;
 # a crowd swell when the town walks in; a sting on "Almost"; an end-card chime.
@@ -14,17 +14,21 @@ def tone(f, d, dec=6, h=(1, .4)): t = np.arange(int(SR * d)) / SR; return sum(a 
 def noise(d, dec=6): t = np.arange(int(SR * d)) / SR; return rng.standard_normal(len(t)) * np.exp(-t * dec)
 def drum(f0, f1, d=0.2, dec=14): t = np.arange(int(SR * d)) / SR; return np.sin(2 * np.pi * (f1 + (f0 - f1) * np.exp(-t * 30)) * t) * np.exp(-t * dec)
 def lp(x, n): return np.convolve(x, np.ones(n) / n, "same")
-music = np.zeros(N); B = 60 / 124; chords = [[57, 60, 64], [53, 57, 60], [55, 59, 62], [52, 55, 59]]
-for i in range(int(DUR / (B / 2))):
-    t0 = i * B / 2
-    if i % 2 == 0: add(music, t0, drum(150, 50, 0.3, 9), 0.5)
-    else: add(music, t0, noise(0.05, 60), 0.08)
-    if i % 4 == 2: add(music, t0, noise(0.12, 25), 0.1)
-    ch = chords[(i // 8) % 4]
-    if i % 2 == 1: [add(music, t0, tone(note(m + 12), 0.25, 10, (1, .5, .2)), 0.05) for m in ch]
-    if i % 8 == 0: add(music, t0, tone(note(ch[0] - 12), B * 3.8, 1.2, (1, .5)), 0.18)
+music = np.zeros(N); B = 60 / 77   # the reference track's tempo (about 77 BPM) and key (D minor), measured from its audio
+prog = [[50, 53, 57], [46, 50, 53], [48, 52, 55], [45, 49, 52]]   # Dm  Bb  C  A
+mel = [74, 72, 69, 72, 74, 77, 76, 74, 70, 69, 67, 69, 72, 69, 73, 76]
+for bar in range(int(DUR / (B * 4)) + 1):
+    t0 = bar * B * 4; ch = prog[bar % 4]
+    add(music, t0, tone(note(ch[0] - 12), B * 4, 0.6, (1, .35, .1)), 0.22)                 # held low bass, a bar at a time
+    for q in range(8):                                                                       # double-time groove (154)
+        tq = t0 + q * B / 2
+        if q in (0, 3, 4): add(music, tq, drum(140, 48, 0.32, 9), 0.45)
+        if q in (2, 6): add(music, tq, noise(0.14, 22), 0.12); add(music, tq, drum(240, 160, 0.12, 22), 0.12)
+        add(music, tq + B / 4, noise(0.03, 90), 0.05)
+        if q % 2 == 0: [add(music, tq, tone(note(m + 12), 0.18, 14, (1, .6, .25)), 0.03) for m in ch]
+    for k in range(4): add(music, t0 + k * B, tone(note(mel[(bar * 4 + k) % 16]), 0.32, 9, (1, .5, .3, .15)), 0.06)   # plucked lead
 PARTY = {"town", "anything", "birthday", "tuesday", "rock", "outthere", "shift", "midnight"}
-gain = np.full(N, 0.22); inside = np.ones(N, bool)
+gain = np.full(N, 0.5); inside = np.ones(N, bool)
 for l in lines:
     if l["shot"] in PARTY:
         a, b = int((l["s"] - 0.08) * SR), int((l["e"] + 0.3) * SR); gain[a:b] = 1.0; inside[a:b] = False
