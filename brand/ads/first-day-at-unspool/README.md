@@ -8,6 +8,9 @@ everyone gets promoted. It ends on the same slip, so it loops. One yellow word o
 
 - `voice-take.mp3` is the full take; `voice-pickup-unspool.mp3` re-says "My first day at Un-spool support" (the take
   sounded like "Unschool"), spliced over 2.52–4.245 s at the same length so every timing holds.
+- `voice-open-shout.mp3` is the opening: a shouted "OHHH… MYYY… GOOOD!" with every word a long, loud wail. Its three words
+  (0–1.84, 2.52–4.15, 4.83–6.48 s) are joined with 0.2 s gaps, boosted 4.5 dB and put over the take's first 2.53 s, so every
+  later timing moves 3.14 s (already done in `web/tl.json`; each word cuts to a new crying close-up).
 - `voice-whines.mp3` holds the extra drawn-out "oh my goooood" wails. Five of them are spliced in after the lines ending at
   12.52, 17.78, 34.84, 42.72 and 57.74 s (0.08 s gap + wail + 0.15 s pad), and `web/tl.json` already has the shifted times
   (lines `whine1`..`whine5`, about 90 s total). He faces his desk in every office shot.

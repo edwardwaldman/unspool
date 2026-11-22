@@ -220,7 +220,7 @@ const SHOT = {
   // the extra "oh my goooood" wails: a close-up of him at his desk, a different angle and flail each time
   whine: (lt, t, n) => { heroFront(); stackBehind(0); const k = (n - 1) % 3, sh = Math.sin(lt * 16) * 0.25;
     hero.pose({ sit: true, la: [[-2.6, -2.9, -2.2][k], 0.6 + sh], ra: [[-2.6, -2.9, -2.2][k], -0.6 - sh], headTilt: Math.sin(lt * 7) * 0.18 }); hero.setFace("cry");
-    cam([v3(0.2, 4.0, -1.05), v3(-1.1, 3.9, -0.9), v3(1.2, 3.7, -0.8)][k], v3(0, 3.28, 1.35), [40, 44, 46][k]); return office; },
+    const sk = Math.sin(lt * 53) * 0.03; cam([v3(0.2 + sk, 4.0, -1.05), v3(-1.1 + sk, 3.9, -0.9), v3(1.2 + sk, 3.7, -0.8)][k], v3(0, 3.28 + sk, 1.35), [40, 44, 46][k] - Math.min(lt, 1.6) * 5); return office; },
 };
 // chat bubbles (the messages, on screen as overlays)
 const BUBBLES = { msg: ["in", "my bio test is tomorrow 😭 my notes are 40 pages"], onereel: ["out", "no tension, I am making you one reel 👍"], mistake: ["out", "small mistake 🙏 please do NOT watch it"], watchwhat: ["in", "watch what? 🤔"], dontshare: ["out", "please do not share it 😭"], nextmorning: ["in", "my notes are 40 pages 😭"] };
@@ -237,7 +237,7 @@ window.renderAt = (t) => {
   const l = lines[i], lt = t - (l.s - 0.08);
   [supervisor, manager, minister, owner].forEach((c) => (c.g.visible = false)); hero.g.position.y = 0; hero.g.visible = true; heroDesk.visible = true; finger.visible = false; friend.g.visible = false; fPhone.visible = false;
   if (t > DUR - 1.6) { const scene = SHOT.omg(2); renderer.render(scene, camera); }
-  else { const scene = l.shot.startsWith("whine") ? SHOT.whine(lt, t, Number(l.shot.slice(5))) : SHOT[l.shot](lt, t); renderer.render(scene, camera); }
+  else { const wi = l.ws.filter((w) => w <= t).length; const scene = l.shot.startsWith("whine") ? SHOT.whine(lt, t, Number(l.shot.slice(5))) : (l === TL.lines[0] ? SHOT.whine(t - l.ws[Math.max(0, wi - 1)], t, Math.max(1, wi)) : SHOT[l.shot](lt, t)); renderer.render(scene, camera); }
   let h = "";
   const b = BUBBLES[l.shot];
   if (b && t < (l.shot === "nextmorning" ? l.ws[13] : 99)) { const k = clamp((lt - 0.25) / 0.2), inn = b[0] === "in";
