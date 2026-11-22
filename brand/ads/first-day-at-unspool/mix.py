@@ -16,7 +16,7 @@ for i in range(int((DUR - 1.6) / (B / 2))):
     add(t0, drum(180, 90) if i % 4 in (0, 3) else drum(420, 300, 0.1, 30), 0.09 if i % 4 in (0, 3) else 0.05)
     if i % 8 == 0: add(t0, tone(note(50), B * 3.5, 1.5, (1, .5)), 0.06)
 for w in L["slipped"]["ws"][1:2]: add(w + 0.25, noise(0.04, 80), 0.4); add(w + 0.3, drum(90, 45, 0.5, 5), 0.5)                        # the slip
-for sh in ("aiyo", "aiyo3"):
+for sh in ["aiyo", "aiyo3"] + [k for k in L if k.startswith("whine")]:
     for w in L[sh]["ws"]: add(w, tone(note(55), 0.5, 4, (1, .6, .3)), 0.12); add(w, drum(140, 60, 0.4, 6), 0.3)                       # aiyo stings
 for sh in ("msg", "watchwhat", "nextmorning"): add(L[sh]["s"] + 0.25, tone(note(88), 0.25, 10, (1, .3)), 0.12); add(L[sh]["s"] + 0.34, tone(note(93), 0.3, 10, (1, .3)), 0.1)  # pings
 for k in range(14): add(L["mistake"]["s"] + 0.3 + k * 0.09, noise(0.02, 120), 0.12)                                                    # frantic typing

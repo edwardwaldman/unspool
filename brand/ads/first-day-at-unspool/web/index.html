@@ -172,22 +172,22 @@ const stove = box(3, 2, 1.2, M("#cfd6dd"), 4.6, 1, -2.6, room);
 // ---------------- shots ----------------
 const cam = (p, l, fov = 42) => { camera.position.copy(p); camera.lookAt(l); camera.fov = fov; camera.updateProjectionMatrix(); };
 const push = (lt, a, b, la, lb, d = 2.5, fov = 42) => { const k = ease(lt / d); cam(a.clone().lerp(b, k), la.clone().lerp(lb, k), fov); };
-const heroFront = () => { hero.g.rotation.y = 0; };   // turn round to the camera
+const heroFront = () => { hero.g.rotation.y = Math.PI; };   // he faces his desk and computer; the camera sits on the desk side
 const heroHead = () => v3(0, 3.6, 1.35);
 function stackBehind(n) { // supervisor, manager, minister line up behind the hero's chair
   [supervisor, manager, minister].forEach((c, i) => { c.g.visible = i < n; c.g.position.set([1.35, -1.35, 2.7][i], 0, [2.8, 3.4, 4.4][i]); c.g.rotation.y = Math.PI; c.pose({ la: [0, 0.1], ra: [0, -0.1] }); c.setFace(i === 0 ? "angry" : i === 1 ? "worried" : "whisper"); }); }
 const SHOT = {
-  omg: (lt) => { heroFront(); hero.pose({ sit: true, la: [-2.6, 0.5], ra: [-2.6, -0.5], headTilt: Math.sin(lt * 9) * 0.08 }); hero.setFace("cry"); push(lt, v3(0.4, 3.9, 5.6), v3(0.1, 3.7, 4.4), heroHead(), heroHead(), 2, 40); return office; },
-  firstday: (lt) => { heroFront(); hero.pose({ sit: true, la: [-0.3, 0.3], ra: [-2.8, -0.3] }); hero.setFace("grin"); push(lt, v3(4.2, 5.4, 8.4), v3(3.2, 4.9, 7.4), v3(0, 3.4, 0), v3(0, 3.4, 0), 2, 50); return office; },
+  omg: (lt) => { heroFront(); hero.pose({ sit: true, la: [-2.6, 0.5], ra: [-2.6, -0.5], headTilt: Math.sin(lt * 9) * 0.08 }); hero.setFace("cry"); cam(v3(0.2, 4.0, -1.05), v3(0, 3.28, 1.35), 40); return office; },
+  firstday: (lt) => { heroFront(); hero.pose({ sit: true, la: [-0.3, 0.3], ra: [-2.8, -0.3] }); hero.setFace("grin"); push(lt, v3(-3.6, 5.0, -1.9), v3(-3.0, 4.7, -1.5), v3(0, 3.2, 1.2), v3(0, 3.2, 1.2), 2, 52); return office; },
   msg: (lt) => { student.pose({ sit: true, la: [-1.4, 0.3], ra: [-1.4, -0.3] }); student.setFace("worried"); friend.g.visible = false; fPhone.visible = false;
     sPhone.position.set(-0.6, 2.6, 0.25); sPhone.rotation.set(-0.3, 0, 0); drawPhone("chat"); push(lt, v3(0.6, 4, 5.6), v3(0.2, 3.8, 4.6), v3(-0.6, 3.4, -0.4), v3(-0.6, 3.5, -0.4), 4, 42); return bedroom; },
   onereel: (lt) => { hero.g.rotation.y = Math.PI; hero.pose({ sit: true, la: [-1.3, 0.2], ra: [-1.3, -0.2] }); hero.setFace("smug"); drawMonitor(lt > 1.4 ? "one" : "chat"); cam(v3(2.5, 3.7, 2.6), v3(0, 2.85, -0.4), 44); return office; },
   slipped: (lt) => { hero.g.visible = false; finger.visible = true; finger.position.set(0.45, 1.93 + Math.max(0, 0.35 - lt * 0.9), 0.33); finger.rotation.x = 0.3; keyHi.material.emissiveIntensity = lt > 0.38 ? 2.5 : 0.3; cam(v3(1.7, 3.3, 1.9), v3(0.45, 2.0, 0.33), 34); return office; },
   textbook: (lt) => { drawMonitor("whole"); hero.g.visible = false; cam(v3(0, 2.85, 4.6 - lt * 0.15), v3(0, 2.77, -0.4), 40); return office; },
-  aiyo: (lt) => { heroFront(); hero.pose({ sit: true, la: [-2.1, 0.95], ra: [-2.1, -0.95] }); hero.setFace("shock"); cam(v3(0, 3.7, 3.6), heroHead(), 40); return office; },
+  aiyo: (lt) => { heroFront(); hero.pose({ sit: true, la: [-2.1, 0.95], ra: [-2.1, -0.95] }); hero.setFace("shock"); cam(v3(0.2, 4.0, -1.05), v3(0, 3.28, 1.35), 40); return office; },
   mistake: (lt) => { hero.g.rotation.y = Math.PI; hero.pose({ sit: true, la: [-1.2 - Math.abs(Math.sin(lt * 22)) * 0.2, 0.2], ra: [-1.2 - Math.abs(Math.cos(lt * 22)) * 0.2, -0.2] }); hero.setFace("worried"); drawMonitor("chat"); cam(v3(2.5, 3.7, 2.6), v3(0, 2.85, -0.4), 44); return office; },
   watchwhat: (lt) => { student.pose({ sit: true, la: [-1.4, 0.3], ra: [-1.4, -0.3], headTilt: 0.2 }); student.setFace("neutral"); sPhone.position.set(-0.6, 2.6, 0.25); drawPhone("chat");
-    if (lt > 1.2) { heroFront(); hero.pose({ sit: true, la: [-2.6, 0.5], ra: [-2.6, -0.5] }); hero.setFace("cry"); cam(v3(0, 3.7, 3.8), heroHead(), 40); return office; }
+    if (lt > 1.2) { heroFront(); hero.pose({ sit: true, la: [-2.6, 0.5], ra: [-2.6, -0.5] }); hero.setFace("cry"); cam(v3(0.2, 4.0, -1.05), v3(0, 3.28, 1.35), 40); return office; }
     cam(v3(-0.2, 3.7, 3.3), v3(-0.6, 3.4, -0.4), 40); return bedroom; },
   onereel2: (lt) => { student.pose({ sit: true, la: [-1.5, 0.3], ra: [-1.5, -0.3] }); student.setFace("happy"); drawPhone("reel"); sPhone.position.set(-0.6, 2.75, 0.3); sPhone.rotation.set(0.1, Math.PI, 0);
     cam(v3(-0.45, 2.9, -0.2), v3(-0.6, 2.75, 0.3), 74); return bedroom; },
@@ -200,7 +200,7 @@ const SHOT = {
       sPhone.position.set(-0.6, 2.6, 0.25); sPhone.rotation.set(-0.3, 0, 0); fPhone.position.set(1.4, 2.6, 0.25); fPhone.rotation.set(-0.3, 0, 0); drawPhone("reel"); cam(v3(0.4, 3.9, 5.4), v3(0.4, 3.3, -0.4), 44); return bedroom; }
     if (t < w[8]) { classKids.forEach((k, i) => k.head.rotation.x = 0.35 + Math.sin(t * 5 + i) * 0.05); cam(v3(0, 6, 9), v3(0, 2, -1), 46); return classroom; }
     school.visible = true; city.visible = false; crowd.forEach((c, i) => c.g.visible = i < 8); cam(v3(0, 4, 16), v3(0, 4, -4), 50); return outside; },
-  aiyo3: (lt) => { heroFront(); stackBehind(0); hero.pose({ sit: true, la: [-2.9, 0.6 + Math.sin(lt * 14) * 0.2], ra: [-2.9, -0.6 - Math.sin(lt * 14) * 0.2] }); hero.setFace("cry"); cam(v3(0, 3.7, 3.6), heroHead(), 40); return office; },
+  aiyo3: (lt) => { heroFront(); stackBehind(0); hero.pose({ sit: true, la: [-2.9, 0.6 + Math.sin(lt * 14) * 0.2], ra: [-2.9, -0.6 - Math.sin(lt * 14) * 0.2] }); hero.setFace("cry"); cam(v3(0.2, 4.0, -1.05), v3(0, 3.28, 1.35), 40); return office; },
   manager: (lt) => { hero.g.rotation.y = Math.PI; hero.pose({ sit: true }); hero.setFace("worried"); stackBehind(2); manager.g.position.z = mix(8, 3.4, ease(lt / 0.9)); heroDesk.visible = false; cam(v3(0.5, 4.3, -3.6), v3(0, 4.0, 3.0), 62); return office; },
   dontshare: (lt) => { hero.g.rotation.y = Math.PI; hero.setFace("worried"); stackBehind(2); supervisor.setFace("worried"); supervisor.pose({ la: [-1.6, 0.4], ra: [-1.6, -0.4] }); heroDesk.visible = false; cam(v3(1.9, 4.5, -0.9), v3(1.35, 4.3, 2.8), 40); return office; },
   city: (lt) => { school.visible = false; city.visible = true; crowd.forEach((c) => (c.g.visible = true)); push(lt, v3(-2, 5, 22), v3(2, 6, 18), v3(0, 4, 0), v3(2, 6, -8), 2.6, 50); return outside; },
@@ -215,8 +215,12 @@ const SHOT = {
     heroDesk.visible = false; cam(v3(0.8, 4.6, -3.8), v3(0.6, 4.1, 3.2), 66); return office; },
   nextmorning: (lt, t) => { const L = lines.find((l) => l.shot === "nextmorning"), w = L.ws; owner.g.visible = false; stackBehind(0); hero.g.position.y = 0;
     if (t >= w[18]) { const lt2 = t - w[18]; hero.g.visible = false; finger.visible = true; finger.position.set(0.45, 1.93 + Math.max(0, 0.35 - lt2 * 0.9), 0.33); finger.rotation.x = 0.3; keyHi.material.emissiveIntensity = lt2 > 0.38 ? 2.5 : 0.3; cam(v3(1.7, 3.3, 1.9), v3(0.45, 2.0, 0.33), 34); return office; }
-    heroFront(); hero.pose({ sit: true, la: [-0.3, 0.3], ra: [-2.8, -0.3] }); hero.setFace("smug"); drawMonitor("chat"); cam(v3(4, 5.2, 9), v3(0, 3.6, 0), 44); return office; },
+    heroFront(); hero.pose({ sit: true, la: [-0.3, 0.3], ra: [-2.8, -0.3] }); hero.setFace("smug"); drawMonitor("chat"); cam(v3(-3.4, 4.9, -1.7), v3(0, 3.2, 1.2), 52); return office; },
   omg2: (lt) => SHOT.omg(lt),
+  // the extra "oh my goooood" wails: a close-up of him at his desk, a different angle and flail each time
+  whine: (lt, t, n) => { heroFront(); stackBehind(0); const k = (n - 1) % 3, sh = Math.sin(lt * 16) * 0.25;
+    hero.pose({ sit: true, la: [[-2.6, -2.9, -2.2][k], 0.6 + sh], ra: [[-2.6, -2.9, -2.2][k], -0.6 - sh], headTilt: Math.sin(lt * 7) * 0.18 }); hero.setFace("cry");
+    cam([v3(0.2, 4.0, -1.05), v3(-1.1, 3.9, -0.9), v3(1.2, 3.7, -0.8)][k], v3(0, 3.28, 1.35), [40, 44, 46][k]); return office; },
 };
 // chat bubbles (the messages, on screen as overlays)
 const BUBBLES = { msg: ["in", "my bio test is tomorrow 😭 my notes are 40 pages"], onereel: ["out", "no tension, I am making you one reel 👍"], mistake: ["out", "small mistake 🙏 please do NOT watch it"], watchwhat: ["in", "watch what? 🤔"], dontshare: ["out", "please do not share it 😭"], nextmorning: ["in", "my notes are 40 pages 😭"] };
@@ -233,7 +237,7 @@ window.renderAt = (t) => {
   const l = lines[i], lt = t - (l.s - 0.08);
   [supervisor, manager, minister, owner].forEach((c) => (c.g.visible = false)); hero.g.position.y = 0; hero.g.visible = true; heroDesk.visible = true; finger.visible = false; friend.g.visible = false; fPhone.visible = false;
   if (t > DUR - 1.6) { const scene = SHOT.omg(2); renderer.render(scene, camera); }
-  else { const scene = SHOT[l.shot](lt, t); renderer.render(scene, camera); }
+  else { const scene = l.shot.startsWith("whine") ? SHOT.whine(lt, t, Number(l.shot.slice(5))) : SHOT[l.shot](lt, t); renderer.render(scene, camera); }
   let h = "";
   const b = BUBBLES[l.shot];
   if (b && t < (l.shot === "nextmorning" ? l.ws[13] : 99)) { const k = clamp((lt - 0.25) / 0.2), inn = b[0] === "in";
