@@ -24,3 +24,5 @@ everyone gets promoted. It ends on the same slip, so it loops. One yellow word o
   the final timings. `mix.py` skips the effects of lines that are not in the cut.
 - **Scrolling feed:** on "She watched one reel. Okay, one reel only." her phone swipes through reels (Mitochondria →
   Photosynthesis → DNA → Cell membrane…, "Reel 12/13/14 of 38"), and the friend's phone scrolls too when it spreads.
+- **High, loud opening moan:** the "Ohhh" is pitched up about 6 semitones (same length) and boosted about 9 dB with a
+  limiter, so it is about 10 dB louder than the rest of the ad.
