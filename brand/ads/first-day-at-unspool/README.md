@@ -17,9 +17,8 @@ everyone gets promoted. It ends on the same slip, so it loops. One yellow word o
 - `web/tl.json` has the word timings (ElevenLabs Scribe) grouped into the 25 shots.
 - `mix.py <dir>` makes `mix.wav` (comedy bed + effects under the voice; needs `voice.wav`).
 - Render: `node brand/ads/tools/render-fresh.mjs <dir> 6 --gl`, then `bash brand/ads/tools/encode.sh <dir> first-day-at-unspool`.
-- **30-second cut:** the opening moan stays, with its last "goooood" shortened (the middle of the vowel, 4.98–5.42 s, is
-  cut out with a crossfade). Then only the core beats: first day, the student's message, "one reel", the finger slip,
-  whole textbook = 38 reels, "aiyooo", she watches one reel and aces the quiz, friend → class → school, the whole city
-  scrolling biology, end card. The extra moans and the escalation (supervisor, manager, minister, principal, mother,
-  samosa, promotion, loop) are cut. Lines come from the 79 s quick version (pauses at 0.2 s, 1.12x); `web/tl.json`
-  holds the final timings. `mix.py` skips the effects of lines that are not in the cut.
+- **Current cut (27 s):** opens on the "Ohhh" moan alone (0–2.86 s of the moan take; "myyy goooood" is dropped), then
+  straight into "My first day at Unspool support". Then only the core beats: the student's message, "one reel", the finger
+  slip, whole textbook = 38 reels, "aiyooo", she watches one reel and aces the quiz, friend → class → school, the whole
+  city scrolling biology, end card. Lines come from the 79 s quick version (pauses at 0.2 s, 1.12x); `web/tl.json` holds
+  the final timings. `mix.py` skips the effects of lines that are not in the cut.
