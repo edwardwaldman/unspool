@@ -26,3 +26,5 @@ everyone gets promoted. It ends on the same slip, so it loops. One yellow word o
   Photosynthesis → DNA → Cell membrane…, "Reel 12/13/14 of 38"), and the friend's phone scrolls too when it spreads.
 - **High, loud opening moan:** the "Ohhh" is pitched up about 6 semitones (same length) and boosted about 9 dB with a
   limiter, so it is about 10 dB louder than the rest of the ad.
+- **Shorter moan:** the middle of the "Ohhh" vowel (1.0–2.47 s) is cut with a crossfade, so the moan lasts about 1.3 s
+  and the ad is 25.8 s. `web/tl.json` has the shifted timings.
