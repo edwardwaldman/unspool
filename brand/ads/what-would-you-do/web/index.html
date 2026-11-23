@@ -217,7 +217,7 @@ const SHOTS = {
   hook(t, lt) { // night: your homeboy asleep; sparkles gather
     const g = clamp((lt - 1.4) / 1.4);
     return svg(bedroom(t) + HB({ x: 340, y: 800, s: 0.66, face: "sleep", lean: -90, la: [5, 5], ra: [5, 5] }) + blanket + zzz(150, 700, t) + sparkles(250, 760, t, 26, 200, g))
-      + A(470, 520, `<div style="background:#d9412f;color:#fff;border:4px solid ${O};border-radius:12px;padding:6px 14px;font:800 26px Arc;transform:rotate(-4deg)">NICK</div>`, pop((lt - 0.4) / 0.25)); },
+      + A(470, 520, `<div style="background:#d9412f;color:#fff;border:4px solid ${O};border-radius:12px;padding:6px 14px;font:800 26px Arc;transform:rotate(-4deg)">HOMEBOY</div>`, pop((lt - 0.4) / 0.25)); },
   turn(t, lt) { // a glowing silhouette swaps from him to her
     const f = clamp(lt / 0.2), sw = lt > 0.9, sil = lt < 1.5;
     return `<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 48%, #f2fffb 0%, ${TEAL} 28%, #12335a 75%)"></div>`
@@ -235,7 +235,7 @@ const SHOTS = {
       + A(150, 110, `<div style="background:#1a1220;border:6px solid ${O};border-radius:18px;padding:8px 24px;font:800 96px Arc;color:#ff4d4d;text-shadow:0 0 18px rgba(255,77,77,.6)">7:00<span style="font-size:32px">AM</span></div>`, pop(lt / 0.25))
       + phoneBig(440, 420, 210, `<div style="position:absolute;inset:0;background:linear-gradient(#2a3350,#151a2c);display:flex;flex-direction:column;align-items:center;padding-top:40px;font:800 18px Arc;color:#cfd6f0">incoming call
         <div style="width:90px;height:90px;border-radius:50%;background:#fff;border:4px solid ${O};margin:18px 0 10px;position:relative;overflow:hidden"><svg width="90" height="90" viewBox="-60 -70 120 120">${`<circle r="44" fill="#fff"/><path d="M-44 -10 Q-42 -52 0 -52 Q42 -52 44 -10 Z" fill="#1d1b26"/><circle cx="-14" cy="0" r="5"/><circle cx="14" cy="0" r="5"/><path d="M-10 18 Q0 26 10 18" stroke="${O}" stroke-width="4" fill="none"/>`}</svg></div>
-        <div style="font-size:26px;color:#fff">NICK</div><div style="display:flex;gap:40px;margin-top:auto;margin-bottom:40px"><div style="width:52px;height:52px;border-radius:50%;background:#e23b3b"></div><div style="width:52px;height:52px;border-radius:50%;background:#22c55e"></div></div></div>`, v * 0.4)
+        <div style="font-size:26px;color:#fff">HOMEBOY</div><div style="display:flex;gap:40px;margin-top:auto;margin-bottom:40px"><div style="width:52px;height:52px;border-radius:50%;background:#e23b3b"></div><div style="width:52px;height:52px;border-radius:50%;background:#22c55e"></div></div></div>`, v * 0.4)
       + sfx(430, 330, "RING RING", (lt - 0.1) / 0.2, "#ffd23f", 6, 40); },
   answer(t, lt) { // "...hello?" then: a girl SCREAMING your name
     const cut = t > wordAt("answer", "girl") - 0.1;
@@ -351,6 +351,8 @@ window.renderAt = (t) => {
   if (OVER[l.shot]) h += OVER[l.shot](t, lt);
   const flash = Math.max(0, 1 - lt / 0.07) * 0.25; if (i > 0 && flash > 0) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${flash}"></div>`;
   if (t <= l.e + 0.3 && t >= l.s && l.shot !== "end") h += caption(l, t);
+  // a name card in the first moment: "NICK", slams in and fades by 0.6 s (on-screen text only)
+  if (t < 0.6) { const k = clamp(t / 0.08), f = 1 - clamp((t - 0.42) / 0.18); h += `<div style="position:absolute;left:0;right:0;top:470px;text-align:center;opacity:${f}"><span style="display:inline-block;transform:scale(${1.6 - 0.6 * ease(k)}) rotate(-4deg);background:#d9412f;color:#fff;border:6px solid ${O};border-radius:18px;padding:10px 34px;font:800 110px Arc;letter-spacing:2px">NICK</span></div>`; }
   // a full repaint every frame: reusing the page between frames left stale tiles (ghost stamps) in the screenshots
   S.innerHTML = ""; void S.offsetHeight; S.style.background = (Math.round(t * 30) % 2) ? "#1b1830" : "#1b1831";
   S.innerHTML = h; void S.offsetHeight;

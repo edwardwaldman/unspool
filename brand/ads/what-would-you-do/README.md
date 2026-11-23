@@ -20,7 +20,8 @@ the test he aces, "Would you treat your homeboy exactly the same?!" and the end 
 before/after, prank, "one hour", mission and "funniest part" beats are cut. Lines are joined with 0.14 s gaps and the
 voice plays at 1.08x; the end line runs to where the voice really goes silent (47.49 s in the long take), not the transcript's word end, so "unspool.cc" is not clipped, with 1.8 s of end card after it. `web/tl.json` holds the final timings. `mix.py` skips the effects of lines that are not in the cut.
 
-**20 s cut, Nick and the moan:** the homeboy's name tag reads "NICK". A loud, high-pitched "OHHHH!" plays underneath the
+**20 s cut, Nick and the moan:** a big "NICK" name card slams in on the first frame and fades by 0.6 s (on-screen text
+only; the narration and the HOMEBOY tag are unchanged). A loud, high-pitched "OHHHH!" plays underneath the
 first words of the hook (`voice-open-moan.mp3`: pitched up about 6 semitones, boosted, about 1.3 s, mixed at 0.75x on top
 of the voice). Same beats as the quick cut, with 0.1 s gaps and the voice at 1.18x so the whole ad is exactly 20 s
 (the voice ends at 18.46 s, then 1.54 s of end card). `web/tl.json` holds the final timings.
