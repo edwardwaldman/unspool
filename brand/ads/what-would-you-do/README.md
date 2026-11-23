@@ -13,3 +13,8 @@ comic sound bubbles, memory-search and before/after cards, a "WHAT WOULD YOU DO?
 Voiceover: `voice-take.mp3` is the yelled take (ElevenLabs Charlie, eleven_v4, from `vo-prompt.txt`). `words.py` holds
 its word timings (Scribe); `timing.py <this dir> web/tl.json` times every line and caption word to it, sped up 1.12x.
 Make `voice.wav` with `ffmpeg -i voice-take.mp3 -af "atempo=1.12,adelay=250:all=1" -ar 24000 -ac 1 voice.wav`, then run `mix.py`.
+
+**Opening moan:** the ad now starts with a loud, high-pitched "OHHHH!" (the same processed moan as the first-day ad:
+`voice-open-moan.mp3`, the "Ohhh" pitched up about 6 semitones, boosted and shortened to about 1.3 s) over his shocked
+mirror moment with a screen shake (shot `moan`). Everything after it starts 1.45 s later; `web/tl.json` holds the
+shifted timings. To rebuild `voice.wav`, put that 1.45 s opening in front of the voice track made as above.
