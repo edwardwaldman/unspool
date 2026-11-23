@@ -16,3 +16,6 @@ ties, a cheering crowd behind glass in shot 1, a warm grade with a vignette, and
 `mix.py <dir>` makes `mix.wav`: an original triumphant F-major track at 120 BPM so each 2 s shot starts on a bar
 (the reference's track measured as dense, bright, around F major). Render with
 `node brand/ads/tools/render-fresh.mjs <dir> 6 --gl`, then `bash brand/ads/tools/encode.sh <dir> addicted-to-studying`.
+- **Detailed people:** real faces (eyes with whites, irises and highlights, lids, thick brows, a nose, ears, a toothy
+  smile), suits with lapels, collar, white shirt front, tie, buttons and pocket square, full sleeves with white cuffs and
+  hands, polished shoes; a rim light behind the people and a light haze on each set so they stand out; tighter framing.
