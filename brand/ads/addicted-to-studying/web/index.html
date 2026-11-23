@@ -11,9 +11,9 @@ canvas { position: absolute; left: 0; top: 0; }
 <script type="module">
 // "Addicted to studying": the "pov: how it feels getting addicted to ___ instead of doomscrolling" format. One static
 // caption over six slow 2-second "living the dream" shots (a student's version), then an Unspool end card.
-// No voice: a triumphant music bed. Six scenes x 2 s + a 1.6 s end card.
+// No voice: a triumphant music bed. Six scenes x 2 s, no end card and no badge (like the original); the caption carries the brand.
 import * as THREE from "./three/three.module.js";
-const DUR = 13.6; window.DUR = DUR;
+const DUR = 12; window.DUR = DUR;
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
 const outBack = (x) => { x = clamp(x); const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
@@ -111,8 +111,9 @@ const nightSky = canvasTex(512, 512, (g) => { const gr = g.createLinearGradient(
   fw(120, 120, "#ff6fb5"); fw(380, 90, "#6fe3ff"); fw(260, 200, "#ffd23f"); });
 
 const SK = ["#f1c9a0", "#c68a5a", "#8d5a3b", "#e8b48a", "#5e3a24"], TOPS = ["#ff5d8f", "#ffd23f", "#3df0a0", "#5bc0eb", "#b07cff", "#ff9a3d", "#ffffff", "#2c3e50"];
-const mkHero = () => blocky({ skin: "#e8b48a", shirt: "#2b4a8b", pants: "#1f2a44", hair: "#3a2416", style: "short" });
-const extra = (i, o = {}) => blocky({ skin: SK[i % 5], shirt: TOPS[i % 8], pants: ["#24345c", "#3a3a3a", "#e8e2cc", "#6b3fa0"][i % 4], hair: ["#2a1a10", "#e8c26a", "#a0522d", "#111"][i % 4], style: ["short", "curly", "bun", "spiky"][i % 4], ...o });
+const humanize = (P) => { P.head.scale.setScalar(0.74); P.head.position.y = 2.95; P.legs.forEach((l) => l.scale.set(1, 1.18, 1)); P.hip.position.y = 1.3; P.torso.scale.set(0.92, 1.12, 1); P.torso.position.y = 1.98; P.arms.forEach((a) => { a.position.y = 2.55; a.scale.set(0.9, 1.15, 0.9); }); return P; };
+const mkHero = () => humanize(blocky({ skin: "#e8b48a", shirt: "#1f2d4f", pants: "#1f2d4f", hair: "#3a2416", style: "short", tie: "#7a1f2a" }));
+const extra = (i, o = {}) => humanize(blocky({ skin: SK[i % 5], shirt: TOPS[i % 8], pants: ["#24345c", "#3a3a3a", "#e8e2cc", "#6b3fa0"][i % 4], hair: ["#2a1a10", "#e8c26a", "#a0522d", "#111"][i % 4], style: ["short", "curly", "bun", "short"][i % 4], ...o }));
 const sky = (top, mid, bot, buildings = "#3a3f5c", lit = "#ffd27a") => canvasTex(512, 512, (g) => { const gr = g.createLinearGradient(0, 0, 0, 512); gr.addColorStop(0, top); gr.addColorStop(0.55, mid); gr.addColorStop(1, bot); g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
   for (let i = 0; i < 26; i++) { const w = 18 + rnd(i) * 26, h = 90 + rnd(i + 7) * 230, x = i * 20 - 10; g.fillStyle = buildings; g.globalAlpha = 0.65 + rnd(i + 3) * 0.35; g.fillRect(x, 512 - h, w, h); g.globalAlpha = 1; g.fillStyle = lit; for (let y = 512 - h + 8; y < 504; y += 14) for (let xx = x + 3; xx < x + w - 4; xx += 7) if (rnd(xx * 3 + y) > 0.55) g.fillRect(xx, y, 3, 5); } });
 const paperTex2 = canvasTex(160, 200, (g) => { g.fillStyle = "#fff"; g.fillRect(0, 0, 160, 200); g.fillStyle = "#c4c9d4"; for (let y = 60; y < 190; y += 16) g.fillRect(16, y, 128, 3); g.strokeStyle = "#e0312b"; g.lineWidth = 7; g.beginPath(); g.arc(112, 40, 28, 0, 7); g.stroke(); g.fillStyle = "#e0312b"; g.font = "800 30px Arc"; g.textAlign = "center"; g.fillText("A+", 112, 51); });
@@ -122,8 +123,10 @@ const sheet = (parent) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.5
 
 // 1 ---- DESK: feet up, phone in one hand, fanning A+ tests with the other, tests floating down
 const room = mkScene("#2a2f4a"); lights(room, true);
-box(30, 0.1, 30, M("#6b4f3a"), 0, -0.05, 0, room); box(30, 12, 0.3, M("#3b4266"), 0, 6, -5, room);
-{ const w = new THREE.Mesh(new THREE.PlaneGeometry(9, 5), new THREE.MeshBasicMaterial({ map: sky("#14183a", "#2b3270", "#5a4a8a", "#1d2140", "#ffe08a") })); w.position.set(0, 6.2, -4.84); room.add(w); for (const x of [-4.5, 0, 4.5]) box(0.2, 5.2, 0.3, M("#222"), x, 6.2, -4.8, room); }
+box(30, 0.1, 30, M("#6b4f3a"), 0, -0.05, 0, room); box(30, 12, 0.3, M("#3b4266"), 0, 6, -11, room);
+{ const w = new THREE.Mesh(new THREE.PlaneGeometry(9, 5), new THREE.MeshBasicMaterial({ map: sky("#14183a", "#2b3270", "#5a4a8a", "#1d2140", "#ffe08a") })); w.position.set(0, 6.2, -10.84); w.scale.setScalar(1.6); room.add(w); for (const x of [-7, 0, 7]) box(0.2, 8.4, 0.3, M("#222"), x, 6.2, -10.8, room); }
+const glassCrowd = []; for (let i = 0; i < 9; i++) { const c = extra(i + 2, { shirt: ["#1f2d4f", "#ffffff", "#2c3e50"][i % 3] }); c.g.position.set(-7 + i * 1.75, 0, -7.2 - (i % 2) * 1.0); c.setFace("grin"); room.add(c.g); glassCrowd.push(c); }
+{ const gl = new THREE.Mesh(new THREE.PlaneGeometry(30, 10), new THREE.MeshStandardMaterial({ color: "#9fc4d8", transparent: true, opacity: 0.22, roughness: 0.1 })); gl.position.set(0, 5, -4.6); room.add(gl); box(30, 0.2, 0.2, M("#555"), 0, 0.1, -4.6, room); box(30, 0.2, 0.2, M("#555"), 0, 9, -4.6, room); for (const x of [-6, -2, 2, 6]) box(0.12, 9, 0.12, M("#555"), x, 4.5, -4.6, room); }
 const desk1 = new THREE.Group(); room.add(desk1); desk1.position.set(0, 0, 1.4); box(4.2, 0.14, 1.8, M("#a9774f"), 0, 1.9, 0, desk1); for (const sx of [-1.9, 1.9]) box(0.14, 1.9, 1.6, M("#7a5232"), sx, 0.95, 0, desk1);
 box(1.4, 0.06, 0.9, M("#ddd"), -1.0, 2.0, 0.1, desk1); { const lid = box(1.4, 0.9, 0.06, M("#cfd3da"), -1.0, 2.45, -0.35, desk1); lid.rotation.x = -0.25; } for (let i = 0; i < 4; i++) box(0.9, 0.16, 0.65, M(["#c0392b", "#2e86de", "#27ae60", "#f39c12"][i]), 1.2, 2.05 + i * 0.16, 0.2, desk1);
 const chair1 = new THREE.Group(); room.add(chair1); chair1.position.set(0, 0, -1.4); box(1.5, 0.2, 1.3, M("#5a2e1c"), 0, 1.2, 0, chair1); { const bk = box(1.5, 2.2, 0.3, M("#5a2e1c"), 0, 2.4, -0.7, chair1); bk.rotation.x = -0.35; } box(0.16, 1.1, 0.16, M("#333"), 0, 0.55, 0, chair1);
@@ -137,7 +140,7 @@ const scrTex = (k) => canvasTex(200, 150, (g) => { g.fillStyle = "#06120c"; g.fi
   if (k % 3 === 0) { g.fillStyle = "#39ff88"; g.font = "800 72px Arc"; g.textAlign = "center"; g.fillText("A+", 100, 100); } else { g.strokeStyle = "#39ff88"; g.lineWidth = 6; g.beginPath(); g.moveTo(10, 130); for (let x = 10; x < 190; x += 20) g.lineTo(x, 130 - (x - 10) * 0.55 - Math.sin(x * 0.2 + k) * 8); g.stroke(); g.fillStyle = "#39ff88"; for (let x = 20; x < 190; x += 24) { const h = 10 + (x / 190) * 70; g.fillRect(x, 140 - h, 12, h); } } });
 const screens = []; for (let r = 0; r < 4; r++) for (let c = 0; c < 6; c++) { const k = r * 6 + c; const m = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.95), new THREE.MeshBasicMaterial({ map: scrTex(k) })); m.position.set(-7.6 + c * 3.04, 3.0 + r * 2.25, -6); hall.add(m); box(2.8, 2.1, 0.1, M("#111"), m.position.x, m.position.y, -6.07, hall); screens.push(m); }
 const h2 = mkHero(); hall.add(h2.g); h2.g.rotation.y = Math.PI; h2.g.position.set(0, 0, 2.2);
-const cheer = []; for (let i = 0; i < 10; i++) { const c = extra(i, { shirt: ["#2b4a8b", "#2c3e50", "#ffffff", "#7f8c8d"][i % 4], tie: i % 2 ? "#c0392b" : null }); c.g.position.set([-3.2, 3.0, -1.7, 1.6, -4.8, 4.6, -2.6, 2.4, -0.9, 0.9][i], 0, [1.6, 1.4, 0.4, 0.2, 0.2, 0.4, -1.2, -1.4, -1.6, -1.8][i]); c.g.rotation.y = i < 4 ? 0.6 * (i % 2 ? -1 : 1) + Math.PI * 0.85 : Math.PI; c.setFace("grin"); hall.add(c.g); cheer.push(c); }
+const cheer = []; for (let i = 0; i < 10; i++) { const c = extra(i, { shirt: ["#1f2d4f", "#2c3e50", "#3a3f4a", "#1f2d4f"][i % 4], pants: ["#1f2d4f", "#2c3e50", "#3a3f4a", "#1f2d4f"][i % 4], tie: ["#c0392b", "#7a1f2a", "#2b4a8b"][i % 3] }); c.g.position.set([-3.2, 3.0, -1.7, 1.6, -4.8, 4.6, -2.6, 2.4, -0.9, 0.9][i], 0, [1.6, 1.4, 0.4, 0.2, 0.2, 0.4, -1.2, -1.4, -1.6, -1.8][i]); c.g.rotation.y = i < 4 ? 0.6 * (i % 2 ? -1 : 1) + Math.PI * 0.85 : Math.PI; c.setFace("grin"); hall.add(c.g); cheer.push(c); }
 // 3 ---- WINDOW: golden hour over the city, back to us, a mug on the desk
 const penthouse = mkScene("#f3b26b"); penthouse.add(new THREE.HemisphereLight("#ffe2b8", "#6a4a3a", 1.5)); { const d = new THREE.DirectionalLight("#ffb46b", 2.4); d.position.set(-3, 4, -10); d.castShadow = true; penthouse.add(d); }
 box(40, 0.1, 40, M("#5a4636"), 0, -0.05, 0, penthouse);
@@ -151,7 +154,7 @@ box(40, 0.1, 40, M("#6b4f3a"), 0, -0.05, 0, office); box(40, 12, 0.3, M("#dfe6ee
 const table4 = box(8, 0.2, 3, M("#8a4f2a"), 0, 1.9, 1.2, office); box(7.6, 1.8, 2.6, M("#6b3b1f"), 0, 0.9, 1.2, office);
 const cert = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.8), new THREE.MeshBasicMaterial({ map: canvasTex(220, 160, (g) => { g.fillStyle = "#fffaf0"; g.fillRect(0, 0, 220, 160); g.strokeStyle = "#c9a227"; g.lineWidth = 8; g.strokeRect(6, 6, 208, 148); g.fillStyle = "#333"; g.font = "800 22px Arc"; g.textAlign = "center"; g.fillText("SCHOLARSHIP", 110, 66); g.font = "800 14px Arc"; g.fillText("awarded to", 110, 96); g.fillStyle = "#c9a227"; g.beginPath(); g.arc(110, 128, 14, 0, 7); g.fill(); }) })); cert.rotation.x = -Math.PI / 2; cert.position.set(-0.4, 2.02, 1.6); office.add(cert);
 const h4 = mkHero(); office.add(h4.g); h4.g.position.set(-1.1, 0, -0.5); h4.g.rotation.y = 0.9;
-const dean = blocky({ skin: "#e8b48a", shirt: "#7f8c8d", pants: "#5d6d7e", style: "white", tie: "#2c3e50" }); office.add(dean.g); dean.g.position.set(1.1, 0, -0.5); dean.g.rotation.y = -0.9;
+const dean = humanize(blocky({ skin: "#e8b48a", shirt: "#6f777f", pants: "#6f777f", style: "white", tie: "#2c3e50" })); office.add(dean.g); dean.g.position.set(1.1, 0, -0.5); dean.g.rotation.y = -0.9;
 const clap = []; for (let i = 0; i < 5; i++) { const c = extra(i + 3, { shirt: ["#ffffff", "#2c3e50", "#d0d3d4", "#2b4a8b", "#ffffff"][i] }); c.g.position.set(-4 + i * 2, 0, -3.6); c.setFace("happy"); office.add(c.g); clap.push(c); }
 // 5 ---- CAMPUS: walking up to the university at sunset, the dean waiting at the steps
 const campus = mkScene("#f0a070"); campus.background = sky("#6a5aa8", "#f08a6a", "#ffcf8a", "#6a4a6a", "#ffe9b0"); campus.add(new THREE.HemisphereLight("#ffd2b0", "#5a4060", 1.4)); { const d = new THREE.DirectionalLight("#ffb07a", 2.2); d.position.set(6, 6, -4); d.castShadow = true; d.shadow.mapSize.set(1024, 1024); Object.assign(d.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20 }); campus.add(d); }
@@ -160,7 +163,7 @@ const uni = new THREE.Group(); campus.add(uni); uni.position.set(0, 0, -16); box
 for (let i = 0; i < 8; i++) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 7.4, 14), M("#f4ece0")); c.position.set(-7.7 + i * 2.2, 4.3, 3.4); uni.add(c); } for (let i = 0; i < 4; i++) box(18 - i, 0.3, 1.2, M("#d8ccb8"), 0, 0.15 + i * 0.3, 4.6 - i * 0.6, uni);
 { const s = new THREE.Mesh(new THREE.PlaneGeometry(9, 1.2), new THREE.MeshBasicMaterial({ map: canvasTex(600, 80, (g) => { g.fillStyle = "#e8dcc8"; g.fillRect(0, 0, 600, 80); g.fillStyle = "#5a4a3a"; g.font = "800 54px Arc"; g.textAlign = "center"; g.fillText("UNIVERSITY", 300, 60); }) })); s.position.set(0, 8.6, 3.05); uni.add(s); }
 const h5 = mkHero(); campus.add(h5.g); h5.g.rotation.y = Math.PI;
-const prof = blocky({ skin: "#8d5a3b", shirt: "#3a2f6a", pants: "#3a2f6a", style: "white" }); campus.add(prof.g); prof.g.position.set(2.4, 0.9, -10.4); prof.setFace("happy");
+const prof = humanize(blocky({ skin: "#8d5a3b", shirt: "#1d2240", pants: "#1d2240", style: "white", tie: "#c9a227" })); campus.add(prof.g); prof.g.position.set(2.4, 0.9, -10.4); prof.setFace("happy");
 const dip = new THREE.Group(); prof.arms[1].add(dip); dip.position.set(0, -1.15, 0.3); { const r = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.8, 12), M("#fffaf0")); r.rotation.z = Math.PI / 2; dip.add(r); box(0.06, 0.24, 0.24, M("#c0392b"), 0, 0, 0, dip); }
 // 6 ---- DINNER: the long table, candles, everyone raising a glass
 const hallD = mkScene("#3a1f14"); hallD.add(new THREE.HemisphereLight("#ffd9a8", "#3a2414", 1.0)); { const d = new THREE.PointLight("#ffcf8a", 60, 30); d.position.set(0, 7, 0); hallD.add(d); const d2 = new THREE.DirectionalLight("#ffe2b8", 0.8); d2.position.set(0, 8, 8); hallD.add(d2); }
@@ -169,9 +172,9 @@ box(40, 0.1, 40, M("#4a2a1a"), 0, -0.05, 0, hallD); box(40, 14, 0.3, M("#6b3a22"
 box(4.2, 0.2, 18, M("#6b3a1f"), 0, 1.9, -2.5, hallD); box(4.6, 0.06, 18.4, M("#f4ecdc"), 0, 2.02, -2.5, hallD);
 const flames = []; for (let i = 0; i < 6; i++) { const z = 4 - i * 3; box(0.14, 0.7, 0.14, M("#fffaf0"), 0, 2.4, z, hallD); const f = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshBasicMaterial({ color: "#ffcf5a" })); f.position.set(0, 2.85, z); f.scale.y = 1.6; hallD.add(f); flames.push(f); for (const s of [-1, 1]) { const pl = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.05, 20), M("#ffffff")); pl.position.set(s * 1.35, 2.07, z); hallD.add(pl); box(0.5, 0.1, 0.35, M("#8a3a1f"), s * 1.35, 2.13, z, hallD); } }
 const glass = (parent) => { const g = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.1, 0.4, 12), new THREE.MeshStandardMaterial({ color: "#ffe9a8", transparent: true, opacity: 0.8 })); parent.add(g); g.position.set(0, -1.25, 0.15); return g; };
-const diners = []; for (let i = 0; i < 12; i++) { const s = i % 2 ? 1 : -1, z = 4.5 - Math.floor(i / 2) * 2.8; const c = extra(i, { shirt: ["#2c3e50", "#7a2f4f", "#ffffff", "#2b4a8b", "#1f6f43", "#d0d3d4"][i % 6] }); c.g.position.set(s * 2.6, -0.5, z); c.g.rotation.y = -s * Math.PI / 2; c.setFace(i % 3 ? "happy" : "grin"); glass(c.arms[s > 0 ? 0 : 1]); hallD.add(c.g); diners.push(c); }
+const diners = []; for (let i = 0; i < 12; i++) { const s = i % 2 ? 1 : -1, z = 4.5 - Math.floor(i / 2) * 2.8; const c = extra(i, { shirt: ["#1f2d4f", "#7a2f4f", "#2c3e50", "#3a3f4a", "#1f2d4f", "#5a2a3a"][i % 6], tie: i % 2 ? "#7a1f2a" : null }); c.g.position.set(s * 2.6, -0.5, z); c.g.rotation.y = -s * Math.PI / 2; c.setFace(i % 3 ? "happy" : "grin"); glass(c.arms[s > 0 ? 0 : 1]); hallD.add(c.g); diners.push(c); }
 const h6 = mkHero(); hallD.add(h6.g); h6.g.position.set(0, 0, -12.6 + 1.4); h6.setFace("grin"); glass(h6.arms[1]);
-const fg = extra(5, { shirt: "#2b4a8b" }); hallD.add(fg.g); fg.g.position.set(-0.9, 0, 7.4); fg.g.rotation.y = Math.PI; glass(fg.arms[1]);
+const fg = extra(5, { shirt: "#1f2d4f", pants: "#1f2d4f" }); hallD.add(fg.g); fg.g.position.set(-0.9, 0, 7.4); fg.g.rotation.y = Math.PI; glass(fg.arms[1]);
 
 // ---------------- shots ----------------
 const cam = (p, l, fov = 42) => { camera.position.copy(p); camera.lookAt(l); camera.fov = fov; camera.updateProjectionMatrix(); };
@@ -180,7 +183,7 @@ const SCENES = [
   (lt) => { h1.g.position.set(0, 0.85, -1.2); h1.g.rotation.set(-0.42, 0, 0); h1.legs.forEach((l) => (l.rotation.x = -1.35)); h1.setFace("grin"); const f = Math.sin(lt * 2.4);
     h1.pose({ la: [-2.75, 0.2], ra: [-1.0 + f * 0.25, -0.5], headTilt: 0.12, ll: -1.35, rl: -1.35 }); fan.rotation.z = f * 0.3;
     floaters.forEach((p, i) => { p.position.set(-5 + rnd(i) * 10, 9 - ((lt * (0.5 + rnd(i + 2) * 0.4) + rnd(i + 5) * 9) % 9), -3 + rnd(i + 8) * 4); p.rotation.set(lt * 0.8 + i, lt * 0.6 + i, i); });
-    drift(lt, v3(3.4, 4.4, 8.6), v3(2.9, 4.3, 7.8), v3(0, 2.6, -0.4), v3(0, 2.7, -0.4), 46); return room; },
+    glassCrowd.forEach((c, i) => { const s = Math.sin(lt * 3 + i); c.pose({ la: [-2.6 - s * 0.3, 0.4], ra: [-2.6 + s * 0.3, -0.4] }); c.g.position.y = Math.abs(s) * 0.12; }); drift(lt, v3(3.4, 4.4, 8.6), v3(2.9, 4.3, 7.8), v3(0, 2.8, -0.4), v3(0, 2.9, -0.4), 46); return room; },
   (lt) => { h2.pose({ la: [0, 0.1], ra: [-2.9 - Math.sin(lt * 3) * 0.15, -0.25] }); h2.g.position.y = Math.abs(Math.sin(lt * 3)) * 0.12; cheer.forEach((c, i) => { const s = Math.sin(lt * 3.2 + i); c.pose({ la: [-2.6 - s * 0.25, 0.5], ra: [-2.6 + s * 0.25, -0.5] }); c.g.position.y = Math.abs(s) * 0.15; });
     screens.forEach((m, i) => (m.material.color.setScalar(0.75 + 0.25 * Math.max(0, Math.sin(lt * 4 + i))))); drift(lt, v3(0.3, 5.6, 11.5), v3(-0.2, 5.8, 10.5), v3(0, 5.0, -3), v3(0, 5.2, -3), 54); return hall; },
   (lt) => { h3.pose({ la: [-0.25 - Math.sin(lt * 1.5) * 0.2, 0.45], ra: [-0.05, -0.08] }); h3.setFace("smug"); drift(lt, v3(1.8, 3.9, 3.4), v3(1.3, 4.0, 2.6), v3(-0.3, 3.4, -8), v3(-0.4, 3.6, -8), 48); return penthouse; },
@@ -194,13 +197,12 @@ const SCENES = [
 
 // ---------------- overlay ----------------
 const ov = document.getElementById("ov");
-const CAP = `<div style="position:absolute;left:110px;right:110px;top:258px;text-align:center;color:#fff;font:500 30px/1.28 'Liberation Sans',Arial,sans-serif;text-shadow:0 0 4px rgba(0,0,0,1),0 0 2px rgba(0,0,0,1),0 2px 3px rgba(0,0,0,.9)">pov: how it feels getting addicted to studying with unspool instead of doomscrolling</div>`;
+const CAP = `<div style="position:absolute;left:150px;right:150px;top:262px;text-align:center;color:#fff;font:400 27px/1.22 'Liberation Sans',Arial,sans-serif;-webkit-text-stroke:0.6px rgba(0,0,0,.55);text-shadow:0 0 3px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.85)">pov: how it feels getting addicted to studying with unspool instead of doomscrolling</div>`;
+const GRADE = `<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 55%,rgba(0,0,0,.38) 100%);mix-blend-mode:multiply"></div><div style="position:absolute;inset:0;background:rgba(255,170,90,.06);mix-blend-mode:soft-light"></div>`;
+document.getElementById("gl").style.filter = "contrast(1.08) saturate(1.12) brightness(1.02)";
 window.renderAt = (t) => {
   const i = Math.min(5, Math.floor(t / 2)), lt = t - i * 2; renderer.render(SCENES[i](lt), camera);
-  let h = "";
-  if (t >= 12) h += `<div style="position:absolute;inset:0;background:rgba(15,29,24,${0.9 * ease((t - 12) / 0.3)})"></div><div style="position:absolute;left:0;right:0;top:520px;text-align:center;color:#fff;font:800 40px Arc">turn your notes into reels</div><div style="position:absolute;left:0;right:0;top:590px;text-align:center"><span style="display:inline-block;background:#d3f05a;color:#0f1d18;font:800 46px Arc;border-radius:999px;padding:16px 34px">unspool.cc</span></div>`;
-  else h += CAP + `<div style="position:absolute;left:90px;top:168px;background:rgba(15,29,24,0.72);border-radius:999px;padding:7px 16px;font:800 26px Arc;color:#d3f05a;letter-spacing:0.5px">unspool.cc</div>`;
-  ov.innerHTML = h;
+  ov.innerHTML = GRADE + CAP;
 };
 window.renderAt(0); setTimeout(() => (window.ready = true), 80);
 </script></body></html>
