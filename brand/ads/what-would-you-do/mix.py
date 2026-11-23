@@ -3,7 +3,9 @@
 import json, os, sys, numpy as np, soundfile as sf
 D = sys.argv[1]
 tl = json.load(open(f"{D}/web/tl.json")); DUR = tl["dur"]; SR = 24000; N = int(SR * DUR); out = np.zeros(N); rng = np.random.default_rng(3); tt = np.arange(N) / SR
-st = {l["shot"]: l["s"] - 0.12 for l in tl["lines"]}; note = lambda m: 440 * 2 ** ((m - 69) / 12)
+from collections import defaultdict
+st = defaultdict(lambda: -100.0, {l["shot"]: l["s"] - 0.12 for l in tl["lines"]})   # lines cut from this version get no effects (add() skips t < 0)
+note = lambda m: 440 * 2 ** ((m - 69) / 12)
 def add(t0, x, g):
     a = int(t0 * SR); b = min(N, a + len(x))
     if 0 <= a < N: out[a:b] += x[:b - a] * g
@@ -14,7 +16,7 @@ def sweep(f0, f1, d, dec=3): t = np.arange(int(SR * d)) / SR; f = f0 + (f1 - f0)
 def kick(): k = np.arange(int(SR * .2)) / SR; return np.sin(2 * np.pi * (50 + 90 * np.exp(-k * 30)) * k) * np.exp(-k * 12)
 def whoosh(d=0.35): x = noise(d, 0.1) * np.sin(np.linspace(0, np.pi, int(SR * d))) ** 2; return np.convolve(x, np.ones(6) / 6, "same")
 def thud(): return kick() * 1.2 + np.pad(noise(.15, 25), (0, int(SR * .05)))[:int(SR * .2)] * 0.3
-B = 60 / 112; bright_at = st["funny"]
+B = 60 / 112; bright_at = st["funny"] if "funny" in st else st["couch2"]
 night = [[57, 60, 64], [53, 57, 60], [55, 59, 62], [52, 55, 59]]; day = [[60, 64, 67], [57, 60, 64], [65, 69, 72], [67, 71, 74]]
 for i in range(int(DUR / (B / 2))):
     t0 = i * B / 2; prog = day if t0 >= bright_at else night; ch = prog[(i // 8) % 4]; br = t0 >= bright_at
