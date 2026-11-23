@@ -214,9 +214,6 @@ const mirrorAt = (x, y, inner) => `<g transform="translate(${x} ${y})"><ellipse 
   <clipPath id="mclip"><ellipse rx="100" ry="210"/></clipPath><g clip-path="url(#mclip)">${inner}</g><path d="M-70 -120 L-30 -170 M-60 -60 L0 -140" stroke="#fff" stroke-width="10" opacity=".6"/>
   <path d="M-60 228 L-90 300 M60 228 L90 300" stroke="${O}" stroke-width="10"/></g>`;
 const SHOTS = {
-  // the opening: a loud, high-pitched "OHHHH!" over his shocked mirror moment, with a fast screen shake
-  moan: (t, lt) => { const sh = Math.max(0, 1 - lt / 1.4), dx = Math.sin(lt * 70) * 14 * sh, dy = Math.cos(lt * 57) * 10 * sh;
-    return `<div style="position:absolute;inset:0;transform:translate(${dx}px,${dy}px)">${SHOTS.mirror(st("mirror") + 0.7, 0.82)}</div>`; },
   hook(t, lt) { // night: your homeboy asleep; sparkles gather
     const g = clamp((lt - 1.4) / 1.4);
     return svg(bedroom(t) + HB({ x: 340, y: 800, s: 0.66, face: "sleep", lean: -90, la: [5, 5], ra: [5, 5] }) + blanket + zzz(150, 700, t) + sparkles(250, 760, t, 26, 200, g))
@@ -348,9 +345,9 @@ function caption(l, t) {
 window.renderAt = (t) => {
   let i = 0; lines.forEach((l, j) => { if (t >= l.s - 0.12) i = j; });
   const l = lines[i], lt = t - (l.s - 0.12);
-  const base = { moan: 1.42, hook: 1.16, call: 1.1, answer: 1.08, mirror: 1.05, prank: 1.06, today: 1.05, breakfast: 1.06, couch: 1.1, couch2: 1.0, test: 1.08, roof: 1.05, roof2: 1.12 }[l.shot] ?? 1;
+  const base = { hook: 1.16, call: 1.1, answer: 1.08, mirror: 1.05, prank: 1.06, today: 1.05, breakfast: 1.06, couch: 1.1, couch2: 1.0, test: 1.08, roof: 1.05, roof2: 1.12 }[l.shot] ?? 1;
   const zoom = base * (1 + 0.035 * inOut(lt / Math.max(1, l.e - l.s + 0.4)));   // a slow push in on every shot
-  let h = `<div style="position:absolute;inset:0;transform:scale(${zoom});transform-origin:${l.shot === 'moan' ? '44% 48%' : ['hook','call'].includes(l.shot) ? '50% 66%' : '50% 60%'}">${SHOTS[l.shot](t, lt)}</div>`;
+  let h = `<div style="position:absolute;inset:0;transform:scale(${zoom});transform-origin:${['hook','call'].includes(l.shot) ? '50% 66%' : '50% 60%'}">${SHOTS[l.shot](t, lt)}</div>`;
   if (OVER[l.shot]) h += OVER[l.shot](t, lt);
   const flash = Math.max(0, 1 - lt / 0.07) * 0.25; if (i > 0 && flash > 0) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${flash}"></div>`;
   if (t <= l.e + 0.3 && t >= l.s && l.shot !== "end") h += caption(l, t);
