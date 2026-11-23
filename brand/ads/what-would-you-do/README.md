@@ -14,11 +14,7 @@ Voiceover: `voice-take.mp3` is the yelled take (ElevenLabs Charlie, eleven_v4, f
 its word timings (Scribe); `timing.py <this dir> web/tl.json` times every line and caption word to it, sped up 1.12x.
 Make `voice.wav` with `ffmpeg -i voice-take.mp3 -af "atempo=1.12,adelay=250:all=1" -ar 24000 -ac 1 voice.wav`, then run `mix.py`.
 
-**Opening moan:** a loud, high-pitched "OHHHH!" plays underneath the first words of the hook ("What would you do...") at
-the same time, from 0 s (`voice-open-moan.mp3`, the same processed moan as the first-day ad: pitched up about 6 semitones,
-boosted, about 1.3 s, mixed at 0.75x on top of the voice). The picture and timings are unchanged.
-
-**Quick cut (22 s):** only the hook (with the moan under it), "Like, a FULL girl", "on the morning of the bio test!",
+**Quick cut (22 s):** only the hook, "Like, a FULL girl", "on the morning of the bio test!",
 the couch ("He still acts exactly the same… Same scrolling."), the Unspool reveal (now at about 10 s instead of 34 s),
 the test he aces, "Would you treat your homeboy exactly the same?!" and the end card. The call, memory search, nickname,
 before/after, prank, "one hour", mission and "funniest part" beats are cut. Lines are joined with 0.14 s gaps and the
