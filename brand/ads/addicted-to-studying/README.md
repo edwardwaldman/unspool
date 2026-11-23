@@ -4,7 +4,7 @@ The "pov: how it feels getting addicted to ___ instead of doomscrolling" format:
 "pov: how it feels getting addicted to studying with unspool instead of doomscrolling", over six slow 2-second
 "living the dream" shots in blocky 3D. 12 s, no voice, and like the original no end card and no corner badge: the
 caption carries the brand. Matched to the original's look: human proportions (smaller heads, longer legs), navy suits and
-ties, a cheering crowd behind glass in shot 1, a warm grade with a vignette, and the caption's size and place.
+ties, a cheering crowd behind glass in shot 1, a warm grade with a vignette, and a bold white caption with a thick black outline so it reads on every shot.
 
 1. Feet up at the desk, phone in one hand, fanning A+ tests with the other while tests float down.
 2. Fist in the air in front of a wall of screens all going green (A+, rising grade charts), everyone cheering.
