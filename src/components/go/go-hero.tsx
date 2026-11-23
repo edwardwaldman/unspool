@@ -216,8 +216,6 @@ export type GoCopy = {
   reels?: string[];
   /** the + button's label and the line under it */
   plus?: { label: string; sub: string };
-  /** a small label under the wordmark, e.g. "Experimental" on a page we are still testing */
-  badge?: string;
 };
 
 const STUDENT_COPY: GoCopy = {
@@ -233,11 +231,6 @@ export function GoHero({ copy = STUDENT_COPY }: { copy?: GoCopy }) {
     <div className="flex min-h-[100dvh] flex-col items-center bg-paper px-4 pb-24 pt-3 text-ink">
       <div className="flex w-full max-w-[460px] flex-col items-center">
         <Wordmark size={24} />
-        {copy.badge && (
-          <span className="mt-2 rounded-full border border-thread px-2.5 py-0.5 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-ink">
-            {copy.badge}
-          </span>
-        )}
         <h1 className="mt-3 text-center font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em]">
           {copy.headline}
         </h1>
