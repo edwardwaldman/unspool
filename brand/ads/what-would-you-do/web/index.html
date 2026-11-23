@@ -351,8 +351,6 @@ window.renderAt = (t) => {
   if (OVER[l.shot]) h += OVER[l.shot](t, lt);
   const flash = Math.max(0, 1 - lt / 0.07) * 0.25; if (i > 0 && flash > 0) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${flash}"></div>`;
   if (t <= l.e + 0.3 && t >= l.s && l.shot !== "end") h += caption(l, t);
-  // a name card in the first moment: "NICK", slams in and fades by 0.6 s (on-screen text only)
-  if (t < 0.6) { const k = clamp(t / 0.08), f = 1 - clamp((t - 0.42) / 0.18); h += `<div style="position:absolute;left:0;right:0;top:470px;text-align:center;opacity:${f}"><span style="display:inline-block;transform:scale(${1.6 - 0.6 * ease(k)}) rotate(-4deg);background:#d9412f;color:#fff;border:6px solid ${O};border-radius:18px;padding:10px 34px;font:800 110px Arc;letter-spacing:2px">NICK</span></div>`; }
   // a full repaint every frame: reusing the page between frames left stale tiles (ghost stamps) in the screenshots
   S.innerHTML = ""; void S.offsetHeight; S.style.background = (Math.round(t * 30) % 2) ? "#1b1830" : "#1b1831";
   S.innerHTML = h; void S.offsetHeight;
