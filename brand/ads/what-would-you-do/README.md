@@ -22,4 +22,4 @@ boosted, about 1.3 s, mixed at 0.75x on top of the voice). The picture and timin
 the couch ("He still acts exactly the same… Same scrolling."), the Unspool reveal (now at about 10 s instead of 34 s),
 the test he aces, "Would you treat your homeboy exactly the same?!" and the end card. The call, memory search, nickname,
 before/after, prank, "one hour", mission and "funniest part" beats are cut. Lines are joined with 0.14 s gaps and the
-voice plays at 1.08x; `web/tl.json` holds the final timings. `mix.py` skips the effects of lines that are not in the cut.
+voice plays at 1.08x; the end line runs to where the voice really goes silent (47.49 s in the long take), not the transcript's word end, so "unspool.cc" is not clipped, with 1.8 s of end card after it. `web/tl.json` holds the final timings. `mix.py` skips the effects of lines that are not in the cut.
