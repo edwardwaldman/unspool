@@ -186,6 +186,8 @@ export function OwnerPanel() {
 
       <PremiumCard data={data} />
 
+      <AiCard />
+
       <section className={card}>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           {(
@@ -984,6 +986,87 @@ function PremiumCard({ data }: { data: Data }) {
             </li>
           ))}
         </ul>
+      )}
+    </section>
+  );
+}
+
+type AiService = { id: string; name: string; role: string; state: "ok" | "bad_key" | "no_credit" | "error" | "off"; detail: string; quota?: { used: number; limit: number; unit: string; resetsAt: string | null }; links: { label: string; href: string }[] };
+type AiStatus = { services: AiService[]; failed24h: number; lastFailure: { at: string; reason: string; message: string } | null; checkedAt: string };
+
+/** The AI services that make reels: does each key work, what's left (where the provider reports it), and direct links to top up. */
+function AiCard() {
+  const [s, setS] = useState<AiStatus | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const check = useCallback(async () => {
+    setChecking(true);
+    const res = await fetch("/api/owner/ai", { cache: "no-store" }).catch(() => null);
+    const body = res ? await res.json().catch(() => ({})) : {};
+    setChecking(false);
+    if (!res || !res.ok) return setErr(body.error ?? "Couldn't check the AI services");
+    setErr(null);
+    setS(body);
+  }, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void check();
+  }, [check]);
+  const label = { ok: "WORKING", bad_key: "BAD KEY", no_credit: "OUT OF CREDIT", error: "CAN'T CHECK", off: "NOT SET" } as const;
+  const tone = (st: AiService["state"]) => (st === "ok" ? "text-sage" : st === "error" ? "text-thread" : "text-coral");
+  const broken = s?.services.filter((x) => x.state !== "ok") ?? [];
+  return (
+    <section className={card} data-testid="ai-card">
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="label">AI services (reels)</div>
+        <button type="button" onClick={() => void check()} disabled={checking} className="text-[13px] text-muted underline underline-offset-4 hover:text-ink disabled:opacity-50">
+          {checking ? "Checking…" : "Check again"}
+        </button>
+      </div>
+      {err && <p className="mt-3 text-[13.5px] text-coral">{err}</p>}
+      {!s && !err && <p className="mt-3 text-[13.5px] text-muted">Checking the keys…</p>}
+      {s && (
+        <>
+          {broken.length > 0 ? (
+            <p className="mt-3 border border-coral/60 p-3 text-[14px] text-coral">
+              Reels can&apos;t be made right now: {broken.map((b) => `${b.name} (${label[b.state].toLowerCase()})`).join(", ")}.
+              {s.failed24h > 0 && ` ${s.failed24h} upload${s.failed24h === 1 ? "" : "s"} failed in the last 24 hours.`}
+            </p>
+          ) : (
+            s.failed24h > 0 && <p className="mt-3 text-[13.5px] text-thread">{s.failed24h} upload{s.failed24h === 1 ? "" : "s"} failed in the last 24 hours. Last: {s.lastFailure?.message}</p>
+          )}
+          <ul className="mt-3 space-y-3">
+            {s.services.map((x) => (
+              <li key={x.id} className="border border-line p-3 text-[14px]">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="font-semibold">
+                    {x.name} <span className="font-normal text-muted">· {x.role}</span>
+                  </span>
+                  <span className={`shrink-0 font-mono text-[11px] ${tone(x.state)}`}>{label[x.state]}</span>
+                </div>
+                <p className="mt-1 text-[13px] text-muted">{x.detail}</p>
+                {x.quota && x.quota.limit > 0 && (
+                  <div className="mt-2">
+                    <div className="h-2 w-full bg-line">
+                      <div className={`h-2 ${x.quota.used / x.quota.limit > 0.9 ? "bg-coral" : "bg-sage"}`} style={{ width: `${Math.min(100, (x.quota.used / x.quota.limit) * 100)}%` }} />
+                    </div>
+                    {x.quota.resetsAt && <p className="mt-1 text-[12px] text-muted">Resets {new Date(x.quota.resetsAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</p>}
+                  </div>
+                )}
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                  {x.links.map((l) => (
+                    <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" className="text-[13px] text-thread underline underline-offset-4">
+                      {l.label} ↗
+                    </a>
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-[12px] text-muted">
+            After topping up or making a new key: set it in Vercel (Project → Settings → Environment Variables), redeploy, then press Check again. Checked {new Date(s.checkedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}.
+          </p>
+        </>
       )}
     </section>
   );
