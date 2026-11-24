@@ -7,7 +7,7 @@ import { EmptyWorkbench } from "@/components/spool/empty-workbench";
 import { LibraryGrid, type LibraryItem } from "@/components/spool/library-grid";
 import { freeReelLimit, isUnlocked } from "@/lib/access";
 import { tierOf } from "@/lib/credits";
-import { PLANS } from "@/lib/plans";
+import { PLANS, FREE_REEL_INTERVAL_MIN } from "@/lib/plans";
 import { supabaseConfigured } from "@/lib/config";
 import { listDocuments } from "@/lib/spool";
 import { adminClient } from "@/lib/supabase/admin";
@@ -102,7 +102,7 @@ export default async function LibraryPage() {
           )}
           {!viewer?.userId && items.length === 0 && supabaseConfigured && (
             <div className="mt-6">
-              <p className="text-[14px] text-muted">Create a free account to unspool a document. Your first reel is free, then 1 every 30 minutes.</p>
+              <p className="text-[14px] text-muted">Create a free account to unspool a document. Your first reel is free, then 1 every {FREE_REEL_INTERVAL_MIN} minutes.</p>
               <SignInButtons next="/library" />
             </div>
           )}

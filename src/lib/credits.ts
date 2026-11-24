@@ -174,7 +174,7 @@ export async function fundPlannedDocument(documentId: string, ent: Entitlement, 
 
 export type UnlockResult = { status: "ok" | "wait" | "cap" | "done" | "none" | "error"; granted: number };
 
-/** Unlock the next free reel of a document (30-minute timer, daily cap). Generates it on demand. */
+/** Unlock the next free reel of a document (FREE_REEL_INTERVAL_MIN timer, daily cap). Generates it on demand. */
 export async function unlockFreeReel(doc: DocumentRow, ent: Entitlement): Promise<UnlockResult> {
   const { data, error } = await adminClient().rpc("claim_free_reel", {
     p_subject: ent.subject,

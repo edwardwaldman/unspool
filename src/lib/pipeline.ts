@@ -13,6 +13,7 @@ import { estimateDuration, estimateWordFractions } from "./timing";
 import { synthesize } from "./tts";
 import { renderReelVideo, videoRenderEnabled, type ReelVideo } from "./video/reel-video";
 import { refundUnreadableUpload } from "./usage";
+import { notifyFirstReelReady } from "./ready-email";
 
 const STALE_MS = 6 * 60 * 1000;
 /** The per-reel job route's maxDuration is 300s; finish (and save) the reel well inside it. */
@@ -337,6 +338,11 @@ export async function generateReel(reelId: string) {
       if (error) await db.from("reels").update(ready).eq("id", reelId).eq("status", "generating");
     }
 
+    // The first reel of a document just finished (only once: a ready reel is never generated again): email the owner a link.
+    if (reel.index === 1 && !edit) {
+      const { data: now } = await db.from("reels").select("status").eq("id", reelId).maybeSingle<{ status: string }>();
+      if (now?.status === "ready") await notifyFirstReelReady(reel.document_id).catch((e) => console.error("[pipeline] ready email failed", reelId, e));
+    }
     if (!(await settleDocument(reel.document_id)) && !edit) await queueRemainingReels(reel.document_id, { pendingOnly: true });
   } catch (err) {
     console.error("[pipeline] generateReel failed", reelId, err);

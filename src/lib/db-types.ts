@@ -26,7 +26,7 @@ export type DocumentRow = {
   unlocked: boolean;
   /** Reels 1..credit_reels are paid for (credits or free drip) and may generate/play. Null until planned. */
   credit_reels: number | null;
-  /** When the last free-drip reel was unlocked (the 30-minute timer runs from here). */
+  /** When the last free-drip reel was unlocked (the free-reel timer runs from here). */
   free_unlocked_at: string | null;
   priority: boolean;
   long_reels: boolean;

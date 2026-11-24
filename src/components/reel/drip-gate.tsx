@@ -54,7 +54,7 @@ function useCheckout(documentId: string | undefined, reel: number) {
 }
 
 /**
- * Free tier: reel 1 of each document is free, then the next reel can be unlocked every 30 minutes
+ * Free tier: reel 1 of each document is free, then the next reel can be unlocked every FREE_REEL_INTERVAL_MIN minutes
  * (generated on demand), up to 5 a day. Shows the countdown, unlocks the reel when the timer is up,
  * and offers the 1-day Plus trial, an upgrade, or a top-up.
  */

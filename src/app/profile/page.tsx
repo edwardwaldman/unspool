@@ -9,7 +9,7 @@ import { BillingButton } from "@/components/shell/billing-button";
 import { UsageMeter } from "@/components/billing/usage-meter";
 import { supabaseConfigured } from "@/lib/config";
 import { entitlementFor, tierOf, usageFor } from "@/lib/credits";
-import { approxMonthly, formatCents, nextTier, PLANS, TOPUP } from "@/lib/plans";
+import { approxMonthly, formatCents, nextTier, PLANS, TOPUP, FREE_REEL_INTERVAL_MIN } from "@/lib/plans";
 import { getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
@@ -42,7 +42,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
         {!viewer?.userId ? (
           <div className="mt-8 border-t border-line pt-6">
             <p className="text-[16px]">You&apos;re not signed in.</p>
-            <p className="mt-1 text-[14px] text-muted">Create a free account to unspool a document. Your first reel is free, then 1 every 30 minutes.</p>
+            <p className="mt-1 text-[14px] text-muted">Create a free account to unspool a document. Your first reel is free, then 1 every {FREE_REEL_INTERVAL_MIN} minutes.</p>
             <SignInButtons next="/profile" />
           </div>
         ) : (

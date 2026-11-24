@@ -79,7 +79,9 @@ export const PLANS: Record<Tier, PlanDef> = {
 
 /** The free drip. */
 export const FREE_FIRST_REELS = 1;
-export const FREE_REEL_INTERVAL_MIN = Number(process.env.FREE_REEL_INTERVAL_MIN ?? 30);
+// 5 minutes (was 30): the early free users watched reel 1, hit a 30-minute wait and left. The daily cap below still
+// limits how many free reels anyone gets, so this only lets people reach the cap (and the upgrade prompt) while they're still here.
+export const FREE_REEL_INTERVAL_MIN = Number(process.env.FREE_REEL_INTERVAL_MIN ?? 5);
 export const FREE_REELS_PER_DAY = Number(process.env.FREE_REELS_PER_DAY ?? 5);
 
 /**

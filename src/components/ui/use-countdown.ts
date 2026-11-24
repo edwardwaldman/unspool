@@ -45,7 +45,7 @@ export function formatCountdown(ms: number): string {
 
 /**
  * When locked reel `index` can be unlocked for free: only the very next reel has a time, since each
- * free reel's 30-minute timer starts when the previous one is unlocked.
+ * free reel's timer (FREE_REEL_INTERVAL_MIN) starts when the previous one is unlocked.
  */
 export function freeAtFor(index: number, freeReels: number, nextFreeUnlockAt: string | null): string | null {
   if (!nextFreeUnlockAt || index !== freeReels + 1) return null;

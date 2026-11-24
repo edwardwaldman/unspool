@@ -7,7 +7,7 @@ import { getViewer } from "@/lib/viewer";
 export const dynamic = "force-dynamic";
 
 /**
- * Unlock more reels of a document. mode "free": the next free reel once its 30-minute timer is up
+ * Unlock more reels of a document. mode "free": the next free reel once its timer (FREE_REEL_INTERVAL_MIN) is up
  * (free tier, max per day), generated on demand. mode "credits": spend monthly or top-up credits on
  * every locked reel. All checks are atomic in SQL; the client only asks.
  */
