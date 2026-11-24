@@ -24,3 +24,9 @@ voice plays at 1.08x; the end line runs to where the voice really goes silent (4
 (`voice-open-moan.mp3`: pitched up about 6 semitones, boosted, about 1.3 s, mixed at 0.75x on top of the voice). Same
 beats as the quick cut, with 0.1 s gaps and the voice at 1.18x so the whole ad is exactly 20 s (the voice ends at
 18.46 s, then 1.54 s of end card). `web/tl.json` holds the final timings.
+
+**Hook variants (A/B test the opening line):** same 20 s ad, same moan, new first line in the same voice (Charlie):
+`hook2` "POV: your homeboy wakes up as a girl… on test day?!" (21.3 s) and `hook3` "Your homeboy woke up as a girl.
+Guess what he did first?!" (20.9 s). `variants/voice-hooks.mp3` is the take with both lines; `variants/<name>-tl.json`
+is that variant's timeline (copy it over `web/tl.json` and rebuild `voice.wav` with the new hook in front of the
+20 s voice from "Like, a FULL girl" on). Videos: `brand/social/full-frame/unspool-ad-what-would-you-do-hook2.mp4` / `-hook3.mp4`.

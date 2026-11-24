@@ -613,3 +613,15 @@ be honest, did anyone actually read the handbook? 📚 #corporatetraining #learn
 ```
 be honest: nobody reads the training manual 📚 turn handbooks, SOPs and policies into short videos with a quiz at unspool.cc/teams (link in bio) #corporatetraining #learninganddevelopment #hr #onboarding #employeetraining
 ```
+
+## Homeboy Ad: Hook B and Hook C (A/B test)
+Videos: `brand/social/full-frame/unspool-ad-what-would-you-do-hook2.mp4`, `-hook3.mp4`
+
+**TikTok (B)**
+```
+pov: your homeboy wakes up as a girl on test day 💀 what would YOU do? #storytime #learnontiktok #highschool #studytok
+```
+**TikTok (C)**
+```
+your homeboy woke up as a girl. guess what he did first 💀 #storytime #learnontiktok #highschool #studytok
+```
