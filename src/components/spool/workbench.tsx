@@ -21,6 +21,7 @@ import { formatCountdown, freeAtFor, useCountdown } from "../ui/use-countdown";
 import { usePendingUpload, type UploadState } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { FREE_REEL_INTERVAL_MIN } from "@/lib/plans";
+import { ReadyNotify } from "./ready-notify";
 
 type ReelState = "ready" | "generating" | "queued" | "failed" | "locked";
 
@@ -655,6 +656,9 @@ export function Workbench({
               <div className="h-full animate-pulse" style={{ width: `${(writing / totalReels) * 100}%`, background: "color-mix(in srgb, var(--thread) 40%, var(--border))" }} />
             )}
           </div>
+          {spool && !spool.demo && (
+            <ReadyNotify docId={spool.id} title={plain(spool.title ?? spool.fileName ?? "Your document")} ready={ready} waiting={ready === 0 && spool.status !== "failed" && upload?.phase !== "error"} />
+          )}
           {(stageIndex(spool, upload ?? null) < 3 || upload?.phase === "error" || spool?.status === "failed") && (
             <p className="mt-2 text-[12px] text-muted" aria-live="polite">
               {upload?.phase === "error" ? upload.error : spool?.status === "failed" ? spool.error : stageLine(spool, upload ?? null)}
