@@ -14,6 +14,7 @@ import { synthesize } from "./tts";
 import { renderReelVideo, videoRenderEnabled, type ReelVideo } from "./video/reel-video";
 import { refundUnreadableUpload } from "./usage";
 import { notifyFirstReelReady } from "./ready-email";
+import { alertOnFailureStreak } from "./failure-alert";
 
 const STALE_MS = 6 * 60 * 1000;
 /** The per-reel job route's maxDuration is 300s; finish (and save) the reel well inside it. */
@@ -200,6 +201,8 @@ export async function processDocument(documentId: string) {
     await db.from("documents").update({ status: "failed", error: friendlyError(err), error_detail: errorDetail(err) }).eq("id", documentId);
     // The file couldn't be read, so nothing was made: don't let it count as the free document.
     if (err instanceof ExtractionError && doc.user_id) await refundUnreadableUpload(doc.user_id).catch(() => {});
+    // A server-side failure (not an unreadable file): tell the owner if uploads are now failing in a row.
+    if (!(err instanceof ExtractionError) && !doc.test_mode) await alertOnFailureStreak(documentId).catch((e) => console.error("[pipeline] failure alert failed", e));
   }
 }
 
