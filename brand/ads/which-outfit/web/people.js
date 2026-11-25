@@ -56,7 +56,7 @@ function blocky({ skin = "#f1c9a0", shirt = "#ffffff", pants = "#24345c", hair =
   const hd = mesh(new THREE.SphereGeometry(0.6, 48, 32), new THREE.MeshStandardMaterial({ map: faceTex(skin, "neutral", iris), roughness: 0.6 }), 0, 0.45, 0, head); hd.scale.set(0.92, 1.0, 0.95);
   if (nose) { const n = mesh(new THREE.SphereGeometry(0.085, 14, 10), mSkin, 0, 0.36, 0.565, head); n.scale.set(1, 1.25, 1.1); }
   for (const s of [-1, 1]) { const e = mesh(new THREE.SphereGeometry(0.12, 12, 10), mSkin, s * 0.54, 0.42, 0, head); e.scale.set(0.45, 1, 0.8); }
-  const cap = (r = 0.625, tilt = -0.42, cover = 0.46) => { const c = mesh(new THREE.SphereGeometry(r, 36, 20, 0, Math.PI * 2, 0, Math.PI * cover), mHair, 0, 0.45, 0, head); c.scale.set(0.95, 1, 0.98); c.rotation.x = tilt; return c; };
+  const cap = (r = 0.625, tilt = -0.3, cover = 0.4) => { const c = mesh(new THREE.SphereGeometry(r, 36, 20, 0, Math.PI * 2, 0, Math.PI * cover), mHair, 0, 0.45, 0, head); c.scale.set(0.95, 1, 0.98); c.rotation.x = tilt; return c; };
   if (style === "short") cap();
   if (style === "spiky") { cap(); for (let i = 0; i < 9; i++) { const c = mesh(new THREE.ConeGeometry(0.13, 0.32, 6), mHair, -0.4 + (i % 5) * 0.2, 1.0 - (i > 4 ? 0.04 : 0), (i > 4 ? -0.18 : 0.05), head); c.rotation.set(i > 4 ? -0.5 : 0.2, 0, (i % 5 - 2) * 0.22); } }
   if (style === "curly" || style === "white") { const mh = style === "white" ? M("#eeeeee") : mHair; cap(0.62); for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2, rr = i % 2 ? 0.42 : 0.26; mesh(new THREE.SphereGeometry(0.15, 10, 8), mh, Math.cos(a) * rr, 0.98 + (i % 2 ? -0.06 : 0.04), Math.sin(a) * rr - 0.1, head); } }
