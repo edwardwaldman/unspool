@@ -10,6 +10,9 @@ import { STORY_SHOTS, StoryObjects, focusIndex, impact, layoutScene } from "./st
 import { mat, popEase, rbox, rcyl, tone } from "./toy-kit";
 import { ReelIcon } from "./icon";
 import { sentenceCase } from "./text";
+import { SETTING_LOOK, type SettingName } from "./setting-look";
+import { mixHex, readableOn } from "@/lib/contrast";
+import { FRAME_BASE } from "./accent";
 
 // Generated reels as real 3D scenes, in the look of the hand-made demo reels: lit, solid objects on a soft
 // stage, black label chips with leader lines pinned to things in the scene, and a camera that drifts and
@@ -811,19 +814,6 @@ function Studio({ accent, mood }: { accent: string; mood?: Mood }) {
 
 // ---------------------------------------------------------------- settings (where the story takes place)
 
-type SettingName = NonNullable<SceneSpec["setting"]>;
-const SETTING_LOOK: Record<SettingName, { sky: string; ground: string; fog: [number, number]; wall?: string }> = {
-  meadow: { sky: "#9fd3ee", ground: "#79b85a", fog: [14, 34] },
-  forest: { sky: "#a9d1bd", ground: "#4d8443", fog: [10, 26] },
-  kitchen: { sky: "#f0e2c6", ground: "#e2d3b8", fog: [16, 40], wall: "#efe0c2" },
-  classroom: { sky: "#e8dfcb", ground: "#b98a5a", fog: [16, 40], wall: "#e6dcc6" },
-  city: { sky: "#a8c6e6", ground: "#8a929a", fog: [14, 36] },
-  ocean: { sky: "#8fd0f0", ground: "#e8d29b", fog: [16, 40] },
-  lab: { sky: "#e3edf1", ground: "#cdd7db", fog: [16, 40], wall: "#e8eff2" },
-  space: { sky: "#0b1030", ground: "#5d6272", fog: [30, 80] },
-  desert: { sky: "#f4c88c", ground: "#e0b26a", fog: [14, 38] },
-  night: { sky: "#18204a", ground: "#2c3b2e", fog: [12, 34] },
-};
 /** A small seeded random, so a setting looks the same every time it plays. */
 const rand = (i: number) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 function Tree({ p, s = 1, c = "#5fb36b" }: { p: [number, number, number]; s?: number; c?: string }) {
@@ -891,6 +881,10 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
   }, []);
   const content = useRef<THREE.Group>(null);
   const term = story && !bare ? keyTerm(visual).replace(/[*#^~]/g, "").trim() : "";
+  // What the heading sits on: the story setting's sky, or the reel's dark frame. Bright accents (lime on a pale lab
+  // or kitchen sky) fall below readable contrast there, so the heading gets the same dark backing as the label chips.
+  const termBg = story && scene?.setting && SETTING_LOOK[scene.setting] ? SETTING_LOOK[scene.setting].sky : mixHex(accent, 16, FRAME_BASE);
+  const termBacking = /^#[0-9a-f]{6}$/i.test(accent) ? readableOn(accent, termBg).backing : null;
   const pins = useRef(new Map<string, Pin>());
   const els = useRef(new Map<string, HTMLDivElement>());
   const [list, setList] = useState<Pin[]>([]);
@@ -960,8 +954,9 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
       {term && (
         <div key={beatKey} className="pointer-events-none absolute inset-x-4 top-2 text-center" data-testid="scene-term">
           <span
-            className="relative inline-block animate-[term-in_.35s_cubic-bezier(.3,1.5,.5,1)] font-hook font-extrabold leading-[1.05] tracking-[-0.02em]"
-            style={{ color: accent, fontSize: `min(40px, ${(170 / Math.max(6, term.length)).toFixed(1)}cqw)`, textShadow: "0 2px 12px rgba(0,0,0,.5)" }}
+            className={`relative inline-block animate-[term-in_.35s_cubic-bezier(.3,1.5,.5,1)] font-hook font-extrabold leading-[1.05] tracking-[-0.02em] ${termBacking ? "rounded-[8px] px-[0.35em] pb-[0.2em] pt-[0.12em]" : ""}`}
+            style={{ color: accent, fontSize: `min(40px, ${(170 / Math.max(6, term.length)).toFixed(1)}cqw)`, textShadow: termBacking ? "none" : "0 2px 12px rgba(0,0,0,.5)", ...(termBacking ? { background: termBacking, boxShadow: "0 3px 10px rgba(0,0,0,.35)" } : {}) }}
+            data-backing={termBacking ? "dark" : undefined}
           >
             {sentence(term)}
             <span aria-hidden className="absolute -bottom-[0.12em] left-0 h-[0.12em] w-full origin-left animate-[term-swipe_.6s_cubic-bezier(.2,.9,.2,1)_both] rounded-full" style={{ background: accent, opacity: 0.85 }} />

@@ -6,15 +6,18 @@ import type { CSSProperties } from "react";
 export const THREAD = "var(--thread)";
 
 /** Per-reel accents. Kept clear of coral / sage / butter, which carry meaning inside captions and quiz states. */
-const REEL_ACCENTS = ["#d3f05a", "#9db8ff", "#e59cff", "#ffc58a", "#72e3e0"];
+export const REEL_ACCENTS = ["#d3f05a", "#9db8ff", "#e59cff", "#ffc58a", "#72e3e0"];
 
 export function reelAccent(index: number) {
   return REEL_ACCENTS[(((index - 1) % REEL_ACCENTS.length) + REEL_ACCENTS.length) % REEL_ACCENTS.length];
 }
 
+/** The near-black forest every reel frame is tinted from. */
+export const FRAME_BASE = "#08110e";
+
 /** The flat tint a reel's frame sits on: its accent mixed into near-black forest. */
 export function reelTint(accent: string, amount = 16) {
-  return `color-mix(in srgb, ${accent} ${amount}%, #08110e)`;
+  return `color-mix(in srgb, ${accent} ${amount}%, ${FRAME_BASE})`;
 }
 
 /** CSS variables that re-skin the theme for one reel's frame. */
