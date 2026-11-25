@@ -649,3 +649,15 @@ part 2: your best friend deleted your essay and said YOU copied HIM 💔 stand u
 ```
 part 2: your best friend deleted your essay and said YOU copied HIM 💔 then he begged you to drop it. stand up or stay seated? comment A or B 👇 turn your notes into reels at unspool.cc (link in bio) #storytime #whatwouldyoudo #highschool #studygram #studentlife
 ```
+
+## Which Outfit Looks Better?
+Video: `brand/social/full-frame/unspool-ad-which-outfit.mp4`
+
+**TikTok**
+```
+there is no right answer. there never was 💀 #relatable #couples #boyfriend #storytime #studytok
+```
+**Instagram**
+```
+there is no right answer. there never was 💀 at least the bio chapter got done. turn your notes into reels at unspool.cc (link in bio) #relatable #couplegoals #boyfriend #funnyreels #studygram
+```
