@@ -53,7 +53,7 @@ FACE.determined = drawFace("angry");
 const rnd = (i) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 
 // ---------------- blocky characters (toy-figure proportions) ----------------
-function blocky({ skin = "#f1c9a0", shirt = "#ffffff", pants = "#24345c", hair = "#5a3a22", style = "short", cap = null, partyHat = null, topHat = false, sash = null, tie = null, apron = null, mustache = false, scale = 1 } = {}) {
+function blockyOld({ skin = "#f1c9a0", shirt = "#ffffff", pants = "#24345c", hair = "#5a3a22", style = "short", cap = null, partyHat = null, topHat = false, sash = null, tie = null, apron = null, mustache = false, scale = 1 } = {}) {
   const g = new THREE.Group(), mSkin = M(skin), mShirt = M(shirt), mPants = M(pants), mHair = M(hair, { roughness: 0.6 });
   const hip = new THREE.Group(); hip.position.y = 1.1; g.add(hip);
   const legs = [-1, 1].map((s) => { const p = new THREE.Group(); p.position.set(s * 0.26, 0, 0); hip.add(p); box(0.5, 1.1, 0.56, mPants, 0, -0.55, 0, p); box(0.52, 0.16, 0.64, M("#2a2a2a"), 0, -1.05, 0.04, p); return p; });
@@ -89,6 +89,80 @@ function drawClock(sec, red = false) { const { g } = clockTex.userData; g.clearR
 const makeClock = (parent, x, y, z, s = 1) => { const c = new THREE.Group(); c.position.set(x, y, z); c.scale.setScalar(s); parent.add(c); const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.24, 28), M("#e6402e")); body.rotation.x = Math.PI / 2; c.add(body);
   const f = new THREE.Mesh(new THREE.CircleGeometry(0.46, 28), new THREE.MeshBasicMaterial({ map: clockTex })); f.position.z = 0.125; c.add(f); for (const s2 of [-1, 1]) { const bell = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8, 0, 7, 0, Math.PI / 2), M("#e6402e")); bell.position.set(s2 * 0.3, 0.48, 0); bell.rotation.z = -s2 * 0.5; c.add(bell); } return c; };
 const mkScene = (bg) => { const s = new THREE.Scene(); s.background = new THREE.Color(bg); return s; };
+
+// ---------------- rounded people (the look of the reference videos) ----------------
+// Egg-shaped heads with the face painted onto the sphere, big eyes with whites and highlights, brows, a small nose and ears,
+// capsule bodies, round hands and shoes. Same interface as the old cube people: { g, head, face, arms, legs, hip, torso,
+// setFace, pose }, so every shot keeps working. arms[i].children[0] = sleeve, [1] = forearm; legs[i].children[0] = trouser leg.
+const FACECACHE = {};
+const drawExpr = (g, kind, iris) => {
+  g.lineCap = "round"; g.lineJoin = "round";
+  const eye = (x, y, { r = 21, open = 1, look = 0, tear = false } = {}) => {
+    g.save(); g.beginPath(); g.ellipse(x, y, r, r * 1.18 * open, 0, 0, 7); g.fillStyle = "#fbfaf6"; g.fill(); g.clip();
+    g.fillStyle = iris; g.beginPath(); g.arc(x + look, y + 2, r * 0.62, 0, 7); g.fill(); g.fillStyle = "#120a06"; g.beginPath(); g.arc(x + look, y + 2, r * 0.32, 0, 7); g.fill();
+    g.fillStyle = "#fff"; g.beginPath(); g.arc(x + look - r * 0.25, y - r * 0.3, r * 0.2, 0, 7); g.fill(); g.restore();
+    g.strokeStyle = "#2a1a12"; g.lineWidth = 3.5; g.beginPath(); g.ellipse(x, y, r + 1, r * 1.18 * open + 1, 0, Math.PI * 1.08, Math.PI * 1.92); g.stroke();
+    if (tear) { g.fillStyle = "rgba(120,190,255,.9)"; g.beginPath(); g.moveTo(x - 4, y + r); g.quadraticCurveTo(x - 14, y + r + 34, x - 4, y + r + 52); g.quadraticCurveTo(x + 6, y + r + 34, x - 4, y + r); g.fill(); } };
+  const lid = (x, y, r = 21) => { g.strokeStyle = "#2a1a12"; g.lineWidth = 6; g.beginPath(); g.moveTo(x - r, y); g.quadraticCurveTo(x, y + 10, x + r, y); g.stroke(); };
+  const brow = (x, y, tilt, arch = 0) => { g.strokeStyle = "#3a2216"; g.lineWidth = 8; g.beginPath(); g.moveTo(x - 24, y + tilt); g.quadraticCurveTo(x, y - 8 - arch, x + 24, y - tilt); g.stroke(); };
+  const mouth = (k) => { g.strokeStyle = "#5a2a1e"; g.fillStyle = "#6a2020"; g.lineWidth = 6;
+    if (k === "smile") { g.beginPath(); g.moveTo(98, 182); g.quadraticCurveTo(128, 204, 158, 182); g.stroke(); }
+    else if (k === "grin") { g.beginPath(); g.moveTo(92, 178); g.quadraticCurveTo(128, 226, 164, 178); g.closePath(); g.fill(); g.fillStyle = "#fff"; g.fillRect(100, 179, 56, 10); }
+    else if (k === "o") { g.beginPath(); g.ellipse(128, 192, 13, 18, 0, 0, 7); g.fill(); }
+    else if (k === "sad") { g.beginPath(); g.moveTo(102, 196); g.quadraticCurveTo(128, 178, 154, 196); g.stroke(); }
+    else if (k === "cry") { g.beginPath(); g.moveTo(98, 200); g.quadraticCurveTo(128, 168, 158, 200); g.closePath(); g.fill(); }
+    else if (k === "smirk") { g.beginPath(); g.moveTo(104, 188); g.quadraticCurveTo(136, 196, 158, 176); g.stroke(); }
+    else if (k === "wavy") { g.beginPath(); g.moveTo(102, 190); g.quadraticCurveTo(115, 180, 128, 190); g.quadraticCurveTo(141, 200, 154, 190); g.stroke(); }
+    else if (k === "small") { g.beginPath(); g.ellipse(146, 190, 8, 6, 0, 0, 7); g.fill(); }
+    else { g.beginPath(); g.moveTo(108, 190); g.lineTo(148, 190); g.stroke(); } };
+  const blush = () => { g.fillStyle = "rgba(235,110,100,.22)"; g.beginPath(); g.ellipse(70, 160, 20, 11, 0, 0, 7); g.ellipse(186, 160, 20, 11, 0, 0, 7); g.fill(); };
+  const sweat = () => { g.fillStyle = "rgba(124,207,255,.95)"; g.beginPath(); g.moveTo(206, 52); g.quadraticCurveTo(192, 86, 206, 96); g.quadraticCurveTo(220, 86, 206, 52); g.fill(); };
+  switch (kind) {
+    case "happy": eye(90, 116); eye(166, 116); brow(90, 78, 0, 4); brow(166, 78, 0, 4); mouth("smile"); blush(); break;
+    case "grin": lid(90, 118); lid(166, 118); brow(90, 82, 0, 6); brow(166, 82, 0, 6); mouth("grin"); blush(); break;
+    case "shock": eye(90, 112, { r: 25, open: 1.1 }); eye(166, 112, { r: 25, open: 1.1 }); brow(90, 64, -2, 10); brow(166, 64, -2, 10); mouth("o"); sweat(); break;
+    case "cry": eye(90, 118, { open: 0.75, tear: true }); eye(166, 118, { open: 0.75, tear: true }); brow(90, 84, 8); brow(166, 84, -8); mouth("cry"); break;
+    case "worried": eye(90, 118); eye(166, 118); brow(90, 82, 9); brow(166, 82, -9); mouth("wavy"); sweat(); break;
+    case "angry": eye(90, 120, { open: 0.8 }); eye(166, 120, { open: 0.8 }); brow(90, 92, -10); brow(166, 92, 10); mouth("sad"); break;
+    case "determined": eye(90, 120, { open: 0.8 }); eye(166, 120, { open: 0.8 }); brow(90, 92, -6); brow(166, 92, 6); mouth(); break;
+    case "smug": eye(90, 120, { open: 0.55, look: 5 }); eye(166, 120, { open: 0.55, look: 5 }); brow(90, 90, 0); brow(166, 84, 0, 6); mouth("smirk"); break;
+    case "whisper": eye(90, 118, { look: 6 }); eye(166, 118, { look: 6 }); brow(90, 84, 4); brow(166, 84, -4); mouth("small"); break;
+    default: eye(90, 118); eye(166, 118); brow(90, 82, 0); brow(166, 82, 0); mouth();
+  } };
+const faceTex = (skin, kind, iris = "#4a2e1a") => { const key = skin + kind + iris; if (FACECACHE[key]) return FACECACHE[key];
+  return (FACECACHE[key] = canvasTex(1024, 512, (g) => { g.fillStyle = skin; g.fillRect(0, 0, 1024, 512); g.save(); g.translate(256 - 118, 256 - 112); g.scale(236 / 256, 236 / 256); drawExpr(g, kind, iris); g.restore(); })); };
+
+function blocky({ skin = "#f1c9a0", shirt = "#ffffff", pants = "#24345c", hair = "#5a3a22", style = "short", scale = 1, nose = true, glasses = false, shoes = "#2a2a2a", iris = "#4a2e1a" } = {}) {
+  const g = new THREE.Group(), mSkin = M(skin, { roughness: 0.6 }), mShirt = M(shirt, { roughness: 0.75 }), mPants = M(pants, { roughness: 0.8 }), mHair = M(hair, { roughness: 0.7 });
+  const mesh = (geo, mat, x, y, z, parent) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; parent.add(m); return m; };
+  const hip = new THREE.Group(); hip.position.y = 1.1; g.add(hip);
+  const legs = [-1, 1].map((s) => { const p = new THREE.Group(); p.position.set(s * 0.27, 0, 0); hip.add(p);
+    mesh(new THREE.CapsuleGeometry(0.24, 0.62, 6, 14), mPants, 0, -0.5, 0, p); const sh = mesh(new THREE.SphereGeometry(0.26, 16, 12), M(shoes, { roughness: 0.4 }), 0, -1.0, 0.1, p); sh.scale.set(1, 0.55, 1.5); return p; });
+  mesh(new THREE.CapsuleGeometry(0.34, 0.2, 6, 14), mPants, 0, 1.12, 0, g).scale.set(1.5, 0.8, 0.95);
+  const torso = mesh(new THREE.CapsuleGeometry(0.5, 0.42, 8, 18), mShirt, 0, 1.74, 0, g); torso.scale.set(1.12, 0.9, 0.68);
+  mesh(new THREE.CylinderGeometry(0.16, 0.19, 0.3, 16), mSkin, 0, 2.47, 0, g);
+  const arms = [-1, 1].map((s) => { const p = new THREE.Group(); p.position.set(s * 0.7, 2.24, 0); g.add(p);
+    mesh(new THREE.CapsuleGeometry(0.19, 0.38, 6, 12), mShirt, 0, -0.26, 0, p); mesh(new THREE.CapsuleGeometry(0.15, 0.4, 6, 12), mSkin, 0, -0.76, 0, p); mesh(new THREE.SphereGeometry(0.19, 14, 10), mSkin, 0, -1.12, 0.02, p); return p; });
+  const head = new THREE.Group(); head.position.y = 2.74; g.add(head);
+  const hd = mesh(new THREE.SphereGeometry(0.6, 48, 32), new THREE.MeshStandardMaterial({ map: faceTex(skin, "neutral", iris), roughness: 0.6 }), 0, 0.45, 0, head); hd.scale.set(0.92, 1.0, 0.95);
+  if (nose) { const n = mesh(new THREE.SphereGeometry(0.085, 14, 10), mSkin, 0, 0.36, 0.565, head); n.scale.set(1, 1.25, 1.1); }
+  for (const s of [-1, 1]) { const e = mesh(new THREE.SphereGeometry(0.12, 12, 10), mSkin, s * 0.54, 0.42, 0, head); e.scale.set(0.45, 1, 0.8); }
+  const cap = (r = 0.625, tilt = -0.42, cover = 0.46) => { const c = mesh(new THREE.SphereGeometry(r, 36, 20, 0, Math.PI * 2, 0, Math.PI * cover), mHair, 0, 0.45, 0, head); c.scale.set(0.95, 1, 0.98); c.rotation.x = tilt; return c; };
+  if (style === "short") cap();
+  if (style === "spiky") { cap(); for (let i = 0; i < 9; i++) { const c = mesh(new THREE.ConeGeometry(0.13, 0.32, 6), mHair, -0.4 + (i % 5) * 0.2, 1.0 - (i > 4 ? 0.04 : 0), (i > 4 ? -0.18 : 0.05), head); c.rotation.set(i > 4 ? -0.5 : 0.2, 0, (i % 5 - 2) * 0.22); } }
+  if (style === "curly" || style === "white") { const mh = style === "white" ? M("#eeeeee") : mHair; cap(0.62); for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2, rr = i % 2 ? 0.42 : 0.26; mesh(new THREE.SphereGeometry(0.15, 10, 8), mh, Math.cos(a) * rr, 0.98 + (i % 2 ? -0.06 : 0.04), Math.sin(a) * rr - 0.1, head); } }
+  if (style === "bun") { cap(); mesh(new THREE.SphereGeometry(0.24, 16, 12), mHair, 0, 1.0, -0.42, head); }
+  if (style === "long") { cap(0.635, -0.5, 0.5); const b = mesh(new THREE.CapsuleGeometry(0.42, 0.7, 8, 16), mHair, 0, 0.05, -0.3, head); b.scale.set(1.35, 1, 0.55);
+    for (const s of [-1, 1]) { const st = mesh(new THREE.CapsuleGeometry(0.13, 0.75, 6, 10), mHair, s * 0.5, 0.08, 0.1, head); st.rotation.z = -s * 0.08; } }
+  if (glasses) { const mg = M("#1d1d22", { roughness: 0.3 }); for (const s of [-1, 1]) { const r = mesh(new THREE.TorusGeometry(0.115, 0.018, 8, 24), mg, s * 0.2, 0.47, 0.545, head); r.rotation.y = s * 0.22; } mesh(new THREE.BoxGeometry(0.12, 0.02, 0.02), mg, 0, 0.5, 0.585, head); }
+  g.scale.setScalar(scale);
+  const P = { g, head, face: hd, arms, legs, hip, torso };
+  P.setFace = (n) => { hd.material.map = faceTex(skin, FACEALIAS[n] || n, iris); };
+  P.pose = ({ la = [0, 0.06], ra = [0, -0.06], headTilt = 0, headTurn = 0, ll = 0, rl = 0 } = {}) => {
+    arms[0].rotation.set(la[0], 0, la[1]); arms[1].rotation.set(ra[0], 0, ra[1]); legs[0].rotation.x = ll; legs[1].rotation.x = rl; head.rotation.set(head.rotation.x, headTurn, headTilt); };
+  P.pose(); return P;
+}
+const FACEALIAS = {};
 const CAPS = [[0.14, "YOUR <b class=\"hl\">GIRLFRIEND</b> ASKS WHICH OUTFIT"], [1.7, "LOOKS BETTER."], [2.86, "YOU MAKE THE <b class=\"hl\">MISTAKE</b> OF"], [3.82, "<b class=\"hl\">F***ING</b> ANSWERING."], [4.72, "THE <b class=\"hl\">BLACK</b> ONE."], [6.48, "SHE LOOKS AT THE <b class=\"hl\">RED</b>"], [7.3, "ONE."], [7.88, "WHAT'S <b class=\"hl\">WRONG</b> WITH THIS ONE?"], [9.32, "<b class=\"hl\">NOTHING.</b>"], [10.04, "YOU JUST LIKE THE <b class=\"hl\">BLACK</b>"], [10.96, "ONE BETTER."], [11.88, "SO <b class=\"hl\">THIS</b> ONE LOOKS BAD."], [13.66, "YOU'VE SOMEHOW <b class=\"hl\">INSULTED</b> A DRESS"], [15.36, "BY COMPLIMENTING A <b class=\"hl\">DIFFERENT</b> DRESS."], [17.48, "YOU EXPLAIN THAT THEY <b class=\"hl\">BOTH</b>"], [18.6, "LOOK <b class=\"hl\">GOOD.</b>"], [19.46, "THEN <b class=\"hl\">WHY</b> DID YOU PICK"], [20.3, "THE <b class=\"hl\">BLACK</b> ONE?"], [21.4, "BECAUSE SHE <b class=\"hl\">ASKED</b> YOU TO"], [22.56, "PICK."], [23.18, "YOU KEEP THAT <b class=\"hl\">SENTENCE</b> INSIDE"], [24.58, "YOUR <b class=\"hl\">F***ING</b> HEAD."], [25.88, "YOU SAY THE <b class=\"hl\">RED</b> ONE"], [26.66, "LOOKS <b class=\"hl\">GREAT,</b> TOO."], [27.82, "<b class=\"hl\">FINE,</b> I'LL WEAR THIS."], [29.74, "YOU SAY, <b class=\"hl\">GOOD</b> CHOICE."], [31.36, "SHE <b class=\"hl\">STOPS.</b>"], [32.42, "SO <b class=\"hl\">NOW</b> YOU LIKE THIS"], [33.68, "ONE BETTER?"], [34.5, "YOU'RE BEING <b class=\"hl\">CROSS-EXAMINED</b> OVER F***ING"], [36.56, "FABRIC."], [37.38, "YOU TELL HER SHE LOOKS"], [38.2, "<b class=\"hl\">BEAUTIFUL</b> IN EITHER ONE."], [39.84, "SHE <b class=\"hl\">SIGHS.</b>"], [40.92, "YOU'RE NO <b class=\"hl\">HELP.</b>"], [42.24, "SHE DISAPPEARS INTO THE <b class=\"hl\">BEDROOM.</b>"], [44.4, "YOU KNOW <b class=\"hl\">THIS</b> TAKES TWENTY"], [45.72, "MINUTES, <b class=\"hl\">MINIMUM.</b>"], [47.22, "YOUR BIO TEST IS <b class=\"hl\">TOMORROW,</b>"], [48.94, "<b class=\"hl\">FORTY</b> PAGES."], [50.12, "YOU HAVEN'T OPENED IT."], [51.28, "SO YOU DROP THE CHAPTER"], [52.28, "INTO <b class=\"hl\">UNSPOOL.</b>"], [53.34, "IT TURNS INTO <b class=\"hl\">REELS,</b> SHORT"], [54.86, "ONES."], [55.42, "<b class=\"hl\">MITOSIS,</b> MEIOSIS, THE CELL CYCLE."], [58.14, "THEN A <b class=\"hl\">QUIZ.</b>"], [59.06, "YOU GET <b class=\"hl\">EVERY</b> QUESTION RIGHT."], [61.2, "SHE COMES BACK <b class=\"hl\">WEARING</b> SOMETHING"], [62.52, "YOU'VE <b class=\"hl\">NEVER</b> SEEN BEFORE."], [64.14, "<b class=\"hl\">THIS</b> ONE."], [64.98, "YOU <b class=\"hl\">HESITATE</b> TOO LONG."], [66.74, "<b class=\"hl\">NEVER</b> MIND."], [67.7, "YOU HAVEN'T SAID A <b class=\"hl\">F***ING</b>"], [69.18, "<b class=\"hl\">WORD.</b>"], [69.84, "<b class=\"hl\">TWENTY</b> MINUTES LATER, SHE'S READY."], [71.76, "SHE'S <b class=\"hl\">WEARING</b> THE RED ONE,"], [73.18, "THE ONE SHE WANTED BEFORE"], [74.46, "SHE <b class=\"hl\">F***ING</b> ASKED YOU."], [75.86, "YOU WENT THROUGH AN ENTIRE"], [77.0, "<b class=\"hl\">INTERROGATION</b> TO FIND OUT YOUR"], [78.58, "VOTE DOESN'T <b class=\"hl\">COUNT.</b>"], [80.0, "BUT YOU KNOW <b class=\"hl\">MITOSIS</b> NOW,"], [81.78, "SO THE <b class=\"hl\">NIGHT</b> WASN'T A"], [82.8, "<b class=\"hl\">TOTAL</b> LOSS."]];
 
 // ================= "Which outfit looks better?" (86 s) =================
@@ -124,10 +198,8 @@ box(3.4, 0.16, 1.5, M("#c08850"), 0.9, 1.0, 1.4, room); for (const x of [-1.5, 1
 box(1.8, 4.6, 0.12, M("#ffffff"), -5.0, 2.3, -3.88, room); box(1.5, 4.3, 0.14, M("#e9eef5"), -5.0, 2.15, -3.86, room);
 
 // ---------- characters ----------
-const BOY = blocky({ shirt: "#f47b20", pants: "#2050c8", hair: "#e8b48a", style: "none", skin: "#f0bf90" });
-const GF = blocky({ shirt: "#8a4fd0", pants: "#24485a", hair: "#6b3f22", style: "none", skin: "#f1c9a0" });
-{ const mh = M("#6b3f22", { roughness: 0.6 }); box(1.08, 0.32, 1.02, mh, 0, 0.95, -0.02, GF.head); box(1.1, 1.5, 0.32, mh, 0, 0.35, -0.42, GF.head);
-  for (const s of [-1, 1]) box(0.16, 1.25, 0.8, mh, s * 0.55, 0.45, -0.1, GF.head); box(0.5, 0.18, 0.04, M("#c84060"), 0, 0.2, 0.49, GF.head).visible = false; }
+const BOY = blocky({ shirt: "#f47b20", pants: "#2050c8", hair: "#e8b48a", style: "none", skin: "#f0bf90", nose: false, iris: "#2a1a10" });
+const GF = blocky({ shirt: "#8a4fd0", pants: "#24485a", hair: "#6b3f22", style: "long", skin: "#f1c9a0", nose: false, iris: "#3a2410" });
 const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.95, 1.25, 20), M("#d32f3a")); skirt.position.y = 0.55; skirt.castShadow = true; GF.g.add(skirt);
 const outfit = (kind) => { const top = { purple: "#8a4fd0", green: "#5f8a5a", red: "#d32f3a" }[kind], bot = { purple: "#24485a", green: "#5f8a5a", red: "#f1c9a0" }[kind];
   GF.torso.material.color.set(top); GF.arms.forEach((a) => a.children[0].material.color.set(top)); GF.legs.forEach((l) => l.children[0].material.color.set(bot)); skirt.visible = kind === "red"; };
