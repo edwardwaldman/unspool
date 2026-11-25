@@ -625,3 +625,15 @@ pov: your homeboy wakes up as a girl on test day 💀 what would YOU do? #storyt
 ```
 your homeboy woke up as a girl. guess what he did first 💀 #storytime #learnontiktok #highschool #studytok
 ```
+
+## The Essay · Part 2 (choose your path)
+Video: `brand/social/full-frame/unspool-ad-the-essay-part-2.mp4`
+
+**TikTok**
+```
+part 2: your best friend says YOU copied HIS essay 😳 A or B? comment 👇 #storytime #whatwouldyoudo #highschool #studytok #learnontiktok
+```
+**Instagram**
+```
+part 2: your best friend says YOU copied HIS essay 😳 drop it, or explain every page? comment A or B 👇 turn your notes into reels at unspool.cc (link in bio) #storytime #whatwouldyoudo #highschool #studygram #studentlife
+```
