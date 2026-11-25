@@ -1,4 +1,4 @@
-# The Essay · Part 2, long cut (77.6 s)
+# The Essay · Part 2, long cut (98.7 s)
 
 The 19.7 s cut (`../the-essay-part-2`) told the story; this one builds the feeling. Same format (PREVIOUSLY + poll,
 second person, an unresolved A/B choice, the character holds the sponsor sign), with the beats that make people care:
@@ -24,3 +24,7 @@ second person, an unresolved A/B choice, the character holds the sponsor sign), 
 - Voice: ElevenLabs eleven_v4 "Teke" (`voice-take.mp3`, 83.5 s). `tighten.py` caps pauses at 0.30 s (0.55 s before
   the emotional lines) and speeds up 1.05x -> `voice-tight.mp3` (75.4 s); `wt.json` = word timings after that edit.
 - Captions: `caps.py` (hand-grouped, colour-coded). Music: `mix.py` (original). Render with `--gl`, encode as `the-essay-part-2-long`.
+
+**98.7 s version:** three beats spliced into the take (`voice-insert-1..3.mp3`, same voice): "By lunch, it's in the group
+chat. Cheater. Copycat." (after the zero), "You try rereading it... it's your own essay, and you can't explain it" (before
+Unspool), and "Then the quiz. You miss one. You watch it again. You nail it. Twelve for twelve." (after Unspool).

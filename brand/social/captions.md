@@ -638,7 +638,7 @@ part 2: your best friend says YOU copied HIS essay 😳 A or B? comment 👇 #st
 part 2: your best friend says YOU copied HIS essay 😳 drop it, or explain every page? comment A or B 👇 turn your notes into reels at unspool.cc (link in bio) #storytime #whatwouldyoudo #highschool #studygram #studentlife
 ```
 
-## The Essay · Part 2 (long cut, 78s)
+## The Essay · Part 2 (long cut, 99s)
 Video: `brand/social/full-frame/unspool-ad-the-essay-part-2-long.mp4`
 
 **TikTok**
