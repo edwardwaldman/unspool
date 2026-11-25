@@ -223,6 +223,7 @@ export function OwnerPanel() {
           ))}
         </ul>
         <TestEmail />
+        <TestText />
       </section>
 
       <OpenAccess on={data.openAccess} onChange={() => void load()} />
@@ -630,6 +631,26 @@ function TestEmail() {
         {busy ? "Sending…" : "Send test"}
       </button>
     </form>
+  );
+}
+
+/** Send a test failure alert to the phone (Twilio text and/or the ntfy app), to check the setup. */
+function TestText() {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      className="mt-3 text-[13px] text-muted underline underline-offset-4 hover:text-ink disabled:opacity-50"
+      onClick={async () => {
+        setBusy(true);
+        const b = await post({ action: "test_text" });
+        setBusy(false);
+        if (b) toast("Test alert sent to your phone");
+      }}
+    >
+      {busy ? "Sending…" : "Send a test alert to my phone"}
+    </button>
   );
 }
 

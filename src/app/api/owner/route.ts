@@ -1,5 +1,6 @@
 import { supabaseConfigured } from "@/lib/config";
 import { compose, emailConfigured, sendBatch, sendEmail, validEmail } from "@/lib/email";
+import { sendAlertText, textAlertsConfigured } from "@/lib/alert-text";
 import { error, json, notConfigured } from "@/lib/http";
 import { isOwnerEmail } from "@/lib/owner";
 import { deleteDocument } from "@/lib/spool";
@@ -51,6 +52,7 @@ async function deployment() {
     { name: "Background jobs", on: has("JOB_SECRET"), hint: "Set JOB_SECRET" },
     { name: "Nightly cleanup", on: has("CRON_SECRET"), hint: "Set CRON_SECRET" },
     { name: "Abuse limits salt", on: has("IP_HASH_SALT"), hint: "Set IP_HASH_SALT" },
+    { name: "Failure alerts by text (Twilio SMS or ntfy)", on: textAlertsConfigured(), hint: "Optional: set ALERT_SMS_TO plus TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM, or NTFY_TOPIC for the free ntfy app" },
     { name: "Email (Resend)", on: emailConfigured(), hint: "Set RESEND_API_KEY (and EMAIL_FROM on a verified domain) for test emails and broadcasts" },
   ];
 }
@@ -199,6 +201,12 @@ export async function POST(req: Request) {
     return json({ ok: true });
   }
 
+  if (body.action === "test_text") {
+    if (!textAlertsConfigured()) return error(400, "Text alerts aren't set up: add the Twilio variables (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM, ALERT_SMS_TO) or NTFY_TOPIC in Vercel.");
+    const errs = await sendAlertText("Unspool test alert", "Text alerts work. You'll get one like this if uploads start failing.");
+    if (errs.length) return error(502, errs.join(" · "));
+    return json({ ok: true });
+  }
   if (body.action === "outcomes") {
     const { data: profiles } = await db.from("profiles").select("id,email,plan,tier,billing_interval,subscription_status,trial_used,comp_tier,updated_at");
     const rows = (profiles ?? []).filter((p) => !isOwnerEmail(p.email));
