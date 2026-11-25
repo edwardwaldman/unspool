@@ -56,7 +56,7 @@ async function checkAnthropic(): Promise<AiService> {
   const base = { id: "anthropic" as const, name: "Claude (Anthropic)", role: "Writes every reel", links: LINKS.anthropic };
   if (!key("ANTHROPIC_API_KEY")) return { ...base, state: "off", detail: "ANTHROPIC_API_KEY is not set, so no reels can be made." };
   const workspace = key("ANTHROPIC_WORKSPACE_ID");
-  const client = new Anthropic({ maxRetries: 0, timeout: TIMEOUT, ...(workspace ? { defaultHeaders: { "anthropic-workspace-id": workspace } } : {}) });
+  const client = new Anthropic({ apiKey: key("ANTHROPIC_API_KEY"), maxRetries: 0, timeout: TIMEOUT, ...(workspace ? { defaultHeaders: { "anthropic-workspace-id": workspace } } : {}) });
   try {
     await client.models.list({ limit: 1 });
     return { ...base, state: "ok", detail: "The key works. Anthropic doesn't share the remaining balance through its API: open the billing page to see it and top up." };

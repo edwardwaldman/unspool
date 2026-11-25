@@ -24,7 +24,8 @@ function anthropic() {
   if (!client) {
     // Org-level keys (not created inside a workspace) must name the workspace on every request.
     const workspace = process.env.ANTHROPIC_WORKSPACE_ID?.trim();
-    client = new Anthropic({ maxRetries: 3, ...(workspace ? { defaultHeaders: { "anthropic-workspace-id": workspace } } : {}) });
+    // Trimmed: a space or line break pasted into Vercel with the key makes Anthropic reject it as "invalid x-api-key".
+    client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY?.trim(), maxRetries: 3, ...(workspace ? { defaultHeaders: { "anthropic-workspace-id": workspace } } : {}) });
   }
   return client;
 }
