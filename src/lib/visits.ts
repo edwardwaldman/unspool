@@ -32,7 +32,7 @@ const PASSIVE = new Set(["open", "page", "idle", "close"]);
 
 /** Saw the offer: the pricing page, a paywall, or an upgrade button. */
 const sawPricing = (v: VisitRow) =>
-  v.events.some((e) => (e.name === "page" && /^\/(pricing|upgrade)/.test(e.detail ?? "")) || e.name === "checkout_clicked" || e.name === "demo_gate");
+  v.events.some((e) => (e.name === "page" && /^\/(pricing|upgrade)/.test(e.detail ?? "")) || e.name === "checkout_clicked" || e.name === "demo_gate" || e.name === "paywall_shown");
 const has = (v: VisitRow, name: string) => v.events.some((e) => e.name === name);
 const median = (xs: number[]) => {
   if (!xs.length) return 0;

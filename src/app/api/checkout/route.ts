@@ -52,7 +52,8 @@ async function checkout(req: Request) {
   }
   const sep = returnPath.includes("?") ? "&" : "?";
   const success_url = `${origin}${returnPath}${sep}checkout_session={CHECKOUT_SESSION_ID}`;
-  const cancel_url = `${origin}${returnPath}`;
+  // Tagged so the visit log records who backed out of Stripe (and on which kind of checkout).
+  const cancel_url = `${origin}${returnPath}${sep}checkout=cancelled&kind=${kind}`;
   const stripe = getStripe();
   const current = tierOf(viewer.profile);
 
@@ -120,6 +121,10 @@ async function checkout(req: Request) {
       ...(kind === "trial" ? { trial_period_days: TRIAL.days } : {}),
     },
     ...(kind === "trial" ? { payment_method_collection: "always" as const } : {}),
+    // A card for a "free" trial is where people hesitate: say plainly, next to the button, that nothing is charged today.
+    ...(kind === "trial"
+      ? { custom_text: { submit: { message: `You won't be charged today. Your free trial lasts ${TRIAL.days} day${TRIAL.days === 1 ? "" : "s"}. Cancel any time before it ends and you pay nothing.` } } }
+      : {}),
     line_items: [{ price: await priceIdFor(tier, billing), quantity: 1 }],
     allow_promotion_codes: kind !== "trial",
     success_url,

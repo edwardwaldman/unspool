@@ -16,6 +16,9 @@ export function VisitTracker() {
     if (recorder) return;
     track("page", path);
     if (path === "/s/demo") track("watch_demo");
+    // Back from Stripe without paying (the checkout's cancel link carries checkout=cancelled).
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("checkout") === "cancelled") track("checkout_cancelled", (q.get("kind") ?? "").replace(/[^a-z]/g, "").slice(0, 20));
   }, [path, recorder]);
 
   useEffect(() => {

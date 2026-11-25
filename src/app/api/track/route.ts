@@ -12,7 +12,7 @@ const VISITOR_COOKIE = "unspool_vid";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const NAMES = new Set([
   "open", "page", "upload_started", "upload_done", "signup_shown", "signup_closed", "signup_done", "login_shown", "login",
-  "checkout_clicked", "demo_gate", "watch_demo", "reel_viewed", "idle", "close",
+  "checkout_clicked", "checkout_cancelled", "paywall_shown", "paywall_closed", "demo_gate", "watch_demo", "reel_viewed", "idle", "close",
 ]);
 const MAX_BODY = 16_384;
 const MAX_BATCH = 50;

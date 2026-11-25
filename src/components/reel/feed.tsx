@@ -223,7 +223,12 @@ export function Feed({
               onMore={() => setMoreOpen(true)}
               onShare={() => setShareOpen(true)}
               onEnded={() => {
-                if (i + 1 < items.length) setTimeout(() => scrollTo(i + 1), 900);
+                if (i + 1 >= items.length) return;
+                // Finishing a free reel is the best moment for the offer: show it again on the next locked reel,
+                // even if it was closed earlier (as on desktop). Swiping onto it by hand still shows it only once.
+                const next = items[i + 1]?.reel;
+                if (next?.locked) dismissedPaywall.current.delete(next.id);
+                setTimeout(() => scrollTo(i + 1), 900);
               }}
             />
           );

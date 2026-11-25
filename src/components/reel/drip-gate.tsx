@@ -9,6 +9,7 @@ import { startCheckout, unlockReels, type CheckoutRequest } from "../billing/che
 import { shortDate } from "../billing/usage-meter";
 import { formatCountdown, useCountdown } from "../ui/use-countdown";
 import { PaywallSheet } from "./paywall-sheet";
+import { track } from "../analytics/track";
 
 const NAME: Record<Tier, string> = { free: "Free", plus: "Plus", pro: "Pro", ultra: "Ultra" };
 
@@ -234,6 +235,18 @@ export function UpgradeSheet({ open, onClose, spool, usage, reel }: { open: bool
 /** What a locked reel opens: sign-in (signed out or demo), the free drip gate, or the upgrade sheet. */
 export function UnlockSheet({ open, onClose, spool, viewer, reel }: { open: boolean; onClose: () => void; spool: SpoolDTO; viewer: ViewerDTO | null; reel: number }) {
   const usage = viewer?.usage;
+  // Visit log: when the offer is shown and closed, and why it showed (so the owner panel can see where people stop).
+  const shownWhy = useRef<string | null>(null);
+  useEffect(() => {
+    const why = spool.demo || !viewer?.signedIn || !usage ? "signin" : usage.tier !== "free" ? "upgrade" : usage.freeUsedToday >= usage.freePerDay ? "cap" : spool.nextFreeUnlockAt && Date.parse(spool.nextFreeUnlockAt) > Date.now() ? "wait" : "free";
+    if (open && !shownWhy.current) {
+      shownWhy.current = why;
+      track("paywall_shown", `${why}:${reel}`);
+    } else if (!open && shownWhy.current) {
+      track("paywall_closed", `${shownWhy.current}:${reel}`);
+      shownWhy.current = null;
+    }
+  }, [open, reel, spool.demo, spool.nextFreeUnlockAt, viewer?.signedIn, usage]);
   if (spool.demo || !viewer?.signedIn || !usage) return <PaywallSheet open={open} onClose={onClose} spool={spool} viewer={viewer} reel={reel} />;
   if (usage.tier === "free") return <DripGate key={`${spool.nextFreeUnlockAt}-${reel}`} open={open} onClose={onClose} spool={spool} usage={usage} reel={reel} />;
   return <UpgradeSheet open={open} onClose={onClose} spool={spool} usage={usage} reel={reel} />;
