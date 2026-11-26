@@ -662,6 +662,6 @@ there is no right answer. there never was 💀 #relatable #couples #boyfriend #s
 there is no right answer. there never was 💀 at least the bio chapter got done. turn your notes into reels at unspool.cc (link in bio) #relatable #couplegoals #boyfriend #funnyreels #studygram
 ```
 
-## What if you fell INTO your textbook? (20s, silent: add your own audio)
-what if you fell into your textbook 📚😭 page 48 had a knight in it
+## What if your textbook turned into REELS? (20s, silent: add your own audio)
+what if your textbook turned into reels 📚➡️📱 the knight said follow for part 2
 #studytok #studywithme #textbook #exam #unspool
