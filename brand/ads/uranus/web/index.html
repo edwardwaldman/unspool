@@ -1,0 +1,18 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: Arc; src: url(Archivo-ExtraBold.ttf); }
+html, body { margin: 0; width: 720px; height: 1280px; overflow: hidden; background: #0a1230; }
+canvas { position: absolute; left: 0; top: 0; }
+#ov { position: absolute; inset: 0; font-family: Arc; }
+.cap { position: absolute; left: 90px; right: 90px; top: 838px; text-align: center; color: #fff; font: 800 46px/1.15 Arc; text-shadow: 0 3px 10px rgba(0,0,0,.55); }
+.cap b { color: #ff5fa8; }
+.tag { position: absolute; left: 0; right: 0; text-align: center; }
+.tag span { display: inline-block; background: rgba(255,255,255,.1); border: 2px solid rgba(255,255,255,.35); color: #fff; font: 800 26px Arc; letter-spacing: 2px; padding: 6px 16px; border-radius: 12px; }
+</style></head>
+<body><canvas id="cv" width="720" height="1280"></canvas><div id="ov"></div>
+<script>const cv = document.getElementById("cv"), g = cv.getContext("2d"), ov = document.getElementById("ov");</script>
+<script src="helpers.js"></script>
+<script src="wt.js"></script>
+<script src="scene.js"></script>
+</body></html>

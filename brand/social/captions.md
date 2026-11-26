@@ -665,3 +665,6 @@ there is no right answer. there never was 💀 at least the bio chapter got done
 ## What if your textbook turned into REELS? (20s, silent: add your own audio)
 what if your textbook turned into reels 📚➡️📱 the knight said follow for part 2
 #studytok #studywithme #textbook #exam #unspool
+
+## Uranus facts (38s)
+uranus is full of gas and it smells. this is science 🪐 #science #space #uranus #studytok #learnontiktok
