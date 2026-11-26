@@ -668,3 +668,7 @@ what if your textbook turned into reels 📚➡️📱 the knight said follow fo
 
 ## Uranus facts (38s)
 uranus is full of gas and it smells. this is science 🪐 #science #space #uranus #studytok #learnontiktok
+
+## The Text · Part 1 (24s, post with an A/B poll)
+she said they were just studying 💔 A: hear them out · B: walk past them. comment A or B 👇 #storytime #pov #studytok #relatable
+(Until Dec 1 11:59 PM PT, add: "Black Friday: 50% off your first month at unspool.cc")
