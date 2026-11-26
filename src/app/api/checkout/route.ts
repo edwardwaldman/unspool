@@ -121,10 +121,9 @@ async function checkout(req: Request) {
       ...(kind === "trial" ? { trial_period_days: TRIAL.days } : {}),
     },
     ...(kind === "trial" ? { payment_method_collection: "always" as const } : {}),
-    // A card for a "free" trial is where people hesitate: say plainly, next to the button, that nothing is charged today.
-    ...(kind === "trial"
-      ? { custom_text: { submit: { message: `You won't be charged today. Your free trial lasts ${TRIAL.days} day${TRIAL.days === 1 ? "" : "s"}. Cancel any time before it ends and you pay nothing.` } } }
-      : {}),
+    // No custom_text here: Stripe refuses it on accounts with Managed Payments ("custom_text cannot be used with
+    // Managed Payments"), and that refusal broke every trial checkout from Nov 25. The "nothing charged today" line
+    // lives on our own paywall, right under the button, instead.
     line_items: [{ price: await priceIdFor(tier, billing), quantity: 1 }],
     allow_promotion_codes: kind !== "trial",
     success_url,

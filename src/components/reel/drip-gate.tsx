@@ -147,7 +147,7 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
       )}
       {/* The one line the law needs before a card is taken for a trial. */}
       <p className="mt-2.5 text-center text-[11px] leading-snug text-muted">
-        {usage.trialEligible ? `Free for 1 day, then ${formatCents(plus.cents)}/week. Cancel anytime.` : `Plus: ${formatCents(plus.cents)}/week. Cancel anytime.`}
+        {usage.trialEligible ? `$0 today. Free for 1 day, then ${formatCents(plus.cents)}/week. Cancel anytime before then and pay nothing.` : `Plus: ${formatCents(plus.cents)}/week. Cancel anytime.`}
       </p>
     </Modal>
   );
