@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { BillingButton } from "@/components/shell/billing-button";
 import { MarketingPage } from "@/components/shell/marketing-page";
 import { PricingTable } from "@/components/billing/pricing-table";
+import { DealBanner } from "@/components/billing/deal-banner";
 import { formatCents, FREE_REEL_INTERVAL_MIN, FREE_REELS_PER_DAY, PLANS, TOPUP, TRIAL } from "@/lib/plans";
 
 export const metadata: Metadata = {
@@ -24,6 +25,7 @@ export default function PricingPage() {
           Free gets 1 document: its first reel, then 1 more every {FREE_REEL_INTERVAL_MIN} minutes, up to {FREE_REELS_PER_DAY} a day. Paid plans bill weekly, or yearly for less,
           in reel credits: 1 credit is 1 reel, and a document uses one credit per reel it plans. Credits reset every week, on yearly plans too.
         </p>
+        <DealBanner />
       </section>
 
       <PricingTable />

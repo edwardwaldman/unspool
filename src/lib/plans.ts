@@ -109,6 +109,24 @@ export function topupSavingsPct(pack: TopupPack) {
 /** The 1-day Plus trial (one per account, card required). */
 export const TRIAL = { tier: "plus" as const, days: 1, maxReels: 30 };
 
+/**
+ * Black Friday 2026: a real, time-boxed discount on new subscriptions (trial included: it applies once the trial ends).
+ * Weekly plans: 50% off the first month. Yearly plans: 40% off the first year. Ends Monday Dec 1, 11:59 PM Pacific;
+ * the Stripe coupons carry the same redeem_by, so Stripe itself refuses them afterwards. The countdown on the site
+ * counts to this one fixed moment and never resets.
+ */
+export const DEAL = {
+  name: "Black Friday",
+  startsAt: "2026-11-26T00:00:00Z",
+  endsAt: "2026-12-02T07:59:59Z",
+  weekPct: 50,
+  yearPct: 40,
+  coupon: { week: "unspool_bf2026_week", year: "unspool_bf2026_year" } as const,
+};
+export const dealActive = (now = Date.now()) => now >= Date.parse(DEAL.startsAt) && now < Date.parse(DEAL.endsAt);
+/** The deal in one line, for the billing interval being bought. */
+export const dealLine = (billing: "week" | "year" = "week") => (billing === "year" ? `${DEAL.yearPct}% off your first year` : `${DEAL.weekPct}% off your first month`);
+
 export const CURRENCY = "usd";
 
 /** Every paid tier bills on this Stripe recurring interval; credits reset on the subscription period. */

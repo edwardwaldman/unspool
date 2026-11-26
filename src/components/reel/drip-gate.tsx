@@ -1,5 +1,6 @@
 "use client";
 
+import { DealBanner } from "../billing/deal-banner";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -115,6 +116,7 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
           <p className="py-2 text-[14px] font-semibold text-thread">Open part {nextReel} to unspool it free</p>
         )}
       </div>
+      <DealBanner variant="compact" trial={usage.trialEligible} />
       <button
         type="button"
         onClick={unlockAll}

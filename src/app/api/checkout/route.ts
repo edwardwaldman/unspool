@@ -2,7 +2,7 @@ import { loadDocument } from "@/lib/access";
 import { tierOf } from "@/lib/credits";
 import { MAX_REELS, siteUrl, supabaseConfigured } from "@/lib/config";
 import { error, json, notConfigured } from "@/lib/http";
-import { CURRENCY, isBilling, isTier, PLANS, TRIAL, topupPack } from "@/lib/plans";
+import { CURRENCY, DEAL, dealActive, isBilling, isTier, PLANS, TRIAL, topupPack } from "@/lib/plans";
 import { ensureCustomer, getStripe, priceIdFor, stripeConfigured, TAX_CODE, wrongStripeAccount } from "@/lib/stripe";
 import { getViewer } from "@/lib/viewer";
 
@@ -111,6 +111,7 @@ async function checkout(req: Request) {
     }
   }
 
+  const deal = dealActive();
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer,
@@ -125,7 +126,9 @@ async function checkout(req: Request) {
     // Managed Payments"), and that refusal broke every trial checkout from Nov 25. The "nothing charged today" line
     // lives on our own paywall, right under the button, instead.
     line_items: [{ price: await priceIdFor(tier, billing), quantity: 1 }],
-    allow_promotion_codes: kind !== "trial",
+    // Black Friday: the discount rides on the new subscription (after the trial, if there is one). Stripe refuses
+    // promotion codes alongside a discount, so the code box is hidden while the deal runs.
+    ...(deal ? { discounts: [{ coupon: DEAL.coupon[billing] }] } : { allow_promotion_codes: kind !== "trial" }),
     success_url,
     cancel_url,
   });
