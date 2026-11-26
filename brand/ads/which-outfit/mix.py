@@ -36,6 +36,6 @@ add(83.7, tone(note(84), 1.6, 2.2, (1, .3)), 0.1); add(83.7, tone(note(88), 1.6,
 vw, vsr = sf.read(f"{D}/vo.wav"); vw = vw if vw.ndim == 1 else vw.mean(1); assert vsr == SR
 vo = np.zeros(N); vo[:min(N, len(vw))] = vw[:N]
 envv = lp(np.abs(vo), 2205); duck = 1 - 0.5 * np.clip(envv / (envv.max() * 0.3), 0, 1)
-m = np.tanh(bed * 1.2) / np.tanh(1.2) * duck * 0.5 + vo
+m = np.tanh(bed * 1.2) / np.tanh(1.2) * duck * 0.35 + vo   # music ~3dB lower (owner asked for quieter)
 m *= np.minimum(1, tt / 0.01) * np.minimum(1, (DUR - tt) / 0.5); m /= np.abs(m).max() / 0.9
 sf.write(f"{D}/mix.wav", m.astype(np.float32), SR); print("ok", len(vw) / SR)
