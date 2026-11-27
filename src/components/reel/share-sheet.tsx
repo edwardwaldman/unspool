@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Copy, Link2, Mail, MessageSquare } from "lucide-react";
+import { Check, Copy, Link2, Mail } from "lucide-react";
+import { siImessage, siWhatsapp, siX } from "simple-icons";
 import { useCallback, useEffect, useState } from "react";
 import type { ReelDTO, SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { openAuth } from "../auth/auth-store";
@@ -86,11 +87,37 @@ export function ShareActions({ url, text }: { url: string; text: string }) {
   );
 }
 
+// The real logos, as app-style tiles (shapes and colours from simple-icons; LinkedIn's isn't in it, so its "in" mark
+// is drawn here).
+function Tile({ bg, children }: { bg: string; children: React.ReactNode }) {
+  return (
+    <span className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ background: bg }} aria-hidden>
+      {children}
+    </span>
+  );
+}
+const Logo = ({ icon, size = 20 }: { icon: { path: string }; size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="#fff" aria-hidden>
+    <path d={icon.path} />
+  </svg>
+);
+
 function TargetGlyph({ id }: { id: string }) {
-  if (id === "email") return <Mail size={18} strokeWidth={1.75} />;
-  if (id === "sms") return <MessageSquare size={18} strokeWidth={1.75} />;
-  const letter = { x: "X", whatsapp: "W", linkedin: "in" }[id] ?? "";
-  return <span className="flex h-[18px] min-w-[18px] items-center justify-center border border-current px-0.5 text-[10px] font-bold leading-none">{letter}</span>;
+  if (id === "x") return <Tile bg="#000"><Logo icon={siX} size={17} /></Tile>;
+  if (id === "whatsapp") return <Tile bg={`#${siWhatsapp.hex}`}><Logo icon={siWhatsapp} /></Tile>;
+  if (id === "sms") return <Tile bg={`#${siImessage.hex}`}><Logo icon={siImessage} /></Tile>;
+  if (id === "linkedin")
+    return (
+      <Tile bg="#0A66C2">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff" aria-hidden>
+          <rect x="3.2" y="9" width="3.9" height="11.8" rx="0.4" />
+          <circle cx="5.15" cy="5.1" r="2.25" />
+          <path d="M9.6 9h3.7v1.65c.55-1 1.9-1.95 3.85-1.95 3.6 0 4.25 2.3 4.25 5.35v6.75h-3.9v-6c0-1.45-.05-3.2-2-3.2s-2.3 1.5-2.3 3.1v6.1H9.6z" />
+        </svg>
+      </Tile>
+    );
+  if (id === "email") return <Tile bg="#1E88E5"><Mail size={19} strokeWidth={2} color="#fff" /></Tile>;
+  return null;
 }
 
 type State = { phase: "idle" | "loading" | "ready" | "error"; url?: string; error?: string; showTitle: boolean };
