@@ -12,8 +12,8 @@ import { usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { CreditBar, RechargeButton } from "./credit-bar";
 import { QueueTimer } from "./queue-timer";
+import { toast } from "../ui/toast";
 import { AccountMenu } from "./account-menu";
-import { LibraryGrid } from "../spool/library-grid";
 import { PromptBox } from "../go/go-hero";
 import { PICK_EVENT, WelcomeTour } from "./welcome-tour";
 import { ReelStylePanel } from "./reel-style-panel";
@@ -195,6 +195,55 @@ function PlusButton({ onClick, pending, size }: { onClick: () => void; pending: 
   );
 }
 
+/** Finished spools as a list: thumbnail, name, how many reels are unlocked. Edit shows a delete button per row. */
+function DoneList({ docs }: { docs: StudioDoc[] }) {
+  const [items, setItems] = useState(docs);
+  const [editing, setEditing] = useState(false);
+  const remove = async (id: string) => {
+    if (!window.confirm("Delete this document, its reels and audio? This can't be undone.")) return;
+    const res = await fetch(`/api/documents/${id}`, { method: "DELETE" }).catch(() => null);
+    if (res?.ok) {
+      setItems((list) => list.filter((d) => d.id !== id));
+      toast("Deleted");
+    } else toast("Couldn't delete. Try again.");
+  };
+  return (
+    <div className="mx-4 mt-3" data-testid="studio-done-list">
+      <div className="mb-1 flex justify-end">
+        <button type="button" onClick={() => setEditing((v) => !v)} className="text-[13px] font-medium text-thread">
+          {editing ? "Done" : "Edit"}
+        </button>
+      </div>
+      <ul className="divide-y divide-line border-y border-line">
+        {items.map((d) => {
+          const total = d.total ?? 0;
+          const open = d.unlocked ? total : Math.min(total, d.freeReels);
+          return (
+            <li key={d.id} className="flex items-center gap-3 py-3">
+              <Link href={`/s/${d.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                <DocThumb doc={d} size="sm" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] font-medium text-ink">{d.name}</span>
+                  <span className="mt-0.5 block font-mono text-[12.5px] text-muted">
+                    {d.status === "failed" ? "Failed" : total ? `${open} of ${total} unlocked` : `${d.readyCount} ready`}
+                  </span>
+                </span>
+              </Link>
+              {editing ? (
+                <button type="button" onClick={() => remove(d.id)} className="shrink-0 border border-coral/60 px-2.5 py-1 text-[12.5px] font-semibold text-coral">
+                  Delete
+                </button>
+              ) : (
+                <span aria-hidden className="shrink-0 text-muted">›</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 /** A mini 9:16 frame: the document's first headline on its file-type tint. */
 function DocThumb({ doc, size = "md" }: { doc: StudioDoc; size?: "sm" | "md" }) {
   const tone = fileTone(doc.fileType);
@@ -350,13 +399,7 @@ function MobileStudio({ docs, style, canEdit, email, queue }: StudioProps) {
             </span>
             <ChevronDown size={18} className={`text-muted transition-transform ${doneOpen ? "rotate-180" : ""}`} />
           </button>
-          {doneOpen && (
-            <div className="mt-1">
-              <LibraryGrid
-                initial={done.map((d) => ({ id: d.id, name: d.name, fileType: d.rawType, status: d.status as never, unlocked: d.unlocked, freeReels: d.freeReels, total: d.total, readyCount: d.readyCount, createdAt: d.createdAt, headline: d.headline, hook: d.hook }))}
-              />
-            </div>
-          )}
+          {doneOpen && <DoneList docs={done} />}
         </div>
       ) : (
         !active.length && <p className="mx-auto w-full max-w-[560px] px-4 pb-6 text-[13px] text-muted ipad:max-w-[680px]">Your documents show up here.</p>
