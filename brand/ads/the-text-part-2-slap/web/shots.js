@@ -97,7 +97,7 @@ const SC = {
   unspool(lt) { // 11:58 PM: textbook into Unspool, reel after reel, alone
     away(JAKE, GF); sit(YOU, true); put(YOU, room, 0.4, -0.3, 0); if (lt >= 4.05) room.add(phone);
     if (lt < 4.05) { phone.position.set(0.4, 2.85, 0.6); phone.rotation.set(-0.1, 0, 0); YOU.setFace("determined"); YOU.pose({ la: [-1.35, 0.25], ra: [-1.35, -0.25], headTilt: 0.18 });
-      if (lt < 1.5) drawCamera(lt); else drawUpload(clamp((lt - 1.8) / 2.2)); glow.intensity = 3; glow.position.set(0.4, 2.9, 1.4); cam(v3(0.7, 3.2, 4.3 - lt * 0.1), v3(0.4, 2.95, 0.6), 38); }
+      if (lt < 1.3) drawCamera(lt); else drawUpload(clamp((lt - 1.6) / 2.15)); glow.intensity = 3; glow.position.set(0.4, 2.9, 1.4); cam(v3(0.7, 3.2, 4.3 - lt * 0.1), v3(0.4, 2.95, 0.6), 38); }
     else { phone.position.set(0.4, 2.2, 0.75); phone.rotation.set(-1.0, Math.PI, 0); YOU.setFace(lt > 3.3 ? "grin" : "determined"); YOU.pose({ la: [-1.35, 0.25], ra: [-1.35, -0.25], headTilt: -0.04 });
       glow.intensity = 7; glow.position.set(0.4, 2.7, 1.1); drawPhone(clamp((lt - 4.05) / 2.6)); const k = (lt - 4.05) / 2.7; cam(v3(1.7 - k * 0.2, 3.8, 5.0 - k * 0.8), v3(0.4, 3.0, -0.3), 36); }
     return room; },
@@ -179,10 +179,10 @@ window.renderAt = (t) => {
   const U0 = 34.5, U1 = 41.26, inU = t >= U0 - 0.2 && t < U1;
   if (inU) { const a = clamp((t - (U0 - 0.2)) / 0.3) * clamp((U1 - t) / 0.25), pop = 0.8 + 0.2 * outBack(clamp((t - (U0 - 0.2)) / 0.35));
     h += `<div style="position:absolute;inset:0;background:rgba(6,10,8,${0.66 * a})"></div>`;
-    const lg = t >= 38.5 && t < 39.25 ? 1 + 0.14 * Math.sin(clamp((t - 38.5) / 0.75) * Math.PI) : 1;
+    const lg = t >= 38.22 && t < 39.22 ? 1 + 0.14 * Math.sin(clamp((t - 38.22) / 1.0) * Math.PI) : 1;
     h += `<div style="position:absolute;left:0;right:0;top:92px;text-align:center;opacity:${a}"><span style="display:inline-block;transform:scale(${lg});background:#b6f24a;color:#08110e;font:800 42px Arc;padding:8px 24px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.45)">unspool.cc</span><div style="margin-top:10px;color:#fff;font:800 24px Arc;letter-spacing:1px">PHOTO → REELS</div></div>`;
     h += `<div id="ph" style="position:absolute;left:218px;top:205px;width:284px;height:560px;border-radius:38px;background:#000;border:5px solid #2a2a2a;box-shadow:0 20px 50px rgba(0,0,0,.6);overflow:hidden;opacity:${a};transform:scale(${pop});transform-origin:50% 50%"></div>`;
-    if (t >= 35.95 && t < 36.35) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${1 - (t - 35.95) / 0.4}"></div>`; }
+    if (t >= 35.76 && t < 36.16) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${1 - (t - 35.76) / 0.4}"></div>`; }
   const c = capAt(t);
   if (c && c[1]) { const k = clamp((t - c[0]) / 0.12); h += `<div style="position:absolute;left:90px;right:90px;top:800px;text-align:center;transform:scale(${0.75 + 0.25 * outBack(k)})"><span style="color:#fff;font:800 62px/1.1 Arc;-webkit-text-stroke:12px #000;paint-order:stroke fill;text-shadow:0 5px 0 #000">${c[1]}</span></div>`; }
   if (name === "end") h += `<div style="position:absolute;left:0;right:0;top:190px;text-align:center;color:#fff;font:800 44px Arc;-webkit-text-stroke:7px #000;paint-order:stroke fill;opacity:${clamp((lt - 0.2) * 4)}">FOLLOW FOR PART 3</div>`;
