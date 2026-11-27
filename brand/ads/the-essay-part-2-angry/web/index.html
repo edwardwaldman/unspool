@@ -1,0 +1,273 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: Arc; src: url(Archivo-ExtraBold.ttf); }
+html, body { margin: 0; width: 720px; height: 1280px; overflow: hidden; background: #000; }
+canvas { position: absolute; left: 0; top: 0; }
+#ov { position: absolute; inset: 0; font-family: Arc; }
+.bub { position: absolute; max-width: 470px; padding: 14px 20px; border-radius: 22px; font: 800 30px/1.25 Arc; box-shadow: 0 6px 16px rgba(0,0,0,.25); }
+</style></head>
+<body><canvas id="gl" width="720" height="1280"></canvas><div id="ov"></div>
+<script type="module">
+import * as THREE from "./three/three.module.js";
+const DUR = 19.9; window.DUR = DUR;
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const outBack = (x) => { x = clamp(x); const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const mix = (a, b, k) => a + (b - a) * k;
+const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+await document.fonts.load("40px Arc");
+
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("gl"), antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(720, 1280, false); renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const camera = new THREE.PerspectiveCamera(42, 720 / 1280, 0.1, 300);
+const M = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.8, ...o });
+const box = (w, h, d, mat, x, y, z, parent) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; parent.add(m); return m; };
+const canvasTex = (w, h, draw) => { const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d"); draw(g, w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.userData = { c, g }; return t; };
+const lights = (scene, warm = false) => { scene.add(new THREE.HemisphereLight("#ffffff", warm ? "#b08a6a" : "#8090a8", 1.5)); const d = new THREE.DirectionalLight(warm ? "#ffe2b8" : "#ffffff", 2.2); d.position.set(4, 9, 7); d.castShadow = true; d.shadow.mapSize.set(1024, 1024); Object.assign(d.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12 }); scene.add(d); };
+
+// ---------------- faces (drawn on a canvas, swapped per beat) ----------------
+const FACE = {};
+const drawFace = (name) => canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = "rgba(0,0,0,0)"; g.clearRect(0, 0, w, h);
+  g.lineCap = "round"; g.strokeStyle = "#1a1210"; g.fillStyle = "#1a1210";
+  const eye = (x, y, r = 14, open = 1) => { g.save(); g.beginPath(); g.ellipse(x, y, r, r * 1.25 * open, 0, 0, 7); g.fill(); g.fillStyle = "#fff"; g.beginPath(); g.arc(x - 4, y - 6 * open, 4.5, 0, 7); g.fill(); g.restore(); };
+  const brow = (x, y, a) => { g.lineWidth = 9; g.beginPath(); g.moveTo(x - 20, y + a); g.lineTo(x + 20, y - a); g.stroke(); };
+  const tears = () => { g.fillStyle = "#5ab8ff"; for (const x of [78, 178]) { g.beginPath(); g.moveTo(x, 132); g.quadraticCurveTo(x - 12, 175, x, 200); g.quadraticCurveTo(x + 12, 175, x, 132); g.fill(); } g.fillStyle = "#1a1210"; };
+  const sweat = () => { g.fillStyle = "#7ccfff"; g.beginPath(); g.moveTo(214, 40); g.quadraticCurveTo(196, 80, 214, 92); g.quadraticCurveTo(232, 80, 214, 40); g.fill(); g.fillStyle = "#1a1210"; };
+  const blush = () => { g.fillStyle = "rgba(240,110,110,.35)"; g.beginPath(); g.ellipse(62, 150, 22, 12, 0, 0, 7); g.ellipse(194, 150, 22, 12, 0, 0, 7); g.fill(); g.fillStyle = "#1a1210"; };
+  switch (name) {
+    case "happy": eye(88, 110); eye(168, 110); brow(88, 70, 0); brow(168, 70, 0); g.lineWidth = 9; g.beginPath(); g.arc(128, 150, 34, 0.15 * Math.PI, 0.85 * Math.PI); g.stroke(); blush(); break;
+    case "grin": g.lineWidth = 9; for (const x of [88, 168]) { g.beginPath(); g.arc(x, 116, 18, Math.PI, 0); g.stroke(); } g.beginPath(); g.moveTo(84, 150); g.quadraticCurveTo(128, 214, 172, 150); g.closePath(); g.fill(); g.fillStyle = "#fff"; g.fillRect(96, 150, 64, 12); blush(); break;
+    case "shock": g.fillStyle = "#fff"; g.lineWidth = 6; for (const x of [88, 168]) { g.beginPath(); g.arc(x, 108, 26, 0, 7); g.fill(); g.stroke(); } g.fillStyle = "#1a1210"; eye(88, 110, 9); eye(168, 110, 9); brow(88, 58, -6); brow(168, 58, 6); g.beginPath(); g.ellipse(128, 176, 18, 26, 0, 0, 7); g.fill(); sweat(); break;
+    case "cry": g.lineWidth = 9; for (const x of [88, 168]) { g.beginPath(); g.moveTo(x - 22, 104); g.quadraticCurveTo(x, 122, x + 22, 104); g.stroke(); } brow(88, 72, 8); brow(168, 72, -8); g.beginPath(); g.moveTo(80, 184); g.quadraticCurveTo(128, 136, 176, 184); g.closePath(); g.fill(); tears(); break;
+    case "worried": eye(88, 112, 13); eye(168, 112, 13); brow(88, 74, 9); brow(168, 74, -9); g.lineWidth = 8; g.beginPath(); g.moveTo(96, 178); g.quadraticCurveTo(112, 164, 128, 178); g.quadraticCurveTo(144, 192, 160, 178); g.stroke(); sweat(); break;
+    case "angry": eye(88, 116, 12); eye(168, 116, 12); brow(88, 80, -10); brow(168, 80, 10); g.lineWidth = 9; g.beginPath(); g.moveTo(92, 182); g.quadraticCurveTo(128, 160, 164, 182); g.stroke(); break;
+    case "smug": g.lineWidth = 9; for (const x of [88, 168]) { g.beginPath(); g.moveTo(x - 20, 112); g.lineTo(x + 20, 112); g.stroke(); } eye(88, 120, 10, 0.7); eye(168, 120, 10, 0.7); g.beginPath(); g.moveTo(98, 170); g.quadraticCurveTo(140, 186, 164, 160); g.stroke(); break;
+    case "whisper": eye(88, 112, 11); eye(168, 112, 11); brow(88, 76, 4); brow(168, 76, -4); g.beginPath(); g.ellipse(150, 176, 10, 8, 0, 0, 7); g.fill(); break;
+    default: eye(88, 110); eye(168, 110); brow(88, 72, 0); brow(168, 72, 0); g.lineWidth = 9; g.beginPath(); g.moveTo(104, 172); g.lineTo(152, 172); g.stroke();
+  } });
+for (const n of ["neutral", "happy", "grin", "shock", "cry", "worried", "angry", "smug", "whisper"]) FACE[n] = drawFace(n);
+// a deadpan "determined" face for the hero (flat brows angled in, flat mouth)
+FACE.determined = drawFace("angry");
+const rnd = (i) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+// ---------------- blocky characters (toy-figure proportions) ----------------
+function blocky({ skin = "#f1c9a0", shirt = "#ffffff", pants = "#24345c", hair = "#5a3a22", style = "short", cap = null, partyHat = null, topHat = false, sash = null, tie = null, apron = null, mustache = false, scale = 1 } = {}) {
+  const g = new THREE.Group(), mSkin = M(skin), mShirt = M(shirt), mPants = M(pants), mHair = M(hair, { roughness: 0.6 });
+  const hip = new THREE.Group(); hip.position.y = 1.1; g.add(hip);
+  const legs = [-1, 1].map((s) => { const p = new THREE.Group(); p.position.set(s * 0.26, 0, 0); hip.add(p); box(0.5, 1.1, 0.56, mPants, 0, -0.55, 0, p); box(0.52, 0.16, 0.64, M("#2a2a2a"), 0, -1.05, 0.04, p); return p; });
+  const torso = box(1.2, 1.2, 0.66, mShirt, 0, 1.7, 0, g);
+  if (tie) box(0.18, 0.75, 0.03, M(tie), 0, 1.8, 0.34, g);
+  if (apron) box(0.9, 1.0, 0.04, M(apron), 0, 1.45, 0.35, g);
+  if (sash) { const s = box(0.22, 1.5, 0.04, M(sash), 0, 1.7, 0.35, g); s.rotation.z = 0.7; }
+  const arms = [-1, 1].map((s) => { const p = new THREE.Group(); p.position.set(s * 0.82, 2.2, 0); g.add(p); box(0.42, 0.5, 0.5, mShirt, 0, -0.2, 0, p); box(0.4, 0.7, 0.46, mSkin, 0, -0.75, 0, p); return p; });
+  const head = new THREE.Group(); head.position.y = 2.84; g.add(head);
+  const hd = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.95, 0.95), mSkin); hd.position.y = 0.42; hd.castShadow = true; head.add(hd);
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(0.96, 0.96), new THREE.MeshBasicMaterial({ map: FACE.neutral, transparent: true })); face.position.set(0, 0.4, 0.478); head.add(face);
+  if (style === "short") { box(1.06, 0.3, 1.0, mHair, 0, 0.95, -0.02, head); box(1.06, 0.6, 0.18, mHair, 0, 0.65, -0.44, head); [-1, 1].forEach((s) => box(0.1, 0.45, 0.85, mHair, s * 0.53, 0.72, -0.06, head)); }
+  if (style === "spiky") { for (let i = 0; i < 7; i++) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.42, 4), mHair); c.position.set(-0.42 + i * 0.14, 1.02, -0.1 + (i % 2) * 0.18); c.rotation.z = (i - 3) * 0.15; head.add(c); } box(1.06, 0.2, 1.0, mHair, 0, 0.9, -0.02, head); }
+  if (style === "curly") { for (let i = 0; i < 9; i++) { const s = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 6), mHair); s.position.set(-0.36 + (i % 3) * 0.36, 0.98, -0.32 + Math.floor(i / 3) * 0.3); head.add(s); } }
+  if (style === "bun") { box(1.06, 0.3, 1.0, mHair, 0, 0.95, -0.02, head); const b = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), mHair); b.position.set(0, 1.25, -0.15); head.add(b); }
+  if (style === "white") { const mw = M("#eeeeee"); for (let i = 0; i < 6; i++) { const s = new THREE.Mesh(new THREE.SphereGeometry(0.26, 8, 6), mw); s.position.set(-0.3 + (i % 3) * 0.3, 1.0, -0.2 + Math.floor(i / 3) * 0.3); head.add(s); } }
+  if (cap) { const mc = M(cap); box(1.1, 0.34, 1.04, mc, 0, 1.02, -0.02, head); box(1.0, 0.07, 0.5, mc, 0, 0.86, 0.68, head); box(0.16, 0.12, 0.16, mc, 0, 1.24, 0, head); }
+  if (partyHat) { const ph = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.8, 16), M(partyHat)); ph.position.set(0.05, 1.3, 0); ph.rotation.z = -0.12; head.add(ph); const pom = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), M("#ffffff")); pom.position.set(0.1, 1.72, 0); head.add(pom); }
+  if (topHat) { const mt = M("#1b1d2a", { roughness: 0.4 }); const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.72, 0.06, 20), mt); brim.position.y = 0.92; head.add(brim); const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.8, 20), mt); crown.position.y = 1.32; head.add(crown); box(0.94, 0.12, 0.94, M("#7a2bd6"), 0, 1.0, 0, head).visible = false; }
+  if (mustache) box(0.5, 0.1, 0.04, M("#3a2416"), 0, 0.2, 0.49, head);
+  g.scale.setScalar(scale);
+  const P = { g, head, face, arms, legs, hip, torso };
+  P.setFace = (n) => { face.material.map = FACE[n] || FACE.neutral; };
+  P.pose = ({ la = [0, 0.06], ra = [0, -0.06], headTilt = 0, headTurn = 0, ll = 0, rl = 0 } = {}) => {
+    arms[0].rotation.set(la[0], 0, la[1]); arms[1].rotation.set(ra[0], 0, ra[1]); legs[0].rotation.x = ll; legs[1].rotation.x = rl; head.rotation.set(0, headTurn, headTilt); };
+  P.dance = (t, k = 1, ph = 0) => { const s = Math.sin(t * 9 + ph); P.pose({ la: [-2.6 - s * 0.35 * k, 0.4], ra: [-2.6 + s * 0.35 * k, -0.4], headTilt: s * 0.12 * k }); g.position.y = Math.abs(Math.sin(t * 9 + ph)) * 0.25 * k; };
+  P.pose(); return P;
+}
+const clockTex = canvasTex(256, 256, () => {});
+function drawClock(sec, red = false) { const { g } = clockTex.userData; g.clearRect(0, 0, 256, 256); g.fillStyle = red ? "#e6402e" : "#2bb673"; g.beginPath(); g.arc(128, 128, 124, 0, 7); g.fill(); g.fillStyle = "#fff"; g.beginPath(); g.arc(128, 128, 100, 0, 7); g.fill();
+  g.strokeStyle = "#222"; g.lineWidth = 6; for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; g.beginPath(); g.moveTo(128 + Math.sin(a) * 84, 128 - Math.cos(a) * 84); g.lineTo(128 + Math.sin(a) * 96, 128 - Math.cos(a) * 96); g.stroke(); }
+  const a = sec / 60 * Math.PI * 2; g.lineWidth = 8; g.strokeStyle = "#e6402e"; g.beginPath(); g.moveTo(128, 128); g.lineTo(128 + Math.sin(a) * 82, 128 - Math.cos(a) * 82); g.stroke(); g.fillStyle = "#222"; g.beginPath(); g.arc(128, 128, 10, 0, 7); g.fill(); clockTex.needsUpdate = true; }
+const makeClock = (parent, x, y, z, s = 1) => { const c = new THREE.Group(); c.position.set(x, y, z); c.scale.setScalar(s); parent.add(c); const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.24, 28), M("#e6402e")); body.rotation.x = Math.PI / 2; c.add(body);
+  const f = new THREE.Mesh(new THREE.CircleGeometry(0.46, 28), new THREE.MeshBasicMaterial({ map: clockTex })); f.position.z = 0.125; c.add(f); for (const s2 of [-1, 1]) { const bell = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8, 0, 7, 0, Math.PI / 2), M("#e6402e")); bell.position.set(s2 * 0.3, 0.48, 0); bell.rotation.z = -s2 * 0.5; c.add(bell); } return c; };
+const mkScene = (bg) => { const s = new THREE.Scene(); s.background = new THREE.Color(bg); return s; };
+
+// ================= "The Essay": a second-person choose-your-path story (Part 2) =================
+// Structure borrowed from the "Best Man Part 2" format: PREVIOUSLY + poll -> "most of you said" -> twist every ~2 s
+// -> the product is the turning point (not a side note) -> an unresolved A/B choice -> character holds the sponsor sign.
+const SH = [["poll", 0], ["tell", 1.94], ["flip", 4.12], ["verdict", 6.4], ["teacher", 9.1], ["night", 11.05], ["hall", 14.1], ["choice", 16.45], ["end", 18.7]];
+const lerpV = (a, b, k) => a.clone().lerp(b, k);
+const cam = (p, l, fov = 40) => { camera.position.copy(p); camera.fov = fov; camera.updateProjectionMatrix(); camera.lookAt(l); };
+const drift = (k, p0, p1, l0, l1, fov = 40) => cam(lerpV(p0, p1, ease(k)), lerpV(l0, l1, ease(k)), fov);
+const hood = (P, c) => { box(1.12, 0.42, 0.5, M(c), 0, 2.42, -0.36, P.g); box(0.16, 0.5, 0.04, M("#ffffff"), -0.2, 1.95, 0.34, P.g); box(0.16, 0.5, 0.04, M("#ffffff"), 0.2, 1.95, 0.34, P.g); };
+const sit = (P, on) => { P.legs.forEach((l) => (l.rotation.x = on ? -1.45 : 0)); P.g.position.y = on ? -0.42 : 0; };
+
+// ---------- the three characters ----------
+const YOU = blocky({ shirt: "#2f6fd6", pants: "#2a2f3a", hair: "#4a2c1a", style: "short" }); hood(YOU, "#2a62c0");
+const JAKE = blocky({ shirt: "#d6453a", pants: "#30323a", hair: "#151515", style: "spiky", skin: "#e2b08a" }); hood(JAKE, "#bd3b31");
+const MS = blocky({ shirt: "#3f7d5a", pants: "#3b3b4a", hair: "#6b4a2a", style: "bun", skin: "#d9a27a" });
+box(0.34, 0.12, 0.04, M("#222"), -0.22, 0.52, 0.49, MS.head); box(0.34, 0.12, 0.04, M("#222"), 0.22, 0.52, 0.49, MS.head); // glasses
+const put = (P, scene, x, z, ry = 0) => { scene.add(P.g); P.g.position.x = x; P.g.position.z = z; P.g.rotation.y = ry; };
+
+// ---------- classroom ----------
+const cls = mkScene("#d9dfe3"); lights(cls, true);
+box(40, 0.1, 40, M("#b98a5e"), 0, -0.05, 0, cls); box(40, 14, 0.2, M("#ece4cf"), 0, 7, -6, cls); box(0.2, 14, 40, M("#e3dac2"), -9, 7, 0, cls);
+for (const z of [-2, 3]) { const w = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.4), new THREE.MeshBasicMaterial({ color: "#bfe6ff" })); w.position.set(-8.88, 5.2, z); w.rotation.y = Math.PI / 2; cls.add(w); }
+const boardTex = canvasTex(1024, 360, () => {});
+const drawBoard = (txt) => { const { g } = boardTex.userData; g.fillStyle = "#24493a"; g.fillRect(0, 0, 1024, 360); g.strokeStyle = "#8a6a3a"; g.lineWidth = 22; g.strokeRect(0, 0, 1024, 360);
+  g.fillStyle = "#f4f4ea"; g.font = "800 76px Arc"; g.textAlign = "center"; txt.split("\n").forEach((l, i) => g.fillText(l, 512, 110 + i * 100)); boardTex.needsUpdate = true; };
+drawBoard("ESSAY DUE TODAY");
+{ const b = new THREE.Mesh(new THREE.PlaneGeometry(9, 3.2), new THREE.MeshBasicMaterial({ map: boardTex })); b.position.set(0, 4.6, -5.88); cls.add(b); }
+box(3.4, 1.4, 1.5, M("#7a5232"), 2.6, 0.7, -3.4, cls); box(1.2, 0.1, 0.9, M("#ffffff"), 2.2, 1.45, -3.2, cls); // teacher desk + papers
+const desk = (x, z) => { box(1.9, 0.12, 1.2, M("#c8a070"), x, 1.45, z, cls); for (const sx of [-0.8, 0.8]) for (const sz of [-0.5, 0.5]) box(0.08, 1.4, 0.08, M("#555"), x + sx, 0.7, z + sz, cls); box(1.2, 0.1, 1.0, M("#3a6ea5"), x, 0.9, z + 1.1, cls); box(0.9, 0.04, 0.6, M("#ffffff"), x, 1.53, z, cls); };
+for (const x of [-4, 0, 4]) for (const z of [0, 3.6]) desk(x, z);
+const ex1 = blocky({ shirt: "#f0b429", hair: "#2a1a12", style: "curly", skin: "#8d5a3b" }); sit(ex1, true); put(ex1, cls, 4, 4.7, 0);
+const ex2 = blocky({ shirt: "#8e5bd6", hair: "#d8b26a", style: "bun" }); sit(ex2, true); put(ex2, cls, -4, 4.7, 0);
+const wallClock = makeClock(cls, -5.4, 7.6, -5.84, 1.3);
+
+// ---------- bedroom at night ----------
+const room = mkScene("#141a33"); room.add(new THREE.HemisphereLight("#8090d0", "#303040", 1.3));
+box(30, 0.1, 30, M("#4a3a52"), 0, -0.05, 0, room); box(30, 14, 0.2, M("#2c3358"), 0, 7, -4, room);
+const moonTex = canvasTex(256, 256, (g) => { g.fillStyle = "#0d1430"; g.fillRect(0, 0, 256, 256); g.fillStyle = "#fff"; for (let i = 0; i < 30; i++) g.fillRect(rnd(i) * 256, rnd(i + 7) * 256, 2, 2); g.fillStyle = "#fff6cf"; g.beginPath(); g.arc(170, 80, 34, 0, 7); g.fill(); g.strokeStyle = "#6a5040"; g.lineWidth = 12; g.strokeRect(0, 0, 256, 256); g.beginPath(); g.moveTo(128, 0); g.lineTo(128, 256); g.moveTo(0, 128); g.lineTo(256, 128); g.stroke(); });
+{ const w = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.4), new THREE.MeshBasicMaterial({ map: moonTex })); w.position.set(-3.2, 5.6, -3.88); room.add(w); }
+box(3.6, 0.12, 1.6, M("#7a5232"), 0.6, 1.5, 1.0, room); for (const sx of [-1.6, 1.6]) box(0.12, 1.5, 1.4, M("#5a3a22"), 0.6 + sx, 0.75, 1.0, room);
+const pages = new THREE.Group(); room.add(pages); pages.position.set(1.7, 1.56, 1.0); for (let i = 0; i < 12; i++) { const p = box(0.85, 0.035, 1.1, M(i % 2 ? "#ffffff" : "#f1f1ea"), (rnd(i) - 0.5) * 0.1, i * 0.04, (rnd(i + 3) - 0.5) * 0.1, pages); p.rotation.y = (rnd(i + 5) - 0.5) * 0.25; }
+const lamp = new THREE.PointLight("#ffcf8a", 9, 9, 1.6); lamp.position.set(-0.7, 3.4, 1.3); lamp.castShadow = true; room.add(lamp);
+{ const sh = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.5, 18, 1, true), M("#e6c34a", { side: THREE.DoubleSide })); sh.position.set(-0.7, 3.5, 1.0); room.add(sh); box(0.08, 1.9, 0.08, M("#333"), -0.7, 2.5, 0.8, room); }
+box(3.2, 0.8, 5, M("#3a5a9a"), -5, 0.4, 0.5, room); box(3.2, 0.3, 1.2, M("#f2f2f2"), -5, 0.95, -1.4, room); // bed
+const glow = new THREE.PointLight("#9fffe0", 0, 4, 1.5); room.add(glow);
+
+// the phone, with a live Unspool screen
+const phoneTex = canvasTex(360, 740, () => {});
+const REELS = [["THESIS", "Britain industrialised first: coal, capital and colonies"], ["PARAGRAPH 2", "Coal sat next to iron, so factories grew fast"], ["PARAGRAPH 3", "Cheap capital paid for the machines"]];
+const drawPhone = (k) => { const { g } = phoneTex.userData; g.fillStyle = "#08110e"; g.fillRect(0, 0, 360, 740);
+  const n = Math.min(2, Math.floor(k * 3)), f = k * 3 - n, slide = n < 2 && f > 0.82 ? ease((f - 0.82) / 0.18) : 0;
+  for (let j = 0; j < 2; j++) { const idx = Math.min(2, n + j), y = (j - slide) * 740; if (y > 740) continue; const [h, body] = REELS[idx];
+    g.save(); g.translate(0, y); g.fillStyle = "#08110e"; g.fillRect(0, 0, 360, 740);
+    for (let s = 0; s < 3; s++) { g.fillStyle = s <= idx ? "#b6f24a" : "rgba(255,255,255,.25)"; g.fillRect(16 + s * 112, 22, 104, 6); }
+    g.fillStyle = "#b6f24a"; g.font = "800 30px Arc"; g.textAlign = "left"; g.fillText(h, 26, 120);
+    g.fillStyle = "#f4f4ea"; g.font = "800 40px Arc"; const words = body.split(" "); let line = "", ly = 190; for (const w of words) { if (g.measureText(line + w).width > 300) { g.fillText(line, 26, ly); line = ""; ly += 52; } line += w + " "; } g.fillText(line, 26, ly);
+    g.strokeStyle = "#b6f24a"; g.lineWidth = 6; g.beginPath(); g.moveTo(26, ly + 34); g.lineTo(26 + 260 * clamp(f * 1.4), ly + 34); g.stroke();
+    g.fillStyle = "rgba(255,255,255,.08)"; g.fillRect(20, 560, 320, 90); g.fillStyle = "#f4f4ea"; g.font = "700 22px Arc"; g.fillText("Tap to answer the quiz ▸", 40, 614); g.restore(); }
+  g.fillStyle = "rgba(255,255,255,.7)"; g.font = "800 20px Arc"; g.textAlign = "center"; g.fillText("unspool", 180, 712); phoneTex.needsUpdate = true; };
+const phone = new THREE.Group(); { box(0.95, 1.9, 0.09, M("#111", { roughness: 0.3 }), 0, 0, 0, phone); const s = new THREE.Mesh(new THREE.PlaneGeometry(0.86, 1.78), new THREE.MeshBasicMaterial({ map: phoneTex })); s.position.z = 0.05; phone.add(s); }
+
+// ---------- school hallway ----------
+const hall = mkScene("#cfe0ea"); lights(hall, false);
+const tileTex = canvasTex(256, 256, (g) => { for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { g.fillStyle = (i + j) % 2 ? "#e9e6dc" : "#d4cfc0"; g.fillRect(i * 64, j * 64, 64, 64); } }); tileTex.wrapS = tileTex.wrapT = THREE.RepeatWrapping; tileTex.repeat.set(10, 10);
+{ const f = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({ map: tileTex, roughness: 0.4 })); f.rotation.x = -Math.PI / 2; f.receiveShadow = true; hall.add(f); }
+box(40, 14, 0.2, M("#f1ead8"), 0, 7, -3.6, hall);
+const lockTex = canvasTex(128, 512, (g) => { g.fillStyle = "#2f6db0"; g.fillRect(0, 0, 128, 512); g.fillStyle = "#24568c"; for (let i = 0; i < 6; i++) g.fillRect(30, 40 + i * 14, 68, 6); g.fillStyle = "#c9d2da"; g.fillRect(96, 240, 10, 40); g.strokeStyle = "#1d4672"; g.lineWidth = 6; g.strokeRect(0, 0, 128, 512); });
+for (let i = -10; i <= 10; i++) { const l = new THREE.Mesh(new THREE.BoxGeometry(1.0, 4.4, 0.6), new THREE.MeshStandardMaterial({ map: lockTex, roughness: 0.5 })); l.position.set(i * 1.02, 2.2, -3.2); l.castShadow = l.receiveShadow = true; hall.add(l); }
+box(2.2, 4.8, 0.3, M("#8a5a32"), 5.2, 2.4, -3.0, hall); box(0.8, 0.9, 0.32, M("#bfe6ff"), 5.2, 3.4, -2.98, hall); // classroom door
+
+// sign for the end card
+const signTex = canvasTex(640, 400, (g) => { g.fillStyle = "#ffffff"; g.fillRect(0, 0, 640, 400); g.strokeStyle = "#08110e"; g.lineWidth = 14; g.strokeRect(7, 7, 626, 386); g.textAlign = "center"; g.fillStyle = "#3a3a3a"; g.font = "800 44px Arc"; g.fillText("Made with", 320, 100);
+  g.fillStyle = "#08110e"; g.font = "800 78px Arc"; g.fillText("UNSPOOL.CC", 320, 215); g.fillStyle = "#2a8a4a"; g.font = "800 38px Arc"; g.fillText("turn your notes into reels", 320, 300); });
+const sign = new THREE.Group(); { box(2.7, 1.7, 0.06, M("#ffffff"), 0, 0, 0, sign); const s = new THREE.Mesh(new THREE.PlaneGeometry(2.62, 1.64), new THREE.MeshBasicMaterial({ map: signTex })); s.position.z = 0.04; sign.add(s); }
+
+// ---------- shots ----------
+const SC = {
+  poll(lt) { // classroom, Jake leaning over to look at your paper
+    sit(YOU, true); sit(JAKE, true); put(YOU, cls, -4, 1.1); put(JAKE, cls, 0, 1.1); YOU.setFace("neutral"); JAKE.setFace("smug");
+    YOU.pose({ la: [-0.9, 0.1], ra: [-0.9, -0.1], headTilt: 0.15 }); JAKE.pose({ la: [-0.9, 0.1], ra: [-0.9, -0.1], headTurn: -0.7, headTilt: -0.1 }); JAKE.g.rotation.z = 0.08;
+    drawClock(40 + lt * 6); drift(lt / 2.14, v3(5, 6.2, 12.5), v3(3.6, 5.6, 10.4), v3(-1.8, 3.2, 0.6), v3(-1.8, 3.2, 0.6), 40); return cls; },
+  tell(lt) { // you at the teacher's desk, Jake in the background
+    sit(YOU, false); sit(JAKE, true); sit(MS, true); JAKE.g.rotation.z = 0;
+    put(YOU, cls, 1.4, -1.2, Math.PI - 0.35); put(MS, cls, 2.8, -4.6, 0.15); put(JAKE, cls, 0, 1.1, 0.4);
+    YOU.setFace("worried"); MS.setFace("neutral"); JAKE.setFace(lt > 1.35 ? "shock" : "neutral");
+    YOU.pose({ la: [0, 0.06], ra: [-1.2 - Math.sin(lt * 7) * 0.12, -0.5], headTilt: 0.05 }); MS.pose({ la: [-0.9, 0], ra: [-0.9, 0], headTilt: -0.08 }); JAKE.pose({ la: [-0.9, 0.1], ra: [-0.9, -0.1], headTurn: lt > 1.35 ? -0.3 : 0 });
+    drawClock(48 + lt * 6); drift(lt / 2.27, v3(3.9, 4.6, -5.4), v3(3.6, 4.3, -4.9), v3(1.2, 3.1, -1.0), v3(1.0, 3.1, -0.6), 42); return cls; },
+  flip(lt) { // Jake stands up and points at YOU; then a punch-in on your shocked face
+    sit(MS, true); put(MS, cls, 2.8, -4.6, 0.15);
+    if (lt < 1.7) { sit(JAKE, false); put(JAKE, cls, 0, 1.9, -0.55); JAKE.g.position.y = -0.4 * (1 - ease(lt / 0.35)); JAKE.setFace("smug");
+      JAKE.pose({ la: [0, 0.06], ra: [-1.5 * ease((lt - 0.3) / 0.3), -0.25], headTilt: -0.12 + Math.sin(lt * 3) * 0.03 });
+      put(YOU, cls, 1.4, -1.2, Math.PI - 0.35); YOU.setFace("worried");
+      drift(lt / 1.7, v3(-2.4, 3.9, 8.6), v3(-2.0, 3.8, 7.4), v3(0.1, 2.9, 1.9), v3(0.1, 3.0, 1.9), 36); }
+    else { sit(YOU, false); put(YOU, cls, 1.4, -1.2, -0.3); YOU.setFace("shock"); YOU.pose({ la: [-0.3, 0.3], ra: [-0.3, -0.3], headTilt: 0.04 });
+      const k = (lt - 1.7) / 0.74; cam(v3(0.6 + k * 0.05, 3.6, 2.9 - k * 0.5), v3(1.4, 3.2, -1.2), 36 - k * 4); }
+    drawClock(55 + lt * 6); return cls; },
+  verdict(lt) { // she believes him: teacher turns on you, Jake smug behind; then your face
+    sit(JAKE, true); sit(MS, false); JAKE.g.rotation.z = 0; put(MS, cls, 2.6, -4.2, 0.6); put(JAKE, cls, 0, 1.1, 0.4);
+    MS.setFace("angry"); MS.pose({ la: [0, 0.06], ra: [-1.5, -0.4], headTilt: 0.06 }); JAKE.setFace("smug"); JAKE.pose({ la: [-0.9, 0.1], ra: [-0.9, -0.1], headTilt: -0.12 });
+    if (lt < 1.0) { sit(YOU, false); put(YOU, cls, 1.4, -1.2, Math.PI - 0.35); YOU.setFace("worried"); YOU.pose();
+      drift(lt / 1.0, v3(2.2, 4.1, 1.4), v3(2.3, 4.0, 0.6), v3(2.6, 3.2, -4.2), v3(2.6, 3.3, -4.2), 38); }
+    else { sit(YOU, false); put(YOU, cls, 1.4, -1.2, -0.3); YOU.setFace(lt > 1.9 ? "angry" : "shock"); YOU.pose({ la: [-0.3, 0.3], ra: [-0.3, -0.3] });
+      const k = (lt - 1.0) / 1.7; cam(v3(0.6, 3.6, 3.0 - k * 0.5), v3(1.4, 3.2, -1.2), 36 - k * 3); }
+    drawClock(58 + lt * 6); return cls; },
+  teacher(lt) { // teacher at the board: explain it tomorrow, out loud; then your face
+    if (lt < 1.35) { sit(MS, false); put(MS, cls, -1.6, -4.4, 0.1); MS.setFace("angry"); MS.pose({ la: [0, 0.06], ra: [-2.2, -0.5], headTilt: 0.05 });
+      put(JAKE, cls, 0, 1.9, -0.55); JAKE.setFace("smug"); JAKE.pose(); sit(JAKE, false); put(YOU, cls, 1.4, -1.2, Math.PI - 0.35); YOU.pose();
+      const s = "TOMORROW:\nEXPLAIN IT.\nOUT LOUD.", n = Math.floor(clamp(lt / 1.2) * s.length); drawBoard(s.slice(0, n));
+      drift(lt / 1.35, v3(1.6, 3.9, 3.6), v3(1.0, 3.8, 2.2), v3(-1.3, 3.2, -4.4), v3(-1.3, 3.4, -4.4), 46); }
+    else { drawBoard("TOMORROW:\nEXPLAIN IT.\nOUT LOUD."); sit(YOU, false); put(YOU, cls, 1.4, -1.2, -0.3); YOU.setFace("worried"); YOU.pose({ headTilt: -0.06 });
+      const k = (lt - 1.35) / 0.6; cam(v3(0.6, 3.6, 2.6 - k * 0.4), v3(1.4, 3.2, -1.2), 34); }
+    drawClock(5 + lt * 6); return cls; },
+  night(lt) { // one night, twelve pages; Unspool on the phone
+    sit(YOU, true); put(YOU, room, 0.4, -0.3, 0); glow.intensity = 0;
+    const T = 11.05; const at = (t) => t - T; // absolute helper
+    if (lt < at(12.35)) { YOU.setFace("worried"); YOU.pose({ la: [-1.1, 0.1], ra: [-1.1, -0.1], headTilt: Math.sin(lt * 2) * 0.05 }); phone.removeFromParent();
+      pages.children.forEach((p, i) => (p.rotation.z = Math.sin(lt * 3 + i) * 0.01));
+      drift(lt / 1.3, v3(3.6, 5.2, 8.6), v3(2.6, 4.6, 6.8), v3(0.6, 2.6, 0.2), v3(0.5, 2.9, 0.2), 40); }
+    else if (lt < at(13.2)) { // phone close-up, the reels playing
+      room.add(phone); phone.position.set(0.4, 2.85, 0.6); phone.rotation.set(-0.1, 0, 0); YOU.setFace("neutral"); YOU.pose({ la: [-1.35, 0.25], ra: [-1.35, -0.25], headTilt: 0.18 });
+      drawPhone(clamp((lt - at(12.35)) / 1.6)); glow.intensity = 3; glow.position.set(0.4, 2.9, 1.4);
+      const k = (lt - at(12.35)) / 0.85; cam(v3(0.7, 3.2, 4.3 - k * 0.4), v3(0.4, 2.95, 0.6), 38); }
+    else { room.add(phone); phone.position.set(0.4, 2.2, 0.75); phone.rotation.set(-1.0, Math.PI, 0); YOU.setFace(lt > at(13.4) ? "grin" : "happy"); YOU.pose({ la: [-1.35, 0.25], ra: [-1.35, -0.25], headTilt: -0.04 });
+      glow.intensity = 7; glow.position.set(0.4, 2.7, 1.1); drawPhone(clamp((lt - at(12.35)) / 1.6));
+      const k = (lt - at(13.2)) / 0.9; cam(v3(1.7 - k * 0.1, 3.8, 5.0 - k * 0.4), v3(0.4, 3.0, -0.3), 36); }
+    return room; },
+  hall(lt) { // next morning, Jake leans in and whispers
+    sit(YOU, false); sit(JAKE, false); put(YOU, hall, -0.55, -1.6, 0.25); put(JAKE, hall, 0.75, -1.9, -0.75); JAKE.g.rotation.z = 0.12;
+    YOU.setFace(lt > 1.28 ? "angry" : "neutral"); YOU.pose({ la: [0, 0.06], ra: [-0.25, -0.1] });
+    JAKE.setFace("smug"); JAKE.pose({ la: [-0.4, 0.9], ra: [-0.4, -0.9], headTilt: -0.14 + Math.sin(lt * 4) * 0.02 });
+    if (lt < 1.28) drift(lt / 1.28, v3(1.4, 4.0, 5.6), v3(1.0, 3.9, 4.2), v3(0.0, 3.3, -1.6), v3(0.0, 3.4, -1.7), 40);
+    else { const k = (lt - 1.28) / 1.07; cam(v3(0.6 - k * 0.1, 3.75, 2.5 - k * 0.3), v3(0.1, 3.4, -1.8), 34); }
+    return hall; },
+  choice(lt) { // you in the middle: Jake on one side, the classroom door on the other
+    JAKE.g.rotation.z = 0; sit(YOU, false); sit(JAKE, false); sit(MS, false);
+    put(YOU, hall, 0.2, -0.6, 0); put(JAKE, hall, -2.0, -2.0, 0.35); put(MS, hall, 2.5, -2.2, -0.4);
+    YOU.setFace(lt > 1.0 ? "determined" : "worried"); YOU.pose({ headTilt: Math.sin(lt * 1.5) * 0.04 }); JAKE.setFace("angry"); JAKE.pose({ la: [-0.4, 0.9], ra: [-0.4, -0.9] }); MS.setFace("neutral"); MS.pose();
+    drift(lt / 2.25, v3(0.4, 3.7, 9.0), v3(0.3, 3.6, 7.0), v3(0.4, 2.7, -1.2), v3(0.3, 2.8, -1.2), 46); return hall; },
+  end(lt) { // you hold up the sign
+    sit(YOU, false); put(YOU, hall, 0, -0.6, 0); YOU.setFace("happy"); YOU.pose({ la: [-1.45, -0.15], ra: [-1.45, 0.15] });
+    hall.add(sign); sign.position.set(0, 2.05 + Math.sin(lt * 4) * 0.02 - 0.3 * (1 - outBack(lt / 0.3)), 0.75); sign.rotation.set(0, 0, Math.sin(lt * 3) * 0.02);
+    put(JAKE, hall, -40, -40); put(MS, hall, -40, -40);
+    cam(v3(0, 3.0, 8.4 - lt * 0.3), v3(0, 3.2, -0.2), 40); return hall; },
+};
+
+// ---------------- overlay ----------------
+const C = { red: "#ff3b3b", pink: "#ff7ac8", blue: "#5fb8ff", yellow: "#ffd23f", green: "#3df07a" };
+// [start, html]  1-3 words each, key words coloured
+const CAPS = [
+  [0.144, `MOST OF YOU SAID`], [1.033, `<b style="color:${C.yellow}">“TELL THE TEACHER.”</b>`], [1.94, `SO YOU TELL HER`], [2.74, `YOUR <b style="color:${C.blue}">BEST FRIEND</b>`], [3.273, `<b style="color:${C.red}">COPIED</b> YOUR ESSAY.`], [4.127, `HE DOESN'T`], [4.429, `EVEN <b style="color:${C.red}">BLINK.</b>`], [5.033, `<b style="color:${C.pink}">“I WROTE IT.”</b>`], [5.62, `<b style="color:${C.pink}">“HE COPIED </b><b style="color:${C.red}">ME.”</b>`], [6.402, `AND SHE <b style="color:${C.red}">BELIEVES HIM.</b>`], [7.451, `YOU GET THE <b style="color:${C.red}">ZERO.</b>`], [8.322, `HE GETS THE <b style="color:${C.green}">A.</b>`], [9.122, `WHOEVER <b style="color:${C.yellow}">REALLY</b> WROTE IT`], [10.064, `EXPLAINS IT <b style="color:${C.yellow}">TOMORROW.</b>`], [11.06, `ONE NIGHT.`], [11.558, `<b style="color:${C.yellow}">TWELVE PAGES.</b>`], [12.411, `YOU PUT THEM INTO`], [13.016, `<b style="color:${C.green}">UNSPOOL.CC</b>`], [14.136, `NEXT MORNING,`], [14.722, `HE <b style="color:${C.pink}">SMIRKS:</b>`], [15.38, `<b style="color:${C.pink}">“GOOD LUCK,</b>`], [15.807, `<b style="color:${C.red}">COPYCAT.”</b>`], [16.5, `<b style="color:${C.red}">DROP IT…</b>`], [17.051, `OR EXPLAIN`], [17.656, `<b style="color:${C.green}">EVERY PAGE?</b>`], [18.7, ``],
+];
+const ov = document.getElementById("ov"), glc = document.getElementById("gl");
+const capAt = (t) => { let c = null; for (const x of CAPS) if (t >= x[0] - 0.03) c = x; return c; };
+const card = (letter, text, col, on, k) => `<div style="display:flex;align-items:center;gap:18px;margin:14px 0;padding:18px 24px;border-radius:20px;background:${on ? col : "rgba(255,255,255,.94)"};color:${on ? "#fff" : "#111"};font:800 40px/1.1 Arc;transform:scale(${0.6 + 0.4 * outBack(k)});opacity:${clamp(k * 3)};box-shadow:0 8px 20px rgba(0,0,0,.35)"><span style="display:inline-flex;align-items:center;justify-content:center;width:62px;height:62px;border-radius:50%;background:${on ? "rgba(255,255,255,.25)" : col};color:#fff">${letter}</span>${text}${on ? '<span style="margin-left:auto">✓</span>' : ""}</div>`;
+window.renderAt = (t) => {
+  let i = 0; for (let j = 0; j < SH.length; j++) if (t >= SH[j][1]) i = j;
+  const [name, t0] = SH[i], lt = t - t0;
+  glc.style.filter = name === "poll" ? `blur(${5 - 2 * clamp(lt / 2)}px) brightness(.7) contrast(1.05)` : "contrast(1.08) saturate(1.12)";
+  renderer.render(SC[name](lt), camera);
+  let h = `<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 55%,rgba(0,0,0,.4) 100%)"></div>`;
+  if (name === "poll") {
+    h += `<div style="position:absolute;left:0;right:0;top:150px;text-align:center"><span style="background:#111;color:#fff;font:800 34px Arc;letter-spacing:4px;padding:10px 22px;border-radius:10px">PREVIOUSLY</span></div>`;
+    h += `<div style="position:absolute;left:110px;right:110px;top:250px"><div style="text-align:center;color:#fff;font:800 38px Arc;-webkit-text-stroke:6px #000;paint-order:stroke fill;margin-bottom:6px">THE ESSAY · PART 1</div>${card("A", "TELL THE TEACHER", "#2bb673", t > 1.08, clamp(t / 0.25))}${card("B", "STAY QUIET", "#e6402e", false, clamp((t - 0.12) / 0.25))}</div>`;
+  }
+  if (name === "verdict") { // your essay: 0. His (your) essay: A.
+    const paper = (who, grade, col, k, rot) => `<div style="width:230px;padding:18px 18px 22px;background:#f7f3e8;border-radius:6px;box-shadow:0 12px 28px rgba(0,0,0,.45);transform:rotate(${rot}deg) scale(${0.6 + 0.4 * outBack(k)});opacity:${clamp(k * 3)}"><div style="font:800 20px Arc;color:#555">ESSAY · ${who}</div>${[92, 80, 88, 70, 84].map((w) => `<div style="height:7px;margin-top:9px;width:${w}%;background:#d6d0c2;border-radius:4px"></div>`).join("")}<div style="margin-top:8px;text-align:right;font:800 92px/1 Arc;color:${col}">${grade}</div></div>`;
+    const t1 = 7.7780000000000005, t2 = 8.606;
+    if (t > t1) h += `<div style="position:absolute;left:0;right:0;top:170px;display:flex;justify-content:center;gap:34px">${paper("YOU", "0", "#e33", clamp((t - t1) / 0.25), -5)}${t > t2 ? paper("JAKE", "A", "#1d9e4a", clamp((t - t2) / 0.25), 4) : `<div style="width:230px"></div>`}</div>`;
+  }
+  if (name === "night" && lt < 1.3) h += `<div style="position:absolute;left:0;right:0;top:170px;text-align:center"><span style="background:#ffd23f;color:#111;font:800 34px Arc;padding:8px 18px;border-radius:10px;opacity:${clamp(lt * 4)}">11:47 PM</span></div>`;
+  if (name === "hall" && lt < 1.2) h += `<div style="position:absolute;left:0;right:0;top:170px;text-align:center"><span style="background:#ffd23f;color:#111;font:800 34px Arc;padding:8px 18px;border-radius:10px;opacity:${clamp(lt * 4)}">7:58 AM</span></div>`;
+  if (name === "choice") {
+    h += `<div style="position:absolute;left:110px;right:110px;top:190px">${card("A", "DROP IT", "#e6402e", false, clamp((t - 16.5) / 0.25))}${card("B", "EXPLAIN IT", "#2bb673", false, clamp((t - 17.051) / 0.25))}</div>`;
+    if (t > 18.05) h += `<div style="position:absolute;left:0;right:0;top:425px;text-align:center;color:#fff;font:800 42px Arc;-webkit-text-stroke:7px #000;paint-order:stroke fill;transform:scale(${0.7 + 0.3 * outBack((t - 18.05) / 0.25)})">COMMENT <span style="color:#ff5a4a">A</span> OR <span style="color:#3df07a">B</span> 👇</div>`;
+  }
+  const c = capAt(t);
+  if (c && c[1]) { const k = clamp((t - c[0]) / 0.12); h += `<div style="position:absolute;left:90px;right:90px;top:${name === "end" ? 900 : 800}px;text-align:center;transform:scale(${0.75 + 0.25 * outBack(k)})"><span style="color:#fff;font:800 66px/1.1 Arc;-webkit-text-stroke:12px #000;paint-order:stroke fill;text-shadow:0 5px 0 #000">${c[1]}</span></div>`; }
+  if (name === "end") h += `<div style="position:absolute;left:0;right:0;top:190px;text-align:center;color:#fff;font:800 44px Arc;-webkit-text-stroke:7px #000;paint-order:stroke fill;opacity:${clamp((lt - 0.2) * 4)}">FOLLOW FOR PART 3</div>`;
+  ov.innerHTML = h;
+};
+window.renderAt(0); setTimeout(() => (window.ready = true), 80);
+</script></body></html>
