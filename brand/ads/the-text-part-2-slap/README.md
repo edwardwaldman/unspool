@@ -12,4 +12,4 @@ reels on "Unspool", then the reels play (PHOTO → REELS badge).
 Fury beat after the promo (41.3 s): "Then, at 2 AM, she posts a story. The two of them, smiling... with your notes. The caption
 says, 'Thank God for Jake. He saved my grade.' Your notes. Your handwriting. Then he texts you: 'lol, you up? Can I borrow
 your notes for the next unit too?'" Shots: your face lit by the phone (2:04 AM), her story (story UI + caption sticker), a
-close-up of your notebook, his text landing as you go from shock to angry. Then the locker, the A/B choice and the sign.
+close-up of your notebook, his text landing as you go from shock to angry. Then the locker and the A/B choice: "Do you give Jake the notes... or walk away?" (A: give Jake the notes, B: walk away), then the sign.

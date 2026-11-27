@@ -193,8 +193,8 @@ window.renderAt = (t) => {
   if (name === "dm" && lt > 0.68) h += notif("jake", "lol u up? can i borrow ur notes for the next unit too 😂", "#3bb273", (lt - 0.68) / 0.25);
   if (name === "locker" && lt < 1.6) h += tag("7:52 AM", lt);
   if (name === "choice") {
-    h += `<div style="position:absolute;left:110px;right:110px;top:190px">${card("A", "HEAR THEM OUT", "#2bb673", clamp((lt - 0.1) / 0.25))}${card("B", "WALK PAST THEM", "#e6402e", clamp((lt - 1.25) / 0.25))}</div>`;
-    if (lt > 2.2) h += `<div style="position:absolute;left:0;right:0;top:425px;text-align:center;color:#fff;font:800 42px Arc;-webkit-text-stroke:7px #000;paint-order:stroke fill;transform:scale(${0.7 + 0.3 * outBack((lt - 2.2) / 0.25)})">COMMENT <span style="color:#3df07a">A</span> OR <span style="color:#ff5a4a">B</span> 👇</div>`;
+    h += `<div style="position:absolute;left:110px;right:110px;top:190px">${card("A", "GIVE JAKE THE NOTES", "#2bb673", clamp((lt - 0.1) / 0.25))}${card("B", "WALK AWAY", "#e6402e", clamp((lt - 1.54) / 0.25))}</div>`;
+    if (lt > 2.2) h += `<div style="position:absolute;left:0;right:0;top:500px;text-align:center;color:#fff;font:800 42px Arc;-webkit-text-stroke:7px #000;paint-order:stroke fill;transform:scale(${0.7 + 0.3 * outBack((lt - 2.2) / 0.25)})">COMMENT <span style="color:#3df07a">A</span> OR <span style="color:#ff5a4a">B</span> 👇</div>`;
   }
   // the Unspool beat, unmissable: unspool.cc up top, the textbook drops into a full-size phone and becomes reels
   const U0 = 34.5, U1 = 41.26, inU = t >= U0 - 0.2 && t < U1;
