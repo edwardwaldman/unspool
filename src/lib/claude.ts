@@ -464,3 +464,26 @@ export async function researchTopic(request: string): Promise<string | null> {
   if (!notes || /^NOT_A_TOPIC/.test(notes)) return null;
   return notes;
 }
+
+/**
+ * A clean title for a typed topic, right when it's typed ("ap boo" → "AP Biology", "krebs cycel" → "The Krebs cycle"),
+ * so the Studio and the queue show what they meant before the reels are planned. Fast and cheap; any failure or a
+ * slow answer keeps the topic as typed (returns null).
+ */
+export async function refineTopicTitle(topic: string): Promise<string | null> {
+  const clean = topic.replace(/[<>]/g, "").trim().slice(0, 300);
+  if (clean.length < 2) return null;
+  const ask = anthropic().messages.create({
+    model: SCRIPT_MODEL,
+    max_tokens: 40,
+    system:
+      "You name study topics. Reply with only a short, clean title (2 to 7 words) for what the student typed: fix typos, expand obvious abbreviations (\"ap bio\" or \"ap boo\" → \"AP Biology\", \"apush\" → \"AP US History\"), use title-style capitalisation, no quotes, no punctuation at the end. If it's already clean, return it as is.",
+    messages: [{ role: "user", content: clean }],
+  });
+  const timeout = new Promise<null>((ok) => setTimeout(() => ok(null), 5000));
+  const msg = await Promise.race([ask, timeout]).catch(() => null);
+  if (!msg) return null;
+  const text = msg.content.find((b) => b.type === "text");
+  const title = text && "text" in text ? text.text.trim().replace(/^["'“]|["'”.]$/g, "").slice(0, 80) : "";
+  return title.length >= 2 ? title : null;
+}

@@ -5,6 +5,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import { entitlementFor, topupBalance } from "@/lib/credits";
 import { claimUsage, freeDocumentUsed } from "@/lib/usage";
 import { canStartNow } from "@/lib/queue";
+import { refineTopicTitle } from "@/lib/claude";
 import { clientIpHash, getViewer } from "@/lib/viewer";
 import { dispatch } from "@/lib/jobs";
 import { PROMPT_FILE } from "@/lib/pipeline";
@@ -136,6 +137,8 @@ async function createDocument(
       ip_hash: ipHash,
       file_name: fileName,
       file_type: prompt !== null ? (pasted ? "paste" : "prompt") : ext,
+      // A typed topic gets a cleaned-up title straight away ("ap boo" → "AP Biology"); pasted notes are named later.
+      ...(prompt !== null && !pasted ? { title: await refineTopicTitle(prompt).catch(() => null) } : {}),
       file_size: size,
       status: prompt !== null ? (queued ? "queued" : "uploaded") : "uploading",
       queued,
