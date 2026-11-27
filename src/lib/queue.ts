@@ -12,6 +12,8 @@ import type { Viewer } from "./viewer";
 const DAY_MS = 24 * 3600e3;
 // A document still being set up (before its first reel exists): free accounts get one of these at a time.
 const MAKING = ["uploaded", "extracting", "planning"];
+// One that hasn't moved in 30 minutes is stuck, not being made: it never holds up the queue.
+const stuckBefore = () => new Date(Date.now() - 30 * 60e3).toISOString();
 
 /** When this account may make its next free reel: null means now. */
 export async function nextFreeReelAt(viewer: Viewer): Promise<string | null> {
@@ -57,7 +59,8 @@ export async function moveQueue(viewer: Viewer): Promise<{ queued: number; nextA
       .from("documents")
       .select("id", { count: "exact", head: true })
       .eq("user_id", viewer.userId)
-      .in("status", MAKING);
+      .in("status", MAKING)
+      .gt("updated_at", stuckBefore());
     if (count) return { queued: queue.length, nextAt: null };
   }
   const start = free ? queue.slice(0, 1) : queue;
@@ -77,7 +80,7 @@ export async function canStartNow(viewer: Viewer): Promise<boolean> {
   const db = adminClient();
   const [{ count: waiting }, { count: making }] = await Promise.all([
     db.from("documents").select("id", { count: "exact", head: true }).eq("user_id", viewer.userId).eq("status", "queued"),
-    db.from("documents").select("id", { count: "exact", head: true }).eq("user_id", viewer.userId).in("status", MAKING),
+    db.from("documents").select("id", { count: "exact", head: true }).eq("user_id", viewer.userId).in("status", MAKING).gt("updated_at", stuckBefore()),
   ]);
   return !waiting && !making;
 }
