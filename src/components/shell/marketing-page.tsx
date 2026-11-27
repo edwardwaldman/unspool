@@ -25,6 +25,9 @@ export function MarketingPage({ children }: { children: React.ReactNode }) {
           <Link href="/pricing" className="hover:text-ink">
             Pricing
           </Link>
+          <Link href="/teams" className="hidden hover:text-ink sm:inline">
+            Teams
+          </Link>
           <Link href="/" className="btn-primary px-4 py-2 text-[14px]">
             Open app
           </Link>

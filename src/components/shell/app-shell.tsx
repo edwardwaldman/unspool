@@ -18,6 +18,7 @@ const TOP_LINKS: [string, string, string][] = [
   ["terms", "/terms", "Terms"],
   ["privacy", "/privacy", "Privacy"],
   ["pricing", "/pricing", "Pricing"],
+  ["teams", "/teams", "Teams"],
 ];
 
 export type NavKey = "home" | "reels" | "library" | "profile" | "none";

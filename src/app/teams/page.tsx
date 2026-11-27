@@ -33,11 +33,12 @@ const TEAMS_COPY: GoCopy = {
   ticks: ["First reel free", "No card needed", "Your files stay private"],
   reels: ["/go/phish", "/go/lift", "/go/fire"],
   plus: { label: "Upload a training PDF", sub: "a handbook, SOP, policy or slides" },
-  // "unspool teams": the usual wordmark, then "teams" in the monospace face, lime
+  // "unspool Teams", the way Google writes "Google Docs": the wordmark, then the product name in the plain UI sans,
+  // regular weight, a step quieter than the logo
   brand: (
-    <span className="inline-flex items-baseline gap-2" aria-label="unspool teams">
+    <span className="inline-flex items-baseline gap-[7px]" aria-label="unspool Teams">
       <Wordmark size={24} />
-      <span className="font-mono text-[19px] font-medium lowercase tracking-[0.04em] text-thread">teams</span>
+      <span className="font-sans text-[23px] font-normal leading-none tracking-[-0.01em] text-ink/70">Teams</span>
     </span>
   ),
 };
@@ -63,7 +64,7 @@ function FlowArrow() {
 /** Below the hero: what a training manager on a laptop wants to know. Stacks on phones, rows on desktop. */
 function TeamsSections() {
   return (
-    <div className="mt-20 w-full max-w-[1160px] lg:mt-10">
+    <div className="mt-20 w-full max-w-[1160px] lg:mt-24 lg:px-10">
       <section aria-labelledby="how" className="border-t border-line pt-14">
         <div className="label">How it works</div>
         <h2 id="how" className="mt-3 max-w-[640px] font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em] lg:text-[40px]">

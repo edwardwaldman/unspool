@@ -90,7 +90,7 @@ function PlusUpload({ label = "Snap a photo", sub = "or upload a PDF, slides or 
           )}
         </svg>
       </button>
-      <div className="mt-3 text-center lg:mt-0 lg:text-left">
+      <div className="mt-3 text-center">
         <div className="text-[17px] font-semibold lg:text-[19px]">{pending ? "Opening your reels…" : label}</div>
         <div className="mt-0.5 text-[13px] text-muted lg:text-[14px]">{sub}</div>
       </div>
@@ -231,38 +231,37 @@ const STUDENT_COPY: GoCopy = {
 
 /**
  * /go (and /teams): the landing page for TikTok and ads. Same look and animation as the videos, one job, no exits.
- * Phones get one narrow column (it has to fit above in-app browser toolbars); desktops get two columns, with the
- * animation large on the right. `children` renders below the hero (the /teams page adds sections for desktop readers).
+ * Phones get one narrow column (it has to fit above in-app browser toolbars). Desktops get the main site's spacing: the
+ * logo top-left in an 80px header bar, then a centred headline, the animation large, and the upload controls under it.
+ * `children` renders below the hero (the /teams page adds sections for desktop readers).
  */
 export function GoHero({ copy = STUDENT_COPY, children }: { copy?: GoCopy; children?: ReactNode }) {
+  const brand = copy.brand ?? <Wordmark size={24} />;
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center bg-paper px-4 pb-24 pt-3 text-ink lg:px-10 lg:pb-16 lg:pt-8">
-      <div className="flex w-full max-w-[460px] flex-col items-center lg:grid lg:min-h-[78vh] lg:max-w-[1160px] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
-        <div className="flex w-full flex-col items-center lg:items-start">
-          {copy.brand ?? <Wordmark size={24} />}
-          <h1 className="mt-3 text-center font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em] lg:mt-8 lg:text-left lg:text-[58px] lg:leading-[1.0]">
-            {copy.headline}
-          </h1>
-          <p className="mt-2 text-center text-[14.5px] leading-[1.4] text-muted lg:mt-5 lg:max-w-[500px] lg:text-left lg:text-[19px] lg:leading-[1.45]">
-            {copy.subline}
-          </p>
-          {/* Phones: kept small so the + and the topic box fit above in-app browser toolbars (TikTok, Instagram) */}
-          <div className="mt-1 w-full max-w-[300px] lg:hidden">
-            <AdAnimation docTitle={copy.docTitle} reels={copy.reels} />
-          </div>
-          <PlusUpload label={copy.plus?.label} sub={copy.plus?.sub} className="lg:mt-9 lg:flex-row lg:gap-5" />
-          <PromptBox topics={copy.topics} className="mt-4 lg:mt-8 lg:max-w-[520px]" />
-          <ul className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13.5px] text-muted lg:justify-start lg:text-[14.5px]">
-            {copy.ticks.map((t) => <li key={t}>✓ {t}</li>)}
-          </ul>
-          <Link href="/s/demo" className="mt-5 text-[14.5px] text-muted underline underline-offset-4 hover:text-ink">
-            Watch a sample reel first
-          </Link>
-        </div>
-        {/* Desktop: the document → reels animation, large */}
-        <div className="hidden w-full lg:block">
+    <div className="flex min-h-[100dvh] flex-col items-center bg-paper px-4 pb-24 pt-3 text-ink lg:px-0 lg:pb-16 lg:pt-0">
+      <header className="hidden h-20 w-full items-center self-stretch px-10 lg:flex">
+        <span className="inline-block origin-left scale-[1.3]">{brand}</span>
+      </header>
+      <div className="flex w-full max-w-[460px] flex-col items-center lg:mt-8 lg:max-w-[880px] lg:px-10">
+        <div className="lg:hidden">{brand}</div>
+        <h1 className="mt-3 text-center font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em] lg:mt-0 lg:text-[62px] lg:leading-[1.02]">
+          {copy.headline}
+        </h1>
+        <p className="mt-2 text-center text-[14.5px] leading-[1.4] text-muted lg:mt-5 lg:max-w-[620px] lg:text-[19px] lg:leading-[1.45]">
+          {copy.subline}
+        </p>
+        {/* Phones: kept small so the + and the topic box fit above in-app browser toolbars (TikTok, Instagram) */}
+        <div className="mt-1 w-full max-w-[300px] lg:mt-8 lg:max-w-[560px]">
           <AdAnimation docTitle={copy.docTitle} reels={copy.reels} />
         </div>
+        <PlusUpload label={copy.plus?.label} sub={copy.plus?.sub} />
+        <PromptBox topics={copy.topics} className="mt-4 lg:mt-8 lg:max-w-[520px]" />
+        <ul className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13.5px] text-muted lg:text-[14.5px]">
+          {copy.ticks.map((t) => <li key={t}>✓ {t}</li>)}
+        </ul>
+        <Link href="/s/demo" className="mt-5 text-[14.5px] text-muted underline underline-offset-4 hover:text-ink">
+          Watch a sample reel first
+        </Link>
       </div>
       {children}
       <footer className="mt-auto flex gap-4 pt-10 text-[12px] text-muted">
