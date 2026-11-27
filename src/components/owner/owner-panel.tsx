@@ -78,6 +78,10 @@ const EVENT_LABELS: Record<string, string> = {
   demo_gate: "Demo gate",
   watch_demo: "Watched demo",
   reel_viewed: "Reel",
+  loading_shown: "Loading screen",
+  loading_left: "Left loading",
+  game_start: "Game started",
+  game_over: "Game over",
   idle: "Idle 60s",
   close: "Closed",
 };

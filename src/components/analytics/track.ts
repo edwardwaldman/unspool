@@ -21,6 +21,10 @@ export type TrackName =
   | "demo_gate"
   | "watch_demo"
   | "reel_viewed"
+  | "loading_shown"
+  | "loading_left"
+  | "game_start"
+  | "game_over"
   | "idle"
   | "close";
 

@@ -2,12 +2,13 @@
 
 import { motion } from "motion/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { SpoolDTO } from "@/lib/spool-types";
 import type { UploadState } from "../upload/upload-store";
 import { reelAccent, reelVars } from "./accent";
-import { MakingOf } from "./making-of";
 import { ParticleField } from "./particle-field";
+import { ThreadGame } from "./thread-game";
+import { track } from "../analytics/track";
 
 const STAGES = ["Upload", "Read", "Plan", "Write"] as const;
 
@@ -70,6 +71,17 @@ export function LoadingReel({
   const stage = stageIndex(spool, upload);
   const ready = reels.filter((r) => r.status === "ready").length;
   const line = stageLine(spool, upload);
+  // How long people watch the loading screen (owner panel): shown, then how long and how far it got when it goes.
+  const seen = useRef({ at: 0, stage: 0 });
+  useEffect(() => {
+    seen.current.stage = stage;
+  }, [stage]);
+  useEffect(() => {
+    const it = seen.current;
+    it.at = Date.now();
+    track("loading_shown", spool?.fileType ?? upload?.fileName?.split(".").pop() ?? "");
+    return () => track("loading_left", `${Math.round((Date.now() - it.at) / 1000)}s, ${STAGES[it.stage] ?? ""}`);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden px-6 text-white" style={{ ...reelVars(reelIndex), paddingBottom: bottomInset + 28 }}>
@@ -112,7 +124,8 @@ export function LoadingReel({
       </div>
 
       {/* Something to watch while it's made: the document turning into reels */}
-      {!isError && <div className="relative z-10"><MakingOf spool={spool} stage={stage} fileName={name} /></div>}
+      {/* Something to do while it's made: the catch-the-key-ideas mini game */}
+      {!isError && <div className="relative z-10"><ThreadGame /></div>}
       {!isError && (
         <div className="relative z-10 mt-6 grid grid-cols-4 gap-1.5">
           {STAGES.map((s, i) => (
