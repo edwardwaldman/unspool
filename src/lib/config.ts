@@ -26,6 +26,8 @@ export const LIMITS = {
 // Reels are generated only once paid for (credits or the free drip); see src/lib/plans.ts.
 
 export const ANON_COOKIE = "unspool_anon";
+// Where to send someone after sign-in, kept for 15 minutes in case Supabase drops the ?next= on the way back.
+export const NEXT_COOKIE = "unspool_next";
 /** Which share link (slug) brought this browser here, for signup attribution. */
 export const REF_COOKIE = "unspool_ref";
 

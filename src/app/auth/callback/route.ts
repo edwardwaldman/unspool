@@ -3,7 +3,7 @@ import { attachAnonymousUpload } from "@/lib/usage";
 import { clientIpHash } from "@/lib/viewer";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { ANON_COOKIE, safeNextPath } from "@/lib/config";
+import { ANON_COOKIE, NEXT_COOKIE, safeNextPath } from "@/lib/config";
 import { adminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,7 +18,10 @@ export async function GET(req: Request) {
   const code = url.searchParams.get("code");
   const tokenHash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type") as EmailOtpType | null;
-  const next = safeNextPath(url.searchParams.get("next"));
+  const jar = await cookies();
+  // ?next= is lost when Supabase falls back to the homepage (see proxy.ts), so the cookie set before sign-in backs it up.
+  const saved = jar.get(NEXT_COOKIE)?.value;
+  const next = safeNextPath(url.searchParams.get("next") ?? (saved ? decodeURIComponent(saved) : null));
   const fail = (reason: string) =>
     NextResponse.redirect(new URL(`/login?error=${reason}&next=${encodeURIComponent(next)}`, url.origin));
 
@@ -31,7 +34,7 @@ export async function GET(req: Request) {
     : await supabase.auth.verifyOtp({ token_hash: tokenHash!, type: type! });
   if (error || !data.user) return fail("auth");
 
-  const anon = (await cookies()).get(ANON_COOKIE)?.value;
+  const anon = jar.get(ANON_COOKIE)?.value;
   const userId = data.user.id;
   if (anon) {
     await adminClient()
@@ -44,5 +47,7 @@ export async function GET(req: Request) {
         if (claimed?.length) await attachAnonymousUpload(userId, await clientIpHash());
       });
   }
-  return NextResponse.redirect(new URL(next, url.origin));
+  const res = NextResponse.redirect(new URL(next, url.origin));
+  res.cookies.delete(NEXT_COOKIE);
+  return res;
 }

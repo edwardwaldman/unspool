@@ -140,7 +140,8 @@ export function SpoolFeed({ id }: { id: string }) {
 /** A signed-out visitor pressed play on their preview reel: sign up, attach the document to the account, play on. */
 function askToSignUp(id: string) {
   openAuth("signup", {
-    next: `/s/${id}`,
+    // back to this exact reel (?reel=N), not just the document
+    next: `/s/${id}${window.location.search}`,
     onDone: () => void fetch("/api/auth/claim", { method: "POST" }).finally(() => window.location.reload()),
   });
 }

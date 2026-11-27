@@ -4,7 +4,7 @@ import { ArrowLeft, Check, Eye, EyeOff, X } from "lucide-react";
 import Link from "next/link";
 import { animate } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { supabaseConfigured } from "@/lib/config";
+import { supabaseConfigured, NEXT_COOKIE } from "@/lib/config";
 import type { AuthError, AuthOtpResponse, AuthResponse, AuthTokenResponsePassword, OAuthResponse } from "@supabase/supabase-js";
 import { supabaseBrowser } from "./supabase-browser";
 import { track } from "../analytics/track";
@@ -223,8 +223,13 @@ export function AuthModal() {
   if (!open) return null;
   const signup = mode === "signup";
   const cooldown = Math.max(0, Math.ceil((resendAt - now) / 1000));
-  const callback = (to?: string) =>
-    `${window.location.origin}/auth/callback?next=${encodeURIComponent(to ?? next ?? window.location.pathname + window.location.search)}`;
+  const callback = (to?: string) => {
+    const dest = to ?? next ?? window.location.pathname + window.location.search;
+    // Also remember it in a cookie: if Supabase doesn't allow this exact return URL it falls back to the homepage
+    // without ?next=, and /auth/callback then reads the cookie so people still land back where they were.
+    document.cookie = `${NEXT_COOKIE}=${encodeURIComponent(dest)}; Max-Age=900; Path=/; SameSite=Lax; Secure`;
+    return `${window.location.origin}/auth/callback?next=${encodeURIComponent(dest)}`;
+  };
 
   const passwordFail = (text: string) => {
     setPwErr(text);

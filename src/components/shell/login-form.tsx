@@ -1,5 +1,6 @@
 "use client";
 
+import { NEXT_COOKIE } from "@/lib/config";
 import { useState } from "react";
 import { supabaseBrowser } from "../auth/supabase-browser";
 import { openAuth } from "../auth/auth-store";
@@ -9,7 +10,10 @@ export function LoginForm({ next, error }: { next: string; error?: string }) {
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(error ? "That sign-in link didn't work. Try again." : null);
-  const redirectTo = () => `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+  const redirectTo = () => {
+    document.cookie = `${NEXT_COOKIE}=${encodeURIComponent(next)}; Max-Age=900; Path=/; SameSite=Lax; Secure`;
+    return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+  };
 
   return (
     <div className="w-full max-w-[380px]">

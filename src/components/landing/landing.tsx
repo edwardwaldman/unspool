@@ -19,11 +19,11 @@ import { useMainScroll } from "./use-main-scroll";
 const ANIM_W = 478;
 const ANIM_H = 336;
 
-// Same formula as the phone branch of `k` in Landing, run inline as soon as the hero is parsed: the server
+// Same formula as the phone branch of `k` in Landing (with the usual headline and button heights), run inline as soon as the hero is parsed: the server
 // can't know the screen, and the guess it renders with (1440x900) would otherwise show a giant animation
 // on phones until JavaScript hydrates. Desktop/iPad (>= 900px) are measured after hydration as before.
 const HERO_FIT = `(function(){var w=innerWidth,h=innerHeight;if(w>=900)return;var a=document.getElementById("hero-anim"),b=document.getElementById("hero-anim-inner");if(!a||!b)return;
-var k=Math.max(0.55,Math.min((w-48)/${ANIM_W},(h-420)/${ANIM_H}));a.style.width=${ANIM_W}*k+"px";a.style.height=${ANIM_H}*k+"px";b.style.transform="scale("+k+")";})();`;
+var k=Math.max(0.35,Math.min((w-48)/${ANIM_W},(h-490)/${ANIM_H}));a.style.width=${ANIM_W}*k+"px";a.style.height=${ANIM_H}*k+"px";b.style.transform="scale("+k+")";})();`;
 
 function useViewport(dim: "innerHeight" | "innerWidth", fallback: number) {
   return useSyncExternalStore(
@@ -177,9 +177,12 @@ export function Landing({ studioOnSignIn = true, faq }: { /** Off while the owne
   // That way the hero fills the screen at any size without ever needing to scroll or zoom.
   // Desktop: the wordmark gets its own band at the top, then title, animation and buttons sit one equal gap apart.
   const TOP_BAND = 48, BOTTOM = 28;
+  // Phones: what the hero needs besides the headline, animation and buttons: top padding (80), two gaps (48),
+  // bottom padding (40) and the pull-up tab (36), so the prompt box always ends above the tab.
+  const PHONE_CHROME = 204;
   const HERO_GAP = Math.round(Math.min(56, Math.max(24, vh * 0.045)));
   const free = vh - TOP_BAND - BOTTOM - (headH || 70) - (rowH || 150) - HERO_GAP * 3;
-  const k = lg ? Math.max(0.6, Math.min(2.8, free / ANIM_H, (vw - 480) / ANIM_W)) : Math.max(0.55, Math.min((vw - 48) / ANIM_W, (vh - 420) / ANIM_H));
+  const k = lg ? Math.max(0.6, Math.min(2.8, free / ANIM_H, (vw - 480) / ANIM_W)) : Math.max(0.35, Math.min((vw - 48) / ANIM_W, (vh - PHONE_CHROME - (headH || 70) - (rowH || 216)) / ANIM_H));
 
   return (
     <div>
@@ -214,7 +217,7 @@ export function Landing({ studioOnSignIn = true, faq }: { /** Off while the owne
           <div className="flex flex-col items-center gap-3">
             <UploadButton toStudio={studioOnSignIn} />
           </div>
-          <motion.div className="flex items-center gap-5 ipad:justify-self-start" style={{ opacity: cueFade, y: cueY }}>
+          <motion.div className="hidden items-center gap-5 min-[900px]:flex ipad:justify-self-start" style={{ opacity: cueFade, y: cueY }}>
           {/* Scroll cue: a spinning "see how it works" badge with a bouncing arrow */}
           <motion.button
             type="button"
