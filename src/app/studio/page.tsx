@@ -8,7 +8,7 @@ import { extensionOf, supabaseConfigured } from "@/lib/config";
 import { parseReelStyle } from "@/lib/reel-style";
 import { listDocuments } from "@/lib/spool";
 import { canEditStyle } from "@/lib/studio";
-import { freeReelLimit } from "@/lib/access";
+import { freeReelLimit, isUnlocked } from "@/lib/access";
 import { tierOf } from "@/lib/credits";
 import { PLANS } from "@/lib/plans";
 import { adminClient } from "@/lib/supabase/admin";
@@ -58,13 +58,18 @@ async function studioDocs(viewer: Viewer): Promise<{ docs: StudioDoc[]; dripAt: 
     const mine = (reels ?? []).filter((r) => r.document_id === d.id);
     const first = mine.find((r) => r.index === 1);
     const { playable, nextFreeAt } = freeReelLimit(d, viewer, { reelRows: mine.length });
+    const unlocked = isUnlocked(d, viewer);
     if (nextFreeAt && Date.parse(nextFreeAt) > Date.now() && (!dripAt || nextFreeAt < dripAt)) dripAt = nextFreeAt;
     return {
       id: d.id,
       name: d.title ?? d.file_name,
       fileName: d.file_name,
       fileType: extensionOf(d.file_name),
+      rawType: d.file_type ?? "",
       status: d.status,
+      unlocked,
+      freeReels: playable,
+      createdAt: d.created_at,
       total: d.reel_count || mine.length || null,
       readyCount: mine.filter((r) => r.status === "ready").length,
       headline: (first?.headline as string | null) ?? null,

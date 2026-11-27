@@ -55,7 +55,7 @@ export function PaywallSheet({
     else setSent(true);
   };
 
-  const startUpload = () => openAuth("signup", { next: "/library", onDone: () => (window.location.href = "/library") });
+  const startUpload = () => openAuth("signup", { next: "/studio", onDone: () => (window.location.href = "/studio") });
   // The demo: no sheet, just the upload block centered on a full-screen gate that can't be dismissed.
   if (spool.demo) return <DemoGate open={open} onUpload={startUpload} />;
   return (

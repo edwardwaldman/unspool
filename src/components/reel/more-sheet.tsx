@@ -104,7 +104,7 @@ export function MoreSheet({
         <span className="flex-1">Device voice for silent reels</span>
         <span className={`font-mono text-[12px] ${prefs.deviceVoice ? "text-thread" : "text-muted"}`}>{prefs.deviceVoice ? "On" : "Off"}</span>
       </button>
-      <Link href="/library" className={row} onClick={onClose}>
+      <Link href="/studio" className={row} onClick={onClose}>
         <GridIcon size={19} /> All my spools
       </Link>
       {canDelete &&

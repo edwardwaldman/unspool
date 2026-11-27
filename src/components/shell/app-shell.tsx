@@ -130,8 +130,8 @@ export function AppShell({
                   Owner panel
                 </Link>
               )}
-              <Link href="/library" className="px-3 py-2 text-[14px] ipad:text-[17px] text-muted hover:text-ink">
-                Library
+              <Link href="/studio" className="px-3 py-2 text-[14px] ipad:text-[17px] text-muted hover:text-ink">
+                Studio
               </Link>
               <button type="button" onClick={openAccount} className="btn-secondary px-4 py-2 text-[14px] ipad:text-[17px]">
                 Account

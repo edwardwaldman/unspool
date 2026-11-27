@@ -44,7 +44,7 @@ async function checkout(req: Request) {
   const origin = siteUrl(new URL(req.url).origin);
   const reel = Math.max(1, Math.min(MAX_REELS, Number(body.reel ?? 2)));
   // Only known pages: never an arbitrary redirect target.
-  let returnPath = body.returnTo === "/studio" ? "/studio" : kind === "topup" ? "/profile" : "/library";
+  let returnPath = body.returnTo === "/studio" ? "/studio" : kind === "topup" ? "/profile" : "/studio";
   if (body.documentId) {
     const doc = await loadDocument(body.documentId, viewer);
     if (!doc) return error(404, "Document not found");

@@ -316,7 +316,7 @@ function SummarySheet({ reel }: { reel: DemoReel }) {
         className="mt-2 flex"
         onSubmit={(e) => {
           e.preventDefault();
-          openAuth("signup", { next: "/library", onDone: () => (window.location.href = "/library") });
+          openAuth("signup", { next: "/studio", onDone: () => (window.location.href = "/studio") });
         }}
       >
         <input

@@ -14,6 +14,7 @@ import { usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { CreditBar } from "./credit-bar";
 import { QueueTimer } from "./queue-timer";
+import { LibraryGrid } from "../spool/library-grid";
 import { PromptBox } from "../go/go-hero";
 import { PICK_EVENT, WelcomeTour } from "./welcome-tour";
 import { ProBadge, ReelStylePanel } from "./reel-style-panel";
@@ -23,7 +24,13 @@ export type StudioDoc = {
   name: string;
   fileName: string;
   fileType: string;
+  /** The stored file type (prompt, paste, pdf, ...), for the library grid's chip. */
+  rawType: string;
   status: string;
+  unlocked: boolean;
+  /** Reels playable for free (the drip). */
+  freeReels: number;
+  createdAt: string;
   /** Planned reel count; null while planning. */
   total: number | null;
   readyCount: number;
@@ -233,11 +240,6 @@ function DesktopStudio({ docs, style, canEdit, plan, queue }: StudioProps) {
         ) : (
           <p className="px-5 text-[13px] leading-snug text-muted">Nothing here yet. Upload a document and its reels show up in this list.</p>
         )}
-        <div className="mt-auto border-t border-line px-5 py-4">
-          <Link href="/library" className="flex items-center justify-between text-[13.5px] text-muted transition-colors hover:text-ink">
-            All reels, grid view <span aria-hidden>→</span>
-          </Link>
-        </div>
       </aside>
 
       {/* Center: an empty reel frame with the "+" */}
@@ -276,7 +278,6 @@ function DesktopStudio({ docs, style, canEdit, plan, queue }: StudioProps) {
 
 function MobileStudio({ docs, style, canEdit, plan, email, queue }: StudioProps) {
   const picker = usePicker();
-  const [openId, setOpenId] = useState<string | null>(docs[0]?.id ?? null);
   const [styleOpen, setStyleOpen] = useState(false);
   // The sheet remounts the panel each time it opens: keep what was saved meanwhile.
   const [saved, setSaved] = useState(style);
@@ -286,9 +287,6 @@ function MobileStudio({ docs, style, canEdit, plan, email, queue }: StudioProps)
       <div className="flex h-14 shrink-0 items-center gap-2 border-b border-line px-4 ipad:h-16 ipad:px-6">
         <Link href="/" aria-label="Unspool" className="mr-auto">
           <Wordmark size={22} />
-        </Link>
-        <Link href="/library" className="px-2.5 py-2 text-[14px] text-muted ipad:text-[16px]">
-          Library
         </Link>
         <button
           type="button"
@@ -330,25 +328,20 @@ function MobileStudio({ docs, style, canEdit, plan, email, queue }: StudioProps)
         {/* The queue and the next-free-reel timer, right under the upload */}
         {queue && <QueueTimer nextAt={queue.nextAt} queued={queue.queued} />}
 
-        <div className="mt-5 flex items-baseline justify-between">
-          <span className="text-[13px] font-medium text-ink ipad:text-[15px]">Your library</span>
-          <Link href="/library" className="text-[12.5px] text-muted ipad:text-[14px]">
-            Grid view
-          </Link>
-        </div>
-        <div className="mt-2">
+        <div className="mt-5">
           <LibraryStats docs={docs} plan={plan} />
         </div>
-        {docs.length ? (
-          <ul className="divide-y divide-line border-b border-line">
-            {docs.map((d) => (
-              <DocItem key={d.id} doc={d} size="sm" open={openId === d.id} onToggle={() => setOpenId(openId === d.id ? null : d.id)} />
-            ))}
-          </ul>
-        ) : (
-          <p className="border-b border-line py-4 text-[13px] text-muted">Your documents show up here.</p>
-        )}
       </div>
+      {/* Everything the Library page had lives here now: the grid of spools, with Edit to delete */}
+      {docs.length ? (
+        <div className="mx-auto w-full max-w-[560px] shrink-0 pb-6 ipad:max-w-[680px]">
+          <LibraryGrid
+            initial={docs.map((d) => ({ id: d.id, name: d.name, fileType: d.rawType, status: d.status as never, unlocked: d.unlocked, freeReels: d.freeReels, total: d.total, readyCount: d.readyCount, createdAt: d.createdAt, headline: d.headline, hook: d.hook }))}
+          />
+        </div>
+      ) : (
+        <p className="mx-auto w-full max-w-[560px] px-4 pb-6 text-[13px] text-muted ipad:max-w-[680px]">Your documents show up here.</p>
+      )}
 
       <Sheet open={styleOpen} onClose={() => setStyleOpen(false)} label="Reel style">
         <div className="max-h-[72dvh] overflow-y-auto">

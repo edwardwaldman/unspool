@@ -134,7 +134,7 @@ export function SpoolFeed({ id }: { id: string }) {
         await fetch(`/api/documents/${id}/retry`, { method: "POST" });
         reload();
       }}
-      onDeleted={() => router.push("/library")}
+      onDeleted={() => router.push("/studio")}
     />
   );
 }

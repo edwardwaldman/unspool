@@ -280,7 +280,7 @@ export function Feed({
         >
           <HomeIcon size={22} />
         </Link>
-        <Link href="/library" aria-label="Library" className="pointer-events-auto absolute right-4 top-3 text-white">
+        <Link href="/studio" aria-label="Studio" className="pointer-events-auto absolute right-4 top-3 text-white">
           <FilterIcon size={20} />
         </Link>
       </div>

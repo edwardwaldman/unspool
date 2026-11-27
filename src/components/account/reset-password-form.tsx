@@ -46,8 +46,8 @@ export function ResetPasswordForm() {
       <div className="mt-8 border-t border-line pt-6">
         <p className="text-[15px]">Your password is changed.</p>
         <p className="mt-1 text-[13.5px] text-muted">You&apos;re signed in as {email}.</p>
-        <Link href="/library" className="btn-primary mt-6 w-full py-3.5 text-[15px]">
-          Go to your library
+        <Link href="/studio" className="btn-primary mt-6 w-full py-3.5 text-[15px]">
+          Go to your Studio
         </Link>
       </div>
     );

@@ -19,8 +19,8 @@ export function MarketingPage({ children }: { children: React.ReactNode }) {
           <Link href="/learn" className="hidden hover:text-ink sm:inline">
             Learn
           </Link>
-          <Link href="/library" className="hidden hover:text-ink sm:inline">
-            Library
+          <Link href="/studio" className="hidden hover:text-ink sm:inline">
+            Studio
           </Link>
           <Link href="/pricing" className="hover:text-ink">
             Pricing

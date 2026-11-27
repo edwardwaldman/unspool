@@ -82,8 +82,8 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
               {(viewer.subscribed || viewer.profile?.stripe_customer_id) && (
                 <BillingButton mode="portal" label={viewer.subscribed ? "Manage subscription" : "Billing and receipts"} />
               )}
-              <Link href="/library" className="btn-secondary w-full py-3.5 text-[15px]">
-                Your library
+              <Link href="/studio" className="btn-secondary w-full py-3.5 text-[15px]">
+                Your Studio
               </Link>
               <ManageAccountButton />
               <form action="/auth/signout" method="post">
