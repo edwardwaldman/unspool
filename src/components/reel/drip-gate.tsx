@@ -124,7 +124,7 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
         className="mt-4 min-h-[52px] w-full bg-thread px-4 text-[16px] font-semibold text-paper hover:opacity-90 disabled:opacity-60"
         data-testid="trial-cta"
       >
-        {busy === "trial" || busy === "plus" ? "Opening checkout" : "Skip the wait"}
+        {busy === "trial" || busy === "plus" ? "Loading..." : "Skip the wait"}
       </button>
       {usage.topup > 0 && (
         <button
@@ -221,7 +221,7 @@ export function UpgradeSheet({ open, onClose, spool, usage, reel }: { open: bool
         </button>
       ) : null}
       <button type="button" onClick={() => go("topup", { kind: "topup" })} disabled={busy !== null} className="btn-secondary -mt-px w-full justify-between px-4 py-3 text-[14.5px]">
-        <span>{busy === "topup" ? "Opening checkout" : `Top up ${usage.topupCredits} reels`}</span>
+        <span>{busy === "topup" ? "Loading..." : `Top up ${usage.topupCredits} reels`}</span>
         <span className="font-mono text-[13px] text-muted">{formatCents(usage.topupCents)} once</span>
       </button>
       {err && (
