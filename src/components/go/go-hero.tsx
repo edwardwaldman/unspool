@@ -240,10 +240,10 @@ export function GoHero({ copy = STUDENT_COPY, children }: { copy?: GoCopy; child
   return (
     <div className="flex min-h-[100dvh] flex-col items-center bg-paper px-4 pb-24 pt-3 text-ink lg:px-0 lg:pb-16 lg:pt-0">
       <header className="hidden h-20 w-full items-center self-stretch px-10 lg:flex">
-        <span className="inline-block origin-left scale-[1.3]">{brand}</span>
+        <Link href="/" aria-label="unspool home" className="inline-block origin-left scale-[1.3] transition-opacity hover:opacity-80">{brand}</Link>
       </header>
       <div className="flex w-full max-w-[460px] flex-col items-center lg:mt-8 lg:max-w-[880px] lg:px-10">
-        <div className="lg:hidden">{brand}</div>
+        <Link href="/" aria-label="unspool home" className="lg:hidden">{brand}</Link>
         <h1 className="mt-3 text-center font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em] lg:mt-0 lg:text-[62px] lg:leading-[1.02]">
           {copy.headline}
         </h1>
