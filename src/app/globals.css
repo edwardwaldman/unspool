@@ -105,6 +105,7 @@ em.font-display {
   color: var(--paper);
   font-weight: 600;
   border: 1px solid var(--ink);
+  border-radius: 999px;
   transition: opacity 0.15s;
 }
 .btn-primary:hover { opacity: 0.9; }
@@ -119,6 +120,7 @@ em.font-display {
   color: var(--ink);
   font-weight: 500;
   border: 1px solid var(--border);
+  border-radius: 999px;
   transition: border-color 0.15s;
 }
 .btn-secondary:hover { border-color: var(--muted); }
@@ -127,6 +129,7 @@ em.font-display {
 .field {
   background: transparent;
   border: 1px solid var(--border);
+  border-radius: 12px;
   color: var(--ink);
   outline: none;
 }

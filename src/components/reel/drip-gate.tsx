@@ -29,8 +29,8 @@ function Modal({ label, onClose, children, compact = false }: { label: string; o
       aria-label={label}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className={`relative w-full border border-line bg-surface ${compact ? "max-w-[340px] p-5 shadow-[0_20px_60px_rgba(0,0,0,.5)]" : "max-w-[420px] p-6"}`} data-testid="unlock-sheet">
-        <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center border border-line text-muted hover:text-ink">
+      <div className={`relative w-full rounded-[20px] border border-line bg-surface ${compact ? "max-w-[340px] p-5 shadow-[0_20px_60px_rgba(0,0,0,.5)]" : "max-w-[420px] p-6"}`} data-testid="unlock-sheet">
+        <button type="button" onClick={onClose} aria-label="Close" className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full border border-line text-muted hover:text-ink">
           <X size={18} strokeWidth={1.5} />
         </button>
         {children}

@@ -23,14 +23,14 @@ export function QueueTimer({ nextAt, queued }: { nextAt: string | null; queued: 
     return (
       <div className="flex items-center justify-between rounded-[16px] border border-line px-4 py-3" data-testid="queue-timer">
         <div>
-          <div className="text-[12.5px] font-semibold text-thread">Next free reel in</div>
+          <div className="text-[12.5px] font-semibold text-muted">Next free reel in</div>
           {queued > 0 && (
             <div className="mt-0.5 text-[13px] text-muted">
               {queued} {queued === 1 ? "upload" : "uploads"} queued, starts then
             </div>
           )}
         </div>
-        <div className="font-mono text-[26px] font-bold tabular-nums leading-none text-thread" aria-live="off">
+        <div className="font-mono text-[26px] font-bold tabular-nums leading-none text-ink" aria-live="off">
           {formatCountdown(left)}
         </div>
       </div>
@@ -46,8 +46,8 @@ export function QueueTimer({ nextAt, queued }: { nextAt: string | null; queued: 
   }
   return (
     <div className="flex items-center justify-between rounded-[16px] border border-line px-4 py-3" data-testid="queue-timer">
-      <div className="text-[12.5px] font-semibold text-thread">Next free reel</div>
-      <div className="font-mono text-[15px] font-bold text-thread">Ready now</div>
+      <div className="text-[12.5px] font-semibold text-muted">Next free reel</div>
+      <div className="font-mono text-[15px] font-bold text-ink">Ready now</div>
     </div>
   );
 }

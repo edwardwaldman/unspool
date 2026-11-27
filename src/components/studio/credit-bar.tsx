@@ -94,7 +94,7 @@ export function RechargeButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-full bg-thread px-3.5 py-2 text-[13.5px] font-semibold text-paper transition-opacity hover:opacity-90 ipad:px-4 ipad:text-[15px]"
+        className="rounded-full border border-line px-3.5 py-2 text-[13.5px] font-semibold text-ink transition-colors hover:border-thread ipad:px-4 ipad:text-[15px]"
         data-testid="recharge"
       >
         Recharge

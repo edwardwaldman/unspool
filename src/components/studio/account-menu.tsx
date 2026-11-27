@@ -37,7 +37,7 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Menu"
-        className="flex h-9 w-9 items-center justify-center text-ink transition-transform active:scale-95 ipad:h-11 ipad:w-11"
+        className="flex h-11 w-11 items-center justify-center text-ink transition-transform active:scale-95"
         data-testid="account-menu"
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
@@ -60,7 +60,7 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
             >
               <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-5">
                 <span className="truncate text-[13px] text-muted">{email ?? "Menu"}</span>
-                <button type="button" onClick={close} aria-label="Close menu" className="-mr-1 p-1 text-[22px] leading-none text-muted">
+                <button type="button" onClick={close} aria-label="Close menu" className="-mr-2 flex h-11 w-11 items-center justify-center text-[22px] leading-none text-muted">
                   ×
                 </button>
               </div>

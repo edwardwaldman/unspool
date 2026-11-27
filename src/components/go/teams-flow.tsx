@@ -113,7 +113,7 @@ function Rail({ p }: { p: MotionValue<number> }) {
 }
 function RailStep({ p, at, label }: { p: MotionValue<number>; at: number; label: string }) {
   const on = useTransform(p, [at, at + 0.03], [0, 1]);
-  const color = useTransform(on, [0, 1], ["#7f8f86", "#e9efe4"]);
+  const color = useTransform(on, [0, 1], ["#8ea595", "#e9efe4"]);
   return (
     <div className="flex flex-col items-center">
       <span className="relative h-4 w-4 rounded-full border-2 border-line bg-paper">

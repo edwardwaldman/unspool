@@ -37,7 +37,7 @@ export function Sheet({ open, onClose, children, label, locked = false, above }:
             role="dialog"
             aria-label={label}
             aria-modal
-            className="safe-bottom relative w-full max-w-[480px] border-x border-t border-line bg-surface px-6 pb-7 pt-3"
+            className="safe-bottom relative w-full max-w-[480px] rounded-t-[22px] border-x border-t border-line bg-surface px-6 pb-7 pt-3"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}

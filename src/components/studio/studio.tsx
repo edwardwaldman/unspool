@@ -257,10 +257,10 @@ function ActiveList({ docs, nextAt }: { docs: StudioDoc[]; nextAt: string | null
                   <div className="line-clamp-2 text-[17px] font-semibold leading-snug text-ink">{d.name}</div>
                   <div className="mt-1.5 flex items-baseline gap-2">
                     <span className="text-[12.5px] text-muted">{left > 0 ? "Starts in" : "Starting next"}</span>
-                    {left > 0 && <span className="font-mono text-[20px] font-bold tabular-nums text-thread">{formatCountdown(left)}</span>}
+                    {left > 0 && <span className="font-mono text-[20px] font-bold tabular-nums text-ink">{formatCountdown(left)}</span>}
                   </div>
                 </div>
-                <button type="button" onClick={() => remove(d.id)} aria-label={`Remove ${d.name} from the queue`} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line text-[18px] text-muted hover:border-coral hover:text-coral">
+                <button type="button" onClick={() => remove(d.id)} aria-label={`Remove ${d.name} from the queue`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line text-[18px] text-muted hover:border-coral hover:text-coral">
                   ×
                 </button>
               </li>
@@ -279,7 +279,7 @@ function ActiveList({ docs, nextAt }: { docs: StudioDoc[]; nextAt: string | null
         })}
       </ul>
       {queued && (
-        <button type="button" onClick={unlock} disabled={busy} className="mt-3 min-h-[52px] w-full rounded-full bg-thread text-[16px] font-semibold text-paper hover:opacity-90 disabled:opacity-60" data-testid="unlock-now">
+        <button type="button" onClick={unlock} disabled={busy} className="mt-3 min-h-[52px] w-full rounded-full bg-ink text-[16px] font-semibold text-paper hover:opacity-90 disabled:opacity-60" data-testid="unlock-now">
           {busy ? "Loading..." : "Unlock the reels now"}
         </button>
       )}
