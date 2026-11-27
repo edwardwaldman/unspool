@@ -2,36 +2,25 @@ import { entitlementFor, tierOf } from "./credits";
 import { dispatch } from "./jobs";
 import { FREE_REELS_PER_DAY } from "./plans";
 import { adminClient } from "./supabase/admin";
+import { nextEasternMidnight } from "./eastern";
 import type { Viewer } from "./viewer";
 
 // The free upload queue. A free account past its one free document can still upload: the document waits as
-// "queued" and starts once the account may make another free reel (free reels are FREE_REELS_PER_DAY in a rolling
-// 24 hours, and a document's first reel is one of them). Nothing runs on a timer: the queue moves when the owner
+// "queued" and starts once the account may make another free reel (free reels are FREE_REELS_PER_DAY a day, reset at
+// 12:00 AM Eastern, and a document's first reel is one of them). Nothing runs on a timer: the queue moves when the owner
 // opens the Studio (its countdown reloads the page when it reaches zero), one document at a time.
 
-const DAY_MS = 24 * 3600e3;
 // A document still being set up (before its first reel exists): free accounts get one of these at a time.
 const MAKING = ["uploaded", "extracting", "planning"];
 // One that hasn't moved in 30 minutes is stuck, not being made: it never holds up the queue.
 const stuckBefore = () => new Date(Date.now() - 30 * 60e3).toISOString();
 
-/** When this account may make its next free reel: null means now. */
+/** When this account may make its next free reel: null means now. Free reels reset at 12:00 AM Eastern. */
 export async function nextFreeReelAt(viewer: Viewer): Promise<string | null> {
   const subject = entitlementFor(viewer.profile, viewer.userId ? `u:${viewer.userId}` : null).subject;
-  const { data } = await adminClient()
-    .from("credit_events")
-    .select("kind,created_at")
-    .eq("subject", subject)
-    .eq("free", true)
-    .gt("created_at", new Date(Date.now() - DAY_MS).toISOString())
-    .order("created_at", { ascending: true });
-  const rows = data ?? [];
-  const reserves = rows.filter((r) => r.kind === "reserve");
-  const used = reserves.length - rows.filter((r) => r.kind === "refund").length;
-  if (used < FREE_REELS_PER_DAY) return null;
-  // At the cap: the oldest free reel in the window frees a slot when it turns 24 hours old.
-  const oldest = reserves[0]?.created_at;
-  return oldest ? new Date(Date.parse(oldest) + DAY_MS).toISOString() : null;
+  const { data } = await adminClient().rpc("free_reels_used", { p_subject: subject });
+  const used = typeof data === "number" ? data : 0;
+  return used < FREE_REELS_PER_DAY ? null : nextEasternMidnight();
 }
 
 /**

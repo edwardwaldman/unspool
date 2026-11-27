@@ -8,6 +8,7 @@ import type { SpoolDTO, UsageDTO, ViewerDTO } from "@/lib/spool-types";
 import { startCheckout, unlockReels, type CheckoutRequest } from "../billing/checkout";
 import { shortDate } from "../billing/usage-meter";
 import { formatCountdown, useCountdown } from "../ui/use-countdown";
+import { nextEasternMidnight } from "@/lib/eastern";
 import { PaywallSheet } from "./paywall-sheet";
 import { track } from "../analytics/track";
 
@@ -65,6 +66,8 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
   const [unlocking, setUnlocking] = useState(false);
   const tried = useRef(false);
   const capped = usage.freeUsedToday >= usage.freePerDay;
+  // Free reels reset at 12:00 AM Eastern.
+  const resetLeft = useCountdown(nextEasternMidnight());
   const nextReel = spool.freeReels + 1;
   const timerUp = !spool.nextFreeUnlockAt || left === 0;
   const canFree = timerUp && !capped && reel === nextReel;
@@ -98,9 +101,13 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
           <p className="py-2 text-[15px] font-semibold text-thread">Unspooling your next free reel</p>
         ) : capped ? (
           <>
-            <p className="text-[12.5px] font-semibold text-thread">Free reels today</p>
-            <p className="mt-1 font-mono text-[36px] font-bold leading-none text-thread">
-              {usage.freeUsedToday} of {usage.freePerDay}
+            {/* All of today's free reels are used: count down to the reset at 12:00 AM Eastern */}
+            <p className="text-[12.5px] font-semibold text-thread">More free reels in</p>
+            <p className="mt-1 font-mono text-[46px] font-bold leading-none tracking-[-0.03em] text-thread" aria-live="off" data-testid="reset-countdown">
+              {formatCountdown(resetLeft)}
+            </p>
+            <p className="mt-2 text-[12px] text-muted">
+              {usage.freeUsedToday} of {usage.freePerDay} used today · resets 12:00 AM ET
             </p>
           </>
         ) : left > 0 ? (
