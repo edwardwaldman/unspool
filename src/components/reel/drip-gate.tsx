@@ -124,7 +124,7 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
         className="mt-4 min-h-[52px] w-full bg-thread px-4 text-[16px] font-semibold text-paper hover:opacity-90 disabled:opacity-60"
         data-testid="trial-cta"
       >
-        {busy === "trial" || busy === "plus" ? "Opening checkout" : usage.trialEligible ? "Skip the wait FREE" : "Skip the wait"}
+        {busy === "trial" || busy === "plus" ? "Opening checkout" : "Skip the wait"}
       </button>
       {usage.topup > 0 && (
         <button
