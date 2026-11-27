@@ -218,6 +218,8 @@ export type GoCopy = {
   reels?: string[];
   /** the + button's label and the line under it */
   plus?: { label: string; sub: string };
+  /** replaces the plain wordmark at the top (e.g. "unspool teams") */
+  brand?: ReactNode;
 };
 
 const STUDENT_COPY: GoCopy = {
@@ -237,7 +239,7 @@ export function GoHero({ copy = STUDENT_COPY, children }: { copy?: GoCopy; child
     <div className="flex min-h-[100dvh] flex-col items-center bg-paper px-4 pb-24 pt-3 text-ink lg:px-10 lg:pb-16 lg:pt-8">
       <div className="flex w-full max-w-[460px] flex-col items-center lg:grid lg:min-h-[78vh] lg:max-w-[1160px] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
         <div className="flex w-full flex-col items-center lg:items-start">
-          <Wordmark size={24} />
+          {copy.brand ?? <Wordmark size={24} />}
           <h1 className="mt-3 text-center font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em] lg:mt-8 lg:text-left lg:text-[58px] lg:leading-[1.0]">
             {copy.headline}
           </h1>

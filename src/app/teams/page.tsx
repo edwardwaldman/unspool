@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthModal } from "@/components/auth/auth-modal";
 import { GoHero, type GoCopy } from "@/components/go/go-hero";
+import { Wordmark } from "@/components/ui/icons";
 import { Toaster } from "@/components/ui/toast";
 import { ResumeStashedUpload } from "@/components/upload/use-uploader";
 
@@ -32,13 +33,15 @@ const TEAMS_COPY: GoCopy = {
   ticks: ["First reel free", "No card needed", "Your files stay private"],
   reels: ["/go/phish", "/go/lift", "/go/fire"],
   plus: { label: "Upload a training PDF", sub: "a handbook, SOP, policy or slides" },
+  // "unspool teams": the usual wordmark, then "teams" in the monospace face, lime
+  brand: (
+    <span className="inline-flex items-baseline gap-2" aria-label="unspool teams">
+      <Wordmark size={24} />
+      <span className="font-mono text-[19px] font-medium lowercase tracking-[0.04em] text-thread">teams</span>
+    </span>
+  ),
 };
 
-const STEPS = [
-  { n: "1", title: "Upload the document you already have", body: "A handbook, SOP, policy or slide deck: PDF, Word, PowerPoint, plain text, or a photo of a page. Or type a topic and we research it." },
-  { n: "2", title: "Get one short reel per key idea", body: "Each reel has a hook, a voiceover, word-by-word captions and a visual for every beat, sized for a phone." },
-  { n: "3", title: "Every reel ends in a quick quiz", body: "Your team has to pull the answer from memory, not just watch, so the key point is recalled rather than skimmed." },
-];
 const USES = [
   ["Safety procedures", "Fire safety, lifting, equipment checks"],
   ["Security awareness", "Phishing, passwords, data handling"],
@@ -49,7 +52,15 @@ const USES = [
 ];
 const IN_A_REEL = ["A hook that says why it matters", "Voiceover and word-by-word captions", "A visual for every beat", "A quiz question at the end", "A share link anyone can open", "Your document stays private"];
 
-/** Below the hero: what a training manager on a laptop wants to know. Stacks on phones, three columns on desktop. */
+function FlowArrow() {
+  return (
+    <svg width="44" height="44" viewBox="0 0 24 24" className="shrink-0 rotate-90 text-thread lg:rotate-0" aria-hidden>
+      <path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Below the hero: what a training manager on a laptop wants to know. Stacks on phones, rows on desktop. */
 function TeamsSections() {
   return (
     <div className="mt-20 w-full max-w-[1160px] lg:mt-10">
@@ -58,15 +69,40 @@ function TeamsSections() {
         <h2 id="how" className="mt-3 max-w-[640px] font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em] lg:text-[40px]">
           From a PDF nobody reads to reels people finish.
         </h2>
-        <ol className="mt-10 grid gap-px border border-line bg-line lg:grid-cols-3">
-          {STEPS.map((s) => (
-            <li key={s.n} className="bg-paper p-7">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-thread font-headline text-[18px] font-bold text-paper">{s.n}</div>
-              <h3 className="mt-5 text-[19px] font-semibold leading-snug">{s.title}</h3>
-              <p className="mt-2 text-[15px] leading-relaxed text-muted">{s.body}</p>
-            </li>
-          ))}
-        </ol>
+        {/* The real flow, drawn: a handbook page, the reels it becomes, the quiz each one ends on */}
+        <div className="mt-12 flex flex-col items-center gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+          <figure className="flex w-full max-w-[260px] flex-col items-center">
+            <div className="w-full rotate-[-2deg] rounded-[6px] bg-[#f4f1e8] p-5 text-[#2a2a2a] shadow-[0_18px_40px_rgba(0,0,0,0.45)]" aria-hidden>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8a8577]">Employee handbook · p. 34</div>
+              <div className="mt-2 text-[15px] font-semibold leading-tight">4.2 Fire safety and extinguisher use</div>
+              {[100, 92, 97, 84, 95, 70, 98, 88, 60].map((w, k) => (
+                <div key={k} className="mt-2 h-[6px] rounded-full bg-[#cfcabd]" style={{ width: `${w}%` }} />
+              ))}
+            </div>
+            <figcaption className="mt-5 text-center text-[14.5px] text-muted">Your handbook, SOP or slides</figcaption>
+          </figure>
+          <FlowArrow />
+          <figure className="flex flex-col items-center">
+            <div className="flex items-end" aria-hidden>
+              {["/go/phish.jpg", "/go/fire.jpg", "/go/lift.jpg"].map((src, k) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={src} src={src} alt="" width={132} height={235}
+                  className={`h-[235px] w-[132px] rounded-[14px] border border-line object-cover shadow-[0_18px_40px_rgba(0,0,0,0.45)] ${k === 1 ? "z-10 -mx-3 -translate-y-3" : k === 0 ? "rotate-[-6deg]" : "rotate-[6deg]"}`} />
+              ))}
+            </div>
+            <figcaption className="mt-5 max-w-[300px] text-center text-[14.5px] text-muted">One short reel per key idea, with a voiceover and captions</figcaption>
+          </figure>
+          <FlowArrow />
+          <figure className="flex w-full max-w-[260px] flex-col items-center">
+            <div className="w-full rounded-[18px] border border-line bg-surface p-5 shadow-[0_18px_40px_rgba(0,0,0,0.45)]" aria-hidden>
+              <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-thread">Quiz</div>
+              <div className="mt-2 text-[15px] font-semibold leading-snug">What does P.A.S.S. stand for?</div>
+              <div className="mt-3 rounded-[10px] bg-paper px-3 py-2 text-[13px] text-muted">Point, alarm, spray, step</div>
+              <div className="mt-2 flex items-center justify-between rounded-[10px] bg-thread px-3 py-2 text-[13px] font-semibold text-paper">Pull, aim, squeeze, sweep <span>✓</span></div>
+            </div>
+            <figcaption className="mt-5 text-center text-[14.5px] text-muted">A quick quiz at the end of every reel</figcaption>
+          </figure>
+        </div>
       </section>
 
       <section aria-labelledby="uses" className="mt-20">
