@@ -44,6 +44,8 @@ export async function POST(req: Request) {
     // reel before signing up. It's tied to the anonymous cookie and attached to the account at sign-up
     // (/api/auth/claim, /auth/callback). Anything more needs the account.
     if (!viewer.anonToken) return error(401, SIGN_UP, { code: "auth" });
+    // The owner testing signed out (a network they've used as owner) is never stopped by the preview limits.
+    if ((await appSettings()).ownerNetworks.includes(ipHash ?? "")) return createDocument(db, viewer, ipHash, prompt, pasted, fileName, size, body);
     // A few a day per browser, not one ever: someone who closed the sign-up card and wants to try another topic
     // got sent straight back to sign-up, which felt broken.
     const { count } = await db
