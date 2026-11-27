@@ -9,7 +9,8 @@ import { dispatch } from "@/lib/jobs";
 import { PROMPT_FILE } from "@/lib/pipeline";
 import { PROMPT_MAX_CHARS, isPastedDocument, promptTitle, tidyPrompt } from "@/lib/prompt-text";
 
-const ANON_PREVIEWS_PER_NETWORK = 4;
+const ANON_PREVIEWS_PER_BROWSER = 3;
+const ANON_PREVIEWS_PER_NETWORK = 6;
 
 export const dynamic = "force-dynamic";
 
@@ -39,12 +40,19 @@ export async function POST(req: Request) {
   const db = adminClient();
   const SIGN_UP = "Create a free account to unspool your document.";
   if (!viewer.userId) {
-    // Signed out: one preview document per browser (and a few per network a day), made so they can see their first
+    // Signed out: a few preview documents per browser and per network a day, made so they can see their first
     // reel before signing up. It's tied to the anonymous cookie and attached to the account at sign-up
     // (/api/auth/claim, /auth/callback). Anything more needs the account.
     if (!viewer.anonToken) return error(401, SIGN_UP, { code: "auth" });
-    const { count } = await db.from("documents").select("id", { count: "exact", head: true }).is("user_id", null).eq("anon_token", viewer.anonToken);
-    if (count) return error(401, SIGN_UP, { code: "auth" });
+    // A few a day per browser, not one ever: someone who closed the sign-up card and wants to try another topic
+    // got sent straight back to sign-up, which felt broken.
+    const { count } = await db
+      .from("documents")
+      .select("id", { count: "exact", head: true })
+      .is("user_id", null)
+      .eq("anon_token", viewer.anonToken)
+      .gt("created_at", new Date(Date.now() - 24 * 3600e3).toISOString());
+    if ((count ?? 0) >= ANON_PREVIEWS_PER_BROWSER) return error(401, SIGN_UP, { code: "auth" });
     // A few per network a day, not one: schools and phone carriers put many students behind one address, and with
     // a limit of 1 everyone after the first went straight to the sign-up wall without seeing their reel.
     const ok = await claimUsage({ kind: "upload", scope: "user_or_ip", limit: ANON_PREVIEWS_PER_NETWORK, userId: null, ipHash });
