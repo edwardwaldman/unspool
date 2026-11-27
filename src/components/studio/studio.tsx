@@ -278,6 +278,10 @@ function DesktopStudio({ docs, style, canEdit, plan, queue }: StudioProps) {
 function MobileStudio({ docs, style, canEdit, email, queue }: StudioProps) {
   const picker = usePicker();
   const [styleOpen, setStyleOpen] = useState(false);
+  // Still being made vs done: the first show up front, the second behind the "Your spools" pull-down.
+  const active = docs.filter((d) => !["ready", "failed"].includes(d.status));
+  const done = docs.filter((d) => ["ready", "failed"].includes(d.status));
+  const [doneOpen, setDoneOpen] = useState(false);
   // The sheet remounts the panel each time it opens: keep what was saved meanwhile.
   const [saved, setSaved] = useState(style);
   return (
@@ -312,15 +316,54 @@ function MobileStudio({ docs, style, canEdit, email, queue }: StudioProps) {
           </div>
         )}
       </div>
-      {/* Everything the Library page had lives here now: the grid of spools, with Edit to delete */}
-      {docs.length ? (
+      {/* Still being made (queued, planning, writing): up front, under the timer */}
+      {active.length > 0 && (
+        <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pb-4 ipad:max-w-[680px]" data-testid="studio-active">
+          <div className="mb-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-muted">In progress</div>
+          <ul className="divide-y divide-line border-y border-line">
+            {active.map((d) => {
+              const st = docStatus(d);
+              return (
+                <li key={d.id}>
+                  <Link href={`/s/${d.id}`} className="flex items-center gap-3 py-3">
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: st.tone }} aria-hidden />
+                    <span className="min-w-0 flex-1 truncate text-[15px] text-ink">{d.name}</span>
+                    <span className="shrink-0 text-[13px] font-medium" style={{ color: st.tone }}>
+                      {st.label}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* Done and watched: behind a pull-down bar, the grid of spools (with Edit to delete) */}
+      {done.length > 0 ? (
         <div className="mx-auto w-full max-w-[560px] shrink-0 pb-6 ipad:max-w-[680px]">
-          <LibraryGrid
-            initial={docs.map((d) => ({ id: d.id, name: d.name, fileType: d.rawType, status: d.status as never, unlocked: d.unlocked, freeReels: d.freeReels, total: d.total, readyCount: d.readyCount, createdAt: d.createdAt, headline: d.headline, hook: d.hook }))}
-          />
+          <button
+            type="button"
+            onClick={() => setDoneOpen((v) => !v)}
+            aria-expanded={doneOpen}
+            className="mx-4 flex w-[calc(100%-2rem)] items-center justify-between border border-line bg-surface px-4 py-3 text-left"
+            data-testid="studio-done-toggle"
+          >
+            <span className="text-[15px] font-medium text-ink">
+              Your spools <span className="text-muted">({done.length})</span>
+            </span>
+            <ChevronDown size={18} className={`text-muted transition-transform ${doneOpen ? "rotate-180" : ""}`} />
+          </button>
+          {doneOpen && (
+            <div className="mt-1">
+              <LibraryGrid
+                initial={done.map((d) => ({ id: d.id, name: d.name, fileType: d.rawType, status: d.status as never, unlocked: d.unlocked, freeReels: d.freeReels, total: d.total, readyCount: d.readyCount, createdAt: d.createdAt, headline: d.headline, hook: d.hook }))}
+              />
+            </div>
+          )}
         </div>
       ) : (
-        <p className="mx-auto w-full max-w-[560px] px-4 pb-6 text-[13px] text-muted ipad:max-w-[680px]">Your documents show up here.</p>
+        !active.length && <p className="mx-auto w-full max-w-[560px] px-4 pb-6 text-[13px] text-muted ipad:max-w-[680px]">Your documents show up here.</p>
       )}
 
       <Sheet open={styleOpen} onClose={() => setStyleOpen(false)} label="Reel style">
