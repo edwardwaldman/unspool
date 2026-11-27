@@ -36,6 +36,7 @@ const TEAMS_COPY: GoCopy = {
   reels: ["/go/phish", "/go/lift", "/go/fire"],
   plus: { label: "Upload a training PDF", sub: "a handbook, SOP, policy or slides" },
   cta: { label: "Request a demo", href: "#enterprise" },
+  demoHero: true,
   // "unspool Teams", the way Google writes "Google Docs": the wordmark, then the product name in the plain UI sans,
   // bold, in the Unspool lime
   brand: (
@@ -68,7 +69,7 @@ function FlowArrow() {
 /** Below the hero: what a training manager on a laptop wants to know. Stacks on phones, rows on desktop. */
 function TeamsSections() {
   return (
-    <div className="mt-20 w-full max-w-[1160px] lg:mt-24 lg:px-10">
+    <div className="mt-16 w-full max-w-[1160px] lg:mt-20 lg:px-10">
       <section aria-labelledby="how-m" className="border-t border-line pt-14 lg:hidden">
         <h2 id="how-m" className="max-w-[640px] font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em] lg:text-[40px]">
           From a PDF nobody reads to reels people finish.

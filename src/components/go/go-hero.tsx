@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Wordmark } from "../ui/icons";
 import { PROMPT_MAX_CHARS, isPastedDocument } from "@/lib/prompt-text";
@@ -222,7 +223,34 @@ export type GoCopy = {
   brand?: ReactNode;
   /** a call to action for the top bar and under the hero, e.g. /teams' "Request a demo" */
   cta?: { label: string; href: string };
+  /** sales-led hero (/teams): one big call to action and a "see how it works" cue instead of the upload and topic box,
+   *  with the rest of the page sliding up over the pinned hero like the main site */
+  demoHero?: boolean;
 };
+
+const scrollDown = () => window.scrollBy({ top: window.innerHeight * 0.9, behavior: "smooth" });
+
+/** The main site's scroll cue: a spinning "see how it works" ring around a bouncing arrow. */
+function SeeHowItWorks() {
+  return (
+    <motion.button type="button" aria-label="See how it works" onClick={scrollDown} className="shrink-0"
+      initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring", stiffness: 320, damping: 16 }} whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.94 }}>
+      <span className="relative flex h-[124px] w-[124px] items-center justify-center lg:h-[144px] lg:w-[144px]">
+        <motion.svg viewBox="0 0 100 100" className="absolute inset-0" animate={{ rotate: 360 }} transition={{ duration: 14, repeat: Infinity, ease: "linear" }}>
+          <defs><path id="go-cue-ring" d="M50 50 m-38 0 a38 38 0 1 1 76 0 a38 38 0 1 1 -76 0" /></defs>
+          <text className="fill-ink font-mono uppercase" style={{ fontSize: 9.6 }}>
+            <textPath href="#go-cue-ring" textLength="236" lengthAdjust="spacing">see how it works · see how it works ·</textPath>
+          </text>
+        </motion.svg>
+        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-thread text-paper lg:h-20 lg:w-20">
+          <motion.svg width="26" height="26" viewBox="0 0 24 24" className="lg:h-8 lg:w-8" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" animate={{ y: [-3, 4, -3] }} transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}>
+            <path d="M12 4v15M5 12l7 7 7-7" />
+          </motion.svg>
+        </span>
+      </span>
+    </motion.button>
+  );
+}
 
 const STUDENT_COPY: GoCopy = {
   headline: <>Snap a photo. Get study <span className="text-thread">TikToks.</span></>,
@@ -265,11 +293,7 @@ export function GoHero({ copy = STUDENT_COPY, children }: { copy?: GoCopy; child
       </Link>
     );
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center bg-paper px-4 pb-24 pt-3 text-ink lg:px-0 lg:pb-16 lg:pt-0">
-      <header className="hidden h-20 w-full items-center self-stretch px-10 lg:flex">
-        <Link href="/" aria-label="unspool home" className="inline-block origin-left scale-[1.3] transition-opacity hover:opacity-80">{brand}</Link>
-        {ctaButton("ml-auto")}
-      </header>
+    <div className={copy.demoHero ? "bg-paper text-ink" : "flex min-h-[100dvh] flex-col items-center bg-paper px-4 pb-24 pt-3 text-ink lg:px-0 lg:pb-16 lg:pt-0"}>
       {/* the pull-down bar: comes down when you scroll back up, like the main site's */}
       <div
         className={`fixed inset-x-0 top-0 z-40 flex h-16 items-center border-b border-line bg-paper px-5 transition-transform duration-300 lg:h-20 lg:px-10 ${barShown ? "translate-y-0" : "-translate-y-full"}`}
@@ -278,6 +302,11 @@ export function GoHero({ copy = STUDENT_COPY, children }: { copy?: GoCopy; child
         <Link href="/" aria-label="unspool home" tabIndex={barShown ? 0 : -1} className="inline-block origin-left transition-opacity hover:opacity-80 lg:scale-[1.3]">{brand}</Link>
         {ctaButton("ml-auto")}
       </div>
+      <div className={copy.demoHero ? "relative z-0 flex flex-col items-center px-4 pb-16 pt-3 lg:sticky lg:top-0 lg:min-h-[100dvh] lg:px-0 lg:pt-0" : "contents"}>
+      <header className="hidden h-20 w-full items-center self-stretch px-10 lg:flex">
+        <Link href="/" aria-label="unspool home" className="inline-block origin-left scale-[1.3] transition-opacity hover:opacity-80">{brand}</Link>
+        {ctaButton("ml-auto")}
+      </header>
       <div className="flex w-full max-w-[460px] flex-col items-center lg:mt-8 lg:max-w-[880px] lg:px-10">
         <Link href="/" aria-label="unspool home" className="lg:hidden">{brand}</Link>
         <h1 className="mt-3 text-center font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em] lg:mt-0 lg:text-[62px] lg:leading-[1.02]">
@@ -290,28 +319,49 @@ export function GoHero({ copy = STUDENT_COPY, children }: { copy?: GoCopy; child
         <div className="mt-1 w-full max-w-[300px] lg:mt-8 lg:max-w-[560px]">
           <AdAnimation docTitle={copy.docTitle} reels={copy.reels} />
         </div>
-        <PlusUpload label={copy.plus?.label} sub={copy.plus?.sub} />
-        <PromptBox topics={copy.topics} className="mt-4 lg:mt-8 lg:max-w-[520px]" />
-        <ul className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13.5px] text-muted lg:text-[14.5px]">
-          {copy.ticks.map((t) => <li key={t}>✓ {t}</li>)}
-        </ul>
+        {copy.demoHero && copy.cta ? (
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-6 lg:mt-8">
+            <Link href={copy.cta.href} className="flex items-center justify-center whitespace-nowrap bg-thread px-12 py-5 text-[19px] font-semibold text-paper transition-opacity hover:opacity-90 lg:px-20 lg:py-7 lg:text-[22px]">
+              {copy.cta.label}
+            </Link>
+            <div className="hidden sm:block"><SeeHowItWorks /></div>
+          </div>
+        ) : (
+          <>
+            <PlusUpload label={copy.plus?.label} sub={copy.plus?.sub} />
+            <PromptBox topics={copy.topics} className="mt-4 lg:mt-8 lg:max-w-[520px]" />
+            <ul className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13.5px] text-muted lg:text-[14.5px]">
+              {copy.ticks.map((t) => <li key={t}>✓ {t}</li>)}
+            </ul>
+          </>
+        )}
         <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[14.5px]">
           <Link href="/s/demo" className="text-muted underline underline-offset-4 hover:text-ink">
             Watch a sample reel first
           </Link>
-          {copy.cta && (
+          {copy.cta && !copy.demoHero && (
             <Link href={copy.cta.href} className="font-semibold text-thread underline underline-offset-4 hover:opacity-80">
               {copy.cta.label}
             </Link>
           )}
         </div>
       </div>
-      {children}
-      <footer className="mt-auto flex gap-4 pt-10 text-[12px] text-muted">
-        <Link href="/terms" className="hover:text-ink">Terms</Link>
-        <Link href="/privacy" className="hover:text-ink">Privacy</Link>
-        <span>unspool.cc</span>
-      </footer>
+      </div>
+      <div className={copy.demoHero ? "relative z-10 flex flex-col items-center rounded-t-[32px] border-t border-line bg-paper px-4 pb-16 shadow-[0_-24px_60px_rgba(0,0,0,0.45)]" : "contents"}>
+        {copy.demoHero && (
+          // the main site's slim tab riding on the card's top edge
+          <button type="button" onClick={scrollDown} className="absolute -top-9 left-5 z-20 flex h-9 items-center gap-1.5 rounded-t-[10px] bg-ink px-4 text-[13px] font-medium text-paper lg:left-10">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+            Pull up
+          </button>
+        )}
+        {children}
+        <footer className="mt-auto flex gap-4 pt-10 text-[12px] text-muted">
+          <Link href="/terms" className="hover:text-ink">Terms</Link>
+          <Link href="/privacy" className="hover:text-ink">Privacy</Link>
+          <span>unspool.cc</span>
+        </footer>
+      </div>
     </div>
   );
 }
