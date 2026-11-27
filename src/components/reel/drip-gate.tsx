@@ -1,6 +1,5 @@
 "use client";
 
-import { DealBanner } from "../billing/deal-banner";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -84,7 +83,6 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
   }, [open, canFree, spool.id, onClose, setErr, usage.freePerDay]);
 
   if (!open) return null;
-  const plus = usage.prices.plus;
   const unlockAll = () => (usage.trialEligible ? go("trial", { kind: "trial" }) : go("plus", { kind: "subscription", tier: "plus" }));
 
   // Kept short on purpose: the headline, the countdown, one button.
@@ -116,7 +114,6 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
           <p className="py-2 text-[14px] font-semibold text-thread">Open part {nextReel} to unspool it free</p>
         )}
       </div>
-      <DealBanner variant="compact" trial={usage.trialEligible} />
       <button
         type="button"
         onClick={unlockAll}
@@ -147,10 +144,8 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
           {err}
         </p>
       )}
-      {/* The one line the law needs before a card is taken for a trial. */}
-      <p className="mt-2.5 text-center text-[11px] leading-snug text-muted">
-        {usage.trialEligible ? `$0 today. Free for 1 day, then ${formatCents(plus.cents)}/week. Cancel anytime before then and pay nothing.` : `Plus: ${formatCents(plus.cents)}/week. Cancel anytime.`}
-      </p>
+      {/* Kept to the countdown and one button. The trial's price and renewal terms are shown on Stripe's checkout
+          page, next to where the card is entered and the trial is agreed to. */}
     </Modal>
   );
 }
