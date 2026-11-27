@@ -57,12 +57,12 @@ function AdAnimation({ docTitle = "My notes", reels = ["/go/mito", "/go/dna", "/
 }
 
 /** One big + button. Phones offer "Take Photo" alongside files in the same picker. Sign-up (if needed) comes after the file. */
-function PlusUpload({ label = "Snap a photo", sub = "or upload a PDF, slides or notes" }: { label?: string; sub?: string }) {
+function PlusUpload({ label = "Snap a photo", sub = "or upload a PDF, slides or notes", className = "" }: { label?: string; sub?: string; className?: string }) {
   const file = useRef<HTMLInputElement>(null);
   const upload = useUploader();
   const pending = usePendingUpload();
   return (
-    <div className="flex flex-col items-center">
+    <div className={`flex flex-col items-center ${className}`}>
       <input
         ref={file}
         type="file"
@@ -90,8 +90,10 @@ function PlusUpload({ label = "Snap a photo", sub = "or upload a PDF, slides or 
           )}
         </svg>
       </button>
-      <div className="mt-3 text-[17px] font-semibold">{pending ? "Opening your reels…" : label}</div>
-      <div className="mt-0.5 text-[13px] text-muted">{sub}</div>
+      <div className="mt-3 text-center lg:mt-0 lg:text-left">
+        <div className="text-[17px] font-semibold lg:text-[19px]">{pending ? "Opening your reels…" : label}</div>
+        <div className="mt-0.5 text-[13px] text-muted lg:text-[14px]">{sub}</div>
+      </div>
     </div>
   );
 }
@@ -225,31 +227,42 @@ const STUDENT_COPY: GoCopy = {
   ticks: ["First reel free", "No card needed", "Your files stay private"],
 };
 
-/** /go (and /teams): the landing page for TikTok and ads. Same look and animation as the videos, one job, no exits. */
-export function GoHero({ copy = STUDENT_COPY }: { copy?: GoCopy }) {
+/**
+ * /go (and /teams): the landing page for TikTok and ads. Same look and animation as the videos, one job, no exits.
+ * Phones get one narrow column (it has to fit above in-app browser toolbars); desktops get two columns, with the
+ * animation large on the right. `children` renders below the hero (the /teams page adds sections for desktop readers).
+ */
+export function GoHero({ copy = STUDENT_COPY, children }: { copy?: GoCopy; children?: ReactNode }) {
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center bg-paper px-4 pb-24 pt-3 text-ink">
-      <div className="flex w-full max-w-[460px] flex-col items-center">
-        <Wordmark size={24} />
-        <h1 className="mt-3 text-center font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em]">
-          {copy.headline}
-        </h1>
-        <p className="mt-2 text-center text-[14.5px] leading-[1.4] text-muted">
-          {copy.subline}
-        </p>
-        {/* Kept small so the + and the topic box fit above in-app browser toolbars (TikTok, Instagram) */}
-        <div className="mt-1 w-full max-w-[300px]">
+    <div className="flex min-h-[100dvh] flex-col items-center bg-paper px-4 pb-24 pt-3 text-ink lg:px-10 lg:pb-16 lg:pt-8">
+      <div className="flex w-full max-w-[460px] flex-col items-center lg:grid lg:min-h-[78vh] lg:max-w-[1160px] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-16">
+        <div className="flex w-full flex-col items-center lg:items-start">
+          <Wordmark size={24} />
+          <h1 className="mt-3 text-center font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em] lg:mt-8 lg:text-left lg:text-[58px] lg:leading-[1.0]">
+            {copy.headline}
+          </h1>
+          <p className="mt-2 text-center text-[14.5px] leading-[1.4] text-muted lg:mt-5 lg:max-w-[500px] lg:text-left lg:text-[19px] lg:leading-[1.45]">
+            {copy.subline}
+          </p>
+          {/* Phones: kept small so the + and the topic box fit above in-app browser toolbars (TikTok, Instagram) */}
+          <div className="mt-1 w-full max-w-[300px] lg:hidden">
+            <AdAnimation docTitle={copy.docTitle} reels={copy.reels} />
+          </div>
+          <PlusUpload label={copy.plus?.label} sub={copy.plus?.sub} className="lg:mt-9 lg:flex-row lg:gap-5" />
+          <PromptBox topics={copy.topics} className="mt-4 lg:mt-8 lg:max-w-[520px]" />
+          <ul className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13.5px] text-muted lg:justify-start lg:text-[14.5px]">
+            {copy.ticks.map((t) => <li key={t}>✓ {t}</li>)}
+          </ul>
+          <Link href="/s/demo" className="mt-5 text-[14.5px] text-muted underline underline-offset-4 hover:text-ink">
+            Watch a sample reel first
+          </Link>
+        </div>
+        {/* Desktop: the document → reels animation, large */}
+        <div className="hidden w-full lg:block">
           <AdAnimation docTitle={copy.docTitle} reels={copy.reels} />
         </div>
-        <PlusUpload label={copy.plus?.label} sub={copy.plus?.sub} />
-        <PromptBox topics={copy.topics} />
-        <ul className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13.5px] text-muted">
-          {copy.ticks.map((t) => <li key={t}>✓ {t}</li>)}
-        </ul>
-        <Link href="/s/demo" className="mt-5 text-[14.5px] text-muted underline underline-offset-4 hover:text-ink">
-          Watch a sample reel first
-        </Link>
       </div>
+      {children}
       <footer className="mt-auto flex gap-4 pt-10 text-[12px] text-muted">
         <Link href="/terms" className="hover:text-ink">Terms</Link>
         <Link href="/privacy" className="hover:text-ink">Privacy</Link>
