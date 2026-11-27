@@ -180,7 +180,7 @@ window.renderAt = (t) => {
   if (inU) { const a = clamp((t - (U0 - 0.2)) / 0.3) * clamp((U1 - t) / 0.25), pop = 0.8 + 0.2 * outBack(clamp((t - (U0 - 0.2)) / 0.35));
     h += `<div style="position:absolute;inset:0;background:rgba(6,10,8,${0.66 * a})"></div>`;
     const lg = t >= 38.5 && t < 39.25 ? 1 + 0.14 * Math.sin(clamp((t - 38.5) / 0.75) * Math.PI) : 1;
-    h += `<div style="position:absolute;left:0;right:0;top:92px;text-align:center;opacity:${a}"><span style="display:inline-block;transform:scale(${lg});background:#b6f24a;color:#08110e;font:800 42px Arc;padding:8px 24px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.45)">unspool<span style="opacity:.55">.cc</span></span><div style="margin-top:10px;color:#fff;font:800 24px Arc;letter-spacing:1px">PHOTO → REELS</div></div>`;
+    h += `<div style="position:absolute;left:0;right:0;top:92px;text-align:center;opacity:${a}"><span style="display:inline-block;transform:scale(${lg});background:#b6f24a;color:#08110e;font:800 42px Arc;padding:8px 24px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.45)">unspool.cc</span><div style="margin-top:10px;color:#fff;font:800 24px Arc;letter-spacing:1px">PHOTO → REELS</div></div>`;
     h += `<div id="ph" style="position:absolute;left:218px;top:205px;width:284px;height:560px;border-radius:38px;background:#000;border:5px solid #2a2a2a;box-shadow:0 20px 50px rgba(0,0,0,.6);overflow:hidden;opacity:${a};transform:scale(${pop});transform-origin:50% 50%"></div>`;
     if (t >= 35.95 && t < 36.35) h += `<div style="position:absolute;inset:0;background:#fff;opacity:${1 - (t - 35.95) / 0.4}"></div>`; }
   const c = capAt(t);
