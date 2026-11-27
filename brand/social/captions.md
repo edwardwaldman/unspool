@@ -680,3 +680,7 @@ you walked in. now what? 💔 A: hear them out · B: walk past them. comment A o
 ## The Text · Part 2, long cut (44s, post with an A/B poll)
 everyone knew. for WEEKS. 😤 A: hear them out · B: walk past them. comment A or B 👇 #storytime #pov #studytok #relatable
 (Until Dec 1 11:59 PM PT, add: "Black Friday: 50% off your first month at unspool.cc")
+
+## The Text · Part 2, "slap him" cut (47s, post with an A/B poll)
+you all said slap him. so you raised your hand... 😶 A: hear them out · B: walk past them. comment A or B 👇 #storytime #pov #studytok
+(Until Dec 1 11:59 PM PT, add: "Black Friday: 50% off your first month at unspool.cc")
