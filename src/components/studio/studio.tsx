@@ -49,6 +49,8 @@ export type StudioProps = {
   isNew?: boolean;
   fresh?: boolean;
   email?: string | null;
+  /** First name for the greeting (from the sign-in account), if known. */
+  name?: string | null;
   /** Free accounts: when the next free reel is allowed, and how many uploads wait in the queue for it. */
   queue?: { nextAt: string | null; queued: number };
 };
@@ -197,6 +199,26 @@ function PlusButton({ onClick, pending, size }: { onClick: () => void; pending: 
   );
 }
 
+/** "Good afternoon, Sam" (or now and then something else friendly) and today's date, in the visitor's own time. */
+function Greeting({ name }: { name?: string | null }) {
+  const [line] = useState(() => {
+    const h = new Date().getHours();
+    const time = h < 5 ? "Up late" : h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+    const others = ["Welcome back", "Ready to study", "Let's unspool something", "Back at it"];
+    return Math.random() < 0.7 ? time : others[Math.floor(Math.random() * others.length)];
+  });
+  const date = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  return (
+    <div data-testid="studio-greeting">
+      <div className="text-[13px] text-muted">{date}</div>
+      <h1 className="mt-0.5 font-display text-[26px] leading-[1.1] text-ink">
+        {line}
+        {name ? `, ${name}` : ""}
+      </h1>
+    </div>
+  );
+}
+
 /** Still being made / waiting in the queue: queued uploads get a big row with their own countdown and a way to
  * remove one added by accident, plus "Unlock the reels now" (the free trial, or Plus once the trial is used). */
 function ActiveList({ docs, nextAt }: { docs: StudioDoc[]; nextAt: string | null }) {
@@ -230,7 +252,7 @@ function ActiveList({ docs, nextAt }: { docs: StudioDoc[]; nextAt: string | null
           const st = docStatus(d);
           if (d.status === "queued")
             return (
-              <li key={d.id} className="flex items-center gap-3 border border-line bg-surface px-4 py-4" data-testid="queued-row">
+              <li key={d.id} className="flex items-center gap-3 rounded-[18px] border border-line bg-surface px-4 py-4" data-testid="queued-row">
                 <div className="min-w-0 flex-1">
                   <div className="line-clamp-2 text-[17px] font-semibold leading-snug text-ink">{d.name}</div>
                   <div className="mt-1.5 flex items-baseline gap-2">
@@ -238,14 +260,14 @@ function ActiveList({ docs, nextAt }: { docs: StudioDoc[]; nextAt: string | null
                     {left > 0 && <span className="font-mono text-[20px] font-bold tabular-nums text-thread">{formatCountdown(left)}</span>}
                   </div>
                 </div>
-                <button type="button" onClick={() => remove(d.id)} aria-label={`Remove ${d.name} from the queue`} className="flex h-9 w-9 shrink-0 items-center justify-center border border-line text-[18px] text-muted hover:border-coral hover:text-coral">
+                <button type="button" onClick={() => remove(d.id)} aria-label={`Remove ${d.name} from the queue`} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line text-[18px] text-muted hover:border-coral hover:text-coral">
                   ×
                 </button>
               </li>
             );
           return (
             <li key={d.id}>
-              <Link href={`/s/${d.id}`} className="flex items-center gap-3 border border-line px-4 py-3.5">
+              <Link href={`/s/${d.id}`} className="flex items-center gap-3 rounded-[16px] border border-line px-4 py-3.5">
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: st.tone }} aria-hidden />
                 <span className="min-w-0 flex-1 truncate text-[15.5px] text-ink">{d.name}</span>
                 <span className="shrink-0 text-[13px] font-medium" style={{ color: st.tone }}>
@@ -257,7 +279,7 @@ function ActiveList({ docs, nextAt }: { docs: StudioDoc[]; nextAt: string | null
         })}
       </ul>
       {queued && (
-        <button type="button" onClick={unlock} disabled={busy} className="mt-3 min-h-[52px] w-full bg-thread text-[16px] font-semibold text-paper hover:opacity-90 disabled:opacity-60" data-testid="unlock-now">
+        <button type="button" onClick={unlock} disabled={busy} className="mt-3 min-h-[52px] w-full rounded-full bg-thread text-[16px] font-semibold text-paper hover:opacity-90 disabled:opacity-60" data-testid="unlock-now">
           {busy ? "Loading..." : "Unlock the reels now"}
         </button>
       )}
@@ -284,7 +306,7 @@ function DoneList({ docs }: { docs: StudioDoc[] }) {
           {editing ? "Done" : "Edit"}
         </button>
       </div>
-      <ul className="divide-y divide-line border-y border-line">
+      <ul className="divide-y divide-line overflow-hidden rounded-[16px] border border-line px-3">
         {items.map((d) => {
           const total = d.total ?? 0;
           const open = d.unlocked ? total : Math.min(total, d.freeReels);
@@ -300,7 +322,7 @@ function DoneList({ docs }: { docs: StudioDoc[] }) {
                 </span>
               </Link>
               {editing ? (
-                <button type="button" onClick={() => remove(d.id)} className="shrink-0 border border-coral/60 px-2.5 py-1 text-[12.5px] font-semibold text-coral">
+                <button type="button" onClick={() => remove(d.id)} className="shrink-0 rounded-full border border-coral/60 px-2.5 py-1 text-[12.5px] font-semibold text-coral">
                   Delete
                 </button>
               ) : (
@@ -394,7 +416,7 @@ function DesktopStudio({ docs, style, canEdit, plan, queue }: StudioProps) {
   );
 }
 
-function MobileStudio({ docs, style, canEdit, email, queue }: StudioProps) {
+function MobileStudio({ docs, style, canEdit, email, queue, name }: StudioProps) {
   const picker = usePicker();
   const [styleOpen, setStyleOpen] = useState(false);
   // Still being made vs done: the first show up front, the second behind the "Your spools" pull-down.
@@ -416,18 +438,28 @@ function MobileStudio({ docs, style, canEdit, email, queue }: StudioProps) {
       </div>
 
       <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pb-5 pt-5 ipad:max-w-[680px]">
-        {/* Type a topic */}
-        <PromptBox divider={false} className="" />
+        {/* Hello, name and the date */}
+        <Greeting name={name} />
+        {/* The next free reel, above the + */}
+        {queue && (
+          <div className="mt-4">
+            <QueueTimer nextAt={queue.nextAt} queued={queue.queued} />
+          </div>
+        )}
         {/* The big + in the middle: upload a file or photo */}
-        <div className="flex flex-col items-center py-8">
+        <div className="flex flex-col items-center pb-5 pt-7">
           <PlusButton onClick={picker.open} pending={picker.pending} size="md" />
           <div className="mt-4 font-display text-[20px] leading-tight text-ink">{picker.pending ? "Starting upload" : "Upload a document"}</div>
           <p className="mt-1 text-[13px] text-muted">{TYPES_HINT}</p>
-          {/* Pick the reel style before (or while) uploading: a small button, centred under the upload */}
+        </div>
+        {/* Or type a topic, under the + */}
+        <PromptBox divider={false} className="" />
+        {/* Pick the reel style before (or while) uploading: a small button, centred */}
+        <div className="mt-4 flex justify-center">
           <button
             type="button"
             onClick={() => setStyleOpen(true)}
-            className="mt-4 inline-flex items-center gap-2 rounded-full border border-line px-3.5 py-1.5 text-[13px] text-ink transition-colors hover:border-thread"
+            className="inline-flex items-center gap-2 rounded-full border border-line px-3.5 py-1.5 text-[13px] text-ink transition-colors hover:border-thread"
             data-testid="style-chip"
             data-tour="studio-style"
           >
@@ -435,12 +467,6 @@ function MobileStudio({ docs, style, canEdit, email, queue }: StudioProps) {
             {!canEdit && <span className="rounded-[3px] bg-thread px-1.5 py-[1px] text-[10px] font-bold text-paper">PRO</span>}
           </button>
         </div>
-        {/* The next-free-reel timer and the queue, right under it */}
-        {queue && (
-          <div className="mt-4">
-            <QueueTimer nextAt={queue.nextAt} queued={queue.queued} />
-          </div>
-        )}
       </div>
       {/* Still being made (queued, planning, writing): up front, under the timer */}
       {active.length > 0 && <ActiveList docs={active} nextAt={queue?.nextAt ?? null} />}
@@ -452,7 +478,7 @@ function MobileStudio({ docs, style, canEdit, email, queue }: StudioProps) {
             type="button"
             onClick={() => setDoneOpen((v) => !v)}
             aria-expanded={doneOpen}
-            className="mx-4 flex w-[calc(100%-2rem)] items-center justify-between border border-line bg-surface px-4 py-3 text-left"
+            className="mx-4 flex w-[calc(100%-2rem)] items-center justify-between rounded-[16px] border border-line bg-surface px-4 py-3 text-left"
             data-testid="studio-done-toggle"
           >
             <span className="text-[15px] font-medium text-ink">

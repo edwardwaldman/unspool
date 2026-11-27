@@ -28,21 +28,34 @@ export function ThreadGame() {
   const [mode, setMode] = useState<"idle" | "play" | "over">("idle");
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
-  const [best, setBest] = useState(() => (typeof window === "undefined" ? 0 : readBest()));
+  const [best, setBest] = useState(0);
   const [drops, setDrops] = useState<Drop[]>([]);
   const [spoolX, setSpoolX] = useState(0.5);
-  const [pop, setPop] = useState<{ id: number; x: number; good: boolean } | null>(null);
-  const s = useRef({ score: 0, lives: 3, drops: [] as Drop[], x: 0.5, next: 0, id: 0, last: 0, started: 0, width: 300 });
+  const [pop, setPop] = useState<{ id: number; x: number; good: boolean; pts?: number } | null>(null);
+  const s = useRef({ streak: 0, score: 0, lives: 3, drops: [] as Drop[], x: 0.5, next: 0, id: 0, last: 0, started: 0, width: 300 });
 
   const start = () => {
     const w = area.current?.clientWidth ?? 300;
-    Object.assign(s.current, { score: 0, lives: 3, drops: [], next: 0, last: 0, started: Date.now(), width: w });
+    Object.assign(s.current, { streak: 0, score: 0, lives: 3, drops: [], next: 0, last: 0, started: Date.now(), width: w });
     setScore(0);
     setLives(3);
     setDrops([]);
     setMode("play");
     track("game_start");
+    setBest(readBest());
   };
+
+  // Already going when the loading screen opens (no "tap to play"), and back on by itself after a game over.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => start());
+    return () => cancelAnimationFrame(id);
+  }, []);
+  useEffect(() => {
+    if (mode !== "over") return;
+    const id = window.setTimeout(() => start(), 2200);
+    return () => window.clearTimeout(id);
+  }, [mode]);
+
 
   // Finger / mouse moves the spool.
   const move = (clientX: number) => {
@@ -76,13 +89,15 @@ export function ThreadGame() {
         d.y += d.v * dt;
         if (d.y > H - 58 && d.y < H - 22 && Math.abs(d.x - st.x) < half + 0.06) {
           if (d.good) {
-            st.score += 1;
+            st.streak = (st.streak ?? 0) + 1;
+            st.score += st.streak >= 3 ? 2 : 1;
             setScore(st.score);
           } else {
+            st.streak = 0;
             st.lives -= 1;
             setLives(st.lives);
           }
-          setPop({ id: d.id, x: d.x, good: d.good });
+          setPop({ id: d.id, x: d.x, good: d.good, pts: d.good ? (st.streak >= 3 ? 2 : 1) : 0 });
           continue;
         }
         if (d.y < H + 10) kept.push(d);
@@ -131,7 +146,7 @@ export function ThreadGame() {
     >
       {/* score */}
       <div className="absolute left-3 top-2.5 font-mono text-[13px] text-white/80">
-        {mode === "play" ? `${score} wound` : best ? `best ${best}` : ""}
+        <span className="font-bold text-thread">{score}</span> pts{best ? <span className="ml-2 text-white/45">best {Math.max(best, score)}</span> : null}
       </div>
       {mode === "play" && <div className="absolute right-3 top-2 text-[13px] tracking-[2px]">{"●".repeat(lives)}<span className="text-white/25">{"●".repeat(3 - lives)}</span></div>}
 
@@ -149,7 +164,7 @@ export function ThreadGame() {
       {/* +1 / ouch */}
       {pop && mode === "play" && (
         <span key={pop.id} className="pointer-events-none absolute -translate-x-1/2 animate-[ping_0.6s_ease-out_1] font-mono text-[14px] font-bold" style={{ left: `${pop.x * 100}%`, top: H - 92, color: pop.good ? "var(--thread)" : "#ff6b6b" }}>
-          {pop.good ? "+1" : "✕"}
+          {pop.good ? `+${pop.pts ?? 1}${(pop.pts ?? 1) > 1 ? " streak!" : ""}` : "✕"}
         </span>
       )}
 
@@ -171,10 +186,10 @@ export function ThreadGame() {
           ) : (
             <>
               <div className="font-display text-[22px] leading-tight text-white">Catch the key ideas</div>
-              <div className="mt-1 max-w-[240px] text-[13px] text-white/70">Slide the spool to wind them in. Dodge the scrolling.</div>
+              <div className="mt-1 max-w-[240px] text-[13px] text-white/70">Slide the spool to wind them in. 3 in a row = double points.</div>
             </>
           )}
-          <div className="mt-3 rounded-full bg-thread px-4 py-1.5 text-[14px] font-semibold text-[#0f1d18]">{mode === "over" ? "Play again" : "Tap to play"}</div>
+          <div className="mt-3 rounded-full bg-thread px-4 py-1.5 text-[14px] font-semibold text-[#0f1d18]">{mode === "over" ? "Next round…" : "Starting…"}</div>
         </div>
       )}
     </div>

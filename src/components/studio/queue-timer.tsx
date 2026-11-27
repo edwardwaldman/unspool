@@ -21,7 +21,7 @@ export function QueueTimer({ nextAt, queued }: { nextAt: string | null; queued: 
 
   if (left > 0) {
     return (
-      <div className="flex items-center justify-between border border-line px-4 py-3" data-testid="queue-timer">
+      <div className="flex items-center justify-between rounded-[16px] border border-line px-4 py-3" data-testid="queue-timer">
         <div>
           <div className="text-[12.5px] font-semibold text-thread">Next free reel in</div>
           {queued > 0 && (
@@ -38,14 +38,14 @@ export function QueueTimer({ nextAt, queued }: { nextAt: string | null; queued: 
   }
   if (queued > 0) {
     return (
-      <div className="border border-line px-4 py-3 text-[13.5px] text-muted" data-testid="queue-timer">
+      <div className="rounded-[16px] border border-line px-4 py-3 text-[13.5px] text-muted" data-testid="queue-timer">
         <span className="font-semibold text-thread">Up next:</span> your queued {queued === 1 ? "upload starts" : "uploads start"} as soon as
         the one being made finishes.
       </div>
     );
   }
   return (
-    <div className="flex items-center justify-between border border-line px-4 py-3" data-testid="queue-timer">
+    <div className="flex items-center justify-between rounded-[16px] border border-line px-4 py-3" data-testid="queue-timer">
       <div className="text-[12.5px] font-semibold text-thread">Next free reel</div>
       <div className="font-mono text-[15px] font-bold text-thread">Ready now</div>
     </div>

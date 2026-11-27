@@ -26,6 +26,9 @@ export default async function StudioPage() {
   // A brand-new account (made in the last day, nothing uploaded yet) gets the welcome pop-up and Studio tour.
   const { data: auth } = await adminClient().auth.admin.getUserById(viewer.realUserId ?? viewer.userId).catch(() => ({ data: { user: null } }));
   const isNew = isNewAccount(auth.user?.created_at);
+  // First name for the Studio greeting (Google gives a full name; email sign-ups may have none).
+  const meta = (auth.user?.user_metadata ?? {}) as { full_name?: string; name?: string };
+  const firstName = (meta.full_name ?? meta.name ?? "").trim().split(/\s+/)[0] || null;
   // Free accounts: start a queued upload if its turn has come, then show the countdown to the next free reel.
   const free = tierOf(viewer.profile) === "free";
   const moved = await moveQueue(viewer).catch((err) => (console.error("studio: queue", err), { queued: 0, nextAt: null }));
@@ -38,7 +41,7 @@ export default async function StudioPage() {
       <Suspense>
         <CheckoutReturn />
       </Suspense>
-      <Studio docs={docs} isNew={docs.length === 0 && isNew} fresh={isNew} email={viewer.email} plan={PLANS[tierOf(viewer.profile)].name} style={parseReelStyle(viewer.profile?.reel_style)} canEdit={canEditStyle(viewer)} queue={free || moved.queued ? { nextAt, queued: moved.queued } : undefined} />
+      <Studio docs={docs} isNew={docs.length === 0 && isNew} fresh={isNew} email={viewer.email} plan={PLANS[tierOf(viewer.profile)].name} style={parseReelStyle(viewer.profile?.reel_style)} canEdit={canEditStyle(viewer)} name={firstName} queue={free || moved.queued ? { nextAt, queued: moved.queued } : undefined} />
     </AppShell>
   );
 }
