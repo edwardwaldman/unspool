@@ -4,9 +4,8 @@ import { Crown } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { ReelStyle } from "@/lib/reel-style";
-import { openAccount } from "../account/account-store";
 import { fileLabel, fileTone, reelTint } from "../reel/accent";
-import { ChevronDown, PlusIcon, UserIcon, Wordmark } from "../ui/icons";
+import { ChevronDown, PlusIcon, Wordmark } from "../ui/icons";
 import { MarkedText } from "../ui/marked-text";
 import { Sheet } from "../ui/sheet";
 import { useLayout } from "../ui/use-media";
@@ -14,6 +13,7 @@ import { usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { CreditBar, RechargeButton } from "./credit-bar";
 import { QueueTimer } from "./queue-timer";
+import { AccountMenu } from "./account-menu";
 import { LibraryGrid } from "../spool/library-grid";
 import { PromptBox } from "../go/go-hero";
 import { PICK_EVENT, WelcomeTour } from "./welcome-tour";
@@ -290,15 +290,8 @@ function MobileStudio({ docs, style, canEdit, plan, email, queue }: StudioProps)
         </Link>
         {/* Recharge sits next to the account icon (where Library used to be) */}
         <RechargeButton />
-        <button
-          type="button"
-          onClick={openAccount}
-          aria-label="Account"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-thread font-display text-[16px] leading-none text-paper ring-2 ring-thread/30 transition-transform active:scale-95 ipad:h-11 ipad:w-11 ipad:text-[19px]"
-        >
-          {/* The account's initial, like the reels' avatar; the outline icon only if there's no email. */}
-          {email?.trim() ? email.trim()[0].toUpperCase() : <UserIcon size={18} />}
-        </button>
+        {/* ☰ menu: account settings and preferences, Log out at the bottom (instead of the account initial) */}
+        <AccountMenu email={email} onReelStyle={() => setStyleOpen(true)} />
       </div>
 
       {/* Credits and Recharge at the top */}
