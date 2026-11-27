@@ -291,7 +291,7 @@ export function GoHero({ copy = STUDENT_COPY, children }: { copy?: GoCopy; child
   const barShown = usePullDownBar();
   const ctaButton = (extra = "") =>
     copy.cta && (
-      <Link href={copy.cta.href} className={`inline-flex items-center bg-ink px-5 py-2.5 text-[15px] font-semibold text-paper transition-opacity hover:opacity-90 ${extra}`}>
+      <Link href={copy.cta.href} className={`inline-flex shrink-0 items-center whitespace-nowrap bg-ink px-4 py-2.5 text-[14px] sm:px-5 sm:text-[15px] font-semibold text-paper transition-opacity hover:opacity-90 ${extra}`}>
         {copy.cta.label}
       </Link>
     );
