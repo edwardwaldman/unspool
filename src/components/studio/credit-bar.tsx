@@ -46,7 +46,7 @@ function counts(u: UsageDTO) {
 }
 
 /** "47 credits" + Recharge: the live meter at the top of Studio. */
-export function CreditBar({ size = "md" }: { size?: "md" | "lg" }) {
+export function CreditBar({ size = "md", recharge = true }: { size?: "md" | "lg"; /** Show the Recharge button (off where the header carries it). */ recharge?: boolean }) {
   const usage = useCredits();
   const [open, setOpen] = useState(false);
   const c = usage ? counts(usage) : null;
@@ -68,15 +68,37 @@ export function CreditBar({ size = "md" }: { size?: "md" | "lg" }) {
             </div>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="shrink-0 bg-thread px-3.5 py-2 text-[13.5px] font-semibold text-paper transition-opacity hover:opacity-90 ipad:text-[15px]"
-          data-testid="recharge"
-        >
-          Recharge
-        </button>
+        {recharge && (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="shrink-0 bg-thread px-3.5 py-2 text-[13.5px] font-semibold text-paper transition-opacity hover:opacity-90 ipad:text-[15px]"
+            data-testid="recharge"
+          >
+            Recharge
+          </button>
+        )}
       </div>
+      <Sheet open={open} onClose={() => setOpen(false)} label="Recharge credits">
+        <RechargePanel />
+      </Sheet>
+    </>
+  );
+}
+
+/** Recharge on its own (the phone Studio's header, next to the account icon): opens the same top-up sheet. */
+export function RechargeButton() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="bg-thread px-3 py-2 text-[13.5px] font-semibold text-paper transition-opacity hover:opacity-90 ipad:px-4 ipad:text-[15px]"
+        data-testid="recharge"
+      >
+        Recharge
+      </button>
       <Sheet open={open} onClose={() => setOpen(false)} label="Recharge credits">
         <RechargePanel />
       </Sheet>

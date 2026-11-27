@@ -12,7 +12,7 @@ import { Sheet } from "../ui/sheet";
 import { useLayout } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
-import { CreditBar } from "./credit-bar";
+import { CreditBar, RechargeButton } from "./credit-bar";
 import { QueueTimer } from "./queue-timer";
 import { LibraryGrid } from "../spool/library-grid";
 import { PromptBox } from "../go/go-hero";
@@ -288,6 +288,8 @@ function MobileStudio({ docs, style, canEdit, plan, email, queue }: StudioProps)
         <Link href="/" aria-label="Unspool" className="mr-auto">
           <Wordmark size={22} />
         </Link>
+        {/* Recharge sits next to the account icon (where Library used to be) */}
+        <RechargeButton />
         <button
           type="button"
           onClick={openAccount}
@@ -301,7 +303,7 @@ function MobileStudio({ docs, style, canEdit, plan, email, queue }: StudioProps)
 
       {/* Credits and Recharge at the top */}
       <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pt-4 ipad:max-w-[680px]">
-        <CreditBar />
+        <CreditBar recharge={false} />
       </div>
 
       <div className="flex min-h-[300px] flex-1 flex-col items-center justify-center px-6 py-8 text-center">
