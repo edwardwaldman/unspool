@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AuthModal } from "@/components/auth/auth-modal";
 import { GoHero, type GoCopy } from "@/components/go/go-hero";
 import { Wordmark } from "@/components/ui/icons";
+import { TeamsFlow } from "@/components/go/teams-flow";
 import { Toaster } from "@/components/ui/toast";
 import { ResumeStashedUpload } from "@/components/upload/use-uploader";
 
@@ -34,11 +35,11 @@ const TEAMS_COPY: GoCopy = {
   reels: ["/go/phish", "/go/lift", "/go/fire"],
   plus: { label: "Upload a training PDF", sub: "a handbook, SOP, policy or slides" },
   // "unspool Teams", the way Google writes "Google Docs": the wordmark, then the product name in the plain UI sans,
-  // regular weight, a step quieter than the logo
+  // regular weight, in the Unspool lime
   brand: (
     <span className="inline-flex items-baseline gap-[7px]" aria-label="unspool Teams">
       <Wordmark size={24} />
-      <span className="font-sans text-[23px] font-normal leading-none tracking-[-0.01em] text-ink/70">Teams</span>
+      <span className="font-sans text-[23px] font-normal leading-none tracking-[-0.01em] text-thread">Teams</span>
     </span>
   ),
 };
@@ -65,9 +66,8 @@ function FlowArrow() {
 function TeamsSections() {
   return (
     <div className="mt-20 w-full max-w-[1160px] lg:mt-24 lg:px-10">
-      <section aria-labelledby="how" className="border-t border-line pt-14">
-        <div className="label">How it works</div>
-        <h2 id="how" className="mt-3 max-w-[640px] font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em] lg:text-[40px]">
+      <section aria-labelledby="how-m" className="border-t border-line pt-14 lg:hidden">
+        <h2 id="how-m" className="max-w-[640px] font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em] lg:text-[40px]">
           From a PDF nobody reads to reels people finish.
         </h2>
         {/* The real flow, drawn: a handbook page, the reels it becomes, the quiz each one ends on */}
@@ -106,9 +106,12 @@ function TeamsSections() {
         </div>
       </section>
 
+      <div className="hidden lg:block">
+        <TeamsFlow />
+      </div>
+
       <section aria-labelledby="uses" className="mt-20">
-        <div className="label">What teams turn into reels</div>
-        <h2 id="uses" className="mt-3 max-w-[640px] font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em] lg:text-[40px]">
+        <h2 id="uses" className="max-w-[640px] font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em] lg:text-[40px]">
           The training everyone is supposed to have read.
         </h2>
         <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -123,8 +126,7 @@ function TeamsSections() {
 
       <section aria-labelledby="inside" className="mt-20 grid gap-10 border border-line p-8 lg:grid-cols-[1fr_1fr] lg:items-center lg:p-12">
         <div>
-          <div className="label">In every reel</div>
-          <h2 id="inside" className="mt-3 font-headline text-[28px] font-bold leading-[1.05] tracking-[-0.02em] lg:text-[36px]">Built for a phone, made from your document.</h2>
+          <h2 id="inside" className="font-headline text-[28px] font-bold leading-[1.05] tracking-[-0.02em] lg:text-[36px]">Built for a phone, made from your document.</h2>
           <p className="mt-4 max-w-[460px] text-[15.5px] leading-relaxed text-muted">
             Start with one document. The first reel is free and needs no card; plans for more reels are on the{" "}
             <Link href="/pricing" className="text-ink underline underline-offset-4">pricing page</Link>.
