@@ -13,6 +13,7 @@ import { useLayout } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { CreditBar } from "./credit-bar";
+import { QueueTimer } from "./queue-timer";
 import { PICK_EVENT, WelcomeTour } from "./welcome-tour";
 import { ProBadge, ReelStylePanel } from "./reel-style-panel";
 
@@ -31,7 +32,17 @@ export type StudioDoc = {
   reels: { index: number; title: string; status: string; headline: string | null; locked: boolean }[];
 };
 
-export type StudioProps = { docs: StudioDoc[]; style: ReelStyle; canEdit: boolean; plan: string; isNew?: boolean; fresh?: boolean; email?: string | null };
+export type StudioProps = {
+  docs: StudioDoc[];
+  style: ReelStyle;
+  canEdit: boolean;
+  plan: string;
+  isNew?: boolean;
+  fresh?: boolean;
+  email?: string | null;
+  /** Free accounts: when the next free reel is allowed, and how many uploads wait in the queue for it. */
+  queue?: { nextAt: string | null; queued: number };
+};
 
 /** The library's numbers, at the top of the document list. */
 function LibraryStats({ docs, plan }: { docs: StudioDoc[]; plan: string }) {
@@ -114,12 +125,13 @@ const TYPES_HINT = "PDF, Word, slides, text or a photo of your notes";
 
 function docStatus(d: StudioDoc): { label: string; tone: string } {
   if (d.status === "failed") return { label: "Failed", tone: "var(--coral)" };
+  if (d.status === "queued") return { label: "Queued", tone: "var(--muted)" };
   if (["uploading", "uploaded", "extracting", "planning"].includes(d.status) || !d.total) return { label: "Unspooling", tone: "var(--thread)" };
   if (d.readyCount < d.total) return { label: `${d.readyCount} of ${d.total} ready`, tone: "var(--thread)" };
   return { label: "Ready", tone: "var(--sage)" };
 }
 
-const reelsLabel = (d: StudioDoc) => (d.total ? `${d.total} ${d.total === 1 ? "reel" : "reels"}` : d.status === "failed" ? "No reels" : "Planning");
+const reelsLabel = (d: StudioDoc) => (d.total ? `${d.total} ${d.total === 1 ? "reel" : "reels"}` : d.status === "failed" ? "No reels" : d.status === "queued" ? "Waiting for a free reel" : "Planning");
 
 /** The hidden file input + opener (same flow as every other upload button: sign-up and limits live in useUploader). */
 function usePicker() {
@@ -193,7 +205,7 @@ function DocThumb({ doc, size = "md" }: { doc: StudioDoc; size?: "sm" | "md" }) 
   );
 }
 
-function DesktopStudio({ docs, style, canEdit, plan }: StudioProps) {
+function DesktopStudio({ docs, style, canEdit, plan, queue }: StudioProps) {
   const picker = usePicker();
   const [openId, setOpenId] = useState<string | null>(docs[0]?.id ?? null);
   return (
@@ -206,6 +218,11 @@ function DesktopStudio({ docs, style, canEdit, plan }: StudioProps) {
           <div className="mt-3">
             <CreditBar />
           </div>
+          {queue && (
+            <div className="mt-2">
+              <QueueTimer nextAt={queue.nextAt} queued={queue.queued} />
+            </div>
+          )}
           <h1 className="mt-5 font-display text-[22px] leading-[1.1] text-ink">Your library</h1>
           <div className="mt-3">
             <LibraryStats docs={docs} plan={plan} />
@@ -255,7 +272,7 @@ function DesktopStudio({ docs, style, canEdit, plan }: StudioProps) {
   );
 }
 
-function MobileStudio({ docs, style, canEdit, plan, email }: StudioProps) {
+function MobileStudio({ docs, style, canEdit, plan, email, queue }: StudioProps) {
   const picker = usePicker();
   const [openId, setOpenId] = useState<string | null>(docs[0]?.id ?? null);
   const [styleOpen, setStyleOpen] = useState(false);
@@ -292,6 +309,11 @@ function MobileStudio({ docs, style, canEdit, plan, email }: StudioProps) {
         <div className="mb-2.5">
           <CreditBar />
         </div>
+        {queue && (
+          <div className="mb-2.5">
+            <QueueTimer nextAt={queue.nextAt} queued={queue.queued} />
+          </div>
+        )}
         <button
           type="button"
           onClick={() => setStyleOpen(true)}

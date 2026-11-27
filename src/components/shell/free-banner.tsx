@@ -29,9 +29,9 @@ export function FreeBanner({ signedIn }: { signedIn: boolean }) {
   if (!signedIn || !used || path.startsWith("/s/") || path === "/feed") return null;
   return (
     <div className="flex items-center justify-center gap-3 bg-thread px-4 py-2 text-center text-[13.5px] font-medium text-paper">
-      <span>You&apos;ve used your 1 free document.</span>
+      <span>Free plan: new uploads wait in your queue.</span>
       <Link href="/pricing" className="underline underline-offset-2">
-        Upgrade to unspool more
+        Upgrade to skip the wait
       </Link>
     </div>
   );

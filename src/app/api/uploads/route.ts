@@ -64,7 +64,12 @@ export async function POST(req: Request) {
   let paidByTopup = false;
   if (oneFree && (await freeDocumentUsed(viewer.userId))) {
     if ((await topupBalance(entitlementFor(viewer.profile).subject)) === 0) {
-      return error(402, "Free accounts get 1 document. Upgrade or buy a top-up to unspool more.", { code: "free_used" });
+      // No refusal: the upload joins the queue and starts when the account's next free reel is allowed
+      // (src/lib/queue.ts). Still capped per day, so the queue can't be filled with junk.
+      const queuedOk = await claimUsage({ kind: "upload", scope: "user", limit: LIMITS.freeUploadsPerDay, userId: viewer.userId, ipHash });
+      if (queuedOk === null) return error(503, "Uploads are briefly unavailable. Try again in a minute.");
+      if (!queuedOk) return error(429, "You've queued today's uploads. Upgrade, or try again tomorrow.", { code: "limit" });
+      return createDocument(db, viewer, ipHash, prompt, pasted, fileName, size, body, true);
     }
     oneFree = false;
     paidByTopup = true;
@@ -105,6 +110,8 @@ async function createDocument(
   fileName: string,
   size: number,
   body: { testOne?: unknown } | null,
+  /** Wait in the free queue instead of starting (a free account past its free document). */
+  queued = false,
 ) {
   const ext = prompt !== null ? "txt" : extensionOf(fileName);
   const { data: doc, error: insErr } = await db
@@ -116,7 +123,8 @@ async function createDocument(
       file_name: fileName,
       file_type: prompt !== null ? (pasted ? "paste" : "prompt") : ext,
       file_size: size,
-      status: prompt !== null ? "uploaded" : "uploading",
+      status: prompt !== null ? (queued ? "queued" : "uploaded") : "uploading",
+      queued,
       // Owner test mode: make reel 1 only, then one at a time on request (owner panel).
       ...(body?.testOne === true && viewer.isOwner ? { test_mode: true } : {}),
     })
@@ -133,6 +141,7 @@ async function createDocument(
       return error(500, "Couldn't start. Try again.");
     }
     await db.from("documents").update({ file_path: path }).eq("id", doc.id);
+    if (queued) return json({ documentId: doc.id, queued: true });
     await dispatch({ name: "process", documentId: doc.id });
     return json({ documentId: doc.id, started: true });
   }
@@ -145,5 +154,5 @@ async function createDocument(
   }
   await db.from("documents").update({ file_path: path }).eq("id", doc.id);
 
-  return json({ documentId: doc.id, path, token: signed.token });
+  return json({ documentId: doc.id, path, token: signed.token, ...(queued ? { queued: true } : {}) });
 }

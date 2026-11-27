@@ -39,7 +39,13 @@ export function useUploader() {
           router.push(`/s/${id}`);
         };
         const result = typed ? await startPrompt(await file.text(), opened) : await startUpload(file, opened);
-        if (result.code === "auth") gate();
+        if (result.queued) {
+          // Free account past its free document: it's in the queue on the Studio, with the countdown to its turn.
+          track("upload_queued");
+          toast("Added to your queue. It starts when your next free reel is ready.", 4500);
+          router.push("/");
+          router.refresh();
+        } else if (result.code === "auth") gate();
         else if (result.error && (result.code === "limit" || result.code === "free_used")) {
           toast(result.error, 4500);
           router.push("/pricing");

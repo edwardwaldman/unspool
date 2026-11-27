@@ -8,6 +8,7 @@ export type TrackName =
   | "page"
   | "upload_started"
   | "upload_done"
+  | "upload_queued"
   | "signup_shown"
   | "signup_closed"
   | "signup_done"

@@ -20,6 +20,11 @@ export async function POST(_req: Request, ctx: RouteContext<"/api/documents/[id]
   const folder = await db.storage.from("documents").list(id);
   if (!folder.data?.some((f) => `${id}/${f.name}` === doc.file_path)) return error(400, "Upload not found. Try again.");
 
+  // A queued upload (free account past its free document) waits its turn instead of starting (src/lib/queue.ts).
+  if (doc.queued) {
+    await db.from("documents").update({ status: "queued" }).eq("id", id).eq("status", "uploading");
+    return json({ ok: true, queued: true });
+  }
   await db.from("documents").update({ status: "uploaded" }).eq("id", id).eq("status", "uploading");
   await dispatch({ name: "process", documentId: id });
   return json({ ok: true });

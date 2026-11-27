@@ -73,7 +73,7 @@ const MIME: Record<string, string> = {
  * Create the document, hand its id to `onCreated` (so the caller can route into the feed immediately),
  * then upload the file and kick off generation.
  */
-export async function startUpload(file: File, onCreated: (documentId: string) => void, opts: { testOne?: boolean } = {}): Promise<{ error?: string; code?: string }> {
+export async function startUpload(file: File, onCreated: (documentId: string) => void, opts: { testOne?: boolean } = {}): Promise<{ error?: string; code?: string; queued?: boolean }> {
   const invalid = validateFile(file);
   if (invalid) return { error: invalid };
   pending = { phase: "creating", fileName: file.name };
@@ -91,7 +91,7 @@ export async function startUpload(file: File, onCreated: (documentId: string) =>
     emit();
     return { error: "You're offline. Check your connection and try again." };
   }
-  const body = (await res.json().catch(() => ({}))) as { documentId?: string; path?: string; token?: string; error?: string; code?: string };
+  const body = (await res.json().catch(() => ({}))) as { documentId?: string; path?: string; token?: string; error?: string; code?: string; queued?: boolean };
   pending = null;
   if (!res.ok || !body.documentId || !body.path || !body.token) {
     emit();
@@ -101,7 +101,9 @@ export async function startUpload(file: File, onCreated: (documentId: string) =>
   const id = body.documentId;
   uploads.set(id, { phase: "uploading", fileName: file.name });
   emit();
-  onCreated(id);
+  // A queued upload (free account past its free document) has no feed to open yet: it finishes uploading here and
+  // the uploader sends them to the Studio, where it waits its turn.
+  if (!body.queued) onCreated(id);
 
   // Any throw here (the client chunk failing to load, a dropped connection) must surface as an error the
   // person can retry, never leave the feed sitting on "Uploading your file" forever.
@@ -129,7 +131,7 @@ export async function startUpload(file: File, onCreated: (documentId: string) =>
   }
   uploads.set(id, { phase: "done", fileName: file.name });
   emit();
-  return {};
+  return body.queued ? { queued: true } : {};
 }
 
 // A typed topic travels as a small text "file" named <topic>.prompt, so it can wait through sign-up
@@ -147,7 +149,7 @@ export const isPromptFile = (file: File) => [PROMPT_EXT, PASTE_EXT].includes(ext
 export const displayName = (file: File) => (isPromptFile(file) ? file.name.replace(/\.[^.]+$/, "") : file.name);
 
 /** Start reels from a typed topic: one request creates the document and starts the research. */
-export async function startPrompt(text: string, onCreated: (documentId: string) => void, opts: { testOne?: boolean } = {}): Promise<{ error?: string; code?: string }> {
+export async function startPrompt(text: string, onCreated: (documentId: string) => void, opts: { testOne?: boolean } = {}): Promise<{ error?: string; code?: string; queued?: boolean }> {
   const prompt = tidyPrompt(text);
   if (prompt.length < 3) return { error: "Type a topic to study." };
   pending = { phase: "creating", fileName: promptTitle(prompt) };
@@ -164,7 +166,7 @@ export async function startPrompt(text: string, onCreated: (documentId: string) 
     emit();
     return { error: "You're offline. Check your connection and try again." };
   }
-  const body = (await res.json().catch(() => ({}))) as { documentId?: string; error?: string; code?: string };
+  const body = (await res.json().catch(() => ({}))) as { documentId?: string; error?: string; code?: string; queued?: boolean };
   pending = null;
   if (!res.ok || !body.documentId) {
     emit();
@@ -172,6 +174,7 @@ export async function startPrompt(text: string, onCreated: (documentId: string) 
   }
   uploads.set(body.documentId, { phase: "done", fileName: promptTitle(prompt) });
   emit();
+  if (body.queued) return { queued: true };
   onCreated(body.documentId);
   return {};
 }
