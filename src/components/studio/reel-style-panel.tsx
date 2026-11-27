@@ -154,7 +154,7 @@ export function ReelStylePanel({ initial, canEdit, compact = false, onSaved }: {
             </fieldset>
           ))}
           {!canEdit && (
-            <button type="button" aria-label="Reel style is a Pro feature. Show upgrade" onClick={() => setUpsell(true)} className="absolute inset-0 z-10 cursor-pointer" />
+            <button type="button" aria-label="Reel style is a Pro feature. Show upgrade" onClick={() => setUpsell(true)} className="absolute inset-0 z-10 cursor-pointer" data-no-press />
           )}
         </div>
       </div>

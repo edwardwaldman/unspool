@@ -48,7 +48,7 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
       <AnimatePresence>
         {open && (
           <motion.div key="menu" className="fixed inset-0 z-[70]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
-            <button type="button" aria-label="Close menu" onClick={close} className="absolute inset-0 bg-black/55" />
+            <button type="button" aria-label="Close menu" onClick={close} className="absolute inset-0 bg-black/55" data-no-press />
             <motion.aside
               role="dialog"
               aria-label="Menu"

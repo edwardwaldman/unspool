@@ -355,6 +355,7 @@ function PlayGate({ onPlay }: { onPlay: () => void }) {
       }}
       aria-label="Play your reel (sign up free)"
       className="absolute inset-0 z-40 flex cursor-pointer items-center justify-center bg-black/10"
+      data-no-press
       data-testid="play-gate"
     >
       <span className="flex flex-col items-center gap-3">

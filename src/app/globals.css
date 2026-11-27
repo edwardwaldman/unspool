@@ -38,6 +38,36 @@ body {
   overscroll-behavior: none;
 }
 
+/* Smoother, less sticky: taps answer at once (no double-tap-to-zoom wait), buttons press in softly, and scrolling
+   areas glide without dragging the page behind them. In the base layer, so a component's own classes still win. */
+@layer base {
+  a,
+  button,
+  summary,
+  label,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    button:not(:disabled),
+    a[href],
+    [role="button"] {
+      transition-property: color, background-color, border-color, opacity, scale, box-shadow;
+      transition-duration: 160ms;
+      transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    button:not(:disabled):not([data-no-press]):active,
+    [role="button"]:not([data-no-press]):active {
+      scale: 0.97;
+    }
+  }
+  .overflow-y-auto,
+  .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+}
+
 /* Nothing may make the page pan sideways (iPad Safari lets you swipe to any overflow, even at 100%).
    clip, unlike hidden, keeps position: sticky working. */
 html,
