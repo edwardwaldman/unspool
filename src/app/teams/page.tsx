@@ -12,14 +12,14 @@ import { ResumeStashedUpload } from "@/components/upload/use-uploader";
 // Same one-job hero as /go, worded for training managers, plus a few sections below it for the people who open it on a
 // laptop and want to know what they'd be buying. Kept out of search: it exists for ad clicks.
 export const metadata: Metadata = {
-  title: "Turn training docs into TikToks your team will watch",
-  description: "Upload a handbook, SOP or policy PDF. Get short TikTok-style videos with a voiceover, captions and a quiz. Your first reel is free.",
+  title: "Turn training docs into short videos your team will watch",
+  description: "Upload a handbook, SOP or policy PDF. Get short videos with a voiceover, captions and a quiz. Your first reel is free.",
   robots: { index: false, follow: true },
   alternates: { canonical: "/" },
 };
 
 const TEAMS_COPY: GoCopy = {
-  headline: <>Turn training docs into <span className="text-thread">TikToks.</span></>,
+  headline: <>Turn training docs into <span className="text-thread">short videos.</span></>,
   subline: "Upload a handbook, SOP or policy PDF. Get short videos with a voiceover, captions and a quiz.",
   docTitle: "Handbook.pdf",
   topics: [
@@ -35,6 +35,7 @@ const TEAMS_COPY: GoCopy = {
   ticks: ["First reel free", "No card needed", "Your files stay private"],
   reels: ["/go/phish", "/go/lift", "/go/fire"],
   plus: { label: "Upload a training PDF", sub: "a handbook, SOP, policy or slides" },
+  cta: { label: "Request a demo", href: "#enterprise" },
   // "unspool Teams", the way Google writes "Google Docs": the wordmark, then the product name in the plain UI sans,
   // bold, in the Unspool lime
   brand: (
@@ -146,7 +147,7 @@ function TeamsSections() {
           ))}
         </ul>
       </section>
-      <section id="enterprise" aria-labelledby="ent" className="mt-20 grid gap-10 border border-thread p-8 lg:grid-cols-[1fr_1.1fr] lg:p-12">
+      <section id="enterprise" aria-labelledby="ent" className="mt-20 scroll-mt-28 grid gap-10 border border-thread p-8 lg:grid-cols-[1fr_1.1fr] lg:p-12">
         <div>
           <h2 id="ent" className="font-headline text-[28px] font-bold leading-[1.05] tracking-[-0.02em] lg:text-[36px]">
             Enterprise

@@ -220,6 +220,8 @@ export type GoCopy = {
   plus?: { label: string; sub: string };
   /** replaces the plain wordmark at the top (e.g. "unspool teams") */
   brand?: ReactNode;
+  /** a call to action for the top bar and under the hero, e.g. /teams' "Request a demo" */
+  cta?: { label: string; href: string };
 };
 
 const STUDENT_COPY: GoCopy = {
@@ -229,6 +231,24 @@ const STUDENT_COPY: GoCopy = {
   ticks: ["First reel free", "No card needed", "Your files stay private"],
 };
 
+/** Like the main site's top bar: hidden at the top of the page, slides down when you scroll back up, away on scroll down. */
+function usePullDownBar() {
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    let last = window.scrollY;
+    const on = () => {
+      const y = window.scrollY;
+      if (y < 120) setShown(false);
+      else if (y < last - 4) setShown(true);
+      else if (y > last + 4) setShown(false);
+      last = y;
+    };
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, []);
+  return shown;
+}
+
 /**
  * /go (and /teams): the landing page for TikTok and ads. Same look and animation as the videos, one job, no exits.
  * Phones get one narrow column (it has to fit above in-app browser toolbars). Desktops get the main site's spacing: the
@@ -237,11 +257,27 @@ const STUDENT_COPY: GoCopy = {
  */
 export function GoHero({ copy = STUDENT_COPY, children }: { copy?: GoCopy; children?: ReactNode }) {
   const brand = copy.brand ?? <Wordmark size={24} />;
+  const barShown = usePullDownBar();
+  const ctaButton = (extra = "") =>
+    copy.cta && (
+      <Link href={copy.cta.href} className={`inline-flex items-center bg-ink px-5 py-2.5 text-[15px] font-semibold text-paper transition-opacity hover:opacity-90 ${extra}`}>
+        {copy.cta.label}
+      </Link>
+    );
   return (
     <div className="flex min-h-[100dvh] flex-col items-center bg-paper px-4 pb-24 pt-3 text-ink lg:px-0 lg:pb-16 lg:pt-0">
       <header className="hidden h-20 w-full items-center self-stretch px-10 lg:flex">
         <Link href="/" aria-label="unspool home" className="inline-block origin-left scale-[1.3] transition-opacity hover:opacity-80">{brand}</Link>
+        {ctaButton("ml-auto")}
       </header>
+      {/* the pull-down bar: comes down when you scroll back up, like the main site's */}
+      <div
+        className={`fixed inset-x-0 top-0 z-40 flex h-16 items-center border-b border-line bg-paper px-5 transition-transform duration-300 lg:h-20 lg:px-10 ${barShown ? "translate-y-0" : "-translate-y-full"}`}
+        aria-hidden={!barShown}
+      >
+        <Link href="/" aria-label="unspool home" tabIndex={barShown ? 0 : -1} className="inline-block origin-left transition-opacity hover:opacity-80 lg:scale-[1.3]">{brand}</Link>
+        {ctaButton("ml-auto")}
+      </div>
       <div className="flex w-full max-w-[460px] flex-col items-center lg:mt-8 lg:max-w-[880px] lg:px-10">
         <Link href="/" aria-label="unspool home" className="lg:hidden">{brand}</Link>
         <h1 className="mt-3 text-center font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em] lg:mt-0 lg:text-[62px] lg:leading-[1.02]">
@@ -259,9 +295,16 @@ export function GoHero({ copy = STUDENT_COPY, children }: { copy?: GoCopy; child
         <ul className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13.5px] text-muted lg:text-[14.5px]">
           {copy.ticks.map((t) => <li key={t}>✓ {t}</li>)}
         </ul>
-        <Link href="/s/demo" className="mt-5 text-[14.5px] text-muted underline underline-offset-4 hover:text-ink">
-          Watch a sample reel first
-        </Link>
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[14.5px]">
+          <Link href="/s/demo" className="text-muted underline underline-offset-4 hover:text-ink">
+            Watch a sample reel first
+          </Link>
+          {copy.cta && (
+            <Link href={copy.cta.href} className="font-semibold text-thread underline underline-offset-4 hover:opacity-80">
+              {copy.cta.label}
+            </Link>
+          )}
+        </div>
       </div>
       {children}
       <footer className="mt-auto flex gap-4 pt-10 text-[12px] text-muted">
