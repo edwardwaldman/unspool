@@ -44,5 +44,10 @@ export function QueueTimer({ nextAt, queued }: { nextAt: string | null; queued: 
       </div>
     );
   }
-  return null;
+  return (
+    <div className="flex items-center justify-between border border-line px-4 py-3" data-testid="queue-timer">
+      <div className="text-[12.5px] font-semibold text-thread">Next free reel</div>
+      <div className="font-mono text-[15px] font-bold text-thread">Ready now</div>
+    </div>
+  );
 }

@@ -14,6 +14,7 @@ import { usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { CreditBar } from "./credit-bar";
 import { QueueTimer } from "./queue-timer";
+import { PromptBox } from "../go/go-hero";
 import { PICK_EVENT, WelcomeTour } from "./welcome-tour";
 import { ProBadge, ReelStylePanel } from "./reel-style-panel";
 
@@ -218,11 +219,6 @@ function DesktopStudio({ docs, style, canEdit, plan, queue }: StudioProps) {
           <div className="mt-3">
             <CreditBar />
           </div>
-          {queue && (
-            <div className="mt-2">
-              <QueueTimer nextAt={queue.nextAt} queued={queue.queued} />
-            </div>
-          )}
           <h1 className="mt-5 font-display text-[22px] leading-[1.1] text-ink">Your library</h1>
           <div className="mt-3">
             <LibraryStats docs={docs} plan={plan} />
@@ -254,6 +250,12 @@ function DesktopStudio({ docs, style, canEdit, plan, queue }: StudioProps) {
           <PlusButton onClick={picker.open} pending={picker.pending} size="lg" />
           <div className="relative mt-7 font-display text-[26px] leading-[1.1] text-ink">{picker.pending ? "Starting upload" : "Upload a document"}</div>
           <p className="relative mt-2 max-w-[260px] text-[13.5px] leading-snug text-muted">{TYPES_HINT}. Or drop a file anywhere here.</p>
+          <PromptBox divider={false} className="relative mt-5 w-full max-w-[360px] text-left" />
+          {queue && (
+            <div className="relative mt-3 w-full max-w-[360px] text-left">
+              <QueueTimer nextAt={queue.nextAt} queued={queue.queued} />
+            </div>
+          )}
           <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[104px] border-t border-line bg-paper/85" />
           <div className="absolute bottom-[34px] left-4 flex items-center gap-2 text-[12.5px] text-muted">
             <span className="flex h-7 w-7 items-center justify-center bg-thread font-wordmark text-[13px] font-bold text-[#08110e]" aria-hidden>
@@ -303,29 +305,32 @@ function MobileStudio({ docs, style, canEdit, plan, email, queue }: StudioProps)
         <PlusButton onClick={picker.open} pending={picker.pending} size="md" />
         <div className="mt-5 font-display text-[24px] leading-[1.1] text-ink ipad:text-[30px]">{picker.pending ? "Starting upload" : "Upload a document"}</div>
         <p className="mt-1.5 max-w-[280px] text-[13px] leading-snug text-muted ipad:text-[15px]">{TYPES_HINT}</p>
+        {/* Or type a topic, right here with the upload */}
+        <PromptBox divider={false} className="mt-5 max-w-[420px] text-left" />
+        {/* The reel style is picked before uploading: a small option under the upload, not a row of its own */}
+        <button
+          type="button"
+          onClick={() => setStyleOpen(true)}
+          className="mt-3 inline-flex items-center gap-2 border border-line px-3 py-1.5 text-[13px] text-muted transition-colors hover:border-thread hover:text-ink"
+          data-testid="style-row"
+          data-tour="studio-style"
+        >
+          <Crown size={14} className="text-thread" aria-hidden />
+          Reel style
+          {canEdit ? <span className="text-ink">Edit</span> : <ProBadge />}
+        </button>
       </div>
 
       <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pb-5 ipad:max-w-[680px]">
-        <div className="mb-2.5">
-          <CreditBar />
-        </div>
+        {/* The queue sits right under the upload; credits come after it */}
         {queue && (
           <div className="mb-2.5">
             <QueueTimer nextAt={queue.nextAt} queued={queue.queued} />
           </div>
         )}
-        <button
-          type="button"
-          onClick={() => setStyleOpen(true)}
-          className="flex w-full items-center gap-3 border border-line bg-surface px-4 py-3 text-left"
-          data-testid="style-row"
-          data-tour="studio-style"
-        >
-          <Crown size={17} className="text-thread" aria-hidden />
-          <span className="flex-1 text-[14px] font-medium text-ink ipad:text-[16px]">Reel style</span>
-          {canEdit ? <span className="text-[12px] text-muted">Edit</span> : <ProBadge />}
-          <ChevronDown size={16} className="-rotate-90 text-muted" />
-        </button>
+        <div>
+          <CreditBar />
+        </div>
 
         <div className="mt-5 flex items-baseline justify-between">
           <span className="text-[13px] font-medium text-ink ipad:text-[15px]">Your library</span>
