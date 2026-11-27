@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useSessionUser } from "../auth/use-session";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { PlayIcon, UploadIcon } from "../ui/icons";
+import { PromptBox } from "../go/go-hero";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -150,6 +151,8 @@ export function BigUpload({ onClick, demoLink = true, wideTags = true, big = fal
         >
           <UploadIcon size={big ? 40 : 28} /> Upload a document
         </button>
+        {/* Type a topic too, as at the top of the page (not on the demo's gate, where the button signs people up first) */}
+        {!onClick && <PromptBox divider={false} className="relative z-10 mx-auto mt-5 max-w-[420px] md:max-w-[560px]" />}
           {demoLink && <Link href="/s/demo" className="group relative z-10 mx-auto mt-6 flex w-fit items-center justify-center gap-3 border border-line bg-paper px-6 py-3 text-[17px] font-medium text-ink transition-colors hover:border-thread md:px-8 md:py-4 md:text-[22px]">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-thread text-paper transition-transform group-hover:scale-110 md:h-10 md:w-10">
               <PlayIcon size={15} />
