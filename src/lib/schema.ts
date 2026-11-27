@@ -258,8 +258,11 @@ const EXAM_CLAIM = /\b(guaranteed|(?<!likely )on the (exam|test|final)|will be (
  *   background" as a stack-of-layers icon, while the hook's swatch had every one of their hex values).
  */
 /** On-screen text never shows the writer's voice marks (*stress*, #warn#, ~underline~, ^number^); hex colours keep their #. */
+// Letters spelled out for the voice ("Simple random (S R S)") read as an acronym on screen ("(SRS)"): three or more
+// spaced capitals, or two or more in brackets.
+const spelled = (x: string) => x.replace(/\(([A-Z](?: [A-Z])+)\)/g, (_, l: string) => `(${l.replace(/ /g, "")})`).replace(/\b[A-Z](?: [A-Z]){2,}\b/g, (l) => l.replace(/ /g, ""));
 function unmark<V>(v: V): V {
-  if (typeof v === "string") return v.replace(/#([^#\s][^#]*?)#/g, "$1").replace(/[*~^]+/g, "").replace(/\s{2,}/g, " ").trim() as V;
+  if (typeof v === "string") return spelled(v.replace(/#([^#\s][^#]*?)#/g, "$1").replace(/[*~^]+/g, "").replace(/\s{2,}/g, " ").trim()) as V;
   if (Array.isArray(v)) return v.map(unmark) as V;
   if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, k === "hex" || k === "color" ? x : unmark(x)])) as V;
   return v;

@@ -11,7 +11,7 @@ import { MarkedText } from "../ui/marked-text";
 import { CrowdCanvas } from "./crowd-canvas";
 import { HookScene } from "./hook-scene";
 import { ReelIcon } from "./icon";
-import { isNumber, sentenceCase, splitDots } from "./text";
+import { cueTimes, fitWord, flagOf, isNumber, sentenceCase, splitDots } from "./text";
 import { QUIZ_WAIT_MS, type QuizState } from "./use-playback";
 
 // The motion graphics drawn inside a reel's frame. Everything reads the reel's own --thread accent
@@ -26,14 +26,6 @@ function colorOf(c: HighlightColor | undefined) {
 }
 
 const sentence = sentenceCase;
-
-function Label({ children, color }: { children: React.ReactNode; color?: string }) {
-  return (
-    <div className="text-[13px] font-semibold" style={{ color: color ?? "rgba(255,255,255,.72)" }}>
-      {typeof children === "string" ? sentence(children) : children}
-    </div>
-  );
-}
 
 function Tile({ name, size = 28, on = true, delay = 0, box = 56 }: { name: string; size?: number; on?: boolean; delay?: number; box?: number }) {
   return (
@@ -190,28 +182,42 @@ function SplitVisual({ v }: { v: Extract<Visual, { type: "split" }> }) {
   );
 }
 
-function FlowVisual({ v, progress }: { v: Extract<Visual, { type: "flow" }>; progress: number }) {
+function FlowVisual({ v, progress, say }: { v: Extract<Visual, { type: "flow" }>; progress: number; say?: string }) {
   const n = v.steps.length;
-  const shown = Math.max(1, Math.min(n, Math.ceil((progress + 0.15) * n)));
+  // A step lights as the voice reaches it (by its title in the line), not on a fixed clock.
+  const cues = cueTimes(say, v.steps.map((s) => s.title));
+  const shown = Math.max(1, cues.filter((t) => progress >= t - 0.02).length);
+  // Few steps get big cards: two small cards in a 480px-tall stage left most of the frame empty.
+  const big = n <= 3;
+  const title = fitWord(v.steps.map((s) => s.title), 262 - (big ? 32 : 28) - (big ? 60 : 48) - 16, big ? 27 : 20);
   return (
-    <div className="relative flex w-full flex-col gap-2.5 px-6">
+    <div className="relative flex w-full flex-col items-stretch px-1">
       {v.steps.map((s, i) => {
         const on = i < shown;
         return (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: 18 }}
-            animate={{ opacity: on ? 1 : 0.35, x: 0 }}
-            transition={{ duration: 0.45, ease, delay: i * 0.05 }}
-            className={`relative flex items-center gap-4 p-3 pr-4 ${glass}`}
-          >
-            <Tile name={s.icon} on={on} size={24} box={50} />
-            <div className="min-w-0">
-              <div className="text-[12px] font-medium text-white/55">Step {i + 1}</div>
-              <div className="font-hook text-[19px] font-extrabold leading-tight tracking-[-0.01em] text-white">{sentence(s.title)}</div>
-              <div className="text-[13px] leading-snug text-white/70">{sentence(s.sub)}</div>
-            </div>
-          </motion.div>
+          <div key={i} className="flex flex-col items-stretch">
+            {i > 0 && (
+              <div className={`flex items-center justify-center ${big ? "h-8" : "h-5"}`} style={{ color: on ? "var(--thread)" : "rgba(255,255,255,.35)" }}>
+                <ArrowRight size={big ? 24 : 18} strokeWidth={2.5} className="rotate-90" />
+              </div>
+            )}
+            <motion.div
+              initial={{ opacity: 0, x: 18 }}
+              animate={{ opacity: on ? 1 : 0.45, x: 0 }}
+              transition={{ duration: 0.45, ease, delay: i * 0.05 }}
+              className={`relative flex items-center gap-4 border-2 bg-black/45 ${big ? "p-4" : "p-3 pr-4"}`}
+              style={{ borderColor: on && i === shown - 1 ? "var(--thread)" : "rgba(255,255,255,.12)" }}
+            >
+              <span className="flex shrink-0 items-center justify-center" style={{ width: big ? 60 : 48, height: big ? 60 : 48, background: on ? "var(--thread)" : "color-mix(in srgb, var(--thread) 16%, transparent)", color: on ? "#08110e" : "var(--thread)" }}>
+                <ReelIcon name={s.icon} size={big ? 30 : 24} strokeWidth={2} />
+              </span>
+              <div className="min-w-0">
+                <div className="text-[12px] font-bold uppercase tracking-[0.08em] text-thread">Step {i + 1}</div>
+                <div className="font-hook font-extrabold leading-[1.05] tracking-[-0.02em] text-white" style={{ fontSize: title }}>{sentence(s.title)}</div>
+                {s.sub.trim() && <div className={`mt-0.5 leading-snug text-white/75 ${big ? "text-[16px]" : "text-[13px]"}`}>{sentence(s.sub)}</div>}
+              </div>
+            </motion.div>
+          </div>
         );
       })}
     </div>
@@ -219,49 +225,66 @@ function FlowVisual({ v, progress }: { v: Extract<Visual, { type: "flow" }>; pro
 }
 
 /** "PAPER · background": the name on its own line and its job under it, instead of one line broken at the dot. */
-function ItemLabel({ label }: { label: string }) {
+function ItemLabel({ label, size = 21 }: { label: string; size?: number }) {
   // "Q3 FY26: THIS QUARTER" and "Telos: the goal" read like "PAPER · background": a short name, then its job.
   const colon = /^([^:]{1,18}):\s+(.+)$/.exec(label);
   const [name, ...rest] = colon && !/^\d+$/.test(colon[1].trim()) ? [colon[1], colon[2]] : splitDots(label);
   return (
-    <span className="flex flex-col">
-      <span className="text-[21px] font-semibold leading-tight tracking-[-0.01em] text-white">{sentence(rest.length ? name : label)}</span>
-      {rest.length > 0 && <span className="mt-0.5 text-[15px] font-medium leading-tight text-white/65">{sentence(rest.join(" · "))}</span>}
+    <span className="flex min-w-0 flex-col">
+      <span className="font-hook font-extrabold leading-[1.05] tracking-[-0.02em] text-white" style={{ fontSize: size }}>{sentence(rest.length ? name : label)}</span>
+      {rest.length > 0 && <span className="mt-1 font-medium leading-tight text-white/70" style={{ fontSize: Math.round(size * 0.62) }}>{sentence(rest.join(" · "))}</span>}
     </span>
   );
 }
 
-function ListVisual({ v, progress }: { v: Extract<Visual, { type: "list" }>; progress: number }) {
-  const n = v.items.length;
-  // Every item is on screen by 60% of the line, so the whole list (often the payoff's cheat sheet) is seen complete
-  // before the beat ends; spread over the full line, the last item landed as the quiz slid in.
-  const shown = Math.max(1, Math.min(n, Math.floor((progress / 0.6) * (n - 1)) + 1));
+/** An item's picture: its colour chip, its country's flag, or its icon on an accent tile. */
+function ItemTile({ icon, label, color, box, lit }: { icon: string; label: string; color: string; box: number; lit: boolean }) {
+  const flag = flagOf(label);
+  if (color) return <span className="shrink-0 rounded-[10px]" style={{ width: box, height: box, background: color, boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,.16)" }} />;
   return (
-    <div className="w-full px-6">
-    <div className={`flex w-full flex-col p-4 ${glass}`}>
-      <div className="mb-2 flex items-baseline justify-between px-1">
-        <Label color="var(--thread)">{v.title}</Label>
-        <span className="text-[12px] tabular-nums text-white/60">
-          {shown} of {n}
-        </span>
+    <span
+      className="flex shrink-0 items-center justify-center transition-colors duration-300"
+      style={{ width: box, height: box, background: flag ? "transparent" : lit ? "var(--thread)" : "color-mix(in srgb, var(--thread) 16%, transparent)", color: lit ? "#08110e" : "var(--thread)" }}
+    >
+      {flag ? <span style={{ fontSize: box * 0.82, lineHeight: 1 }}>{flag}</span> : <ReelIcon name={icon} size={Math.round(box * 0.5)} strokeWidth={2} />}
+    </span>
+  );
+}
+
+/**
+ * A list is the beat's content, so every item is on screen from the first frame, big, filling the stage; the one
+ * the voice is saying lights up as it is said. (It used to reveal one item at a time on a fixed clock with a "1 of
+ * 3" counter: a mostly empty dark box reading "The allies · France" while the caption said "France,".)
+ */
+function ListVisual({ v, progress, say }: { v: Extract<Visual, { type: "list" }>; progress: number; say?: string }) {
+  const n = v.items.length;
+  const cues = cueTimes(say, v.items.map((it) => it.label));
+  const said = cues.filter((t) => progress >= t - 0.02).length;
+  const box = n <= 3 ? 60 : n === 4 ? 52 : 46;
+  // Big, but a long word ("Stratified", "Assassination") never runs past its card: the row's text room decides.
+  const size = fitWord(v.items.map((it) => splitDots(it.label)[0] ?? it.label), 262 - (n <= 3 ? 32 : 28) - box - 16, n <= 3 ? 30 : n === 4 ? 25 : 22);
+  return (
+    <div className="flex w-full flex-col gap-2.5 px-1">
+      <div className="flex items-center gap-2 px-1 font-hook text-[15px] font-extrabold uppercase tracking-[0.06em] text-thread">
+        <span className="h-[3px] w-5 bg-thread" />
+        {v.title}
       </div>
-      {v.items.map((it, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 10 }}
-          animate={i < shown ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-          transition={{ duration: 0.4, ease }}
-          className="flex items-center gap-3.5 px-1 py-2"
-        >
-          {it.color ? (
-            <span className="h-[44px] w-[44px] shrink-0 rounded-[10px]" style={{ background: it.color, boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,.16)" }} />
-          ) : (
-            <Tile name={it.icon} size={20} box={44} on={i === shown - 1} />
-          )}
-          <ItemLabel label={it.label} />
-        </motion.div>
-      ))}
-    </div>
+      {v.items.map((it, i) => {
+        const now = i === said - 1;
+        return (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: i < said ? 1 : 0.5, x: 0, scale: now ? 1.03 : 1 }}
+            transition={{ duration: 0.4, ease, delay: progress < 0.05 ? i * 0.08 : 0 }}
+            className={`flex items-center gap-4 border-2 bg-black/45 ${n <= 3 ? "px-4 py-4" : "px-3.5 py-3"}`}
+            style={{ borderColor: now ? "var(--thread)" : "rgba(255,255,255,.12)", boxShadow: now ? "0 0 28px color-mix(in srgb, var(--thread) 35%, transparent)" : undefined }}
+          >
+            <ItemTile icon={it.icon} label={it.label} color={it.color} box={box} lit={now} />
+            <ItemLabel label={it.label} size={size} />
+          </motion.div>
+        );
+      })}
     </div>
   );
 }
@@ -578,6 +601,8 @@ export type StageProps = {
   mood?: Mood;
   /** Behind the quiz card: the last scene keeps playing without its heading or labels. */
   bare?: boolean;
+  /** The beat's spoken line: a list lights each item as the voice says it. */
+  say?: string;
 };
 
 /** One beat's motion graphic, centred and as large as the space allows, popping in and floating gently (as in the ads). The quiz is an interactive overlay (QuizCard), not part of the stage. */
@@ -631,7 +656,7 @@ export function VisualStage(props: StageProps) {
   );
 }
 
-function StageInner({ visual, script, progress, last, pulse = 0 }: StageProps) {
+function StageInner({ visual, script, progress, last, pulse = 0, say }: StageProps) {
   switch (visual.type) {
     case "hook":
       return <HookVisual v={visual} pulse={pulse} progress={progress} />;
@@ -640,9 +665,9 @@ function StageInner({ visual, script, progress, last, pulse = 0 }: StageProps) {
     case "split":
       return <SplitVisual v={visual} />;
     case "flow":
-      return <FlowVisual v={visual} progress={progress} />;
+      return <FlowVisual v={visual} progress={progress} say={say} />;
     case "list":
-      return <ListVisual v={visual} progress={progress} />;
+      return <ListVisual v={visual} progress={progress} say={say} />;
     case "icons":
       return <IconsVisual v={visual} />;
     case "crowd":

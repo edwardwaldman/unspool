@@ -26,8 +26,13 @@ export function Captions({ text, words, fraction, variant = "spotlight" }: { tex
     list.forEach((w, i) => {
       cur.push(i);
       const chars = cur.reduce((n, k) => n + list[k].text.length + 1, 0);
-      if (/[.!?,;:—]$/.test(w.text)) {
-        out.push(cur);
+      // A sentence end always breaks; a comma, colon or dash only once the chunk is a phrase (3+ words): breaking at
+      // every comma flashed "France," and "first," up alone, half a thought each.
+      if (/[.!?]$/.test(w.text) || (/[,;:—]$/.test(w.text) && cur.length >= 3)) {
+        // A sentence's last word left alone ("groups.") finishes the chunk before it instead.
+        const prev = out[out.length - 1];
+        if (cur.length === 1 && prev && prev.length <= 5 && !/[.!?]$/.test(list[prev[prev.length - 1]].text)) prev.push(...cur);
+        else out.push(cur);
         cur = [];
       } else if (cur.length >= 5 || chars >= 26) {
         // Carry trailing joining words over to the next chunk.

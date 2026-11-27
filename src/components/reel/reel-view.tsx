@@ -213,7 +213,7 @@ export function ReelView({
         stageBox={{ top: below, bottom: bottom + RAIL_TOP, right: preview ? 0 : GUTTER - 8, left: preview ? 0 : 8 }}
         stage={
           (active || pb.seg > 0 || still) && !isQuiz
-            ? { visual: pb.segment.visual, script, progress: fraction, last: reel.index === total, pulse: hits, scene: pb.segment.kind === "beat" ? script.beats[pb.segment.beatIndex]?.scene : undefined, mood: pb.segment.kind === "beat" ? script.beats[pb.segment.beatIndex]?.mood : undefined }
+            ? { visual: pb.segment.visual, script, progress: fraction, last: reel.index === total, pulse: hits, scene: pb.segment.kind === "beat" ? script.beats[pb.segment.beatIndex]?.scene : undefined, mood: pb.segment.kind === "beat" ? script.beats[pb.segment.beatIndex]?.mood : undefined, say: pb.segment.kind === "beat" ? script.beats[pb.segment.beatIndex]?.say : undefined }
             : isQuiz && quizBeat
               ? // The story's last 3D scene keeps playing behind the quiz, and its mood reacts to the answer.
                 { visual: quizBeat.visual, script, progress: 1, last: reel.index === total, pulse: 0, scene: quizBeat.scene, mood: !pb.quiz.revealed ? "calm" : pb.quiz.selected === script.quiz.answer ? "win" : "warn", bare: true }
