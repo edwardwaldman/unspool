@@ -187,7 +187,7 @@ function PlusButton({ onClick, pending, size }: { onClick: () => void; pending: 
       aria-label="Upload a document"
       data-testid="studio-plus"
       data-tour="studio-plus"
-      className={`group relative flex ${box} items-center justify-center rounded-full bg-thread text-paper transition-transform hover:scale-[1.04] active:scale-[0.97] disabled:opacity-60`}
+      className={`group relative flex ${box} shrink-0 items-center justify-center rounded-full bg-thread text-paper transition-transform hover:scale-[1.04] active:scale-[0.97] disabled:opacity-60`}
     >
       <span aria-hidden className="absolute inset-0 rounded-full border border-thread motion-safe:animate-[studio-ring_2.6s_ease-out_infinite]" />
       <PlusIcon size={size === "lg" ? 58 : 50} strokeWidth={2} />
@@ -291,24 +291,20 @@ function MobileStudio({ docs, style, canEdit, email, queue }: StudioProps) {
         <Link href="/" aria-label="Unspool" className="mr-auto">
           <Wordmark size={22} />
         </Link>
-        {/* Upload, Recharge and the menu, all up here */}
-        <button
-          type="button"
-          onClick={picker.open}
-          disabled={picker.pending}
-          aria-label="Upload a document"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-thread text-paper transition-transform active:scale-95 disabled:opacity-60 ipad:h-11 ipad:w-11"
-          data-testid="studio-upload"
-        >
-          <PlusIcon size={20} />
-        </button>
+        {/* Recharge and the menu up here; the + is in the middle of the page */}
         <RechargeButton />
         <AccountMenu email={email} onReelStyle={() => setStyleOpen(true)} />
       </div>
 
       <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pb-5 pt-5 ipad:max-w-[680px]">
-        {/* Type a topic (or tap + above to upload a file) */}
+        {/* Type a topic */}
         <PromptBox divider={false} className="" />
+        {/* The big + in the middle: upload a file or photo */}
+        <div className="flex flex-col items-center py-8">
+          <PlusButton onClick={picker.open} pending={picker.pending} size="md" />
+          <div className="mt-4 font-display text-[20px] leading-tight text-ink">{picker.pending ? "Starting upload" : "Upload a document"}</div>
+          <p className="mt-1 text-[13px] text-muted">{TYPES_HINT}</p>
+        </div>
         {/* The next-free-reel timer and the queue, right under it */}
         {queue && (
           <div className="mt-4">
