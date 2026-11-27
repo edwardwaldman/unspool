@@ -36,11 +36,11 @@ const TEAMS_COPY: GoCopy = {
   reels: ["/go/phish", "/go/lift", "/go/fire"],
   plus: { label: "Upload a training PDF", sub: "a handbook, SOP, policy or slides" },
   // "unspool Teams", the way Google writes "Google Docs": the wordmark, then the product name in the plain UI sans,
-  // regular weight, in the Unspool lime
+  // bold, in the Unspool lime
   brand: (
     <span className="inline-flex items-baseline gap-[7px]" aria-label="unspool Teams">
       <Wordmark size={24} />
-      <span className="font-sans text-[23px] font-normal leading-none tracking-[-0.01em] text-thread">Teams</span>
+      <span className="font-sans text-[23px] font-semibold leading-none tracking-[-0.01em] text-thread">Teams</span>
     </span>
   ),
 };
