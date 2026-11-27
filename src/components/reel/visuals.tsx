@@ -90,7 +90,7 @@ function BigWordVisual({ v }: { v: Extract<Visual, { type: "bigword" }> }) {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className={`relative mt-5 max-w-[290px] px-4 py-1.5 text-[15px] font-medium text-white ${glass}`}
+          className={`relative mt-5 max-w-[300px] px-4 py-2 text-[19px] font-semibold leading-snug text-white ${glass}`}
         >
           {/* "…bees are honey bees" carries on the big word's sentence, so it stays lower case. */}
           {v.sub.trim().startsWith("…") ? sentence(subs.join(", ")).replace(/^…(\p{Lu})/u, (_, c: string) => `…${c.toLowerCase()}`) : sentence(subs.join(", "))}
@@ -102,81 +102,71 @@ function BigWordVisual({ v }: { v: Extract<Visual, { type: "bigword" }> }) {
 
 function SplitVisual({ v }: { v: Extract<Visual, { type: "split" }> }) {
   const figures = isNumber(v.left.title) && isNumber(v.right.title);
-  // Side by side, each card gets ~110px beside the action rail, and a word never breaks: "INSTRUMENT SANS" or
-  // "FINAL CAUSE" ran out of its card and under the "vs" badge. Long titles (or long subs) stack as two full-width
-  // rows instead; short pairs ("ACORN" -> "OAK") stay side by side.
-  const words = [v.left.title, v.right.title].flatMap((t) => t.split(/\s+/));
-  // ("SNAP A PHOTO" broke one word per line, "Snap / a / photo", in a 110px card.)
-  const stacked = !figures && (Math.max(...words.map((w) => w.length)) > 7 || [v.left, v.right].some((x) => x.title.length > 9 || x.sub.length > 18));
+  // Words always stack as two full-width rows, big: side by side, each card got ~110px beside the action rail, so
+  // titles sat at 24px in two small boxes with most of the frame empty above and below them.
   const badge = (vertical: boolean) => (
     <motion.div
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
       transition={{ delay: 0.2, duration: 0.4, ease }}
-      className="absolute left-1/2 top-1/2 z-10 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-[3px] font-hook text-[13px] font-extrabold text-[#08110e]"
+      className="absolute left-1/2 top-1/2 z-10 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-[3px] font-hook text-[15px] font-extrabold text-[#08110e]"
       style={{ background: "var(--thread)", borderColor: "var(--paper)" }}
     >
-      {v.mode === "vs" ? "vs" : <ArrowRight size={16} strokeWidth={2.5} className={vertical ? "rotate-90" : undefined} />}
+      {v.mode === "vs" ? "vs" : <ArrowRight size={20} strokeWidth={2.5} className={vertical ? "rotate-90" : undefined} />}
     </motion.div>
   );
   const color = (i: number) => (i === 0 ? "#fff" : "var(--thread)");
-  if (stacked) {
+  if (!figures) {
+    const title = fitWord([v.left.title, v.right.title], 262 - 32 - 60 - 16, 32);
     const row = (s: typeof v.left, i: number) => (
       <motion.div
         key={i}
         initial={{ opacity: 0, y: i === 0 ? -18 : 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: i * 0.3, duration: 0.55, ease }}
-        className={`flex w-full items-center gap-3 px-4 py-4 ${glass}`}
+        className="flex w-full items-center gap-4 border-2 bg-black/45 px-4 py-5"
+        style={{ borderColor: i === 1 ? "var(--thread)" : "rgba(255,255,255,.12)" }}
       >
-        <Tile name={s.icon} on={i === 1} delay={i * 0.3} box={48} />
+        <span className="flex h-[60px] w-[60px] shrink-0 items-center justify-center" style={{ background: i === 1 ? "var(--thread)" : "rgba(255,255,255,.1)", color: i === 1 ? "#08110e" : "#fff" }}>
+          <ReelIcon name={s.icon} size={30} strokeWidth={2} />
+        </span>
         <div className="min-w-0">
-          <div className="font-hook text-[22px] font-extrabold leading-tight tracking-[-0.02em]" style={{ color: color(i) }}>
+          <div className="font-hook font-extrabold leading-[1.05] tracking-[-0.02em]" style={{ color: color(i), fontSize: title }}>
             {sentence(s.title)}
           </div>
-          <div className="mt-0.5 text-[14px] leading-snug text-white/70">{sentence(s.sub)}</div>
+          {s.sub.trim() && <div className="mt-1 text-[17px] leading-snug text-white/75">{sentence(s.sub)}</div>}
         </div>
       </motion.div>
     );
     // The badge sits in the flow between the rows: centred on the container, it landed on the taller row's title.
     return (
-      <div className="relative flex w-full flex-col items-center gap-2 px-5">
+      <div className="relative flex w-full flex-col items-center gap-2 px-1">
         {row(v.left, 0)}
-        <div className="relative h-10 w-10">{badge(true)}</div>
+        <div className="relative h-12 w-12">{badge(true)}</div>
         {row(v.right, 1)}
       </div>
     );
   }
+  // Two figures stack, one above the other, so each can be big without the "vs" badge landing on a number. The
+  // figures are the picture (a clock and a calendar beside "22%" and "62%" were filler).
   const side = (s: typeof v.left, i: number) => (
     <motion.div
       key={i}
       initial={{ opacity: 0, x: i === 0 ? -24 : 24 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: i * 0.3, duration: 0.55, ease }}
-      className={`flex min-w-0 flex-1 flex-col items-center text-center ${figures ? "w-full justify-center px-5 py-4" : "px-3 py-5"} ${glass}`}
+      className={`flex w-full min-w-0 flex-col items-center justify-center px-5 py-5 text-center ${glass}`}
     >
-      {/* Two figures side by side: the figures are the picture (a clock and a calendar beside "22%" and "62%" were filler). */}
-      {!figures && <Tile name={s.icon} on={i === 1} delay={i * 0.3} />}
-      <div className={`${figures ? "font-hook text-[56px] leading-none tracking-[-0.035em]" : "mt-4 font-hook text-[24px] leading-tight tracking-[-0.02em]"} font-extrabold`} style={{ color: color(i) }}>
+      <div className="font-hook text-[60px] font-extrabold leading-none tracking-[-0.035em]" style={{ color: color(i) }}>
         {sentence(s.title)}
       </div>
-      <div className="mt-1 text-[13.5px] leading-snug text-white/70">{sentence(s.sub)}</div>
+      <div className="mt-2 text-[17px] leading-snug text-white/75">{sentence(s.sub)}</div>
     </motion.div>
   );
-  // Two figures stack, one above the other, so each can be big without the "vs" badge landing on a number.
-  if (figures)
-    return (
-      <div className="relative flex w-full flex-col items-center gap-3 px-6">
-        {side(v.left, 0)}
-        {badge(true)}
-        {side(v.right, 1)}
-      </div>
-    );
   return (
-    // The badge sits in the gap between the cards (it used to overlap both, landing on the titles).
-    <div className="relative flex w-full items-stretch gap-11 px-5">
+    <div className="relative flex w-full flex-col items-center gap-3 px-1">
       {side(v.left, 0)}
-      {badge(false)}
+      {badge(true)}
       {side(v.right, 1)}
     </div>
   );
@@ -293,13 +283,15 @@ function IconsVisual({ v }: { v: Extract<Visual, { type: "icons" }> }) {
   const many = v.items.length > 2;
   // Words, not colour chips: one item per row, big, with the arrow pointing down. Side by side, each label got
   // 130px ("f of x near" / "7" broken over two lines at 18px) in a row a third of the stage tall.
+  // Two rows get bigger type and taller cards (they sat at 28px with half the stage empty below them).
+  const wordSize = fitWord(v.items.map((it) => it.label), 262 - 32 - (v.items.length <= 2 ? 64 : 56) - 16, v.items.length <= 2 ? 34 : 28);
   if (!v.items.some((it) => it.color))
     return (
-      <div className="relative flex w-full flex-col items-stretch px-5">
+      <div className="relative flex w-full flex-col items-stretch px-1">
         {v.items.map((it, i) => (
           <div key={i} className="flex flex-col items-stretch">
             {i > 0 && (
-              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.45 - 0.15 }} className="flex h-9 items-center pl-[30px] text-white/60">
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.45 - 0.15 }} className="flex h-10 items-center pl-[34px] text-white/60">
                 {v.arrow ? <ArrowRight size={26} strokeWidth={2.25} className="rotate-90" /> : null}
               </motion.div>
             )}
@@ -307,12 +299,13 @@ function IconsVisual({ v }: { v: Extract<Visual, { type: "icons" }> }) {
               initial={{ opacity: 0, x: -14 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.45, duration: 0.45, ease }}
-              className={`flex items-center gap-4 px-4 py-3.5 ${glass}`}
+              className={`flex items-center gap-4 border-2 bg-black/45 px-4 ${v.items.length <= 2 ? "py-5" : "py-3.5"}`}
+              style={{ borderColor: i === v.items.length - 1 ? "var(--thread)" : "rgba(255,255,255,.12)" }}
             >
-              <Tile name={it.icon} size={30} box={56} on={i === v.items.length - 1} delay={i * 0.45} />
+              <ItemTile icon={it.icon} label={it.label} color="" box={v.items.length <= 2 ? 64 : 56} lit={i === v.items.length - 1} />
               {/* A short formula ("lim f(x) = 7") never breaks; the stage scales it to fit instead. Words wrap: kept on one
                   line, "Swap the text" ran out of its card and was cut off at the frame's edge. */}
-              <span className={`min-w-0 font-hook text-[28px] font-extrabold leading-[1.08] tracking-[-0.02em] ${it.label.length <= 16 && /[=()0-9→<>^√]/.test(it.label) ? "whitespace-nowrap" : ""}`} style={{ color: i === v.items.length - 1 ? "var(--thread)" : "#fff" }}>
+              <span className={`min-w-0 font-hook font-extrabold leading-[1.08] tracking-[-0.02em] ${it.label.length <= 16 && /[=()0-9→<>^√]/.test(it.label) ? "whitespace-nowrap" : ""}`} style={{ color: i === v.items.length - 1 ? "var(--thread)" : "#fff", fontSize: wordSize }}>
                 {sentence(it.label)}
               </span>
             </motion.div>
@@ -389,7 +382,7 @@ function StatVisual({ v }: { v: Extract<Visual, { type: "stat" }> }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className={`relative mt-5 px-4 py-1.5 text-[14.5px] font-medium text-white ${glass}`}
+        className={`relative mt-5 px-4 py-2 text-[19px] font-semibold leading-snug text-white ${glass}`}
       >
         {sentence(v.label)}
       </motion.div>

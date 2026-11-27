@@ -77,8 +77,10 @@ export function CrowdCanvas({ ratio, progress }: { ratio: number; progress: numb
         diff = Math.PI - diff;
         const wave = Math.max(0, 1 - diff / 0.55);
         const lit = d.picked && d.jitter / Math.max(ratio, 0.001) <= reveal * 1.0001;
-        const size = 1.2 + wave * 0.9 + (lit ? 0.7 : 0);
-        ctx.globalAlpha = lit ? 0.9 : 0.16 + wave * 0.4;
+        // The whole group must read at a glance: at 1.2px and 16% opacity the population was a near-black frame
+        // until the sample lit up.
+        const size = 1.7 + wave * 0.9 + (lit ? 0.8 : 0);
+        ctx.globalAlpha = lit ? 0.95 : 0.42 + wave * 0.4;
         ctx.fillStyle = lit || wave > 0.5 ? accent : base;
         if (lit) {
           ctx.shadowColor = accent;
