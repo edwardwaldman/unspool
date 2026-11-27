@@ -27,7 +27,7 @@ export function DemoRequestForm() {
         const res = await fetch("/api/demo-request", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).catch(() => null);
         const out = (await res?.json().catch(() => ({}))) as { error?: string } | undefined;
         if (res?.ok) setState("sent");
-        else { setErr(out?.error ?? "Couldn't send your request. Please email hello@unspool.cc."); setState("idle"); }
+        else { setErr(out?.error ?? "Couldn't send your request. Please try again in a minute."); setState("idle"); }
       }}
     >
       <label className="sr-only" htmlFor="dr-name">Name</label>
