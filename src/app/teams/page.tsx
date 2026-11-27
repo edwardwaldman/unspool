@@ -10,12 +10,46 @@ import { ResumeStashedUpload } from "@/components/upload/use-uploader";
 
 // The landing page for the corporate-training ads (link it as /teams?utm_source=tiktok-teams).
 // Same one-job hero as /go, worded for training managers, plus a few sections below it for the people who open it on a
-// laptop and want to know what they'd be buying. Kept out of search: it exists for ad clicks.
+// laptop and want to know what they'd be buying. Indexed for training-video searches (title, FAQ, structured data).
 export const metadata: Metadata = {
-  title: "Turn training docs into short videos your team will watch",
-  description: "Upload a handbook, SOP or policy PDF. Get short videos with a voiceover, captions and a quiz. Your first reel is free.",
-  robots: { index: false, follow: true },
-  alternates: { canonical: "/" },
+  title: { absolute: "Turn training documents into short training videos | Unspool Teams" },
+  description:
+    "Unspool Teams turns employee handbooks, SOPs, policies and compliance docs into short training videos with a voiceover, captions and a quiz at the end of each one. Request a demo.",
+  alternates: { canonical: "/teams" },
+  openGraph: {
+    url: "/teams",
+    title: "Unspool Teams: training documents into short videos",
+    description: "Handbooks, SOPs and policy PDFs become short training videos with a voiceover, captions and a quiz.",
+    siteName: "Unspool",
+    type: "website",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Unspool Teams" }],
+  },
+  twitter: { card: "summary_large_image", title: "Unspool Teams", description: "Training documents into short videos with a voiceover, captions and a quiz." },
+};
+
+// Shown on the page and mirrored in the FAQPage structured data (Google only credits questions visible on the page).
+const FAQ: [string, string][] = [
+  ["What can we turn into training videos?", "Employee handbooks, SOPs, policies, onboarding guides, safety procedures and slide decks: PDF, Word, PowerPoint, plain text, or a photo of a page. You can also type a topic and Unspool researches it."],
+  ["What does each video include?", "Each short video covers one key idea, with a hook, a voiceover, word-by-word captions, a visual for every beat and a quiz question at the end, sized for a phone."],
+  ["How does the team watch them?", "Every reel has a share link anyone can open, so you can send it in chat, email or your LMS."],
+  ["Are our documents private?", "Yes. Your files stay private and are never used to train AI."],
+  ["How much does it cost?", "The first reel of a document is free with no card. Plans for more reels are on the pricing page, and Enterprise has custom pricing with invoiced billing."],
+];
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      name: "Unspool Teams",
+      url: "https://unspool.cc/teams",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      description: "Turns training documents (handbooks, SOPs, policies) into short videos with a voiceover, captions and a quiz.",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD", description: "First reel of a document free" },
+      publisher: { "@id": "https://unspool.cc/#org" },
+    },
+    { "@type": "FAQPage", mainEntity: FAQ.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) },
+  ],
 };
 
 const TEAMS_COPY: GoCopy = {
@@ -148,6 +182,21 @@ function TeamsSections() {
           ))}
         </ul>
       </section>
+      <section aria-labelledby="faq" className="mt-20">
+        <h2 id="faq" className="max-w-[640px] font-headline text-[30px] font-bold leading-[1.05] tracking-[-0.02em] lg:text-[40px]">Questions teams ask</h2>
+        <div className="mt-8 border-t border-line">
+          {FAQ.map(([q, a]) => (
+            <details key={q} className="group border-b border-line py-5">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-[17px] font-semibold">
+                {q}
+                <span className="text-[22px] leading-none text-thread transition-transform group-open:rotate-45" aria-hidden>+</span>
+              </summary>
+              <p className="mt-3 max-w-[760px] text-[15.5px] leading-relaxed text-muted">{a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
       <section id="enterprise" aria-labelledby="ent" className="mt-20 scroll-mt-28 grid gap-10 border border-thread p-8 lg:grid-cols-[1fr_1.1fr] lg:p-12">
         <div>
           <h2 id="ent" className="font-headline text-[28px] font-bold leading-[1.05] tracking-[-0.02em] lg:text-[36px]">
@@ -175,6 +224,7 @@ function TeamsSections() {
 export default function TeamsPage() {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <GoHero copy={TEAMS_COPY}>
         <TeamsSections />
       </GoHero>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Wordmark } from "../ui/icons";
+import { SiteFooter } from "../shell/site-footer";
 import { PROMPT_MAX_CHARS, isPastedDocument } from "@/lib/prompt-text";
 import { promptFile, usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
@@ -259,20 +260,22 @@ const STUDENT_COPY: GoCopy = {
   ticks: ["First reel free", "No card needed", "Your files stay private"],
 };
 
-/** Like the main site's top bar: hidden at the top of the page, slides down when you scroll back up, away on scroll down. */
+/**
+ * Exactly the main site's top bar: hidden only at the very top of the page; it slides down as soon as you scroll (or
+ * wheel down while still at the top) and stays down until you're back at the top.
+ */
 function usePullDownBar() {
   const [shown, setShown] = useState(false);
   useEffect(() => {
-    let last = window.scrollY;
-    const on = () => {
-      const y = window.scrollY;
-      if (y < 120) setShown(false);
-      else if (y < last - 4) setShown(true);
-      else if (y > last + 4) setShown(false);
-      last = y;
+    const onScroll = () => setShown(window.scrollY > 12);
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY > 4) setShown(true);
+      else if (e.deltaY < -4 && window.scrollY <= 12) setShown(false);
     };
-    window.addEventListener("scroll", on, { passive: true });
-    return () => window.removeEventListener("scroll", on);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("wheel", onWheel, { passive: true });
+    return () => { window.removeEventListener("scroll", onScroll); window.removeEventListener("wheel", onWheel); };
   }, []);
   return shown;
 }
@@ -347,7 +350,7 @@ export function GoHero({ copy = STUDENT_COPY, children }: { copy?: GoCopy; child
         </div>
       </div>
       </div>
-      <div className={copy.demoHero ? "relative z-10 flex flex-col items-center rounded-t-[32px] border-t border-line bg-paper px-4 pb-16 shadow-[0_-24px_60px_rgba(0,0,0,0.45)]" : "contents"}>
+      <div className={copy.demoHero ? "relative z-10 flex flex-col items-center rounded-t-[32px] border-t border-line bg-paper px-4 shadow-[0_-24px_60px_rgba(0,0,0,0.45)]" : "contents"}>
         {copy.demoHero && (
           // the main site's slim tab riding on the card's top edge
           <button type="button" onClick={scrollDown} className="absolute -top-9 left-5 z-20 flex h-9 items-center gap-1.5 rounded-t-[10px] bg-ink px-4 text-[13px] font-medium text-paper lg:left-10">
@@ -356,11 +359,17 @@ export function GoHero({ copy = STUDENT_COPY, children }: { copy?: GoCopy; child
           </button>
         )}
         {children}
-        <footer className="mt-auto flex gap-4 pt-10 text-[12px] text-muted">
-          <Link href="/terms" className="hover:text-ink">Terms</Link>
-          <Link href="/privacy" className="hover:text-ink">Privacy</Link>
-          <span>unspool.cc</span>
-        </footer>
+        {copy.demoHero ? (
+          <div className="mt-20 w-full">
+            <SiteFooter />
+          </div>
+        ) : (
+          <footer className="mt-auto flex gap-4 pt-10 text-[12px] text-muted">
+            <Link href="/terms" className="hover:text-ink">Terms</Link>
+            <Link href="/privacy" className="hover:text-ink">Privacy</Link>
+            <span>unspool.cc</span>
+          </footer>
+        )}
       </div>
     </div>
   );
