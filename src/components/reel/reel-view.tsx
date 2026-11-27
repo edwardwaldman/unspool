@@ -20,6 +20,7 @@ import { QuizCard } from "./visuals";
 import { Sheet } from "../ui/sheet";
 import { MarkedText } from "../ui/marked-text";
 import { chime, thud, whoosh } from "./sfx";
+import { track } from "../analytics/track";
 
 export type ReelChrome = {
   /** Extra bottom inset (keeps overlays clear of the phone's home indicator). */
@@ -100,6 +101,22 @@ export function ReelView({
   // Under the top chip (the demo layout: chip and wordmark on top, everything else is the scene).
   const below = top + 58;
   const heart = useDoubleTapHeart();
+  // "Know someone studying this?" once per visit, two-thirds of the way through a reel that can be shared.
+  const [nudge, setNudge] = useState<"off" | "on" | "done">("off");
+  const nudgeable = Boolean(onShare) && active && !preview && !record && pb.progress > 0.66;
+  useEffect(() => {
+    if (!nudgeable || nudge !== "off") return;
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem("unspool:share-nudge") === "1";
+      sessionStorage.setItem("unspool:share-nudge", "1");
+    } catch {}
+    const id = requestAnimationFrame(() => {
+      setNudge(seen ? "done" : "on");
+      if (!seen) track("share_prompt_shown");
+    });
+    return () => cancelAnimationFrame(id);
+  }, [nudgeable, nudge]);
   const toggleMute = () => {
     setPrefs({ muted: !getPrefs().muted, autoMuted: false });
     // Inside the tap: unlock the clips on phones and carry on where it is (never restart the reel).
@@ -299,6 +316,37 @@ export function ReelView({
       <Sheet open={summaryOpen} onClose={() => setSummaryOpen(false)} label="Reel summary">
         <ReelSummary script={script} index={reel.index} sensitive={spool.sensitive} />
       </Sheet>
+
+      {/* Share nudge */}
+      <AnimatePresence>
+        {nudge === "on" && active && onShare && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute left-3 right-14 z-30 flex items-center gap-3 rounded-[14px] bg-black/75 px-3.5 py-2.5 text-white backdrop-blur-[2px]"
+            style={{ top: below + 6 }}
+            onClick={(e) => e.stopPropagation()}
+            data-testid="share-nudge"
+          >
+            <span className="flex-1 text-[13.5px] font-semibold leading-snug">Know someone studying this?</span>
+            <button
+              type="button"
+              onClick={() => {
+                track("share_prompt_tapped");
+                setNudge("done");
+                onShare();
+              }}
+              className="rounded-full bg-thread px-3.5 py-1.5 text-[13px] font-semibold text-[#0f1d18]"
+            >
+              Share
+            </button>
+            <button type="button" aria-label="Close" onClick={() => setNudge("done")} className="px-1 text-[16px] text-white/70">
+              ×
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Paused */}
       <AnimatePresence>

@@ -25,6 +25,15 @@ export type TrackName =
   | "loading_left"
   | "game_start"
   | "game_over"
+  | "share_opened"
+  | "share_copied"
+  | "share_native"
+  | "share_app"
+  | "share_prompt_shown"
+  | "share_prompt_tapped"
+  | "keep_scrolling_shown"
+  | "keep_scrolling_signup"
+  | "keep_scrolling_skip"
   | "idle"
   | "close";
 

@@ -82,11 +82,20 @@ const EVENT_LABELS: Record<string, string> = {
   loading_left: "Left loading",
   game_start: "Game started",
   game_over: "Game over",
+  share_opened: "Share opened",
+  share_copied: "Copied share link",
+  share_native: "Shared (phone menu)",
+  share_app: "Shared to",
+  share_prompt_shown: "Share nudge shown",
+  share_prompt_tapped: "Share nudge tapped",
+  keep_scrolling_shown: "Keep-scrolling card",
+  keep_scrolling_signup: "Keep-scrolling: sign up",
+  keep_scrolling_skip: "Keep-scrolling: skipped",
   idle: "Idle 60s",
   close: "Closed",
 };
 const eventTone = (name: string) =>
-  name.startsWith("upload") ? "text-sage" : name === "checkout_clicked" ? "text-thread" : name === "signup_done" ? "text-sage" : name === "signup_closed" ? "text-coral" : "text-ink/80";
+  name.startsWith("upload") ? "text-sage" : name.startsWith("share") ? "text-thread" : name === "checkout_clicked" ? "text-thread" : name === "signup_done" ? "text-sage" : name === "signup_closed" ? "text-coral" : "text-ink/80";
 
 /** IP in monospace with its country code. */
 function IpTag({ ip, country }: { ip: string | null; country: string | null }) {

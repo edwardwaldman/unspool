@@ -9,6 +9,7 @@ import { ShareIcon } from "../ui/icons";
 import { DOWNLOADS_ON, DownloadReelButton } from "./download-button";
 import { Sheet } from "../ui/sheet";
 import { toast } from "../ui/toast";
+import { track } from "../analytics/track";
 
 const plain = (s: string) => s.replace(/[*#^~]/g, "");
 
@@ -56,14 +57,14 @@ export function ShareActions({ url, text }: { url: string; text: string }) {
     <div>
       <div className="flex">
         <input readOnly value={url} aria-label="Share link" onFocus={(e) => e.currentTarget.select()} className="field min-w-0 flex-1 px-3 py-2.5 font-mono text-[12.5px]" data-testid="share-url" />
-        <button type="button" onClick={async () => setCopied(await copy(url))} aria-live="polite" className="-ml-px flex shrink-0 items-center gap-2 bg-thread px-4 text-[14px] font-semibold text-paper hover:opacity-90" data-testid="copy-link">
+        <button type="button" onClick={async () => { const ok = await copy(url); setCopied(ok); if (ok) track("share_copied"); }} aria-live="polite" className="-ml-px flex shrink-0 items-center gap-2 bg-thread px-4 text-[14px] font-semibold text-paper hover:opacity-90" data-testid="copy-link">
           {copied ? <Check size={15} strokeWidth={2.5} /> : <Copy size={15} strokeWidth={2} />} {copied ? "Copied link" : "Copy link"}
         </button>
       </div>
       {canNative && (
         <button
           type="button"
-          onClick={() => navigator.share({ title: "Unspool", text, url }).catch(() => undefined)}
+          onClick={() => navigator.share({ title: "Unspool", text, url }).then(() => track("share_native"), () => undefined)}
           className="btn-secondary mt-3 w-full py-2.5 text-[14px]"
         >
           <ShareIcon size={16} /> Share via…
@@ -76,6 +77,7 @@ export function ShareActions({ url, text }: { url: string; text: string }) {
             href={t.href}
             target={t.id === "sms" || t.id === "email" ? undefined : "_blank"}
             rel="noopener noreferrer"
+            onClick={() => track("share_app", t.id)}
             className="flex flex-col items-center gap-1.5 border-b border-r border-line px-1 py-3 text-[11.5px] text-muted transition-colors hover:text-ink"
           >
             <TargetGlyph id={t.id} />
@@ -143,6 +145,10 @@ export function ShareSheet({
   publicUrl?: boolean;
 }) {
   const [st, setSt] = useState<State>({ phase: "idle", showTitle: true });
+  // Owner panel: who opens the share sheet (in the app, or on a shared reel's public page).
+  useEffect(() => {
+    if (open) track("share_opened", publicUrl ? "public page" : "app");
+  }, [open, publicUrl]);
   const demo = Boolean(spool.demo) && !publicUrl;
   const passOn = publicUrl;
   const text = shareText(reel.hook);

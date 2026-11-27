@@ -157,3 +157,9 @@ em.font-display {
 }
 .typing-caret { animation: caret-blink 1s infinite; }
 @media (prefers-reduced-motion: reduce) { .typing-caret { animation: none; } }
+
+/* The keep-scrolling card on shared reels slides up from the bottom. */
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
