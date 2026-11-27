@@ -1,6 +1,5 @@
 "use client";
 
-import { Crown } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { ReelStyle } from "@/lib/reel-style";
@@ -17,7 +16,7 @@ import { AccountMenu } from "./account-menu";
 import { LibraryGrid } from "../spool/library-grid";
 import { PromptBox } from "../go/go-hero";
 import { PICK_EVENT, WelcomeTour } from "./welcome-tour";
-import { ProBadge, ReelStylePanel } from "./reel-style-panel";
+import { ReelStylePanel } from "./reel-style-panel";
 
 export type StudioDoc = {
   id: string;
@@ -276,7 +275,7 @@ function DesktopStudio({ docs, style, canEdit, plan, queue }: StudioProps) {
   );
 }
 
-function MobileStudio({ docs, style, canEdit, plan, email, queue }: StudioProps) {
+function MobileStudio({ docs, style, canEdit, email, queue }: StudioProps) {
   const picker = usePicker();
   const [styleOpen, setStyleOpen] = useState(false);
   // The sheet remounts the panel each time it opens: keep what was saved meanwhile.
@@ -288,44 +287,30 @@ function MobileStudio({ docs, style, canEdit, plan, email, queue }: StudioProps)
         <Link href="/" aria-label="Unspool" className="mr-auto">
           <Wordmark size={22} />
         </Link>
-        {/* Recharge sits next to the account icon (where Library used to be) */}
+        {/* Upload, Recharge and the menu, all up here */}
+        <button
+          type="button"
+          onClick={picker.open}
+          disabled={picker.pending}
+          aria-label="Upload a document"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-thread text-paper transition-transform active:scale-95 disabled:opacity-60 ipad:h-11 ipad:w-11"
+          data-testid="studio-upload"
+        >
+          <PlusIcon size={20} />
+        </button>
         <RechargeButton />
-        {/* ☰ menu: account settings and preferences, Log out at the bottom (instead of the account initial) */}
         <AccountMenu email={email} onReelStyle={() => setStyleOpen(true)} />
       </div>
 
-      {/* Credits and Recharge at the top */}
-      <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pt-4 ipad:max-w-[680px]">
-        <CreditBar recharge={false} />
-      </div>
-
-      <div className="flex min-h-[300px] flex-1 flex-col items-center justify-center px-6 py-8 text-center">
-        <PlusButton onClick={picker.open} pending={picker.pending} size="md" />
-        <div className="mt-5 font-display text-[24px] leading-[1.1] text-ink ipad:text-[30px]">{picker.pending ? "Starting upload" : "Upload a document"}</div>
-        <p className="mt-1.5 max-w-[280px] text-[13px] leading-snug text-muted ipad:text-[15px]">{TYPES_HINT}</p>
-        {/* Or type a topic, right here with the upload */}
-        <PromptBox divider={false} className="mt-5 max-w-[420px] text-left" />
-        {/* The reel style is picked before uploading: a small option under the upload, not a row of its own */}
-        <button
-          type="button"
-          onClick={() => setStyleOpen(true)}
-          className="mt-3 inline-flex items-center gap-2 border border-line px-3 py-1.5 text-[13px] text-muted transition-colors hover:border-thread hover:text-ink"
-          data-testid="style-row"
-          data-tour="studio-style"
-        >
-          <Crown size={14} className="text-thread" aria-hidden />
-          Reel style
-          {canEdit ? <span className="text-ink">Edit</span> : <ProBadge />}
-        </button>
-      </div>
-
-      <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pb-5 ipad:max-w-[680px]">
-        {/* The queue and the next-free-reel timer, right under the upload */}
-        {queue && <QueueTimer nextAt={queue.nextAt} queued={queue.queued} />}
-
-        <div className="mt-5">
-          <LibraryStats docs={docs} plan={plan} />
-        </div>
+      <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pb-5 pt-5 ipad:max-w-[680px]">
+        {/* Type a topic (or tap + above to upload a file) */}
+        <PromptBox divider={false} className="" />
+        {/* The next-free-reel timer and the queue, right under it */}
+        {queue && (
+          <div className="mt-4">
+            <QueueTimer nextAt={queue.nextAt} queued={queue.queued} />
+          </div>
+        )}
       </div>
       {/* Everything the Library page had lives here now: the grid of spools, with Edit to delete */}
       {docs.length ? (
