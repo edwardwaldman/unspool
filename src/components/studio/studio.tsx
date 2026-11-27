@@ -10,7 +10,9 @@ import { Sheet } from "../ui/sheet";
 import { useLayout } from "../ui/use-media";
 import { usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
-import { CreditBar, RechargeButton } from "./credit-bar";
+import { CreditBar, RechargeButton, useCredits } from "./credit-bar";
+import { startCheckout } from "../billing/checkout";
+import { formatCountdown, useCountdown } from "../ui/use-countdown";
 import { QueueTimer } from "./queue-timer";
 import { toast } from "../ui/toast";
 import { AccountMenu } from "./account-menu";
@@ -195,6 +197,74 @@ function PlusButton({ onClick, pending, size }: { onClick: () => void; pending: 
   );
 }
 
+/** Still being made / waiting in the queue: queued uploads get a big row with their own countdown and a way to
+ * remove one added by accident, plus "Unlock the reels now" (the free trial, or Plus once the trial is used). */
+function ActiveList({ docs, nextAt }: { docs: StudioDoc[]; nextAt: string | null }) {
+  const [items, setItems] = useState(docs);
+  const [busy, setBusy] = useState(false);
+  const usage = useCredits();
+  const left = useCountdown(nextAt);
+  const queued = items.some((d) => d.status === "queued");
+  const remove = async (id: string) => {
+    if (!window.confirm("Remove this from your queue?")) return;
+    const res = await fetch(`/api/documents/${id}`, { method: "DELETE" }).catch(() => null);
+    if (res?.ok) {
+      setItems((list) => list.filter((d) => d.id !== id));
+      toast("Removed from your queue");
+    } else toast("Couldn't remove it. Try again.");
+  };
+  const unlock = async () => {
+    setBusy(true);
+    const err = await startCheckout(usage?.trialEligible ? { kind: "trial", returnTo: "/studio" as const } : { kind: "subscription", tier: "plus", returnTo: "/studio" as const });
+    if (err) {
+      toast(err, 4000);
+      setBusy(false);
+    }
+  };
+  if (!items.length) return null;
+  return (
+    <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pb-4 ipad:max-w-[680px]" data-testid="studio-active">
+      <div className="mb-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-muted">{queued ? "Your queue" : "In progress"}</div>
+      <ul className="space-y-2">
+        {items.map((d) => {
+          const st = docStatus(d);
+          if (d.status === "queued")
+            return (
+              <li key={d.id} className="flex items-center gap-3 border border-line bg-surface px-4 py-4" data-testid="queued-row">
+                <div className="min-w-0 flex-1">
+                  <div className="line-clamp-2 text-[17px] font-semibold leading-snug text-ink">{d.name}</div>
+                  <div className="mt-1.5 flex items-baseline gap-2">
+                    <span className="text-[12.5px] text-muted">{left > 0 ? "Starts in" : "Starting next"}</span>
+                    {left > 0 && <span className="font-mono text-[20px] font-bold tabular-nums text-thread">{formatCountdown(left)}</span>}
+                  </div>
+                </div>
+                <button type="button" onClick={() => remove(d.id)} aria-label={`Remove ${d.name} from the queue`} className="flex h-9 w-9 shrink-0 items-center justify-center border border-line text-[18px] text-muted hover:border-coral hover:text-coral">
+                  ×
+                </button>
+              </li>
+            );
+          return (
+            <li key={d.id}>
+              <Link href={`/s/${d.id}`} className="flex items-center gap-3 border border-line px-4 py-3.5">
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: st.tone }} aria-hidden />
+                <span className="min-w-0 flex-1 truncate text-[15.5px] text-ink">{d.name}</span>
+                <span className="shrink-0 text-[13px] font-medium" style={{ color: st.tone }}>
+                  {st.label}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+      {queued && (
+        <button type="button" onClick={unlock} disabled={busy} className="mt-3 min-h-[52px] w-full bg-thread text-[16px] font-semibold text-paper hover:opacity-90 disabled:opacity-60" data-testid="unlock-now">
+          {busy ? "Loading..." : "Unlock the reels now"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 /** Finished spools as a list: thumbnail, name, how many reels are unlocked. Edit shows a delete button per row. */
 function DoneList({ docs }: { docs: StudioDoc[] }) {
   const [items, setItems] = useState(docs);
@@ -362,27 +432,7 @@ function MobileStudio({ docs, style, canEdit, email, queue }: StudioProps) {
         )}
       </div>
       {/* Still being made (queued, planning, writing): up front, under the timer */}
-      {active.length > 0 && (
-        <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pb-4 ipad:max-w-[680px]" data-testid="studio-active">
-          <div className="mb-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-muted">In progress</div>
-          <ul className="divide-y divide-line border-y border-line">
-            {active.map((d) => {
-              const st = docStatus(d);
-              return (
-                <li key={d.id}>
-                  <Link href={`/s/${d.id}`} className="flex items-center gap-3 py-3">
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: st.tone }} aria-hidden />
-                    <span className="min-w-0 flex-1 truncate text-[15px] text-ink">{d.name}</span>
-                    <span className="shrink-0 text-[13px] font-medium" style={{ color: st.tone }}>
-                      {st.label}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
+      {active.length > 0 && <ActiveList docs={active} nextAt={queue?.nextAt ?? null} />}
 
       {/* Done and watched: behind a pull-down bar, the grid of spools (with Edit to delete) */}
       {done.length > 0 ? (

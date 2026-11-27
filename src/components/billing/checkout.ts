@@ -4,8 +4,8 @@ import type { Billing, Tier, TopupPack } from "@/lib/plans";
 import { track } from "../analytics/track";
 
 export type CheckoutRequest =
-  | { kind: "subscription"; tier: Exclude<Tier, "free">; billing?: Billing }
-  | { kind: "trial" }
+  | { kind: "subscription"; tier: Exclude<Tier, "free">; billing?: Billing; returnTo?: "/studio" }
+  | { kind: "trial"; returnTo?: "/studio" }
   | { kind: "topup"; pack?: TopupPack["id"]; returnTo?: "/studio" };
 
 /** Open Stripe Checkout (or the billing portal for a plan switch). Returns an error message, or null after redirecting. */

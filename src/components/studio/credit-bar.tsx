@@ -12,7 +12,7 @@ const POLL_MS = 20_000;
 const UNLIMITED = 100_000;
 
 /** The account's credits, kept live: polled while the tab is visible, and refreshed on focus and after any unlock or purchase. */
-function useCredits() {
+export function useCredits() {
   const [usage, setUsage] = useState<UsageDTO | null>(null);
   const load = useCallback(async () => {
     const res = await fetch("/api/credits", { cache: "no-store" }).catch(() => null);
