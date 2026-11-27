@@ -301,6 +301,11 @@ function MobileStudio({ docs, style, canEdit, plan, email, queue }: StudioProps)
         </button>
       </div>
 
+      {/* Credits and Recharge at the top */}
+      <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pt-4 ipad:max-w-[680px]">
+        <CreditBar />
+      </div>
+
       <div className="flex min-h-[300px] flex-1 flex-col items-center justify-center px-6 py-8 text-center">
         <PlusButton onClick={picker.open} pending={picker.pending} size="md" />
         <div className="mt-5 font-display text-[24px] leading-[1.1] text-ink ipad:text-[30px]">{picker.pending ? "Starting upload" : "Upload a document"}</div>
@@ -322,15 +327,8 @@ function MobileStudio({ docs, style, canEdit, plan, email, queue }: StudioProps)
       </div>
 
       <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pb-5 ipad:max-w-[680px]">
-        {/* The queue sits right under the upload; credits come after it */}
-        {queue && (
-          <div className="mb-2.5">
-            <QueueTimer nextAt={queue.nextAt} queued={queue.queued} />
-          </div>
-        )}
-        <div>
-          <CreditBar />
-        </div>
+        {/* The queue and the next-free-reel timer, right under the upload */}
+        {queue && <QueueTimer nextAt={queue.nextAt} queued={queue.queued} />}
 
         <div className="mt-5 flex items-baseline justify-between">
           <span className="text-[13px] font-medium text-ink ipad:text-[15px]">Your library</span>

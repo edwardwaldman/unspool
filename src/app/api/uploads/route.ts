@@ -4,6 +4,7 @@ import { appSettings } from "@/lib/settings";
 import { adminClient } from "@/lib/supabase/admin";
 import { entitlementFor, topupBalance } from "@/lib/credits";
 import { claimUsage, freeDocumentUsed } from "@/lib/usage";
+import { canStartNow } from "@/lib/queue";
 import { clientIpHash, getViewer } from "@/lib/viewer";
 import { dispatch } from "@/lib/jobs";
 import { PROMPT_FILE } from "@/lib/pipeline";
@@ -79,6 +80,9 @@ export async function POST(req: Request) {
       const queuedOk = await claimUsage({ kind: "upload", scope: "user", limit: LIMITS.freeUploadsPerDay, userId: viewer.userId, ipHash });
       if (queuedOk === null) return error(503, "Uploads are briefly unavailable. Try again in a minute.");
       if (!queuedOk) return error(429, "You've queued today's uploads. Upgrade, or try again tomorrow.", { code: "limit" });
+      // A free reel is available now and nothing is waiting or being made: start it straight away (it opens its reels)
+      // instead of saying it's queued and dropping them in the Studio.
+      if (await canStartNow(viewer)) return createDocument(db, viewer, ipHash, prompt, pasted, fileName, size, body);
       return createDocument(db, viewer, ipHash, prompt, pasted, fileName, size, body, true);
     }
     oneFree = false;

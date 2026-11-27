@@ -10,6 +10,8 @@ import type { Viewer } from "./viewer";
 // opens the Studio (its countdown reloads the page when it reaches zero), one document at a time.
 
 const DAY_MS = 24 * 3600e3;
+// A document still being set up (before its first reel exists): free accounts get one of these at a time.
+const MAKING = ["uploaded", "extracting", "planning"];
 
 /** When this account may make its next free reel: null means now. */
 export async function nextFreeReelAt(viewer: Viewer): Promise<string | null> {
@@ -49,14 +51,13 @@ export async function moveQueue(viewer: Viewer): Promise<{ queued: number; nextA
   const free = tierOf(viewer.profile) === "free";
   const nextAt = free ? await nextFreeReelAt(viewer) : null;
   if (nextAt) return { queued: queue.length, nextAt };
-  // One at a time for free accounts: wait while a document released from the queue is still being made.
+  // One at a time for free accounts: wait while another of their documents is still being set up.
   if (free) {
     const { count } = await db
       .from("documents")
       .select("id", { count: "exact", head: true })
       .eq("user_id", viewer.userId)
-      .eq("queued", true)
-      .in("status", ["uploaded", "extracting", "planning"]);
+      .in("status", MAKING);
     if (count) return { queued: queue.length, nextAt: null };
   }
   const start = free ? queue.slice(0, 1) : queue;
@@ -66,4 +67,17 @@ export async function moveQueue(viewer: Viewer): Promise<{ queued: number; nextA
     if (moved?.length) await dispatch({ name: "process", documentId: d.id });
   }
   return { queued: queue.length - start.length, nextAt: null };
+}
+
+/** A free account past its free document may start a new upload right away (no wait, nothing it queued still being
+ * made); otherwise the upload joins the queue. Same rule as moveQueue, so an upload never "queues" only to start. */
+export async function canStartNow(viewer: Viewer): Promise<boolean> {
+  if (!viewer.userId) return false;
+  if (await nextFreeReelAt(viewer)) return false;
+  const db = adminClient();
+  const [{ count: waiting }, { count: making }] = await Promise.all([
+    db.from("documents").select("id", { count: "exact", head: true }).eq("user_id", viewer.userId).eq("status", "queued"),
+    db.from("documents").select("id", { count: "exact", head: true }).eq("user_id", viewer.userId).in("status", MAKING),
+  ]);
+  return !waiting && !making;
 }
