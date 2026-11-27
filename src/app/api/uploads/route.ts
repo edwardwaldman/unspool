@@ -9,6 +9,8 @@ import { dispatch } from "@/lib/jobs";
 import { PROMPT_FILE } from "@/lib/pipeline";
 import { PROMPT_MAX_CHARS, isPastedDocument, promptTitle, tidyPrompt } from "@/lib/prompt-text";
 
+const ANON_PREVIEWS_PER_NETWORK = 4;
+
 export const dynamic = "force-dynamic";
 
 /** Create a document row and a signed upload URL; the browser uploads straight to Supabase Storage. */
@@ -37,13 +39,15 @@ export async function POST(req: Request) {
   const db = adminClient();
   const SIGN_UP = "Create a free account to unspool your document.";
   if (!viewer.userId) {
-    // Signed out: one preview document per browser (and per network a day), made so they can see their first
+    // Signed out: one preview document per browser (and a few per network a day), made so they can see their first
     // reel before signing up. It's tied to the anonymous cookie and attached to the account at sign-up
     // (/api/auth/claim, /auth/callback). Anything more needs the account.
     if (!viewer.anonToken) return error(401, SIGN_UP, { code: "auth" });
     const { count } = await db.from("documents").select("id", { count: "exact", head: true }).is("user_id", null).eq("anon_token", viewer.anonToken);
     if (count) return error(401, SIGN_UP, { code: "auth" });
-    const ok = await claimUsage({ kind: "upload", scope: "user_or_ip", limit: 1, userId: null, ipHash });
+    // A few per network a day, not one: schools and phone carriers put many students behind one address, and with
+    // a limit of 1 everyone after the first went straight to the sign-up wall without seeing their reel.
+    const ok = await claimUsage({ kind: "upload", scope: "user_or_ip", limit: ANON_PREVIEWS_PER_NETWORK, userId: null, ipHash });
     if (ok === null) return error(503, "Uploads are briefly unavailable. Try again in a minute.");
     if (!ok) return error(401, SIGN_UP, { code: "auth" });
     return createDocument(db, viewer, ipHash, prompt, pasted, fileName, size, body);

@@ -66,7 +66,7 @@ export function ReelSlot({
     const s = item.spool;
     return <LockedReel reel={r} total={total} bottomInset={bottomInset} topInset={topInset} onUnlock={onUnlock} gateOpen={onScreen && !active} trialEligible={trialEligible} freeAt={s ? freeAtFor(r.index, s.freeReels, s.nextFreeUnlockAt) : null} />;
   }
-  return <ReelView spool={item.spool!} reel={r} active={active} onScreen={onScreen} total={total} chrome={{ bottomInset, topInset }} onMore={onMore} onEnded={onEnded} onShare={onShare} overlay={onPlayGate ? <PlayGate onPlay={onPlayGate} /> : undefined} />;
+  return <ReelView spool={item.spool!} reel={r} active={active} onScreen={onScreen} total={total} chrome={{ bottomInset, topInset }} onMore={onMore} onEnded={onEnded} onShare={onShare} overlay={onPlayGate ? <PlayGate onPlay={onPlayGate} /> : undefined} poster={Boolean(onPlayGate)} />;
 }
 
 /** The "more" sheet for a spool's reel (mute, speed, delete the document). */

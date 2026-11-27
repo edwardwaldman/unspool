@@ -54,6 +54,7 @@ export function ReelView({
   overlay,
   onScreen = false,
   record = false,
+  poster = false,
 }: {
   spool: SpoolDTO;
   reel: ReelDTO;
@@ -71,6 +72,9 @@ export function ReelView({
   onScreen?: boolean;
   /** Recording to a video file: the reel alone (chip, scene, captions, quiz), none of the app's buttons. */
   record?: boolean;
+  /** The still frame a signed-out preview's play button sits on: drawn as the opening at its fullest (headline
+   * built, every key word lit, the scene and caption on screen), not the empty first instant. */
+  poster?: boolean;
 }) {
   // Old reels get today's visual repairs too (nothing said or timed changes).
   const script = useMemo(() => repairVisuals(reel.script!), [reel.script]);
@@ -79,7 +83,11 @@ export function ReelView({
   const [summaryOpen, setSummaryOpen] = useState(false);
   const pb = usePlayback({ script, audio: reel.audio, active, hold: summaryOpen, onEnded, silent: preview, video, record });
   const prefs = usePrefs();
-  const fraction = pb.duration > 0 ? pb.t / pb.duration : 0;
+  const opening0 = pb.seg === 0;
+  const still = poster && opening0 && !pb.playing;
+  const fraction = still ? 0.92 : pb.duration > 0 ? pb.t / pb.duration : 0;
+  // The still's caption: the hook's first phrase fully lit ("A chef never eats"), which makes people want the rest.
+  const capFraction = still ? Math.max(0, (pb.words[4] ?? 0.35) - 0.005) : fraction;
   const kind = pb.segment.kind;
   const isQuiz = kind === "quiz" || kind === "explain";
   const stageKey = isQuiz ? `q${pb.segment.beatIndex}` : pb.segment.key;
@@ -187,7 +195,7 @@ export function ReelView({
         stageKey={stageKey}
         stageBox={{ top: below, bottom: bottom + RAIL_TOP, right: preview ? 0 : GUTTER - 8, left: preview ? 0 : 8 }}
         stage={
-          (active || pb.seg > 0) && !isQuiz
+          (active || pb.seg > 0 || still) && !isQuiz
             ? { visual: pb.segment.visual, script, progress: fraction, last: reel.index === total, pulse: hits, scene: pb.segment.kind === "beat" ? script.beats[pb.segment.beatIndex]?.scene : undefined, mood: pb.segment.kind === "beat" ? script.beats[pb.segment.beatIndex]?.mood : undefined }
             : isQuiz && quizBeat
               ? // The story's last 3D scene keeps playing behind the quiz, and its mood reacts to the answer.
@@ -259,7 +267,7 @@ export function ReelView({
       {/* Burned-in captions, lower third (already in the frames when playing a rendered video) */}
       {!isQuiz && !pb.burnedCaptions && (
         <div className="absolute left-5 right-16 z-10" style={look?.position === "middle" ? { top: "50%", transform: "translateY(-50%)" } : { bottom: bottom + 178 }}>
-          <Captions text={pb.segment.text} words={pb.words} fraction={fraction} variant={look?.captions} />
+          <Captions text={pb.segment.text} words={pb.words} fraction={capFraction} variant={look?.captions} />
         </div>
       )}
 
