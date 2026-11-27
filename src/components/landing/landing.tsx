@@ -87,9 +87,10 @@ function UploadButton({ toStudio }: { toStudio: boolean }) {
         // Signed in: re-render "/" on the server, which shows their Studio, instead of uploading from the hero.
         onClick={() => (user && toStudio ? router.push("/studio") : input.current?.click())}
         disabled={Boolean(pending)}
-        className="flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-10 py-4 text-[18px] font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-60 min-[900px]:px-20 min-[900px]:py-7 min-[900px]:text-[28px]"
+        className="flex items-center justify-center gap-3 whitespace-nowrap bg-thread px-10 py-4 text-[18px] font-medium text-paper transition-opacity hover:opacity-90 min-[900px]:px-20 min-[900px]:py-7 min-[900px]:text-[28px]"
       >
-        {pending ? "Opening your feed" : (<><UploadIcon size={26} /> Upload a document</>)}
+        {/* The "Unspooling" card in the middle of the screen covers the wait; the button just stays itself. */}
+        <UploadIcon size={26} /> Upload a document
       </button>
       {/* Upload first, then type a topic, then the demo */}
       <PromptBox divider={false} className="mt-1 max-w-[420px] min-[900px]:max-w-[520px]" />

@@ -93,7 +93,7 @@ function PlusUpload({ label = "Snap a photo", sub = "or upload a PDF, slides or 
         </svg>
       </button>
       <div className="mt-3 text-center">
-        <div className="text-[17px] font-semibold lg:text-[19px]">{pending ? "Opening your reels…" : label}</div>
+        <div className="text-[17px] font-semibold lg:text-[19px]">{label}</div>
         <div className="mt-0.5 text-[13px] text-muted lg:text-[14px]">{sub}</div>
       </div>
     </div>
