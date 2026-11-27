@@ -11,7 +11,7 @@ import { checkoutFromIntent, startCheckout } from "../billing/checkout";
 import { openAuth } from "../auth/auth-store";
 import { toast } from "../ui/toast";
 import { useLayout } from "../ui/use-media";
-import { useUpload, type UploadState } from "../upload/upload-store";
+import { endLaunch, useUpload, type UploadState } from "../upload/upload-store";
 import { useSpool } from "./use-spool";
 import { Workbench } from "./workbench";
 
@@ -56,6 +56,8 @@ export function SpoolFeed({ id }: { id: string }) {
   const params = useSearchParams();
   const upload = useUpload(id);
   const uploading = upload?.phase === "uploading" || upload?.phase === "starting";
+  // The real loading screen is up: the instant "Unspooling" card hands over to it.
+  useEffect(() => endLaunch(), []);
   const { spool, viewer, error, reload } = useSpool(id, { keepPolling: uploading });
   const initialReel = Math.max(1, Math.min(MAX_REELS, Number(params.get("reel") ?? 1))) - 1;
 

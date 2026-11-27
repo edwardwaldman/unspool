@@ -7,7 +7,7 @@ import { openAuth } from "../auth/auth-store";
 import { useSessionUser } from "../auth/use-session";
 import { toast } from "../ui/toast";
 import { RESUME_PARAM, takeStashedFile } from "./file-stash";
-import { holdFile, isPromptFile, startPrompt, startUpload, validateFile } from "./upload-store";
+import { beginLaunch, endLaunch, holdFile, isPromptFile, startPrompt, startUpload, validateFile } from "./upload-store";
 
 /**
  * Upload a file and jump straight into its feed. The file always comes first. Signed-out visitors get one
@@ -34,11 +34,15 @@ export function useUploader() {
       };
       const run = async () => {
         track("upload_started", file.name.split(".").pop());
+        // The instant card in the middle of the screen; the feed ends it when it mounts (the real loading screen).
+        beginLaunch(typed ? (await file.text()).trim().replace(/\s+/g, " ").slice(0, 60) : file.name);
         const opened = (id: string) => {
           track("upload_done");
           router.push(`/s/${id}`);
         };
         const result = typed ? await startPrompt(await file.text(), opened) : await startUpload(file, opened);
+        // Went somewhere other than its feed (sign-up, the queue, an error): the card goes now.
+        if (result.queued || result.code || result.error) endLaunch();
         if (result.queued) {
           // Free account past its free document: it's in the queue on the Studio, with the countdown to its turn.
           track("upload_queued");

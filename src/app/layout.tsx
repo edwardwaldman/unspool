@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { LaunchCard } from "@/components/upload/launch-card";
 import { SOCIALS } from "@/components/shell/social-links";
 import { Archivo, Bricolage_Grotesque, Instrument_Sans, Martian_Mono, Syne, Unbounded } from "next/font/google";
 import { VisitTracker } from "@/components/analytics/visit-tracker";
@@ -101,6 +102,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {children}
         <VisitTracker />
         <OwnerViewBox />
+        <LaunchCard />
       </body>
     </html>
   );

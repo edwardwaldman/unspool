@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReelDTO, SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { MAX_REELS } from "@/lib/config";
@@ -122,6 +123,16 @@ export function Feed({
 }) {
   const scroller = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(initialIndex);
+  const router = useRouter();
+  // "Are you sure?" before leaving for the Studio while this document is still being unspooled.
+  const [leaving, setLeaving] = useState(false);
+  const cur = items[index];
+  const working = Boolean(
+    cur &&
+      ((cur.spool && cur.spool.status !== "ready" && cur.spool.status !== "failed") ||
+        !cur.reel ||
+        (cur.reel.status !== "ready" && cur.reel.status !== "failed" && !cur.reel.locked)),
+  );
   const [paywallFor, setPaywallFor] = useState<number | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -256,7 +267,17 @@ export function Feed({
           </Link>
         </div>
         {/* Phones: a way out of the reels, back to the Studio ("/" shows it when signed in). Desktop has the side nav. */}
-        <Link href="/" aria-label="Back to Studio" className="pointer-events-auto absolute left-4 top-3 text-white lg:hidden" data-testid="feed-home">
+        <Link
+          href="/"
+          aria-label="Back to Studio"
+          onClick={(e) => {
+            if (!working) return;
+            e.preventDefault();
+            setLeaving(true);
+          }}
+          className="pointer-events-auto absolute left-4 top-3 text-white lg:hidden"
+          data-testid="feed-home"
+        >
           <HomeIcon size={22} />
         </Link>
         <Link href="/library" aria-label="Library" className="pointer-events-auto absolute right-4 top-3 text-white">
@@ -264,6 +285,22 @@ export function Feed({
         </Link>
       </div>
 
+      {leaving && (
+        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 px-6" role="dialog" aria-modal="true" aria-label="Leave while unspooling?" onClick={() => setLeaving(false)} data-testid="leave-confirm">
+          <div className="w-full max-w-[320px] border border-line bg-surface p-6 text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="font-display text-[22px] leading-tight text-ink">Are you sure?</div>
+            <p className="mt-2 text-[14.5px] leading-snug text-muted">Your reels are still being made. They&apos;ll keep going, and you&apos;ll find them in your Studio.</p>
+            <div className="mt-5 grid grid-cols-2 gap-2.5">
+              <button type="button" onClick={() => setLeaving(false)} className="min-h-[46px] bg-thread text-[15px] font-semibold text-paper">
+                Stay
+              </button>
+              <button type="button" onClick={() => router.push("/")} className="min-h-[46px] border border-line text-[15px] font-semibold text-ink">
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <HomeScreenTip />
 
       {/* Desktop up/down buttons, like TikTok web */}

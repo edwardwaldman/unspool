@@ -178,3 +178,28 @@ export async function startPrompt(text: string, onCreated: (documentId: string) 
   onCreated(body.documentId);
   return {};
 }
+
+// The instant "starting" card: on screen from the tap that starts an unspool until its feed (the real loading
+// screen) mounts, so there's never a dead moment while the server creates the document and the page changes.
+let launching: { title: string; since: number } | null = null;
+let launchTimer: ReturnType<typeof setTimeout> | undefined;
+
+export function beginLaunch(title: string) {
+  launching = { title, since: Date.now() };
+  clearTimeout(launchTimer);
+  // Never strand it: if nothing ends it (a slow page, an error path we didn't see), it goes after 20 s.
+  launchTimer = setTimeout(endLaunch, 20_000);
+  emit();
+}
+
+export function endLaunch() {
+  if (!launching) return;
+  launching = null;
+  clearTimeout(launchTimer);
+  emit();
+}
+
+export function useLaunching() {
+  useSyncExternalStore(subscribe, () => version, () => 0);
+  return launching;
+}
