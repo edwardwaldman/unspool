@@ -91,13 +91,14 @@ function UploadButton({ toStudio }: { toStudio: boolean }) {
       >
         {pending ? "Opening your feed" : (<><UploadIcon size={26} /> Upload a document</>)}
       </button>
+      {/* Upload first, then type a topic, then the demo */}
+      <PromptBox divider={false} className="mt-1 max-w-[420px] min-[900px]:max-w-[520px]" />
       <Link href="/s/demo" className="group mt-1 flex items-center justify-center gap-3 border border-line px-6 py-3 text-[17px] font-medium text-ink transition-colors hover:border-thread min-[900px]:px-8 min-[900px]:py-3.5 min-[900px]:text-[20px]">
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-thread text-paper transition-transform group-hover:scale-110 min-[900px]:h-9 min-[900px]:w-9">
           <PlayIcon size={14} />
         </span>
         Watch a demo
       </Link>
-      <PromptBox className="mt-3 max-w-[420px] min-[900px]:max-w-[520px]" />
     </>
   );
 }

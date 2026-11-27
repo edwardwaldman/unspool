@@ -142,7 +142,7 @@ function useTypewriter(words: string[], on: boolean) {
 }
 
 /** "or type a prompt": a topic instead of a file. Unspool researches it and makes the reels. */
-export function PromptBox({ className = "mt-4", topics = EXAMPLE_TOPICS }: { className?: string; topics?: string[] }) {
+export function PromptBox({ className = "mt-4", topics = EXAMPLE_TOPICS, divider = true }: { className?: string; topics?: string[]; /** The "or type a topic" rule above the box. */ divider?: boolean }) {
   const [text, setText] = useState("");
   const upload = useUploader();
   const pending = usePendingUpload();
@@ -159,11 +159,13 @@ export function PromptBox({ className = "mt-4", topics = EXAMPLE_TOPICS }: { cla
         if (ready) void upload(promptFile(text));
       }}
     >
-      <div className="mb-2 flex items-center gap-3 text-[13px] text-muted" aria-hidden>
-        <span className="h-px flex-1 bg-line" />
-        or type a topic or paste notes
-        <span className="h-px flex-1 bg-line" />
-      </div>
+      {divider && (
+        <div className="mb-2 flex items-center gap-3 text-[13px] text-muted" aria-hidden>
+          <span className="h-px flex-1 bg-line" />
+          or type a topic or paste notes
+          <span className="h-px flex-1 bg-line" />
+        </div>
+      )}
       <div className={`flex items-end gap-2 border border-line bg-surface py-1.5 pl-5 pr-1.5 focus-within:border-thread ${multi ? "rounded-[22px]" : "rounded-full"}`}>
         <div className="relative flex min-w-0 flex-1 self-center">
         {/* While empty and not focused, an example topic types itself out behind the box (the real placeholder stays for screen readers). */}
