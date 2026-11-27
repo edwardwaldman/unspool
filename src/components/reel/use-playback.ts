@@ -6,7 +6,7 @@ import type { ReelScript } from "@/lib/schema";
 import type { SegmentAudioDTO } from "@/lib/spool-types";
 import type { VideoTimeline } from "@/lib/video/types";
 import { estimateDuration, estimateWordFractions } from "@/lib/timing";
-import { returnAudio, takeAudio, unlockAudio } from "./audio-pool";
+import { claimSound, releaseSound, returnAudio, takeAudio, unlockAudio } from "./audio-pool";
 import { getPrefs, rateOf, setPrefs, usePrefs } from "./prefs";
 
 export const QUIZ_WAIT_MS = 7000;
@@ -286,11 +286,22 @@ export function usePlayback(opts: {
     engine.current.speaking = false;
   }, []);
 
+  // Another reel started speaking: pause this one (shows as paused; a tap carries on).
+  const yieldSound = useCallback(() => {
+    const e = engine.current;
+    if (!e.playing) return;
+    stopAll();
+    e.playing = false;
+    render();
+  }, [stopAll, render]);
+
   const playClip = useCallback(
     (i: number) => {
       const e = engine.current;
       const el = audios.current[i];
       const p = getPrefs();
+      // Only one reel talks at a time (silent loops and recordings don't count).
+      if (!silent && !record) claimSound(yieldSound);
       if (vt) {
         // Video mode: seek to the segment and play (picture and voice come from the same element).
         const v = videoRef.current;
@@ -343,7 +354,7 @@ export function usePlayback(opts: {
         window.speechSynthesis.speak(u);
       }
     },
-    [segments, silent, record, vt, block],
+    [segments, silent, record, vt, block, yieldSound],
   );
 
   const startSeg = useCallback(
@@ -482,14 +493,16 @@ export function usePlayback(opts: {
       playClip(0);
     } else {
       stopAll();
+      releaseSound(yieldSound);
       Object.assign(e, freshEngine(e.durations));
     }
     const raf = requestAnimationFrame(render);
     return () => {
       cancelAnimationFrame(raf);
       stopAll();
+      releaseSound(yieldSound);
     };
-  }, [active, playClip, render, stopAll, record, segments]);
+  }, [active, playClip, render, stopAll, record, segments, yieldSound]);
 
   // Live mute / speed changes.
   useEffect(() => {

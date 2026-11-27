@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReelDTO, SpoolDTO, ViewerDTO } from "@/lib/spool-types";
 import { MAX_REELS } from "@/lib/config";
 import { track } from "../analytics/track";
-import { ChevronDown, ChevronUp, FilterIcon, PlayIcon } from "../ui/icons";
+import { ChevronDown, ChevronUp, FilterIcon, HomeIcon, PlayIcon } from "../ui/icons";
 import { toast } from "../ui/toast";
 import { useIsDesktop } from "../ui/use-media";
 import type { UploadState } from "../upload/upload-store";
@@ -255,6 +255,10 @@ export function Feed({
             All spools
           </Link>
         </div>
+        {/* Phones: a way out of the reels, back to the Studio ("/" shows it when signed in). Desktop has the side nav. */}
+        <Link href="/" aria-label="Back to Studio" className="pointer-events-auto absolute left-4 top-3 text-white lg:hidden" data-testid="feed-home">
+          <HomeIcon size={22} />
+        </Link>
         <Link href="/library" aria-label="Library" className="pointer-events-auto absolute right-4 top-3 text-white">
           <FilterIcon size={20} />
         </Link>

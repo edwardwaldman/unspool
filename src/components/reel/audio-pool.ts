@@ -77,3 +77,18 @@ export function returnAudio(a: HTMLAudioElement) {
   a.load();
   if (pool?.includes(a)) free.push(a);
 }
+
+// One voice at a time: the reel that starts speaking takes the sound, and the one that had it is paused (tapping
+// around quickly could leave two reels playing, with their voices talking over each other).
+let speaker: (() => void) | null = null;
+
+/** Take the page's sound; `stop` pauses this reel if another one takes it later. */
+export function claimSound(stop: () => void) {
+  if (speaker && speaker !== stop) speaker();
+  speaker = stop;
+}
+
+/** This reel has stopped or gone: it no longer holds the sound. */
+export function releaseSound(stop: () => void) {
+  if (speaker === stop) speaker = null;
+}
