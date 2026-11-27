@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { BillingButton } from "@/components/shell/billing-button";
 import { MarketingPage } from "@/components/shell/marketing-page";
@@ -29,6 +30,18 @@ export default function PricingPage() {
       </section>
 
       <PricingTable />
+
+      <section className="mt-10 flex flex-wrap items-center justify-between gap-6 border border-line p-6">
+        <div>
+          <div className="label">Enterprise</div>
+          <p className="mt-2 max-w-[560px] text-[14.5px] text-ink/85">
+            For teams training a lot of people: everything in Ultra, a reel volume agreed with you, billed by invoice. Custom pricing.
+          </p>
+        </div>
+        <Link href="/teams#enterprise" className="inline-flex min-h-[46px] items-center border border-ink px-6 text-[15px] font-semibold hover:bg-ink hover:text-paper">
+          Request a demo
+        </Link>
+      </section>
 
       <section className="mt-10 grid gap-px border border-line bg-line md:grid-cols-2">
         <div className="bg-paper p-6">

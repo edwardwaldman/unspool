@@ -4,6 +4,7 @@ import { AuthModal } from "@/components/auth/auth-modal";
 import { GoHero, type GoCopy } from "@/components/go/go-hero";
 import { Wordmark } from "@/components/ui/icons";
 import { TeamsFlow } from "@/components/go/teams-flow";
+import { DemoRequestForm } from "@/components/go/demo-request";
 import { Toaster } from "@/components/ui/toast";
 import { ResumeStashedUpload } from "@/components/upload/use-uploader";
 
@@ -52,6 +53,7 @@ const USES = [
   ["Process SOPs", "Step-by-step how-tos for the floor or the desk"],
   ["Compliance refreshers", "The yearly policy re-read, in minutes"],
 ];
+const ENTERPRISE = ["Everything in Ultra: longer documents, every reel at once, no watermark", "A reel volume agreed with you for your whole team", "Billed by invoice, monthly or yearly", "A walkthrough with us before you roll it out"];
 const IN_A_REEL = ["A hook that says why it matters", "Voiceover and word-by-word captions", "A visual for every beat", "A quiz question at the end", "A share link anyone can open", "Your document stays private"];
 
 function FlowArrow() {
@@ -143,6 +145,26 @@ function TeamsSections() {
             </li>
           ))}
         </ul>
+      </section>
+      <section id="enterprise" aria-labelledby="ent" className="mt-20 grid gap-10 border border-thread p-8 lg:grid-cols-[1fr_1.1fr] lg:p-12">
+        <div>
+          <h2 id="ent" className="font-headline text-[28px] font-bold leading-[1.05] tracking-[-0.02em] lg:text-[36px]">
+            Enterprise
+          </h2>
+          <p className="mt-3 text-[16px] text-muted">For teams rolling training out to a lot of people. Custom pricing.</p>
+          <ul className="mt-6 grid gap-3">
+            {ENTERPRISE.map((x) => (
+              <li key={x} className="flex items-start gap-3 text-[15px]">
+                <span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-thread text-[12px] font-bold text-paper" aria-hidden>✓</span>
+                {x}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="mb-4 text-[15px] text-ink/85">Tell us a little about your team and we&apos;ll set up a demo.</p>
+          <DemoRequestForm />
+        </div>
       </section>
     </div>
   );
