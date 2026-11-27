@@ -5,7 +5,7 @@ import { useState } from "react";
 import { openAccount } from "../account/account-store";
 import { supabaseBrowser } from "../auth/supabase-browser";
 import { getPrefs, setPrefs, usePrefs } from "../reel/prefs";
-import { Sheet } from "../ui/sheet";
+import { AnimatePresence, motion } from "motion/react";
 
 const SPEEDS = [1, 1.25, 1.5, 2] as const;
 
@@ -44,13 +44,34 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
           <path d="M4 7h16M4 12h16M4 17h16" />
         </svg>
       </button>
-      <Sheet open={open} onClose={close} label="Menu">
-        <div className="max-h-[78dvh] overflow-y-auto pb-2">
-          {email && <div className="px-5 pb-3 pt-1 text-[13px] text-muted">{email}</div>}
-
-          <div className="border-t border-line">
+      {/* Slides in from the right */}
+      <AnimatePresence>
+        {open && (
+          <motion.div key="menu" className="fixed inset-0 z-[70]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+            <button type="button" aria-label="Close menu" onClick={close} className="absolute inset-0 bg-black/55" />
+            <motion.aside
+              role="dialog"
+              aria-label="Menu"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", stiffness: 420, damping: 40 }}
+              className="safe-bottom absolute inset-y-0 right-0 flex w-[86%] max-w-[360px] flex-col border-l border-line bg-paper shadow-[-20px_0_50px_rgba(0,0,0,0.45)]"
+            >
+              <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-5">
+                <span className="truncate text-[13px] text-muted">{email ?? "Menu"}</span>
+                <button type="button" onClick={close} aria-label="Close menu" className="-mr-1 p-1 text-[22px] leading-none text-muted">
+                  ×
+                </button>
+              </div>
+        <div className="flex-1 overflow-y-auto pb-2">
+          <div>
             <button type="button" className={row} onClick={() => (close(), openAccount())}>
-              Manage account <span className="text-[13px] text-muted">Password, email, invite friends</span>
+              <span>
+                <span className="block">Manage account</span>
+                <span className="block text-[12.5px] text-muted">Password, email, invite friends</span>
+              </span>
+              <span aria-hidden className="text-muted">›</span>
             </button>
             <Link href="/pricing" className={row} onClick={close}>
               Plan & billing <span aria-hidden className="text-muted">›</span>
@@ -106,7 +127,10 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
             </button>
           </div>
         </div>
-      </Sheet>
+            </motion.aside>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

@@ -423,6 +423,17 @@ function MobileStudio({ docs, style, canEdit, email, queue }: StudioProps) {
           <PlusButton onClick={picker.open} pending={picker.pending} size="md" />
           <div className="mt-4 font-display text-[20px] leading-tight text-ink">{picker.pending ? "Starting upload" : "Upload a document"}</div>
           <p className="mt-1 text-[13px] text-muted">{TYPES_HINT}</p>
+          {/* Pick the reel style before (or while) uploading: a small button, centred under the upload */}
+          <button
+            type="button"
+            onClick={() => setStyleOpen(true)}
+            className="mt-4 inline-flex items-center gap-2 rounded-full border border-line px-3.5 py-1.5 text-[13px] text-ink transition-colors hover:border-thread"
+            data-testid="style-chip"
+            data-tour="studio-style"
+          >
+            <span aria-hidden className="text-thread">✦</span> Reel style
+            {!canEdit && <span className="rounded-[3px] bg-thread px-1.5 py-[1px] text-[10px] font-bold text-paper">PRO</span>}
+          </button>
         </div>
         {/* The next-free-reel timer and the queue, right under it */}
         {queue && (
