@@ -126,8 +126,9 @@ function Sticker({ text, color, delay }: { text: string; color: string; delay: n
       initial={reduce ? false : { opacity: 0, scale: 1.55, rotate: -14, y: 6 }}
       animate={{ opacity: 1, scale: 1, rotate: -4, y: 0 }}
       transition={{ type: "spring", stiffness: 700, damping: 30, mass: 0.8, delay }}
-      className="relative shrink-0 px-3.5 py-1.5 font-hook text-[16px] font-extrabold tracking-[-0.01em]"
-      style={{ background: color, color: INK }}
+      // The tag is the first frame's headline: big, not a 16px label (a phone viewer decides in a second).
+      className="relative max-w-[300px] shrink-0 px-4 py-2 text-center font-hook font-extrabold leading-[1.02] tracking-[-0.02em]"
+      style={{ background: color, color: INK, fontSize: text.length <= 14 ? 34 : text.length <= 24 ? 28 : 22 }}
     >
       {sentenceCase(text)}
     </motion.div>
@@ -354,9 +355,9 @@ export function HookScene({ icon, tag, color, pulse, progress }: { icon: string;
       initial={false}
       // A small jolt when the sticker lands.
       animate={reduce ? undefined : { y: [0, 0, 5, -2, 0] }}
-      transition={{ duration: 0.34, times: [0, 0.01, 0.35, 0.7, 1], delay: 1.08 }}
+      transition={{ duration: 0.34, times: [0, 0.01, 0.35, 0.7, 1], delay: 0.33 }}
     >
-      <Sticker text={tag} color={color} delay={0.95} />
+      <Sticker text={tag} color={color} delay={0.2} />
       <div className="relative flex justify-center" style={{ height: natural * scale, width: 240 * scale }}>
         <div className="absolute left-1/2 top-0 origin-top" style={{ transform: `translateX(-50%) scale(${scale})` }}>
           {soup ? <SoupStage pulse={pulse} salt={progress > 0.8} /> : <IconScene icon={icon} color={color} pulse={pulse} />}

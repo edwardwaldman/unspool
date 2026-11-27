@@ -52,19 +52,19 @@ function BigWordVisual({ v }: { v: Extract<Visual, { type: "bigword" }> }) {
   // "POT · SPOON" / "population · sample": a stacked pair, each word with its own line under it.
   if (parts.length > 1 && subs.length === parts.length) {
     return (
-      <div className="relative flex flex-col items-stretch gap-3 px-6">
+      <div className="relative flex w-full flex-col items-stretch gap-3 px-1">
         {parts.map((p, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, x: i % 2 ? 24 : -24 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, ease, delay: i * 0.22 }}
-            className={`flex items-baseline justify-between gap-5 px-5 py-3 ${glass}`}
+            className={`flex items-baseline justify-between gap-5 px-5 py-4 ${glass}`}
           >
-            <span className="font-hook text-[44px] font-extrabold leading-none tracking-[-0.035em]" style={{ color: c }}>
+            <span className="font-hook font-extrabold leading-none tracking-[-0.035em]" style={{ color: c, fontSize: fitWord(parts, 170, 54) }}>
               {p}
             </span>
-            <span className="text-[16px] font-medium text-white/85">{sentence(subs[i])}</span>
+            <span className="text-right text-[18px] font-semibold leading-tight text-white/85">{sentence(subs[i])}</span>
           </motion.div>
         ))}
       </div>
