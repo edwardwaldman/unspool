@@ -25,6 +25,7 @@ import { track } from "../analytics/track";
 import { PromptBox } from "../go/go-hero";
 import { PICK_EVENT, WelcomeTour } from "./welcome-tour";
 import { ReelStylePanel, StyleUpsell } from "./reel-style-panel";
+import { DailyRefresh, type DailyRefreshQ } from "./daily-refresh";
 
 export type StudioDoc = {
   id: string;
@@ -60,6 +61,8 @@ export type StudioProps = {
   /** Free accounts: when the next free reel is allowed, and how many uploads wait in the queue for it. */
   /** ready: a queued upload may be started now (it shows a Ready button; nothing starts on its own). */
   queue?: { nextAt: string | null; queued: number; ready?: boolean };
+  /** Today's daily refresh question (from a spool they can already watch), if any. */
+  refresh?: DailyRefreshQ | null;
 };
 
 /** The library's numbers, at the top of the document list. */
@@ -444,7 +447,7 @@ function DocThumb({ doc, size = "md" }: { doc: StudioDoc; size?: "sm" | "md" }) 
   );
 }
 
-function DesktopStudio({ docs, style, canEdit, plan, queue }: StudioProps) {
+function DesktopStudio({ docs, style, canEdit, plan, queue, refresh }: StudioProps) {
   const picker = usePicker();
   const [openId, setOpenId] = useState<string | null>(docs[0]?.id ?? null);
   return (
@@ -484,6 +487,11 @@ function DesktopStudio({ docs, style, canEdit, plan, queue }: StudioProps) {
           <div className="relative mt-7 font-display text-[26px] leading-[1.1] text-ink">{picker.pending ? "Starting upload" : "Upload a document"}</div>
           <p className="relative mt-2 max-w-[260px] text-[13.5px] leading-snug text-muted">{TYPES_HINT}. Or drop a file anywhere here.</p>
           <PromptBox divider={false} className="relative mt-5 w-full max-w-[360px] text-left" />
+          {refresh && (
+            <div className="relative mt-6 w-full max-w-[420px] text-left">
+              <DailyRefresh q={refresh} />
+            </div>
+          )}
           {queue && (
             <div className="relative mt-3 w-full max-w-[360px] text-left">
               <QueueTimer nextAt={queue.nextAt} queued={queue.queued} />
@@ -507,7 +515,7 @@ function DesktopStudio({ docs, style, canEdit, plan, queue }: StudioProps) {
   );
 }
 
-function MobileStudio({ docs, style, canEdit, email, queue, name }: StudioProps) {
+function MobileStudio({ docs, style, canEdit, email, queue, name, refresh }: StudioProps) {
   const picker = usePicker();
   const [styleOpen, setStyleOpen] = useState(false);
   const [upsellOpen, setUpsellOpen] = useState(false);
@@ -566,6 +574,12 @@ function MobileStudio({ docs, style, canEdit, email, queue, name }: StudioProps)
           </button>
         </div>
       </div>
+      {/* Once a day: one question from a spool they've already watched */}
+      {refresh && (
+        <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pb-5 ipad:max-w-[680px]">
+          <DailyRefresh q={refresh} />
+        </div>
+      )}
       {/* Still being made (queued, planning, writing): up front, under the timer */}
       {active.length > 0 && <ActiveList docs={active} nextAt={queue?.nextAt ?? null} ready={Boolean(queue?.ready)} />}
 

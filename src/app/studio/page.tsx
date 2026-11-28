@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { CheckoutReturn } from "@/components/shell/account-actions";
 import { AppShell } from "@/components/shell/app-shell";
 import { Studio, type StudioDoc } from "@/components/studio/studio";
+import type { DailyRefreshQ } from "@/components/studio/daily-refresh";
 import { extensionOf, supabaseConfigured } from "@/lib/config";
 import { parseReelStyle } from "@/lib/reel-style";
 import { listDocuments } from "@/lib/spool";
@@ -33,7 +34,7 @@ export default async function StudioPage() {
   const free = tierOf(viewer.profile) === "free";
   const moved = await queueState(viewer).catch((err) => (console.error("studio: queue", err), { queued: 0, nextAt: null, ready: false }));
   const capAt = free ? (moved.nextAt ?? (await nextFreeReelAt(viewer).catch(() => null))) : null;
-  const { docs, dripAt } = await studioDocs(viewer).catch((err) => (console.error("studio: could not load documents", err), { docs: [] as StudioDoc[], dripAt: null }));
+  const { docs, dripAt, refresh } = await studioDocs(viewer).catch((err) => (console.error("studio: could not load documents", err), { docs: [] as StudioDoc[], dripAt: null, refresh: null }));
   // The next free reel: the daily limit resetting, or else a document's next drip (whichever the account waits on).
   const nextAt = free ? (capAt ?? dripAt) : null;
   return (
@@ -41,18 +42,18 @@ export default async function StudioPage() {
       <Suspense>
         <CheckoutReturn />
       </Suspense>
-      <Studio docs={docs} isNew={docs.length === 0 && isNew} fresh={isNew} email={viewer.email} plan={PLANS[tierOf(viewer.profile)].name} style={parseReelStyle(viewer.profile?.reel_style)} canEdit={canEditStyle(viewer)} name={firstName} queue={free || moved.queued ? { nextAt, queued: moved.queued, ready: moved.ready } : undefined} />
+      <Studio docs={docs} isNew={docs.length === 0 && isNew} fresh={isNew} email={viewer.email} plan={PLANS[tierOf(viewer.profile)].name} style={parseReelStyle(viewer.profile?.reel_style)} canEdit={canEditStyle(viewer)} name={firstName} refresh={refresh} queue={free || moved.queued ? { nextAt, queued: moved.queued, ready: moved.ready } : undefined} />
     </AppShell>
   );
 }
 
-async function studioDocs(viewer: Viewer): Promise<{ docs: StudioDoc[]; dripAt: string | null }> {
+async function studioDocs(viewer: Viewer): Promise<{ docs: StudioDoc[]; dripAt: string | null; refresh: DailyRefreshQ | null }> {
   const docs = await listDocuments(viewer, 100);
-  if (!docs.length) return { docs: [], dripAt: null };
+  if (!docs.length) return { docs: [], dripAt: null, refresh: null };
   let dripAt: string | null = null;
   const { data: reels } = await adminClient()
     .from("reels")
-    .select("document_id,index,title,status,hook,headline:script_json->>headline")
+    .select("document_id,index,title,status,hook,headline:script_json->>headline,quiz:script_json->quiz")
     .in(
       "document_id",
       docs.map((d) => d.id),
@@ -82,7 +83,26 @@ async function studioDocs(viewer: Viewer): Promise<{ docs: StudioDoc[]; dripAt: 
         .map((r) => ({ index: r.index, title: r.title, status: r.status, headline: (r.headline as string | null) ?? r.hook ?? null, locked: !d.unlocked && r.index > playable })),
     };
   });
-  return { docs: out, dripAt };
+  // The daily refresh: one quiz question from a reel they can already watch, the same all day (Eastern), favouring
+  // documents from earlier days (a refresher, not a repeat of what they just watched).
+  const day = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+  type Cand = DailyRefreshQ & { old: boolean };
+  const cands: Cand[] = [];
+  for (const d of out) {
+    for (const r of (reels ?? []).filter((x) => x.document_id === d.id)) {
+      const q = r.quiz as { question?: unknown; options?: unknown; answer?: unknown } | null;
+      const options = Array.isArray(q?.options) ? (q!.options as unknown[]).filter((o): o is string => typeof o === "string" && o.trim() !== "").slice(0, 4) : [];
+      const answer = typeof q?.answer === "number" ? q.answer : -1;
+      const watchable = r.status === "ready" && (d.unlocked || r.index <= d.freeReels);
+      if (!watchable || typeof q?.question !== "string" || options.length < 2 || answer < 0 || answer >= options.length) continue;
+      cands.push({ day, docId: d.id, docName: d.name, reel: r.index, question: q.question, options, answer, old: Date.now() - Date.parse(d.createdAt) > 18 * 3600e3 });
+    }
+  }
+  const pool = cands.some((c) => c.old) ? cands.filter((c) => c.old) : cands;
+  const hash = (t: string) => [...t].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) | 0, 7);
+  const pick = pool.sort((a, b) => hash(`${viewer.userId}${day}${a.docId}${a.reel}`) - hash(`${viewer.userId}${day}${b.docId}${b.reel}`))[0];
+  const refresh: DailyRefreshQ | null = pick ? { day: pick.day, docId: pick.docId, docName: pick.docName, reel: pick.reel, question: pick.question, options: pick.options, answer: pick.answer } : null;
+  return { docs: out, dripAt, refresh };
 }
 
 /** Made in the last day. */
