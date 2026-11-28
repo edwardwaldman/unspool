@@ -90,6 +90,13 @@ export function AccountMenu({ email, name, onReelStyle }: { email?: string | nul
                 Reel style <span aria-hidden className="text-muted">›</span>
               </button>
             )}
+            <Link href="/teams" className={row} onClick={close} data-testid="menu-teams">
+              <span>
+                <span className="block">Unspool for Teams</span>
+                <span className="block text-[12.5px] text-muted">Training videos from handbooks and SOPs</span>
+              </span>
+              <span aria-hidden className="text-muted">›</span>
+            </Link>
           </div>
 
           <div className="mx-3 mt-3 rounded-[20px] bg-surface/70 py-1">
