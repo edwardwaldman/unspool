@@ -516,7 +516,7 @@ function MobileStudio({ docs, style, canEdit, email, queue, name }: StudioProps)
   // Still being made vs done: the first show up front, the second behind the "Your spools" pull-down.
   const active = docs.filter((d) => !["ready", "failed"].includes(d.status));
   const done = docs.filter((d) => ["ready", "failed"].includes(d.status));
-  const [doneOpen, setDoneOpen] = useState(false);
+  const [doneOpen, setDoneOpen] = useState(true); // open by default; the bar still folds it away
   // The sheet remounts the panel each time it opens: keep what was saved meanwhile.
   const [saved, setSaved] = useState(style);
   return (
