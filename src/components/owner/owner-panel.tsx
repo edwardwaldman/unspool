@@ -114,6 +114,47 @@ function IpTag({ ip, country }: { ip: string | null; country: string | null }) {
   );
 }
 
+/** "jo***@gmail.com": enough to recognise, not enough to reach. */
+const maskEmail = (e: string) => e.replace(/^(.{1,2})[^@]*(@.*)$/, "$1***$2");
+const clock = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.floor((ms % 60000) / 1000)).padStart(2, "0")}`;
+
+/** One visit as plain text, step by step with the time into the visit. The email is masked and the IP left out. */
+type Shareable = Pick<Visit, "at" | "duration" | "events"> & Partial<Pick<Visit, "email" | "country" | "device" | "referrer" | "returning" | "signedUp" | "checkout" | "owner">>;
+function visitText(v: Shareable) {
+  const tags = [v.returning && "returning", v.signedUp && "signed up", v.checkout && "pressed checkout", v.owner && "owner"].filter(Boolean).join(", ");
+  const head = [
+    `Unspool visit, ${new Date(v.at).toLocaleString()}`,
+    `${v.email ? maskEmail(v.email) : "Signed out"}${v.country ? `, ${v.country}` : ""}${v.device ? `, ${v.device}` : ""}`,
+    `Stayed ${stay(v.duration)}${tags ? `, ${tags}` : ""}`,
+    v.referrer ? `From ${v.referrer}` : "",
+  ].filter(Boolean);
+  const steps = v.events.map((e, i) => `${String(i + 1).padStart(2, " ")}. ${clock(e.t)}  ${EVENT_LABELS[e.name] ?? e.name}${e.detail ? ` ${e.detail}` : ""}`);
+  return [...head, "", ...steps].join("\n");
+}
+
+/** Share one visit: the phone's share menu where there is one, else copy it. */
+function ShareVisit({ v }: { v: Shareable }) {
+  const share = async () => {
+    const text = visitText(v);
+    try {
+      if (navigator.share) return void (await navigator.share({ title: "Unspool visit", text }));
+    } catch (e) {
+      if ((e as Error).name === "AbortError") return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast("Visit copied");
+    } catch {
+      toast("Couldn't copy it");
+    }
+  };
+  return (
+    <button type="button" onClick={share} className="rounded-full border border-line px-2.5 py-0.5 font-mono text-[11px] text-muted hover:border-thread hover:text-ink" aria-label="Share this visit" data-testid="share-visit">
+      Share
+    </button>
+  );
+}
+
 /** `Open new → Page /pricing → Upload started → …`, repeated events folded together. */
 function Trail({ events }: { events: TrailEvent[] }) {
   const folded: { e: TrailEvent; n: number }[] = [];
@@ -422,6 +463,7 @@ function WhatPeopleDid({ data: bySegment, build }: { data: Data["visits"]; build
               <span className="ml-auto font-mono text-[11.5px] text-muted" title={new Date(v.at).toLocaleString()}>
                 {stay(v.duration)}, {ago(v.at)}
               </span>
+              <ShareVisit v={v} />
             </div>
             <Trail events={v.events} />
             {v.referrer && <div className="mt-1 truncate font-mono text-[11px] text-muted">from {v.referrer}</div>}
@@ -507,6 +549,7 @@ function BeforeTheySignedUp({ data }: { data: BeforeSignup }) {
               <span className="ml-auto font-mono text-[11.5px] text-muted">
                 {stay(v.duration)}, {new Date(v.at).toLocaleString()}
               </span>
+              <ShareVisit v={v} />
             </div>
             <FoldedTrail events={v.events} />
           </li>
@@ -794,6 +837,7 @@ function IpEmailLookup() {
                   <span className="ml-auto font-mono text-[11.5px] text-muted">
                     {stay(v.duration)}, {new Date(v.at).toLocaleString()}
                   </span>
+                  <ShareVisit v={v} />
                 </div>
                 <Trail events={v.events} />
               </li>
