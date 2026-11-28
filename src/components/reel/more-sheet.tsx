@@ -18,6 +18,7 @@ export function MoreSheet({
   sensitive,
   editReelId,
   canEdit = false,
+  canStyle = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -28,6 +29,8 @@ export function MoreSheet({
   editReelId?: string;
   /** Pro and Ultra may edit; everyone else sees the row with a Pro badge that leads to pricing. */
   canEdit?: boolean;
+  /** Plus, Pro and Ultra may change the reel style. */
+  canStyle?: boolean;
 }) {
   const prefs = usePrefs();
   const [confirm, setConfirm] = useState(false);
@@ -75,7 +78,7 @@ export function MoreSheet({
       )}
       <Link href="/studio" className={row} onClick={onClose}>
         <Crown size={19} strokeWidth={1.5} /> <span className="flex-1">Reel style</span>
-        {canEdit ? <span className="font-mono text-[12px] text-muted">Change the look</span> : <ProBadge />}
+        {canStyle ? <span className="font-mono text-[12px] text-muted">Change the look</span> : <ProBadge label="PLUS" />}
       </Link>
       <button type="button" className={row} onClick={() => setPrefs({ muted: !prefs.muted, autoMuted: false })}>
         <VolumeIcon size={19} muted={prefs.muted} /> {prefs.muted ? "Unmute" : "Mute"}

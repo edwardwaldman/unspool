@@ -1,19 +1,23 @@
 "use client";
 
-import { Crown } from "lucide-react";
-import Link from "next/link";
+import { Crown, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { ACCENT_HEX, DEFAULT_REEL_STYLE, FONT_VAR, REEL_STYLE_OPTIONS, reelStyleVars, type ReelStyle, type ReelStyleKey } from "@/lib/reel-style";
 import { reelVars } from "../reel/accent";
 import { Captions } from "../reel/captions";
 import { LockIcon } from "../ui/icons";
 import { toast } from "../ui/toast";
+import { track } from "../analytics/track";
+import { startCheckout } from "../billing/checkout";
+import { useCredits } from "./credit-bar";
 
-/** Crown + lime "PRO" pill: marks a premium feature. */
-export function ProBadge({ className = "" }: { className?: string }) {
+/** Crown + lime pill: marks a paid feature ("PRO" for reel editing, "PLUS" for reel style). */
+export function ProBadge({ className = "", label = "PRO" }: { className?: string; label?: "PRO" | "PLUS" }) {
   return (
-    <span className={`inline-flex items-center gap-1 bg-thread px-1.5 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] text-paper ${className}`}>
-      <Crown size={11} strokeWidth={2.4} aria-hidden /> PRO
+    <span className={`inline-flex items-center gap-1 rounded-[4px] bg-thread px-1.5 py-[3px] text-[10.5px] font-bold leading-none tracking-[0.06em] text-paper ${className}`}>
+      <Crown size={11} strokeWidth={2.4} aria-hidden /> {label}
     </span>
   );
 }
@@ -35,7 +39,7 @@ export function useReelStyle(initial: ReelStyle, canEdit: boolean, onSaved?: (s:
     }
     setStyle(prev);
     setSaving("idle");
-    toast(res?.status === 403 ? "Reel style is a Pro feature." : "Couldn't save your style. Try again.", 3500);
+    toast(res?.status === 403 ? "Reel style comes with Plus." : "Couldn't save your style. Try again.", 3500);
   };
   return { style, set, saving };
 }
@@ -58,10 +62,10 @@ export function StylePreview({ style, className = "" }: { style: ReelStyle; clas
       aria-label="Reel style preview"
       role="img"
     >
-      <div className="absolute inset-x-3 top-3 font-hook text-[13px] font-extrabold leading-[1.1] tracking-[-0.02em] text-white">
+      <div className="absolute inset-x-[8cqw] top-[5cqh] font-hook text-[8.6cqw] font-extrabold leading-[1.1] tracking-[-0.02em] text-white">
         Why your cells <span className="px-[2px] text-[#08110e]" style={{ background: "var(--thread)" }}>never</span> run out
       </div>
-      <div className="absolute left-3 right-3 top-[24%] h-[18%] border border-white/10" style={{ background: "color-mix(in srgb, var(--thread) 14%, transparent)" }} aria-hidden>
+      <div className="absolute left-[8cqw] right-[8cqw] top-[31%] h-[15%] border border-white/10" style={{ background: "color-mix(in srgb, var(--thread) 14%, transparent)" }} aria-hidden>
         <div className="absolute bottom-2 left-2 h-[40%] w-[14%]" style={{ background: "var(--thread)" }} />
         <div className="absolute bottom-2 left-[22%] h-[65%] w-[14%] bg-white/70" />
         <div className="absolute bottom-2 left-[42%] h-[85%] w-[14%]" style={{ background: "var(--thread)" }} />
@@ -76,6 +80,81 @@ export function StylePreview({ style, className = "" }: { style: ReelStyle; clas
         </div>
       </div>
     </div>
+  );
+}
+
+// The looks the upsell shows, one after another (each a real combination of the options below).
+const SHOWCASE: ReelStyle[] = [
+  { captions: "pop", font: "display", accent: "coral", position: "middle", theme: "dark" },
+  { captions: "karaoke", font: "rounded", accent: "ocean", position: "bottom", theme: "dark" },
+  { captions: "clean", font: "serif", accent: "violet", position: "bottom", theme: "paper" },
+  { captions: "spotlight", font: "mono", accent: "lime", position: "middle", theme: "dark" },
+  { captions: "pop", font: "classic", accent: "mono", position: "bottom", theme: "dark" },
+];
+const optName = (k: ReelStyleKey, id: string) => (REEL_STYLE_OPTIONS[k] as readonly (readonly [string, string])[]).find(([v]) => v === id)?.[1] ?? id;
+const describe = (st: ReelStyle) => `${optName("captions", st.captions)} captions, ${optName("font", st.font).toLowerCase()} font, ${optName("accent", st.accent).toLowerCase()}`;
+
+/**
+ * Tapping Reel style without Plus: a pop-up where three sample reels keep changing look (captions, font, colour,
+ * layout), and one button to upgrade (the free trial when they can still take it; it's Plus too).
+ */
+export function StyleUpsell({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const usage = useCredits();
+  const [i, setI] = useState(0);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    track("style_upsell_shown");
+    const id = window.setInterval(() => setI((x) => x + 1), 1700);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => (window.clearInterval(id), window.removeEventListener("keydown", onKey));
+  }, [open, onClose]);
+  if (!open || typeof document === "undefined") return null;
+  const at = (k: number) => SHOWCASE[(i + k + SHOWCASE.length) % SHOWCASE.length];
+  const upgrade = async () => {
+    setBusy(true);
+    track("style_upsell_tapped");
+    const err = await startCheckout(usage?.trialEligible ? { kind: "trial", returnTo: "/studio" } : { kind: "subscription", tier: "plus", returnTo: "/studio" });
+    if (err) {
+      toast(err, 4000);
+      setBusy(false);
+    }
+  };
+  const card = (k: number, tilt: number, cls: string) => (
+    <div className={`relative ${cls}`} style={{ transform: `rotate(${tilt}deg)` }}>
+      {/* the old look leaves before the new one arrives, so two never overlap */}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div key={i + k} initial={{ opacity: 0, scale: 0.92, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: -8 }} transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}>
+          <StylePreview style={at(k)} className="w-full rounded-[14px] shadow-[0_14px_34px_rgba(0,0,0,.45)]" />
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+  return createPortal(
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 px-5" role="dialog" aria-modal aria-label="Reel style" onClick={(e) => e.target === e.currentTarget && onClose()} data-testid="style-upsell-popup">
+      <div className="relative w-full max-w-[360px] rounded-[22px] border border-line bg-surface p-5 text-center shadow-[0_20px_60px_rgba(0,0,0,.5)]">
+        <button type="button" onClick={onClose} aria-label="Close" className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full border border-line text-muted hover:text-ink">
+          <X size={18} strokeWidth={2} aria-hidden />
+        </button>
+        <h2 className="px-10 font-display text-[24px] leading-[1.05] text-ink">Make every reel yours</h2>
+        <p className="mt-2 text-[13px] leading-snug text-muted">Pick the captions, font, colour and layout once. Every reel you make follows.</p>
+        {/* three sample reels fanned out, each changing look in turn */}
+        <div className="mt-5 flex items-end justify-center gap-2" aria-hidden>
+          {card(-1, -6, "w-[86px] translate-y-2 opacity-80")}
+          {card(0, 0, "z-10 w-[118px]")}
+          {card(1, 6, "w-[86px] translate-y-2 opacity-80")}
+        </div>
+        <div className="mt-4 h-5 text-[12.5px] font-medium text-thread" aria-live="off">{describe(at(0))}</div>
+        <button type="button" onClick={upgrade} disabled={busy} className="mt-4 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-thread px-4 text-[16px] font-semibold text-paper hover:opacity-90 disabled:opacity-60" data-testid="style-upsell-cta">
+          <Crown size={17} strokeWidth={2.2} aria-hidden /> {busy ? "Loading..." : "Upgrade to Plus"}
+        </button>
+        <button type="button" onClick={onClose} className="mt-1 w-full py-2.5 text-[13.5px] text-muted hover:text-ink">
+          Not now
+        </button>
+      </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -95,16 +174,17 @@ function Swatch({ k, id }: { k: ReelStyleKey; id: string }) {
 
 /**
  * "Reel style": how every reel looks (captions, font, accent, caption position, background), with a live
- * preview. Pro and Ultra only: everyone else sees it blurred and locked, and any tap shows the upgrade.
+ * preview. Plus, Pro and Ultra: everyone else sees it blurred and locked, and any tap shows the upgrade pop-up.
  */
 export function ReelStylePanel({ initial, canEdit, compact = false, onSaved }: { initial: ReelStyle; canEdit: boolean; compact?: boolean; onSaved?: (s: ReelStyle) => void }) {
   const { style, set, saving } = useReelStyle(canEdit ? initial : DEFAULT_REEL_STYLE, canEdit, onSaved);
   const [upsell, setUpsell] = useState(false);
+  const [popup, setPopup] = useState(false);
   return (
     <div data-testid="reel-style" data-locked={canEdit ? undefined : "true"}>
       <div className="flex items-center justify-between gap-3">
         <span className="flex items-center gap-2 text-[14px] font-semibold text-ink">
-          Reel style <ProBadge />
+          Reel style <ProBadge label="PLUS" />
         </span>
         <span className="text-[12px] text-muted" aria-live="polite">
           {canEdit ? (saving === "saving" ? "Saving" : saving === "saved" ? "Saved" : "All your reels") : "Locked"}
@@ -115,12 +195,13 @@ export function ReelStylePanel({ initial, canEdit, compact = false, onSaved }: {
       {!canEdit && (
         <div className={`mt-4 border p-4 transition-colors ${upsell ? "border-thread bg-thread/[0.06]" : "border-line bg-surface"}`} data-testid="style-upsell">
           <div className="flex items-center gap-2 text-[14px] font-semibold text-ink">
-            <LockIcon size={15} /> A Pro feature
+            <LockIcon size={15} /> Comes with Plus
           </div>
-          <p className="mt-1 text-[12.5px] leading-snug text-muted">Pick your caption style, font and colours once and every reel you make follows. On Pro and Ultra.</p>
-          <Link href="/pricing" className="mt-3 flex w-full items-center justify-center gap-2 bg-thread px-4 py-2.5 text-[14px] font-semibold text-paper transition-opacity hover:opacity-90">
-            <Crown size={15} strokeWidth={2.2} aria-hidden /> Upgrade to Pro
-          </Link>
+          <p className="mt-1 text-[12.5px] leading-snug text-muted">Pick your caption style, font and colours once and every reel you make follows. On Plus, Pro and Ultra.</p>
+          <button type="button" onClick={() => setPopup(true)} className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-thread px-4 py-2.5 text-[14px] font-semibold text-paper transition-opacity hover:opacity-90">
+            <Crown size={15} strokeWidth={2.2} aria-hidden /> Upgrade to Plus
+          </button>
+          <StyleUpsell open={popup} onClose={() => setPopup(false)} />
         </div>
       )}
 
@@ -141,7 +222,7 @@ export function ReelStylePanel({ initial, canEdit, compact = false, onSaved }: {
                       type="button"
                       aria-pressed={on}
                       aria-disabled={!canEdit}
-                      onClick={() => (canEdit ? void set(k, id) : setUpsell(true))}
+                      onClick={() => (canEdit ? void set(k, id) : (setUpsell(true), setPopup(true)))}
                       className={`flex items-center gap-1.5 border px-2.5 py-1.5 text-[12.5px] transition-colors ${on ? "border-thread bg-thread/10 text-ink" : "border-line text-muted hover:border-muted hover:text-ink"}`}
                       style={k === "font" ? { fontFamily: FONT_VAR[id as ReelStyle["font"]] } : undefined}
                     >
@@ -154,7 +235,7 @@ export function ReelStylePanel({ initial, canEdit, compact = false, onSaved }: {
             </fieldset>
           ))}
           {!canEdit && (
-            <button type="button" aria-label="Reel style is a Pro feature. Show upgrade" onClick={() => setUpsell(true)} className="absolute inset-0 z-10 cursor-pointer" data-no-press />
+            <button type="button" aria-label="Reel style comes with Plus. Show upgrade" onClick={() => (setUpsell(true), setPopup(true))} className="absolute inset-0 z-10 cursor-pointer" data-no-press />
           )}
         </div>
       </div>

@@ -23,7 +23,7 @@ import { useStreak } from "./streak";
 import { track } from "../analytics/track";
 import { PromptBox } from "../go/go-hero";
 import { PICK_EVENT, WelcomeTour } from "./welcome-tour";
-import { ReelStylePanel } from "./reel-style-panel";
+import { ReelStylePanel, StyleUpsell } from "./reel-style-panel";
 
 export type StudioDoc = {
   id: string;
@@ -456,7 +456,7 @@ function DesktopStudio({ docs, style, canEdit, plan, queue }: StudioProps) {
         </div>
       </div>
 
-      {/* Right: Reel style (Pro) */}
+      {/* Right: Reel style (Plus) */}
       <aside className="w-[300px] shrink-0 overflow-y-auto border-l border-line p-5 xl:w-[360px]" data-tour="studio-style">
         <ReelStylePanel initial={style} canEdit={canEdit} />
       </aside>
@@ -467,6 +467,9 @@ function DesktopStudio({ docs, style, canEdit, plan, queue }: StudioProps) {
 function MobileStudio({ docs, style, canEdit, email, queue, name }: StudioProps) {
   const picker = usePicker();
   const [styleOpen, setStyleOpen] = useState(false);
+  const [upsellOpen, setUpsellOpen] = useState(false);
+  // Without Plus, Reel style opens the pop-up with the changing sample reels instead of the locked panel.
+  const openStyle = () => (canEdit ? setStyleOpen(true) : setUpsellOpen(true));
   // Still being made vs done: the first show up front, the second behind the "Your spools" pull-down.
   const active = docs.filter((d) => !["ready", "failed"].includes(d.status));
   const done = docs.filter((d) => ["ready", "failed"].includes(d.status));
@@ -482,7 +485,7 @@ function MobileStudio({ docs, style, canEdit, email, queue, name }: StudioProps)
         </Link>
         {/* Recharge and the menu up here; the + is in the middle of the page */}
         <RechargeButton />
-        <AccountMenu email={email} onReelStyle={() => setStyleOpen(true)} />
+        <AccountMenu email={email} onReelStyle={openStyle} />
       </div>
 
       <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pb-5 pt-5 ipad:max-w-[680px]">
@@ -506,7 +509,7 @@ function MobileStudio({ docs, style, canEdit, email, queue, name }: StudioProps)
         <div className="mt-4 flex justify-center">
           <button
             type="button"
-            onClick={() => setStyleOpen(true)}
+            onClick={openStyle}
             className="inline-flex items-center gap-2 rounded-full border border-line px-3.5 py-1.5 text-[13px] text-ink transition-colors hover:border-thread"
             data-testid="style-chip"
             data-tour="studio-style"
@@ -515,7 +518,7 @@ function MobileStudio({ docs, style, canEdit, email, queue, name }: StudioProps)
               <path d="M12 0c.9 6.6 5.4 11.1 12 12-6.6.9-11.1 5.4-12 12-.9-6.6-5.4-11.1-12-12C6.6 11.1 11.1 6.6 12 0Z" />
             </svg>
             Reel style
-            {!canEdit && <span className="rounded-[3px] bg-thread px-1.5 py-[1px] text-[10px] font-bold text-paper">PRO</span>}
+            {!canEdit && <span className="rounded-[4px] bg-thread px-1.5 py-[1px] text-[10px] font-bold text-paper">PLUS</span>}
           </button>
         </div>
       </div>
@@ -543,6 +546,7 @@ function MobileStudio({ docs, style, canEdit, email, queue, name }: StudioProps)
         !active.length && <StarterTopics />
       )}
 
+      <StyleUpsell open={upsellOpen} onClose={() => setUpsellOpen(false)} />
       <Sheet open={styleOpen} onClose={() => setStyleOpen(false)} label="Reel style">
         <div className="max-h-[72dvh] overflow-y-auto">
           <ReelStylePanel initial={saved} canEdit={canEdit} compact onSaved={setSaved} />
@@ -552,7 +556,7 @@ function MobileStudio({ docs, style, canEdit, email, queue, name }: StudioProps)
   );
 }
 
-/** Home for signed-in accounts: upload in the middle, their documents, and the Pro reel style. */
+/** Home for signed-in accounts: upload in the middle, their documents, and the reel style (Plus). */
 export function Studio(props: StudioProps) {
   const layout = useLayout();
   if (layout === null) return <div className="h-full w-full bg-paper" />;

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import type { AuthError, AuthTokenResponsePassword, UserResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { X } from "lucide-react";
 import { supabaseBrowser } from "../auth/supabase-browser";
 import { openAuth } from "../auth/auth-store";
 import { toast } from "../ui/toast";
@@ -28,8 +30,8 @@ const callback = (next: string) => `${window.location.origin}/auth/callback?next
 /** The Manage account popup. Mounted once in AppShell; open it with openAccount(). */
 export function AccountModal() {
   const open = useAccountModal();
-  if (!open) return null;
-  return <AccountDialog />;
+  // Kept mounted while it animates out
+  return <AnimatePresence>{open && <AccountDialog key="account" />}</AnimatePresence>;
 }
 
 function AccountDialog() {
@@ -62,14 +64,20 @@ function AccountDialog() {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center p-3 sm:p-4">
-      <div className="absolute inset-0 bg-black/75" onClick={closeAccount} />
-      <div
+    <div className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center sm:p-4">
+      <motion.div className="absolute inset-0 bg-black/70 backdrop-blur-[2px]" onClick={closeAccount} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} />
+      {/* Phones: rises from the bottom as a rounded sheet with a soft spring. Larger screens: a centred card that settles in. */}
+      <motion.div
         role="dialog"
         aria-modal
         aria-labelledby="account-title"
-        className="relative max-h-[94dvh] w-full max-w-[494px] overflow-y-auto border border-line bg-paper px-5 pb-6 pt-6 font-sans text-ink shadow-[0_24px_80px_rgba(0,0,0,.55)] sm:px-7"
+        initial={{ opacity: 0, y: 60, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 40, scale: 0.98, transition: { duration: 0.18 } }}
+        transition={{ type: "spring", stiffness: 380, damping: 34, mass: 0.9 }}
+        className="safe-bottom relative max-h-[92dvh] w-full max-w-[494px] overflow-y-auto overscroll-contain rounded-t-[28px] bg-paper px-5 pb-6 pt-3 font-sans text-ink shadow-[0_-12px_60px_rgba(0,0,0,.55)] sm:rounded-[28px] sm:pt-6 sm:shadow-[0_24px_80px_rgba(0,0,0,.55)] sm:px-7"
       >
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-line sm:hidden" aria-hidden />
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 id="account-title" className="font-display text-[28px] leading-[1.05] text-ink">
@@ -88,13 +96,13 @@ function AccountDialog() {
               )}
             </p>
           </div>
-          <button type="button" onClick={closeAccount} className="shrink-0 py-1 text-[14px] text-muted hover:text-ink">
-            Cancel
+          <button type="button" onClick={closeAccount} aria-label="Close" className="-mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-muted hover:text-ink">
+            <X size={18} strokeWidth={2} aria-hidden />
           </button>
         </div>
 
         {info?.email && <AccountSections info={info} email={info.email} />}
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -103,10 +111,10 @@ function AccountSections({ info, email }: { info: AccountInfo; email: string }) 
   return (
     <>
       <EmailSection email={email} />
-      <hr className="my-7 border-line" />
+      <div className="h-9" aria-hidden />
       <PasswordSection email={email} />
       <SubscriptionLink info={info} />
-      <hr className="my-7 border-line" />
+      <div className="h-9" aria-hidden />
       <DangerZone />
     </>
   );
@@ -158,11 +166,11 @@ function EmailSection({ email }: { email: string }) {
         new one, and the address only switches once you have opened both. Links expire in an hour.
       </p>
       {sentTo && (
-        <p className="mt-3 border border-thread/40 px-3.5 py-2.5 text-[13px] leading-relaxed text-thread" role="status">
+        <p className="mt-3 rounded-[12px] bg-thread/[0.08] px-3.5 py-2.5 text-[13px] leading-relaxed text-thread" role="status">
           Check both inboxes: we sent a link to {email} and to {sentTo}. Open both and your email switches to {sentTo}.
         </p>
       )}
-      <button type="submit" disabled={busy} className="border border-line bg-transparent font-semibold text-ink transition-colors hover:border-thread/60 hover:bg-white/[0.03] disabled:opacity-60 mt-4 w-full py-3.5 text-[15px]">
+      <button type="submit" disabled={busy} className="rounded-full bg-surface font-semibold text-ink transition-colors hover:bg-white/[0.06] disabled:opacity-60 mt-4 w-full py-3.5 text-[15px]">
         {busy ? "Sending links" : "Change email"}
       </button>
     </form>
@@ -263,7 +271,7 @@ function PasswordSection({ email }: { email: string }) {
           {busy ? "Changing password" : "Change password"}
         </button>
       </form>
-      <button type="button" onClick={sendReset} disabled={resetBusy || resetSent} className="border border-line bg-transparent font-semibold text-ink transition-colors hover:border-thread/60 hover:bg-white/[0.03] disabled:opacity-60 mt-3 w-full py-3.5 text-[15px]">
+      <button type="button" onClick={sendReset} disabled={resetBusy || resetSent} className="rounded-full bg-surface font-semibold text-ink transition-colors hover:bg-white/[0.06] disabled:opacity-60 mt-3 w-full py-3.5 text-[15px]">
         {resetBusy ? "Sending link" : resetSent ? "Link sent" : "I don't have my current password"}
       </button>
       {resetErr && <p className="mt-2 text-[13px] text-coral">{resetErr}</p>}
@@ -345,11 +353,11 @@ function DangerZone() {
       <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-coral">Danger zone</div>
       <p className="mt-2 text-[13.5px] leading-relaxed text-muted">Permanently delete your account, documents, reels and credits. This cannot be undone.</p>
       {!confirming ? (
-        <button type="button" onClick={() => setConfirming(true)} className="mt-4 w-full border border-coral/70 py-3.5 text-[15px] font-medium text-coral transition-colors hover:bg-coral/10">
+        <button type="button" onClick={() => setConfirming(true)} className="mt-4 w-full rounded-full bg-coral/[0.08] py-3.5 text-[15px] font-medium text-coral transition-colors hover:bg-coral/10">
           Delete account
         </button>
       ) : (
-        <div className="mt-4 border border-coral/60 p-4">
+        <div className="mt-4 rounded-[18px] bg-coral/[0.06] p-4">
           <label className="block">
             <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-coral">Type DELETE to confirm</span>
             <input
@@ -372,7 +380,7 @@ function DangerZone() {
                 setTyped("");
                 setErr(null);
               }}
-              className="border border-line bg-transparent font-semibold text-ink transition-colors hover:border-thread/60 hover:bg-white/[0.03] disabled:opacity-60 flex-1 py-3 text-[14.5px]"
+              className="rounded-full bg-surface font-semibold text-ink transition-colors hover:bg-white/[0.06] disabled:opacity-60 flex-1 py-3 text-[14.5px]"
             >
               Keep account
             </button>
@@ -380,7 +388,7 @@ function DangerZone() {
               type="button"
               disabled={!armed || busy}
               onClick={remove}
-              className="flex-1 border border-coral bg-coral py-3 text-[14.5px] font-semibold text-paper transition-opacity disabled:opacity-40"
+              className="flex-1 rounded-full bg-coral py-3 text-[14.5px] font-semibold text-paper transition-opacity disabled:opacity-40"
             >
               {busy ? "Deleting" : "Delete forever"}
             </button>

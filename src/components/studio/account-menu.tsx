@@ -20,7 +20,7 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
   const [leaving, setLeaving] = useState(false);
   const prefs = usePrefs();
   const close = () => setOpen(false);
-  const row = "flex w-full items-center justify-between px-5 py-3.5 text-left text-[15px] text-ink transition-colors hover:bg-surface";
+  const row = "mx-2 flex w-[calc(100%-1rem)] items-center justify-between rounded-[14px] px-3 py-3.5 text-left text-[15px] text-ink transition-colors hover:bg-white/[0.04]";
   const toggle = (on: boolean) => (
     <span className={`relative h-6 w-10 rounded-full transition-colors ${on ? "bg-thread" : "bg-line"}`} aria-hidden>
       <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-paper transition-all ${on ? "left-[18px]" : "left-0.5"}`} />
@@ -58,16 +58,16 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 420, damping: 40 }}
-              className="safe-bottom absolute inset-y-0 right-0 flex w-[86%] max-w-[360px] flex-col border-l border-line bg-paper shadow-[-20px_0_50px_rgba(0,0,0,0.45)]"
+              className="safe-bottom absolute inset-y-0 right-0 flex w-[86%] max-w-[360px] flex-col overflow-hidden rounded-l-[28px] bg-paper shadow-[-20px_0_50px_rgba(0,0,0,0.45)]"
             >
-              <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-5">
+              <div className="flex h-16 shrink-0 items-center justify-between px-5 pt-2">
                 <span className="truncate text-[13px] text-muted">{email ?? "Menu"}</span>
-                <button type="button" onClick={close} aria-label="Close menu" className="-mr-2 flex h-11 w-11 items-center justify-center text-muted">
-                  <X size={22} strokeWidth={2} aria-hidden />
+                <button type="button" onClick={close} aria-label="Close menu" className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full bg-surface text-muted">
+                  <X size={20} strokeWidth={2} aria-hidden />
                 </button>
               </div>
         <div className="flex-1 overflow-y-auto pb-2">
-          <div>
+          <div className="mx-3 rounded-[20px] bg-surface/70 py-1">
             <button type="button" className={row} onClick={() => (close(), openAccount())}>
               <span>
                 <span className="block">Manage account</span>
@@ -85,7 +85,7 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
             )}
           </div>
 
-          <div className="mt-2 border-t border-line">
+          <div className="mx-3 mt-3 rounded-[20px] bg-surface/70 py-1">
             <div className="px-5 pb-1 pt-3 text-[12px] font-semibold uppercase tracking-[0.12em] text-muted">Preferences</div>
             <button type="button" className={row} onClick={() => setPrefs({ muted: !getPrefs().muted, autoMuted: false })} aria-pressed={!prefs.muted}>
               Sound {toggle(!prefs.muted)}
@@ -105,7 +105,7 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
             </button>
           </div>
 
-          <div className="mt-2 border-t border-line">
+          <div className="mx-3 mt-3 rounded-[20px] bg-surface/70 py-1">
             <a href="mailto:hello@unspool.cc" className={row}>
               Help <span className="text-[13px] text-muted">hello@unspool.cc</span>
             </a>
@@ -117,12 +117,12 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
             </Link>
           </div>
 
-          <div className="mt-2 border-t border-line px-5 pt-4">
+          <div className="mt-4 px-5 pt-1">
             <button
               type="button"
               onClick={logOut}
               disabled={leaving}
-              className="min-h-[48px] w-full border border-line text-[15px] font-semibold text-coral transition-colors hover:border-coral disabled:opacity-60"
+              className="min-h-[50px] w-full rounded-full bg-coral/[0.1] text-[15px] font-semibold text-coral transition-colors hover:bg-coral/[0.16] disabled:opacity-60"
               data-testid="log-out"
             >
               {leaving ? "Logging out…" : "Log out"}

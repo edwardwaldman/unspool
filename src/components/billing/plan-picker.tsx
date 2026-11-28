@@ -8,7 +8,7 @@ import { toast } from "../ui/toast";
 import { startCheckout } from "./checkout";
 
 const PERKS: Record<Exclude<Tier, "free">, string> = {
-  plus: "no watermark, up to 60 pages",
+  plus: "reel style, no watermark, up to 60 pages",
   pro: "priority, longer reels, up to 150 pages",
   ultra: "everything in Pro, up to 300 pages, early features",
 };

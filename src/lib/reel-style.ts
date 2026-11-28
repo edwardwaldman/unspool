@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-// "Reel style" (Pro and Ultra): one look applied to every reel of an account. Stored as profiles.reel_style;
+// "Reel style" (Plus, Pro and Ultra): one look applied to every reel of an account. Stored as profiles.reel_style;
 // every field is checked against these allowlists on the way in and on the way out.
 
 export const REEL_STYLE_OPTIONS = {

@@ -31,7 +31,7 @@ const SECTIONS = [
   { id: "ai-output", title: "AI-generated reels: read this" },
   { id: "your-content", title: "Your content and our licence to process it" },
   { id: "sharing", title: "Share links and public reels" },
-  { id: "pro-features", title: "Pro features: editing reels and reel style" },
+  { id: "pro-features", title: "Paid features: editing reels and reel style" },
   { id: "acceptable-use", title: "Acceptable use" },
   { id: "intellectual-property", title: "Our intellectual property" },
   { id: "free-plan", title: "The free plan" },
@@ -381,7 +381,7 @@ export default function TermsPage() {
         </Section>
 
         <Section id="pro-features">
-          <p>Some features are only available on certain paid plans. Today, Pro and Ultra include:</p>
+          <p>Some features are only available on certain paid plans. Today, reel editing is included with Pro and Ultra, and reel style with Plus, Pro and Ultra:</p>
           <ul>
             <li>
               <strong>Editing a reel.</strong> You can ask the AI to rewrite one of your reels (for example &quot;make it simpler&quot; or
@@ -511,7 +511,7 @@ export default function TermsPage() {
           />
           <ul>
             <li>
-              <strong>What each plan includes.</strong> Pro and Ultra also get longer reels, reel editing and reel style (
+              <strong>What each plan includes.</strong> Plus, Pro and Ultra get reel style; Pro and Ultra also get longer reels and reel editing (
               <See id="pro-features" />) and priority processing, and Ultra gets early access to new features. A different price or a
               promotion shown to you at checkout takes precedence over the table above.
             </li>

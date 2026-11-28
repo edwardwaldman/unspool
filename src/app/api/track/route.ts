@@ -12,7 +12,7 @@ const VISITOR_COOKIE = "unspool_vid";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const NAMES = new Set([
   "open", "page", "upload_started", "upload_done", "upload_queued", "signup_shown", "signup_closed", "signup_done", "login_shown", "login",
-  "checkout_clicked", "checkout_cancelled", "paywall_shown", "paywall_closed", "demo_gate", "watch_demo", "reel_viewed", "loading_shown", "loading_left", "game_start", "game_over", "share_opened", "share_copied", "share_native", "share_app", "share_prompt_shown", "share_prompt_tapped", "keep_scrolling_shown", "keep_scrolling_signup", "keep_scrolling_skip", "starter_topic", "plans_opened", "plan_picked", "unlock_bar_shown", "unlock_bar_tapped", "idle", "close",
+  "checkout_clicked", "checkout_cancelled", "paywall_shown", "paywall_closed", "demo_gate", "watch_demo", "reel_viewed", "loading_shown", "loading_left", "game_start", "game_over", "share_opened", "share_copied", "share_native", "share_app", "share_prompt_shown", "share_prompt_tapped", "keep_scrolling_shown", "keep_scrolling_signup", "keep_scrolling_skip", "starter_topic", "style_upsell_shown", "style_upsell_tapped", "plans_opened", "plan_picked", "unlock_bar_shown", "unlock_bar_tapped", "idle", "close",
 ]);
 const MAX_BODY = 16_384;
 const MAX_BATCH = 50;

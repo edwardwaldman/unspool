@@ -7,7 +7,7 @@ import { getViewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 
-/** The account's reel style and whether this viewer may change it (Pro and Ultra). */
+/** The account's reel style and whether this viewer may change it (Plus, Pro and Ultra). */
 export async function GET() {
   if (!supabaseConfigured) return notConfigured();
   const viewer = await getViewer();
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   if (!supabaseConfigured) return notConfigured();
   const viewer = await getViewer();
   if (!viewer.userId) return error(401, "Sign in first");
-  if (!canEditStyle(viewer)) return error(403, "Reel style is a Pro feature", { code: "pro_required" });
+  if (!canEditStyle(viewer)) return error(403, "Reel style comes with Plus", { code: "plus_required" });
   const raw = ((await req.json().catch(() => null)) as { style?: unknown } | null)?.style;
   if (!isReelStyle(raw)) return error(400, "Invalid style");
   const style = parseReelStyle(raw);

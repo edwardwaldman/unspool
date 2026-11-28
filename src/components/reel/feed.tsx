@@ -82,6 +82,7 @@ export function SpoolMoreSheet({ spool, reel, viewer, open, onClose, onDeleted }
       sensitive={spool.sensitive}
       editReelId={!spool.demo && reel && !reel.locked && reel.status === "ready" ? reel.id : undefined}
       canEdit={tier === "pro" || tier === "ultra"}
+      canStyle={tier === "plus" || tier === "pro" || tier === "ultra"}
       onDelete={async () => {
         const res = await fetch(`/api/documents/${spool.id}`, { method: "DELETE" });
         onClose();

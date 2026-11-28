@@ -5,6 +5,8 @@
 
 export type TrackName =
   | "starter_topic"
+  | "style_upsell_shown"
+  | "style_upsell_tapped"
   | "plans_opened"
   | "plan_picked"
   | "unlock_bar_shown"

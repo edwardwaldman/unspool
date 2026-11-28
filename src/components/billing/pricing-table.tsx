@@ -20,7 +20,7 @@ const ROWS: [string, (t: Tier) => string][] = [
   ["Share links", () => yes],
   ["Longer reels", (t) => (PLANS[t].longReels ? yes : no)],
   ["Edit any reel (\"make it simpler\")", (t) => (t === "pro" || t === "ultra" ? yes : no)],
-  ["Reel style in Studio", (t) => (t === "pro" || t === "ultra" ? yes : no)],
+  ["Reel style in Studio", (t) => (t === "plus" || t === "pro" || t === "ultra" ? yes : no)],
   ["Priority queue", (t) => (PLANS[t].priority ? yes : no)],
   ["Early access to new features", (t) => (PLANS[t].earlyAccess ? yes : no)],
 ];

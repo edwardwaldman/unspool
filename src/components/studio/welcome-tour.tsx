@@ -18,7 +18,7 @@ const STOPS: Stop[] = [
   { target: "studio-plus", title: "Drop in a document", body: "A PDF, Word file, slides, notes, or a photo of your notes. Unspool turns it into short reels with a voiceover and a quiz." },
   { target: "credit-bar", title: "Your credits", body: "1 credit makes 1 reel. Your count updates live, and Recharge tops you up anytime." },
   { target: "studio-stats", title: "Your library", body: "Every document lands here. Tap the arrow on one to see its reels, then tap a reel to watch." },
-  { target: "studio-style", title: "Make it yours", body: "Reel style changes how every reel looks: captions, font, colour. It's a Pro feature." },
+  { target: "studio-style", title: "Make it yours", body: "Reel style changes how every reel looks: captions, font, colour. It comes with Plus." },
 ];
 
 function readFlag(key: string) {

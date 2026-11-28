@@ -66,6 +66,8 @@ const stay = (ms: number) => {
 
 const EVENT_LABELS: Record<string, string> = {
   starter_topic: "Tapped a starter topic",
+  style_upsell_shown: "Saw reel style pop-up",
+  style_upsell_tapped: "Tapped Upgrade to Plus (reel style)",
   plans_opened: "Opened all plans",
   plan_picked: "Picked a plan",
   unlock_bar_shown: "Saw unlock bar",
