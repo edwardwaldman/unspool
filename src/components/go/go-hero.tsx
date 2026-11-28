@@ -151,6 +151,7 @@ export function PromptBox({ className = "mt-4", topics = EXAMPLE_TOPICS, divider
   const pasted = isPastedDocument(text);
   const [focused, setFocused] = useState(false);
   const example = useTypewriter(topics, !text && !focused);
+  const camera = useRef<HTMLInputElement>(null);
   return (
     <form
       className={`w-full ${className}`}
@@ -195,6 +196,35 @@ export function PromptBox({ className = "mt-4", topics = EXAMPLE_TOPICS, divider
           className="min-w-0 flex-1 resize-none self-center bg-transparent py-2 text-[16px] leading-snug text-ink outline-none placeholder:text-muted/70"
         />
         </div>
+        {/* Snap a page: opens the camera on phones (a photo picker elsewhere), then makes reels from the photo */}
+        {!text && (
+          <button
+            type="button"
+            onClick={() => camera.current?.click()}
+            disabled={!!pending}
+            aria-label="Snap a photo of a page"
+            title="Snap a photo of a page"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line text-ink transition-colors hover:border-thread disabled:opacity-35"
+            data-testid="snap-photo"
+          >
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z" />
+              <circle cx="12" cy="13" r="3.5" />
+            </svg>
+          </button>
+        )}
+        <input
+          ref={camera}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (f) void upload(f);
+          }}
+        />
         <button
           type="submit"
           disabled={!ready}
@@ -206,7 +236,7 @@ export function PromptBox({ className = "mt-4", topics = EXAMPLE_TOPICS, divider
           </svg>
         </button>
       </div>
-      <p className="mt-2 text-center text-[12.5px] text-muted">{pasted ? "We turn your pasted notes into TikToks." : "Type a topic and we research it, or paste your notes."}</p>
+      <p className="mt-2 text-center text-[12.5px] text-muted">{pasted ? "We turn your pasted notes into TikToks." : "Type a topic, paste your notes, or snap a photo of a page."}</p>
     </form>
   );
 }
