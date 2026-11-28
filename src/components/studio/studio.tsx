@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { ReelStyle } from "@/lib/reel-style";
 import { fileLabel, fileTone, reelTint } from "../reel/accent";
@@ -57,7 +58,8 @@ export type StudioProps = {
   /** First name for the greeting (from the sign-in account), if known. */
   name?: string | null;
   /** Free accounts: when the next free reel is allowed, and how many uploads wait in the queue for it. */
-  queue?: { nextAt: string | null; queued: number };
+  /** ready: a queued upload may be started now (it shows a Ready button; nothing starts on its own). */
+  queue?: { nextAt: string | null; queued: number; ready?: boolean };
 };
 
 /** The library's numbers, at the top of the document list. */
@@ -234,7 +236,7 @@ function Greeting({ name }: { name?: string | null }) {
 
 /** Still being made / waiting in the queue: queued uploads get a big row with their own countdown and a way to
  * remove one added by accident, plus "Unlock the reels now" (the free trial, or Plus once the trial is used). */
-function ActiveList({ docs, nextAt }: { docs: StudioDoc[]; nextAt: string | null }) {
+function ActiveList({ docs, nextAt, ready }: { docs: StudioDoc[]; nextAt: string | null; /** A queued upload may be started now. */ ready: boolean }) {
   const [items, setItems] = useState(docs);
   const [busy, setBusy] = useState(false);
   const usage = useCredits();
@@ -257,32 +259,56 @@ function ActiveList({ docs, nextAt }: { docs: StudioDoc[]; nextAt: string | null
       setBusy(false);
     }
   };
+  // Ready: the oldest queued upload, once its turn has come. It is only made when they tap Ready (nothing starts on its own).
+  const waiting = items.filter((d) => d.status === "queued").sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const next = ready ? waiting[0] : undefined;
+  const rest = waiting.filter((d) => d !== next);
+  const making = items.filter((d) => d.status !== "queued");
+  const [starting, setStarting] = useState<string | null>(null);
+  const router = useRouter();
+  const make = async (d: StudioDoc) => {
+    setStarting(d.id);
+    const res = await fetch(`/api/documents/${d.id}/make`, { method: "POST" }).catch(() => null);
+    const body = res ? await res.json().catch(() => ({})) : {};
+    if (res?.ok) return router.push(`/s/${d.id}`);
+    toast(body.error ?? "Couldn't start it. Try again.", 4000);
+    setStarting(null);
+    router.refresh();
+  };
+  const removeBtn = (d: StudioDoc) => (
+    <button type="button" onClick={() => remove(d.id)} aria-label={`Remove ${d.name} from the queue`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line text-[18px] text-muted hover:border-coral hover:text-coral">
+      <X size={18} strokeWidth={2} aria-hidden />
+    </button>
+  );
+  const heading = (t: string) => <div className="mb-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-muted">{t}</div>;
   if (!items.length) return null;
   return (
     <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pb-4 ipad:max-w-[680px]" data-testid="studio-active">
-      <div className="mb-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-muted">{queued ? "Your queue" : "In progress"}</div>
+      {next && (
+        <div className="mb-5" data-testid="ready-to-make">
+          {heading("Ready to make")}
+          <div className="flex items-center gap-3 rounded-[18px] border border-thread bg-thread/[0.07] px-4 py-4">
+            <div className="min-w-0 flex-1">
+              <div className="line-clamp-2 text-[17px] font-semibold leading-snug text-ink">{next.name}</div>
+              <div className="mt-1 text-[12.5px] text-muted">Your free reel is ready. Tap to start.</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => make(next)}
+              disabled={starting !== null}
+              className="min-h-[44px] shrink-0 rounded-full bg-thread px-5 text-[15px] font-semibold text-paper transition-opacity hover:opacity-90 disabled:opacity-60"
+              data-testid="make-ready"
+            >
+              {starting === next.id ? "Starting..." : "Ready"}
+            </button>
+            {removeBtn(next)}
+          </div>
+        </div>
+      )}
+      {(rest.length > 0 || making.length > 0) && heading(rest.length ? "Your queue" : "In progress")}
       <ul className="space-y-2">
-        {items.map((d) => {
+        {making.map((d) => {
           const st = docStatus(d);
-          if (d.status === "queued")
-            return (
-              <li key={d.id} className="flex items-center gap-3 rounded-[18px] border border-line bg-surface px-4 py-4" data-testid="queued-row">
-                <div className="min-w-0 flex-1">
-                  <div className="line-clamp-2 text-[17px] font-semibold leading-snug text-ink">{d.name}</div>
-                  {left > 0 ? (
-                    <button type="button" onClick={() => setSkipOpen(true)} className="mt-1.5 flex items-baseline gap-2 text-left" aria-label={`Starts in ${formatCountdown(left)}. Tap to skip the wait`}>
-                      <span className="text-[12.5px] text-muted">Starts in</span>
-                      <span className="font-mono text-[20px] font-bold tabular-nums text-ink">{formatCountdown(left)}</span>
-                    </button>
-                  ) : (
-                    <div className="mt-1.5 text-[12.5px] text-muted">Starting next</div>
-                  )}
-                </div>
-                <button type="button" onClick={() => remove(d.id)} aria-label={`Remove ${d.name} from the queue`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line text-[18px] text-muted hover:border-coral hover:text-coral">
-                  <X size={18} strokeWidth={2} aria-hidden />
-                </button>
-              </li>
-            );
           return (
             <li key={d.id}>
               <Link href={`/s/${d.id}`} className="flex items-center gap-3 rounded-[16px] border border-line px-4 py-3.5">
@@ -294,6 +320,22 @@ function ActiveList({ docs, nextAt }: { docs: StudioDoc[]; nextAt: string | null
             </li>
           );
         })}
+        {rest.map((d) => (
+          <li key={d.id} className="flex items-center gap-3 rounded-[18px] border border-line bg-surface px-4 py-4" data-testid="queued-row">
+            <div className="min-w-0 flex-1">
+              <div className="line-clamp-2 text-[17px] font-semibold leading-snug text-ink">{d.name}</div>
+              {left > 0 ? (
+                <button type="button" onClick={() => setSkipOpen(true)} className="mt-1.5 flex items-baseline gap-2 text-left" aria-label={`Ready in ${formatCountdown(left)}. Tap to skip the wait`}>
+                  <span className="text-[12.5px] text-muted">Ready in</span>
+                  <span className="font-mono text-[20px] font-bold tabular-nums text-ink">{formatCountdown(left)}</span>
+                </button>
+              ) : (
+                <div className="mt-1.5 text-[12.5px] text-muted">{next ? "After the one above" : "Waiting for the one being made"}</div>
+              )}
+            </div>
+            {removeBtn(d)}
+          </li>
+        ))}
       </ul>
       {queued && (
         <button type="button" onClick={unlock} disabled={busy} className="mt-3 min-h-[52px] w-full rounded-full bg-ink text-[16px] font-semibold text-paper hover:opacity-90 disabled:opacity-60" data-testid="unlock-now">
@@ -524,7 +566,7 @@ function MobileStudio({ docs, style, canEdit, email, queue, name }: StudioProps)
         </div>
       </div>
       {/* Still being made (queued, planning, writing): up front, under the timer */}
-      {active.length > 0 && <ActiveList docs={active} nextAt={queue?.nextAt ?? null} />}
+      {active.length > 0 && <ActiveList docs={active} nextAt={queue?.nextAt ?? null} ready={Boolean(queue?.ready)} />}
 
       {/* Done and watched: behind a pull-down bar, the grid of spools (with Edit to delete) */}
       {done.length > 0 ? (

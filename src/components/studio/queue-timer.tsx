@@ -71,7 +71,8 @@ export function SkipPopup({ left, onClose }: { left: number; onClose: () => void
 
 /**
  * Free accounts: the countdown to their next free reel, and how many uploads are waiting in the queue for it.
- * Tap it to skip the wait. When it reaches zero the page reloads, which starts the next queued upload (src/lib/queue.ts).
+ * Tap it to skip the wait. When it reaches zero the page reloads, and the next queued upload shows a Ready button
+ * (nothing starts on its own: src/lib/queue.ts).
  */
 export function QueueTimer({ nextAt, queued }: { nextAt: string | null; queued: number }) {
   const router = useRouter();
@@ -101,7 +102,7 @@ export function QueueTimer({ nextAt, queued }: { nextAt: string | null; queued: 
             <div className="text-[12.5px] font-semibold text-muted">Next free reel in</div>
             {queued > 0 && (
               <div className="mt-0.5 text-[13px] text-muted">
-                {queued} {queued === 1 ? "upload" : "uploads"} queued, starts then
+                {queued} {queued === 1 ? "upload" : "uploads"} queued, ready then
               </div>
             )}
           </div>
@@ -111,14 +112,6 @@ export function QueueTimer({ nextAt, queued }: { nextAt: string | null; queued: 
         </button>
         {popup}
       </>
-    );
-  }
-  if (queued > 0) {
-    return (
-      <div className="rounded-[16px] border border-line px-4 py-3 text-[13.5px] text-muted" data-testid="queue-timer">
-        <span className="font-semibold text-thread">Up next:</span> your queued {queued === 1 ? "upload starts" : "uploads start"} as soon as
-        the one being made finishes.
-      </div>
     );
   }
   return (

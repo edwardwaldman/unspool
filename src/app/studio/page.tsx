@@ -13,7 +13,7 @@ import { tierOf } from "@/lib/credits";
 import { PLANS } from "@/lib/plans";
 import { adminClient } from "@/lib/supabase/admin";
 import { getViewer, type Viewer } from "@/lib/viewer";
-import { moveQueue, nextFreeReelAt } from "@/lib/queue";
+import { nextFreeReelAt, queueState } from "@/lib/queue";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Studio", robots: { index: false } };
@@ -29,9 +29,9 @@ export default async function StudioPage() {
   // First name for the Studio greeting (Google gives a full name; email sign-ups may have none).
   const meta = (auth.user?.user_metadata ?? {}) as { full_name?: string; name?: string };
   const firstName = (meta.full_name ?? meta.name ?? "").trim().split(/\s+/)[0] || null;
-  // Free accounts: start a queued upload if its turn has come, then show the countdown to the next free reel.
+  // The queue, read only: nothing starts on its own. When a queued upload's turn comes it shows a Ready button.
   const free = tierOf(viewer.profile) === "free";
-  const moved = await moveQueue(viewer).catch((err) => (console.error("studio: queue", err), { queued: 0, nextAt: null }));
+  const moved = await queueState(viewer).catch((err) => (console.error("studio: queue", err), { queued: 0, nextAt: null, ready: false }));
   const capAt = free ? (moved.nextAt ?? (await nextFreeReelAt(viewer).catch(() => null))) : null;
   const { docs, dripAt } = await studioDocs(viewer).catch((err) => (console.error("studio: could not load documents", err), { docs: [] as StudioDoc[], dripAt: null }));
   // The next free reel: the daily limit resetting, or else a document's next drip (whichever the account waits on).
@@ -41,7 +41,7 @@ export default async function StudioPage() {
       <Suspense>
         <CheckoutReturn />
       </Suspense>
-      <Studio docs={docs} isNew={docs.length === 0 && isNew} fresh={isNew} email={viewer.email} plan={PLANS[tierOf(viewer.profile)].name} style={parseReelStyle(viewer.profile?.reel_style)} canEdit={canEditStyle(viewer)} name={firstName} queue={free || moved.queued ? { nextAt, queued: moved.queued } : undefined} />
+      <Studio docs={docs} isNew={docs.length === 0 && isNew} fresh={isNew} email={viewer.email} plan={PLANS[tierOf(viewer.profile)].name} style={parseReelStyle(viewer.profile?.reel_style)} canEdit={canEditStyle(viewer)} name={firstName} queue={free || moved.queued ? { nextAt, queued: moved.queued, ready: moved.ready } : undefined} />
     </AppShell>
   );
 }
