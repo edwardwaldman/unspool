@@ -498,9 +498,10 @@ function MobileStudio({ docs, style, canEdit, email, queue, name }: StudioProps)
           </div>
         )}
         {/* The big + in the middle: upload a file or photo */}
-        <div className="flex flex-col items-center pb-5 pt-7">
+        {/* Room around the + so its pulse ring (up to 1.25x) never reaches the timer or the title */}
+        <div className="flex flex-col items-center pb-5 pt-9">
           <PlusButton onClick={picker.open} pending={picker.pending} size="md" />
-          <div className="mt-4 font-display text-[20px] leading-tight text-ink">{picker.pending ? "Starting upload" : "Upload a document"}</div>
+          <div className="mt-7 font-display text-[20px] leading-tight text-ink">{picker.pending ? "Starting upload" : "Upload a document"}</div>
           <p className="mt-1 text-[13px] text-muted">{TYPES_HINT}</p>
         </div>
         {/* Or type a topic, under the + */}
