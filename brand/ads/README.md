@@ -18,7 +18,12 @@ frame by frame (`index.html`), the voiceover script (`lines.json` or `tts.py`) a
    above centre, over a blurred copy of itself (see the commit that added `brand/social/full-frame/`), so
    nothing sits under the side buttons, search bar or caption. Full-frame originals live in
    `brand/social/full-frame/`.
-4. **Show the product with the standard document → reels beat.** Whenever an ad shows a document turning
+4. **The product moment is always "snap a page → reels".** Whenever Unspool appears, show a phone camera
+   pointed at a printed or handwritten page (viewfinder corners, a shutter button), the shutter flash, then that
+   page turning into reels on the phone. It's the fastest way into the product and what the app's camera button
+   does. 3D ads: the phone's screen texture plays viewfinder → flash → reels (see `the-essay-part-3b`, `drawCamera`).
+   2D ads: open the standard beat below on the photo of a page instead of a PDF icon.
+   **Standard document → reels beat.** Whenever an ad shows a document turning
    into reels, use `shared/doc-to-reels.js` (the PDF that pops in, pulses a lime ring and splits into three
    reel cards, first used in rise-and-fall) rather than a new animation. Copy it and its three reel stills
    (`shared/*.jpg`) next to the ad's `index.html` and call `docToReels(lt)` during the beat.

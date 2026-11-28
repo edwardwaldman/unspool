@@ -32,6 +32,8 @@ for t in (5.253, 7.27, 10.036, 10.803, 11.165, 13.169, 14.103, 18.795):
 for i, m in enumerate([62, 66, 69, 74, 69, 66, 69, 74, 78, 74, 69, 74]):
     add(bed, 16.62 + i * 0.12, tone(note(m), 0.4, 7, (1, .5, .2)), 0.07)
 add(bed, 16.62, tone(note(50), 1.8, 1, (1, .4, .2), 0.2), 0.12)
+# the shutter: snapping the page (a short click and a softer second click, like a phone camera)
+add(bed, 17.05, lp(noise(0.05, 90), 2), 0.5); add(bed, 17.11, lp(noise(0.04, 120), 3), 0.3)
 # the choice: held suspense chord swelling, then cut to silence on the end sign
 t = np.arange(int(SR * 1.6)) / SR; env = (t / 1.6) ** 1.5
 for m in (50, 53, 56, 62): add(bed, 18.75, np.sin(2 * np.pi * note(m) * t) * env, 0.05)

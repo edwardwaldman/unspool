@@ -148,6 +148,23 @@ const drawPhone = (k) => { const { g } = phoneTex.userData; g.fillStyle = "#0811
     g.strokeStyle = "#b6f24a"; g.lineWidth = 6; g.beginPath(); g.moveTo(26, ly + 34); g.lineTo(26 + 260 * clamp(f * 1.4), ly + 34); g.stroke();
     g.fillStyle = "rgba(255,255,255,.08)"; g.fillRect(20, 560, 320, 90); g.fillStyle = "#f4f4ea"; g.font = "700 22px Arc"; g.fillText("Tap to answer the quiz ▸", 40, 614); g.restore(); }
   g.fillStyle = "rgba(255,255,255,.7)"; g.font = "800 20px Arc"; g.textAlign = "center"; g.fillText("unspool", 180, 712); phoneTex.needsUpdate = true; };
+const drawCamera = (flash = 0, press = 0) => { const { g } = phoneTex.userData;
+  g.fillStyle = "#121212"; g.fillRect(0, 0, 360, 740);
+  // the page under the camera, slightly turned, lined, with handwriting
+  g.save(); g.translate(180, 330); g.rotate(-0.06); g.fillStyle = "#f6f2e4"; g.fillRect(-130, -190, 260, 380);
+  g.strokeStyle = "#b9cbe6"; g.lineWidth = 2; for (let y = -150; y < 180; y += 26) { g.beginPath(); g.moveTo(-118, y); g.lineTo(118, y); g.stroke(); }
+  g.strokeStyle = "#2a4f9a"; g.lineWidth = 3.2; g.lineCap = "round";
+  for (let i = 0; i < 12; i++) { const y = -158 + i * 26, w = 70 + rnd(i + 40) * 150; g.beginPath(); g.moveTo(-110, y); for (let x = -110; x < -110 + w; x += 9) g.lineTo(x, y + Math.sin(x * 0.3 + i) * 2.2); g.stroke(); }
+  g.fillStyle = "#2a4f9a"; g.font = "800 22px Arc"; g.fillText("PAGE 7", -112, -168); g.restore();
+  // viewfinder corners
+  g.strokeStyle = "#d3f05a"; g.lineWidth = 6; g.lineCap = "round"; const c = (x, y, dx, dy) => { g.beginPath(); g.moveTo(x, y + dy * 36); g.lineTo(x, y); g.lineTo(x + dx * 36, y); g.stroke(); };
+  c(34, 116, 1, 1); c(326, 116, -1, 1); c(34, 548, 1, -1); c(326, 548, -1, -1);
+  g.fillStyle = "rgba(255,255,255,.85)"; g.font = "800 22px Arc"; g.textAlign = "center"; g.fillText("Snap a page", 180, 82);
+  // shutter button
+  g.fillStyle = "#fff"; g.beginPath(); g.arc(180, 640, 40, 0, 7); g.fill(); g.fillStyle = "#121212"; g.beginPath(); g.arc(180, 640, 33, 0, 7); g.fill();
+  g.fillStyle = "#fff"; g.beginPath(); g.arc(180, 640, 29 - press * 5, 0, 7); g.fill(); g.textAlign = "left";
+  if (flash > 0) { g.fillStyle = `rgba(255,255,255,${flash})`; g.fillRect(0, 0, 360, 740); }
+  phoneTex.needsUpdate = true; };
 const phone = new THREE.Group(); { box(0.95, 1.9, 0.09, M("#111", { roughness: 0.3 }), 0, 0, 0, phone); const s = new THREE.Mesh(new THREE.PlaneGeometry(0.86, 1.78), new THREE.MeshBasicMaterial({ map: phoneTex })); s.position.z = 0.05; phone.add(s); }
 
 const jphone = new THREE.Group(); box(0.5, 0.95, 0.06, M("#111", { roughness: 0.3 }), 0, 0, 0, jphone); box(0.44, 0.86, 0.01, M("#dfe9ff", { emissive: "#9fb8ff", emissiveIntensity: 0.6 }), 0, 0, 0.035, jphone);
@@ -204,10 +221,15 @@ const SC = {
     if (lt < 1.1) { YOU.setFace("worried"); YOU.pose({ la: [-1.1, 0.1], ra: [-1.1, -0.1], headTilt: Math.sin(lt * 2) * 0.05 }); phone.removeFromParent();
       drift(lt / 1.1, v3(3.6, 5.2, 8.6), v3(2.6, 4.6, 6.8), v3(0.6, 2.6, 0.2), v3(0.5, 2.9, 0.2), 40); }
     else if (lt < 2.2) { room.add(phone); phone.position.set(0.4, 2.85, 0.6); phone.rotation.set(-0.1, 0, 0); YOU.setFace("neutral"); YOU.pose({ la: [-1.35, 0.25], ra: [-1.35, -0.25], headTilt: 0.18 });
-      drawPhone(clamp((lt - 1.1) / 1.9)); glow.intensity = 3; glow.position.set(0.4, 2.9, 1.4);
+      // snap a page: the viewfinder on the notes, the shutter at 1.5, a white flash, then the reels
+      const snap = 1.5;
+      if (lt < snap + 0.12) drawCamera(lt > snap ? clamp((lt - snap) / 0.08) : 0, clamp((lt - (snap - 0.12)) / 0.12));
+      else if (lt < snap + 0.3) { drawPhone(0); const { g } = phoneTex.userData; g.fillStyle = `rgba(255,255,255,${1 - (lt - snap - 0.12) / 0.18})`; g.fillRect(0, 0, 360, 740); phoneTex.needsUpdate = true; }
+      else drawPhone(clamp((lt - snap - 0.3) / 1.5));
+      glow.intensity = lt > snap && lt < snap + 0.3 ? 9 : 3; glow.position.set(0.4, 2.9, 1.4);
       const k = (lt - 1.1) / 1.1; cam(v3(0.7, 3.2, 4.3 - k * 0.4), v3(0.4, 2.95, 0.6), 38); }
     else { room.add(phone); phone.position.set(0.4, 2.2, 0.75); phone.rotation.set(-1.0, Math.PI, 0); YOU.setFace("grin"); YOU.pose({ la: [-1.35, 0.25], ra: [-1.35, -0.25], headTilt: -0.04 });
-      glow.intensity = 7; glow.position.set(0.4, 2.7, 1.1); drawPhone(clamp((lt - 1.1) / 1.9));
+      glow.intensity = 7; glow.position.set(0.4, 2.7, 1.1); drawPhone(clamp((lt - 1.8) / 1.5));
       const k = (lt - 2.2) / 1.0; cam(v3(1.7 - k * 0.1, 3.8, 5.0 - k * 0.4), v3(0.4, 3.0, -0.3), 36); }
     return room; },
   choice(lt) { // next morning: you in the hallway, Jake on one side, the teacher on the other
@@ -244,14 +266,14 @@ window.renderAt = (t) => {
   let h = `<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 55%,rgba(0,0,0,.4) 100%)"></div>`;
   if (name === "poll") {
     h += `<div style="position:absolute;left:0;right:0;top:150px;text-align:center"><span style="background:#111;color:#fff;font:800 34px Arc;letter-spacing:4px;padding:10px 22px;border-radius:10px">PREVIOUSLY</span></div>`;
-    h += `<div style="position:absolute;left:110px;right:110px;top:250px"><div style="text-align:center;color:#fff;font:800 38px Arc;-webkit-text-stroke:6px #000;paint-order:stroke fill;margin-bottom:6px">THE ESSAY · PART 2</div>${card("A", "DROP IT", "#e6402e", false, clamp(t / 0.25))}${card("B", "EXPLAIN IT", "#2bb673", t > 0.95, clamp((t - 0.12) / 0.25))}</div>`;
+    h += `<div style="position:absolute;left:110px;right:110px;top:250px"><div style="text-align:center;color:#fff;font:800 38px Arc;-webkit-text-stroke:6px #000;paint-order:stroke fill;margin-bottom:6px">THE ESSAY, PART 2</div>${card("A", "DROP IT", "#e6402e", false, clamp(t / 0.25))}${card("B", "EXPLAIN IT", "#2bb673", t > 0.95, clamp((t - 0.12) / 0.25))}</div>`;
   }
   if (name === "jake" && t > 7.27) { // the phone he's reading from: a photo of your notes
     const k = clamp((t - 7.27) / 0.25);
-    h += `<div style="position:absolute;left:0;right:0;top:160px;display:flex;justify-content:center"><div style="width:250px;padding:12px;background:#111;border-radius:30px;box-shadow:0 14px 34px rgba(0,0,0,.5);transform:rotate(-4deg) scale(${0.6 + 0.4 * outBack(k)});opacity:${clamp(k * 3)}"><div style="background:#fbf7e6;border-radius:20px;padding:16px 16px 20px;height:330px"><div style="font:800 18px Arc;color:#2a62c0">YOUR NOTES · PAGE 7</div>${[88, 72, 94, 60, 84, 76, 90, 66].map((w) => `<div style="height:6px;margin-top:14px;width:${w}%;background:#9bb3d8;border-radius:3px"></div>`).join("")}<div style="margin-top:18px;font:800 22px Arc;color:#e33">📷 screenshot</div></div></div></div>`;
+    h += `<div style="position:absolute;left:0;right:0;top:160px;display:flex;justify-content:center"><div style="width:250px;padding:12px;background:#111;border-radius:30px;box-shadow:0 14px 34px rgba(0,0,0,.5);transform:rotate(-4deg) scale(${0.6 + 0.4 * outBack(k)});opacity:${clamp(k * 3)}"><div style="background:#fbf7e6;border-radius:20px;padding:16px 16px 20px;height:330px"><div style="font:800 18px Arc;color:#2a62c0">YOUR NOTES, PAGE 7</div>${[88, 72, 94, 60, 84, 76, 90, 66].map((w) => `<div style="height:6px;margin-top:14px;width:${w}%;background:#9bb3d8;border-radius:3px"></div>`).join("")}<div style="margin-top:18px;font:800 22px Arc;color:#e33">📷 screenshot</div></div></div></div>`;
   }
   if (name === "verdict") { // his essay: A. Yours: B, "for copying".
-    const paper = (who, grade, col, k, rot, note) => `<div style="position:relative;width:230px;padding:18px 18px 22px;background:#f7f3e8;border-radius:6px;box-shadow:0 12px 28px rgba(0,0,0,.45);transform:rotate(${rot}deg) scale(${0.6 + 0.4 * outBack(k)});opacity:${clamp(k * 3)}"><div style="font:800 20px Arc;color:#555">ESSAY · ${who}</div>${[92, 80, 88, 70, 84].map((w) => `<div style="height:7px;margin-top:9px;width:${w}%;background:#d6d0c2;border-radius:4px"></div>`).join("")}<div style="margin-top:8px;text-align:right;font:800 92px/1 Arc;color:${col}">${grade}</div>${note || ""}</div>`;
+    const paper = (who, grade, col, k, rot, note) => `<div style="position:relative;width:230px;padding:18px 18px 22px;background:#f7f3e8;border-radius:6px;box-shadow:0 12px 28px rgba(0,0,0,.45);transform:rotate(${rot}deg) scale(${0.6 + 0.4 * outBack(k)});opacity:${clamp(k * 3)}"><div style="font:800 20px Arc;color:#555">ESSAY: ${who}</div>${[92, 80, 88, 70, 84].map((w) => `<div style="height:7px;margin-top:9px;width:${w}%;background:#d6d0c2;border-radius:4px"></div>`).join("")}<div style="margin-top:8px;text-align:right;font:800 92px/1 Arc;color:${col}">${grade}</div>${note || ""}</div>`;
     const t1 = 10.036, t2 = 10.803, t3 = 11.165;
     const note = t > t3 ? `<div style="position:absolute;left:10px;bottom:22px;font:800 24px Arc;color:#e33;transform:rotate(-8deg) scale(${0.6 + 0.4 * outBack((t - t3) / 0.2)})">“for copying”</div>` : "";
     if (t > t1) h += `<div style="position:absolute;left:0;right:0;top:170px;display:flex;justify-content:center;gap:34px">${paper("JAKE", "A", "#1d9e4a", clamp((t - t1) / 0.25), -4)}${t > t2 ? paper("YOU", "B", "#e33", clamp((t - t2) / 0.25), 5, note) : `<div style="width:230px"></div>`}</div>`;
@@ -265,7 +287,7 @@ window.renderAt = (t) => {
       <div style="margin-top:10px;background:#f2efe4;border-radius:12px;padding:12px">${[90, 76, 84, 62].map((w) => `<div style="height:6px;margin-top:9px;width:${w}%;background:#cfc8b6;border-radius:3px"></div>`).join("")}</div>
       <div style="margin-top:12px;font:800 26px Arc;color:${hearts ? "#ff2d55" : "#888"}">♥ ${likes.toLocaleString("en-US")}</div></div></div>`;
   }
-  if (name === "proof" && lt < 1.1) h += `<div style="position:absolute;left:0;right:0;top:170px;text-align:center"><span style="background:#ffd23f;color:#111;font:800 34px Arc;padding:8px 18px;border-radius:10px;opacity:${clamp(lt * 4)}">LAST NIGHT · 11:47 PM</span></div>`;
+  if (name === "proof" && lt < 1.1) h += `<div style="position:absolute;left:0;right:0;top:170px;text-align:center"><span style="background:#ffd23f;color:#111;font:800 34px Arc;padding:8px 18px;border-radius:10px;opacity:${clamp(lt * 4)}">LAST NIGHT, 11:47 PM</span></div>`;
   if (name === "choice") {
     h += `<div style="position:absolute;left:100px;right:100px;top:190px">${card("A", "REPORT HIM", "#e6402e", false, clamp((t - 18.795) / 0.25))}${card("B", "POST THE PROOF", "#2bb673", false, clamp((t - 19.461) / 0.25))}</div>`;
     if (t > 19.9) h += `<div style="position:absolute;left:0;right:0;top:425px;text-align:center;color:#fff;font:800 42px Arc;-webkit-text-stroke:7px #000;paint-order:stroke fill;transform:scale(${0.7 + 0.3 * outBack((t - 19.9) / 0.25)})">COMMENT <span style="color:#ff5a4a">A</span> OR <span style="color:#3df07a">B</span> 👇</div>`;

@@ -3,8 +3,8 @@
 Follows the angry cut of Part 2, on the path most people voted for ("B: explain every page").
 The opening is deliberately tame (the PREVIOUSLY poll card over a calm classroom, no shove or slap: the slap cut
 seemed to lower reach). The anger then builds: you nail the presentation, Jake reads your notes off his phone, the
-teacher gives him the A and you a B "for copying", and he posts your essay under his name. Unspool is the turn (you made
-the reels the night before), and it ends on an unresolved A/B choice.
+teacher gives him the A and you a B "for copying", and he posts your essay under his name. Unspool is the turn (you snapped your notes into reels
+the night before, shown as the standard snap-a-page beat), and it ends on an unresolved A/B choice.
 
 | t (s) | shot | voice |
 |---|---|---|
@@ -13,7 +13,7 @@ the reels the night before), and it ends on an unresolved A/B choice.
 | 5.2 | Jake stands, reading off his phone; a photo of your notes pops up | Then Jake stands up and reads your notes off his phone. |
 | 8.15 | teacher claps; JAKE A, YOU B "for copying"; your face | "Great job, both of you." He still gets the A. You get a B, for copying. |
 | 11.95 | AFTER CLASS, Jake on the lockers; his post, likes climb to 10,000 | He posts your essay with his name on it. Ten thousand likes by lunch. |
-| 15.55 | LAST NIGHT 11:47 PM, the twelve pages, the Unspool reels on your phone | But you made your reels on unspool dot cc, the night before. |
+| 15.55 | LAST NIGHT, 11:47 PM: you snap a page of your notes (viewfinder, shutter flash), it turns into reels on your phone | But you made your reels on unspool dot cc, the night before. |
 | 18.75 | hallway, you between Jake and the teacher; A/B cards | Report him, or post the proof? |
 | 20.35 | sign: Made with UNSPOOL.CC | (follow for part 4) |
 
