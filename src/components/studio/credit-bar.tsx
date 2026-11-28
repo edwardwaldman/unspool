@@ -1,12 +1,13 @@
 "use client";
 
-import { Zap } from "lucide-react";
+import { X, Zap } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { formatCents, TOPUP_PACKS, topupSavingsPct, type TopupPack } from "@/lib/plans";
 import type { UsageDTO } from "@/lib/spool-types";
 import { startCheckout } from "../billing/checkout";
 import { shortDate } from "../billing/usage-meter";
-import { Sheet } from "../ui/sheet";
 
 const POLL_MS = 20_000;
 const UNLIMITED = 100_000;
@@ -79,9 +80,7 @@ export function CreditBar({ size = "md", recharge = true }: { size?: "md" | "lg"
           </button>
         )}
       </div>
-      <Sheet open={open} onClose={() => setOpen(false)} label="Recharge credits">
-        <RechargePanel />
-      </Sheet>
+      <RechargePopup open={open} onClose={() => setOpen(false)} />
     </>
   );
 }
@@ -99,10 +98,44 @@ export function RechargeButton() {
       >
         Recharge
       </button>
-      <Sheet open={open} onClose={() => setOpen(false)} label="Recharge credits">
-        <RechargePanel />
-      </Sheet>
+      <RechargePopup open={open} onClose={() => setOpen(false)} />
     </>
+  );
+}
+
+/** Recharge as a centred pop-up that springs in (and fades out), closed by the ×, a tap outside or Escape. */
+function RechargePopup({ open, onClose }: { open: boolean; onClose: () => void }) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center px-4" key="recharge">
+          <motion.div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} />
+          <motion.div
+            role="dialog"
+            aria-modal
+            aria-label="Recharge credits"
+            initial={{ opacity: 0, scale: 0.92, y: 24 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 12, transition: { duration: 0.15 } }}
+            transition={{ type: "spring", stiffness: 420, damping: 32 }}
+            className="relative max-h-[88dvh] w-full max-w-[400px] overflow-y-auto overscroll-contain rounded-[24px] bg-surface shadow-[0_24px_70px_rgba(0,0,0,.55)]"
+          >
+            <button type="button" onClick={onClose} aria-label="Close" className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-paper text-muted hover:text-ink">
+              <X size={18} strokeWidth={2} aria-hidden />
+            </button>
+            <RechargePanel />
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>,
+    document.body,
   );
 }
 
@@ -121,8 +154,8 @@ function RechargePanel() {
     }
   };
   return (
-    <div className="mx-auto w-full max-w-[520px] px-5 pb-6 pt-5" data-testid="recharge-panel">
-      <h2 className="font-display text-[24px] leading-[1.1] text-ink">Recharge credits</h2>
+    <div className="w-full px-5 pb-6 pt-5" data-testid="recharge-panel">
+      <h2 className="pr-12 font-display text-[24px] leading-[1.1] text-ink">Recharge credits</h2>
       <p className="mt-1.5 text-[13px] leading-snug text-muted">1 credit = 1 reel. Top-up credits never expire and are used after your weekly ones. The bigger the pack, the less each credit costs.</p>
       <ul className="mt-4 space-y-2">
         {TOPUP_PACKS.map((p) => {
@@ -133,14 +166,14 @@ function RechargePanel() {
                 type="button"
                 disabled={busy !== null}
                 onClick={() => void buy(p)}
-                className={`flex w-full items-center gap-3 border px-4 py-3 text-left transition-colors disabled:opacity-60 ${p.id === best ? "border-thread bg-thread/[0.06]" : "border-line hover:bg-white/[0.03]"}`}
+                className={`flex w-full items-center gap-3 rounded-[16px] border px-4 py-3 text-left transition-colors disabled:opacity-60 ${p.id === best ? "border-thread bg-thread/[0.06]" : "border-line hover:bg-white/[0.03]"}`}
                 data-testid={`pack-${p.id}`}
               >
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2">
-                    <span className="font-display text-[19px] leading-none tabular-nums text-ink">{p.credits} credits</span>
-                    {save > 0 && <span className="bg-thread px-1.5 py-[1px] font-mono text-[10.5px] font-semibold text-paper">SAVE {save}%</span>}
-                    {p.id === best && <span className="font-mono text-[10.5px] text-thread">BEST VALUE</span>}
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="whitespace-nowrap font-display text-[19px] leading-none tabular-nums text-ink">{p.credits} credits</span>
+                    {save > 0 && <span className="whitespace-nowrap rounded-[4px] bg-thread px-1.5 py-[1px] font-mono text-[10.5px] font-semibold text-paper">SAVE {save}%</span>}
+                    {p.id === best && <span className="whitespace-nowrap font-mono text-[10.5px] text-thread">BEST VALUE</span>}
                   </span>
                   <span className="mt-1 block font-mono text-[11.5px] tabular-nums text-muted">
                     {(p.priceCents / p.credits).toFixed(1)}¢ per credit{save === 0 ? ", full price" : ""}
