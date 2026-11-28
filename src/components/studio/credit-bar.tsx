@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Zap } from "lucide-react";
+import { Check, X, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -141,50 +141,68 @@ function RechargePopup({ open, onClose }: { open: boolean; onClose: () => void }
 
 /** The top-up packs: the small one at full price, bigger ones cheaper per credit. */
 function RechargePanel() {
-  const [busy, setBusy] = useState<TopupPack["id"] | null>(null);
-  const [err, setErr] = useState<string | null>(null);
   const best = TOPUP_PACKS[TOPUP_PACKS.length - 1].id;
-  const buy = async (pack: TopupPack) => {
-    setBusy(pack.id);
+  // Pick a pack (a radio list), then one button buys it.
+  const [picked, setPicked] = useState<TopupPack["id"]>(best);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const pack = TOPUP_PACKS.find((p) => p.id === picked) ?? TOPUP_PACKS[0];
+  const buy = async () => {
+    setBusy(true);
     setErr(null);
     const problem = await startCheckout({ kind: "topup", pack: pack.id, returnTo: "/studio" });
     if (problem) {
       setErr(problem);
-      setBusy(null);
+      setBusy(false);
     }
   };
   return (
-    <div className="w-full px-5 pb-6 pt-5" data-testid="recharge-panel">
+    <div className="w-full px-5 pb-5 pt-5" data-testid="recharge-panel">
       <h2 className="pr-12 font-display text-[24px] leading-[1.1] text-ink">Recharge credits</h2>
       <p className="mt-1.5 text-[13px] leading-snug text-muted">1 credit = 1 reel. Top-up credits never expire and are used after your weekly ones. The bigger the pack, the less each credit costs.</p>
-      <ul className="mt-4 space-y-2">
+      <div className="mt-4 space-y-2" role="radiogroup" aria-label="Credit pack">
         {TOPUP_PACKS.map((p) => {
           const save = topupSavingsPct(p);
+          const on = p.id === picked;
           return (
-            <li key={p.id}>
-              <button
-                type="button"
-                disabled={busy !== null}
-                onClick={() => void buy(p)}
-                className={`flex w-full items-center gap-3 rounded-[16px] border px-4 py-3 text-left transition-colors disabled:opacity-60 ${p.id === best ? "border-thread bg-thread/[0.06]" : "border-line hover:bg-white/[0.03]"}`}
-                data-testid={`pack-${p.id}`}
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="whitespace-nowrap font-display text-[19px] leading-none tabular-nums text-ink">{p.credits} credits</span>
-                    {save > 0 && <span className="whitespace-nowrap rounded-[4px] bg-thread px-1.5 py-[1px] font-mono text-[10.5px] font-semibold text-paper">SAVE {save}%</span>}
-                    {p.id === best && <span className="whitespace-nowrap font-mono text-[10.5px] text-thread">BEST VALUE</span>}
-                  </span>
-                  <span className="mt-1 block font-mono text-[11.5px] tabular-nums text-muted">
-                    {(p.priceCents / p.credits).toFixed(1)}¢ per credit{save === 0 ? ", full price" : ""}
-                  </span>
+            <button
+              key={p.id}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              disabled={busy}
+              onClick={() => setPicked(p.id)}
+              className={`flex w-full items-center gap-3 rounded-[16px] border px-4 py-3 text-left transition-colors disabled:opacity-60 ${on ? "border-thread bg-thread/[0.07]" : "border-line hover:bg-white/[0.03]"}`}
+              data-testid={`pack-${p.id}`}
+            >
+              {/* the selection mark: an empty ring, or a filled lime circle with a tick */}
+              <span className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-2 transition-colors ${on ? "border-thread bg-thread text-paper" : "border-line"}`} aria-hidden>
+                {on && <Check size={13} strokeWidth={3.2} />}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="whitespace-nowrap font-display text-[19px] leading-none tabular-nums text-ink">{p.credits} credits</span>
+                  {save > 0 && <span className="whitespace-nowrap rounded-[4px] bg-thread px-1.5 py-[1px] font-mono text-[10.5px] font-semibold text-paper">SAVE {save}%</span>}
+                  {p.id === best && <span className="whitespace-nowrap font-mono text-[10.5px] text-thread">BEST VALUE</span>}
                 </span>
-                <span className="shrink-0 text-[16px] font-semibold tabular-nums text-ink">{busy === p.id ? "Opening" : formatCents(p.priceCents)}</span>
-              </button>
-            </li>
+                <span className="mt-1 block font-mono text-[11.5px] tabular-nums text-muted">
+                  {(p.priceCents / p.credits).toFixed(1)}¢ per credit{save === 0 ? ", full price" : ""}
+                </span>
+              </span>
+              <span className="shrink-0 text-[16px] font-semibold tabular-nums text-ink">{formatCents(p.priceCents)}</span>
+            </button>
           );
         })}
-      </ul>
+      </div>
+      <button
+        type="button"
+        onClick={buy}
+        disabled={busy}
+        className="mt-4 min-h-[52px] w-full rounded-full bg-thread px-4 text-[16px] font-semibold text-paper transition-opacity hover:opacity-90 disabled:opacity-60"
+        data-testid="recharge-buy"
+      >
+        {busy ? "Opening checkout..." : `Buy ${pack.credits} credits for ${formatCents(pack.priceCents)}`}
+      </button>
       {err && <p className="mt-3 text-center text-[13px] text-coral">{err}</p>}
     </div>
   );
