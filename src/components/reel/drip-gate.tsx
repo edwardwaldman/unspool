@@ -94,7 +94,7 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
     <Modal label="Watch every reel" onClose={onClose} compact>
       <h2 className="mr-10 font-display text-[26px] leading-[1.05]">Watch every reel</h2>
       <div
-        className="mt-4 px-4 py-4 text-center"
+        className="mt-4 rounded-[14px] px-4 py-4 text-center"
         style={{ background: "color-mix(in srgb, var(--thread) 10%, var(--paper))", border: "1px solid color-mix(in srgb, var(--thread) 45%, transparent)" }}
         data-testid="drip-countdown"
       >
@@ -126,7 +126,7 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
         type="button"
         onClick={unlockAll}
         disabled={busy !== null}
-        className="mt-4 min-h-[52px] w-full bg-thread px-4 text-[16px] font-semibold text-paper hover:opacity-90 disabled:opacity-60"
+        className="mt-4 min-h-[52px] w-full rounded-full bg-thread px-4 text-[16px] font-semibold text-paper hover:opacity-90 disabled:opacity-60"
         data-testid="trial-cta"
       >
         {busy === "trial" || busy === "plus" ? "Loading..." : "Skip the wait"}
