@@ -2,6 +2,42 @@
 
 import { useEffect, useRef, useState } from "react";
 import { track } from "../analytics/track";
+import { getPrefs } from "./prefs";
+
+// Little synthesized sounds (Web Audio, no files): a bright blip per catch that climbs with the streak, a chime on a
+// streak bonus, a low buzz for a distraction, a falling tune on game over. Silent while the app's sound is off; the
+// audio context starts on the first touch (phones only allow sound after a tap).
+let actx: AudioContext | null = null;
+function audio() {
+  if (typeof window === "undefined" || getPrefs().muted) return null;
+  try {
+    actx ??= new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    if (actx.state === "suspended") void actx.resume();
+    return actx;
+  } catch {
+    return null;
+  }
+}
+function tone(freq: number, dur: number, type: OscillatorType, vol: number, delay = 0, slideTo?: number) {
+  const a = audio();
+  if (!a || a.state !== "running") return;
+  const t = a.currentTime + delay, o = a.createOscillator(), g = a.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(a.destination);
+  o.start(t);
+  o.stop(t + dur + 0.02);
+}
+const sfx = {
+  catch: (streak: number) => tone(520 * Math.pow(2, Math.min(streak, 8) / 12), 0.11, "triangle", 0.16),
+  bonus: () => (tone(784, 0.1, "triangle", 0.14), tone(1175, 0.16, "triangle", 0.14, 0.08)),
+  miss: () => tone(160, 0.22, "sawtooth", 0.09, 0, 90),
+  over: () => [523, 415, 330, 220].forEach((f, i) => tone(f, 0.18, "triangle", 0.13, i * 0.13)),
+};
 
 // "Catch the key ideas": the loading screen's mini game. A spool follows your finger along the bottom; key ideas
 // fall as lime pills and wind onto it, while "scroll" distractions fall too: catch three of those and it's over.
@@ -91,18 +127,18 @@ export function ThreadGame() {
       const st = s.current;
       const dt = st.last ? Math.min(0.05, (now - st.last) / 1000) : 0;
       st.last = now;
-      const speed = 1 + st.score * 0.06;
+      const speed = 1.35 + st.score * 0.07; // starts fast, keeps climbing
       // spawn
       st.next -= dt;
       if (st.next <= 0) {
-        const good = Math.random() > 0.28;
+        const good = Math.random() > 0.36; // more distractions to dodge
         const word = good ? GOOD[Math.floor(Math.random() * GOOD.length)] : BAD;
         const el = document.createElement("span");
         el.textContent = word;
         el.className = `absolute left-0 top-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-semibold will-change-transform ${good ? "bg-thread text-[#0f1d18]" : "bg-white/15 text-white/80"}`;
         layer.current?.appendChild(el);
-        st.drops.push({ id: ++st.id, x: 0.08 + Math.random() * 0.84, y: -24, good, word, v: (70 + Math.random() * 40) * speed, el });
-        st.next = Math.max(0.35, 1.0 - st.score * 0.02);
+        st.drops.push({ id: ++st.id, x: 0.08 + Math.random() * 0.84, y: -24, good, word, v: (good ? 75 + Math.random() * 45 : 95 + Math.random() * 55) * speed, el }); // distractions drop faster
+        st.next = Math.max(0.28, 0.72 - st.score * 0.02);
       }
       // the spool glides after the finger (frame-rate independent easing, no lag spikes)
       st.sx += (st.x - st.sx) * (1 - Math.exp(-dt * 22));
@@ -118,10 +154,13 @@ export function ThreadGame() {
             st.streak = (st.streak ?? 0) + 1;
             st.score += st.streak >= 3 ? 2 : 1;
             setScore(st.score);
+            if (st.streak === 3) sfx.bonus();
+            else sfx.catch(st.streak);
           } else {
             st.streak = 0;
             st.lives -= 1;
             setLives(st.lives);
+            sfx.miss();
           }
           setPop({ id: d.id, x: d.x, good: d.good, pts: d.good ? (st.streak >= 3 ? 2 : 1) : 0 });
           continue;
@@ -141,6 +180,9 @@ export function ThreadGame() {
           localStorage.setItem(BEST_KEY, String(b));
         } catch {}
         setBest(b);
+        sfx.over();
+        layer.current?.replaceChildren();
+        st.drops = [];
         setMode("over");
       }
     };
@@ -162,6 +204,7 @@ export function ThreadGame() {
     <div
       ref={area}
       onPointerDown={(e) => {
+        audio(); // phones only start sound after a tap
         e.stopPropagation();
         if (mode !== "play") start();
         move(e.clientX);
