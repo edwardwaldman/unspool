@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { openAccount } from "../account/account-store";
+import { SOCIALS } from "../shell/social-links";
 import { supabaseBrowser } from "../auth/supabase-browser";
 import { getPrefs, setPrefs, usePrefs } from "../reel/prefs";
 import { AnimatePresence, motion } from "motion/react";
@@ -167,6 +168,27 @@ export function AccountMenu({ email, name, onReelStyle }: { email?: string | nul
               {leaving ? "Logging out…" : "Log out"}
             </button>
             {email && <p className="mt-2 truncate text-center text-[12px] text-muted">Signed in as {email}</p>}
+          </div>
+
+          {/* Follow us: Unspool's social profiles */}
+          <div className="mx-3 mt-4 rounded-[20px] bg-surface/70 pb-4">
+            {label("Follow us")}
+            <div className="mt-1 flex justify-around px-3" data-testid="menu-socials">
+              {SOCIALS.map((so) => (
+                <a
+                  key={so.name}
+                  href={so.href}
+                  target="_blank"
+                  rel="noopener noreferrer me"
+                  aria-label={`Unspool on ${so.name}`}
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-paper text-ink transition-colors hover:text-thread"
+                >
+                  <svg viewBox="0 0 24 24" width={20} height={20} fill="currentColor" aria-hidden>
+                    <path d={so.path} />
+                  </svg>
+                </a>
+              ))}
+            </div>
           </div>
 
           {/* About, at the very bottom */}
