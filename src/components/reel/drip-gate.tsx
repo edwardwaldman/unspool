@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { approxMonthly, formatCents, nextTier, type Tier } from "@/lib/plans";
 import type { SpoolDTO, UsageDTO, ViewerDTO } from "@/lib/spool-types";
 import { startCheckout, unlockReels, type CheckoutRequest } from "../billing/checkout";
+import { SeeAllPlans } from "../billing/plan-picker";
 import { shortDate } from "../billing/usage-meter";
 import { formatCountdown, useCountdown } from "../ui/use-countdown";
 import { nextEasternMidnight } from "@/lib/eastern";
@@ -130,6 +131,7 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
       >
         {busy === "trial" || busy === "plus" ? "Loading..." : "Skip the wait"}
       </button>
+      <SeeAllPlans />
       {usage.topup > 0 && (
         <button
           type="button"

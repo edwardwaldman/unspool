@@ -8,14 +8,16 @@ import { ChevronDown, PlusIcon, Wordmark } from "../ui/icons";
 import { MarkedText } from "../ui/marked-text";
 import { Sheet } from "../ui/sheet";
 import { useLayout } from "../ui/use-media";
-import { usePendingUpload } from "../upload/upload-store";
+import { promptFile, usePendingUpload } from "../upload/upload-store";
 import { FILE_ACCEPT, useUploader } from "../upload/use-uploader";
 import { CreditBar, RechargeButton, useCredits } from "./credit-bar";
 import { startCheckout } from "../billing/checkout";
+import { SeeAllPlans } from "../billing/plan-picker";
 import { formatCountdown, useCountdown } from "../ui/use-countdown";
 import { QueueTimer } from "./queue-timer";
 import { toast } from "../ui/toast";
 import { AccountMenu } from "./account-menu";
+import { track } from "../analytics/track";
 import { PromptBox } from "../go/go-hero";
 import { PICK_EVENT, WelcomeTour } from "./welcome-tour";
 import { ReelStylePanel } from "./reel-style-panel";
@@ -283,6 +285,7 @@ function ActiveList({ docs, nextAt }: { docs: StudioDoc[]; nextAt: string | null
           {busy ? "Loading..." : "Unlock the reels now"}
         </button>
       )}
+      {queued && <SeeAllPlans returnTo="/studio" />}
     </div>
   );
 }
@@ -337,6 +340,35 @@ function DoneList({ docs }: { docs: StudioDoc[] }) {
 }
 
 /** A mini 9:16 frame: the document's first headline on its file-type tint. */
+const STARTERS = ["Photosynthesis, AP Bio", "The causes of World War I", "Supply and demand", "The French Revolution"];
+
+/** A first-time Studio: instead of an empty list, one tap turns a sample topic into reels. */
+function StarterTopics() {
+  const upload = useUploader();
+  const pending = usePendingUpload();
+  return (
+    <div className="mx-auto w-full max-w-[560px] px-4 pb-6 ipad:max-w-[680px]" data-testid="starter-topics">
+      <div className="text-[13px] text-muted">Not sure where to start? Tap one:</div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {STARTERS.map((t) => (
+          <button
+            key={t}
+            type="button"
+            disabled={!!pending}
+            onClick={() => {
+              track("starter_topic", t);
+              void upload(promptFile(t));
+            }}
+            className="rounded-full border border-line bg-surface px-3.5 py-2 text-[13.5px] text-ink transition-colors hover:border-thread disabled:opacity-60"
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function DocThumb({ doc, size = "md" }: { doc: StudioDoc; size?: "sm" | "md" }) {
   const tone = fileTone(doc.fileType);
   return (
@@ -489,7 +521,7 @@ function MobileStudio({ docs, style, canEdit, email, queue, name }: StudioProps)
           {doneOpen && <DoneList docs={done} />}
         </div>
       ) : (
-        !active.length && <p className="mx-auto w-full max-w-[560px] px-4 pb-6 text-[13px] text-muted ipad:max-w-[680px]">Your documents show up here.</p>
+        !active.length && <StarterTopics />
       )}
 
       <Sheet open={styleOpen} onClose={() => setStyleOpen(false)} label="Reel style">

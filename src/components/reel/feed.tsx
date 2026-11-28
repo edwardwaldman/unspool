@@ -198,6 +198,16 @@ export function Feed({
   }, [active?.reel, index]);
 
   const total = (s: SpoolDTO | null) => s?.reels.length || s?.totalReels || MAX_REELS;
+  // The first locked reel of the document on screen, for the unlock bar (free accounts only).
+  const lockedCount = viewer?.usage?.tier === "free" && !onPlayGate ? items.filter((it) => it.spool?.id === active?.spool?.id && it.reel?.locked).length : 0;
+  const firstLocked = lockedCount ? items.findIndex((it) => it.spool?.id === active?.spool?.id && it.reel?.locked) : -1;
+  const unlockAt = firstLocked >= 0 ? firstLocked : null;
+  const barShown = useRef(false);
+  useEffect(() => {
+    if (unlockAt === null || barShown.current) return;
+    barShown.current = true;
+    track("unlock_bar_shown", lockedCount);
+  }, [unlockAt, lockedCount]);
   const paywallItem = paywallFor !== null ? items[paywallFor] : null;
 
   return (
@@ -285,16 +295,31 @@ export function Feed({
         </Link>
       </div>
 
+      {/* Free accounts: one always-there way to unlock the whole document (opens the same unlock sheet) */}
+      {unlockAt !== null && paywallFor === null && !moreOpen && !shareOpen && (
+        <button
+          type="button"
+          onClick={() => {
+            track("unlock_bar_tapped", lockedCount);
+            setPaywallFor(unlockAt);
+          }}
+          className="absolute left-1/2 top-12 z-30 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/55 px-4 py-2 text-[13px] font-semibold text-white backdrop-blur-sm"
+          data-testid="unlock-bar"
+        >
+          Unlock all {total(active?.spool ?? null)} reels · <span className="text-thread">{viewer?.usage?.trialEligible ? "Try free" : "Upgrade"}</span>
+        </button>
+      )}
+
       {leaving && (
         <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 px-6" role="dialog" aria-modal="true" aria-label="Leave while unspooling?" onClick={() => setLeaving(false)} data-testid="leave-confirm">
-          <div className="w-full max-w-[320px] border border-line bg-surface p-6 text-center" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-[320px] rounded-[20px] border border-line bg-surface p-6 text-center" onClick={(e) => e.stopPropagation()}>
             <div className="font-display text-[22px] leading-tight text-ink">Are you sure?</div>
             <p className="mt-2 text-[14.5px] leading-snug text-muted">Your reels are still being made. They&apos;ll keep going, and you&apos;ll find them in your Studio.</p>
             <div className="mt-5 grid grid-cols-2 gap-2.5">
-              <button type="button" onClick={() => setLeaving(false)} className="min-h-[46px] bg-thread text-[15px] font-semibold text-paper">
+              <button type="button" onClick={() => setLeaving(false)} className="min-h-[46px] rounded-full bg-thread text-[15px] font-semibold text-paper">
                 Stay
               </button>
-              <button type="button" onClick={() => router.push("/")} className="min-h-[46px] border border-line text-[15px] font-semibold text-ink">
+              <button type="button" onClick={() => router.push("/")} className="min-h-[46px] rounded-full border border-line text-[15px] font-semibold text-ink">
                 Leave
               </button>
             </div>

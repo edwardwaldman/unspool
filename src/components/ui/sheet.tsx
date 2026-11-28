@@ -7,7 +7,7 @@ import { useEffect } from "react";
  * Bottom sheet that slides up over the feed. Flat surface, 1px top rule, square corners.
  * `locked`: a hard gate. No tap-outside, swipe-down or keyboard escape; the feed behind can't be scrolled.
  */
-export function Sheet({ open, onClose, children, label, locked = false, above }: { open: boolean; onClose: () => void; children: React.ReactNode; label: string; locked?: boolean; /** Drawn in the space above the sheet. */ above?: React.ReactNode }) {
+export function Sheet({ open, onClose, children, label, locked = false, above, z = 60 }: { open: boolean; onClose: () => void; children: React.ReactNode; label: string; locked?: boolean; /** Drawn in the space above the sheet. */ above?: React.ReactNode; /** Stacking order; raise it to open over a pop-up. */ z?: number }) {
   useEffect(() => {
     if (!open || !locked) return;
     // Swallow the feed's keyboard navigation (arrows, space, Escape) so the gate can't be skipped.
@@ -23,7 +23,7 @@ export function Sheet({ open, onClose, children, label, locked = false, above }:
   return (
     <AnimatePresence>
       {open && (
-        <motion.div className="fixed inset-0 z-[60] flex items-end justify-center" initial={{ opacity: 1 }} exit={{ opacity: 1 }}>
+        <motion.div className="fixed inset-0 flex items-end justify-center" style={{ zIndex: z }} initial={{ opacity: 1 }} exit={{ opacity: 1 }}>
           <motion.div
             className={`absolute inset-0 ${locked ? "bg-paper/85 backdrop-blur-[2px]" : "bg-paper/70"}`}
             initial={{ opacity: 0 }}

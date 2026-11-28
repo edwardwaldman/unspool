@@ -4,6 +4,11 @@
 // One visit per tab session (sessionStorage); the server sets the long-lived visitor cookie.
 
 export type TrackName =
+  | "starter_topic"
+  | "plans_opened"
+  | "plan_picked"
+  | "unlock_bar_shown"
+  | "unlock_bar_tapped"
   | "open"
   | "page"
   | "upload_started"
