@@ -15,12 +15,13 @@ const SPEEDS = [1, 1.25, 1.5, 2] as const;
  * The phone Studio's menu button (☰, where the account initial used to be): account settings and playback
  * preferences in a sheet, with Log out at the bottom.
  */
-export function AccountMenu({ email, onReelStyle }: { email?: string | null; /** Opens the Reel style sheet. */ onReelStyle?: () => void }) {
+export function AccountMenu({ email, name, onReelStyle }: { email?: string | null; /** First name from the account, shown at the top. */ name?: string | null; /** Opens the Reel style sheet. */ onReelStyle?: () => void }) {
   const [open, setOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const prefs = usePrefs();
   const close = () => setOpen(false);
   const row = "mx-2 flex w-[calc(100%-1rem)] items-center justify-between rounded-[14px] px-3 py-3.5 text-left text-[15px] text-ink transition-colors hover:bg-white/[0.04]";
+  const label = (t: string, tone = "text-muted") => <div className={`px-5 pb-1 pt-3 text-[12px] font-semibold uppercase tracking-[0.12em] ${tone}`}>{t}</div>;
   const toggle = (on: boolean) => (
     <span className={`relative h-6 w-10 rounded-full transition-colors ${on ? "bg-thread" : "bg-line"}`} aria-hidden>
       <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-paper transition-all ${on ? "left-[18px]" : "left-0.5"}`} />
@@ -61,13 +62,19 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
               className="safe-bottom absolute inset-y-0 right-0 flex w-[86%] max-w-[360px] flex-col overflow-hidden rounded-l-[28px] bg-paper shadow-[-20px_0_50px_rgba(0,0,0,0.45)]"
             >
               <div className="flex h-16 shrink-0 items-center justify-between px-5 pt-2">
-                <span className="truncate text-[13px] text-muted">{email ?? "Menu"}</span>
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-thread font-display text-[17px] text-paper" aria-hidden>
+                    {(name || email || "U").trim().charAt(0).toUpperCase()}
+                  </span>
+                  <span className="truncate font-display text-[19px] text-ink">{name || "Your account"}</span>
+                </span>
                 <button type="button" onClick={close} aria-label="Close menu" className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full bg-surface text-muted">
                   <X size={20} strokeWidth={2} aria-hidden />
                 </button>
               </div>
         <div className="flex-1 overflow-y-auto pb-2">
           <div className="mx-3 rounded-[20px] bg-surface/70 py-1">
+            {label("Account")}
             <button type="button" className={row} onClick={() => (close(), openAccount())}>
               <span>
                 <span className="block">Manage account</span>
@@ -86,7 +93,7 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
           </div>
 
           <div className="mx-3 mt-3 rounded-[20px] bg-surface/70 py-1">
-            <div className="px-5 pb-1 pt-3 text-[12px] font-semibold uppercase tracking-[0.12em] text-muted">Preferences</div>
+            {label("Preferences")}
             <button type="button" className={row} onClick={() => setPrefs({ muted: !getPrefs().muted, autoMuted: false })} aria-pressed={!prefs.muted}>
               Sound {toggle(!prefs.muted)}
             </button>
@@ -106,6 +113,7 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
           </div>
 
           <div className="mx-3 mt-3 rounded-[20px] bg-surface/70 py-1">
+            {label("Help & legal")}
             <a href="mailto:hello@unspool.cc" className={row}>
               Help <span className="text-[13px] text-muted">hello@unspool.cc</span>
             </a>
@@ -115,6 +123,30 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
             <Link href="/privacy" className={row} onClick={close}>
               Privacy <span aria-hidden className="text-muted">›</span>
             </Link>
+          </div>
+
+          <div className="mx-3 mt-3 rounded-[20px] bg-surface/70 py-1">
+            {label("Advanced")}
+            <button
+              type="button"
+              className={row}
+              onClick={() => {
+                if (!window.confirm("Put sound, music, speed and read-aloud back to their defaults?")) return;
+                setPrefs({ muted: false, autoMuted: false, speed: 1, boost: false, music: true, deviceVoice: true });
+              }}
+            >
+              <span>
+                <span className="block">Reset preferences</span>
+                <span className="block text-[12.5px] text-muted">Sound, music, speed and read-aloud</span>
+              </span>
+            </button>
+            <button type="button" className={row} onClick={() => (close(), openAccount("delete"))} data-testid="menu-delete-account">
+              <span>
+                <span className="block text-coral">Delete account</span>
+                <span className="block text-[12.5px] text-muted">Your documents, reels and credits, for good</span>
+              </span>
+              <span aria-hidden className="text-muted">›</span>
+            </button>
           </div>
 
           <div className="mt-4 px-5 pt-1">
@@ -127,6 +159,18 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
             >
               {leaving ? "Logging out…" : "Log out"}
             </button>
+            {email && <p className="mt-2 truncate text-center text-[12px] text-muted">Signed in as {email}</p>}
+          </div>
+
+          {/* About, at the very bottom */}
+          <div className="mx-3 mt-4 rounded-[20px] bg-surface/70 py-1">
+            <Link href="/about" className={row} onClick={close} data-testid="menu-about">
+              <span>
+                <span className="block">About Unspool</span>
+                <span className="block text-[12.5px] text-muted">What it is and how it works</span>
+              </span>
+              <span aria-hidden className="text-muted">›</span>
+            </Link>
           </div>
         </div>
             </motion.aside>

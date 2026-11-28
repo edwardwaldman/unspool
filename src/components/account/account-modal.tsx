@@ -8,7 +8,7 @@ import { X } from "lucide-react";
 import { supabaseBrowser } from "../auth/supabase-browser";
 import { openAuth } from "../auth/auth-store";
 import { toast } from "../ui/toast";
-import { closeAccount, useAccountModal } from "./account-store";
+import { accountFocus, closeAccount, useAccountModal } from "./account-store";
 import { PasswordInput } from "./password-input";
 import { PASSWORD_HINT, passwordProblem, withTimeout } from "./password-rules";
 
@@ -102,6 +102,7 @@ function AccountDialog() {
         </div>
 
         {info?.email && <AccountSections info={info} email={info.email} />}
+        {info && <ScrollToFocus />}
       </motion.div>
     </div>
   );
@@ -326,6 +327,16 @@ function SubscriptionLink({ info }: { info: AccountInfo }) {
   );
 }
 
+/** Opened from the menu's "Delete account": bring that section into view once the account has loaded. */
+function ScrollToFocus() {
+  useEffect(() => {
+    if (accountFocus() !== "delete") return;
+    const t = window.setTimeout(() => document.getElementById("danger-zone")?.scrollIntoView({ behavior: "smooth", block: "center" }), 250);
+    return () => window.clearTimeout(t);
+  }, []);
+  return null;
+}
+
 function DangerZone() {
   const [confirming, setConfirming] = useState(false);
   const [typed, setTyped] = useState("");
@@ -349,7 +360,7 @@ function DangerZone() {
   };
 
   return (
-    <div>
+    <div id="danger-zone">
       <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-coral">Danger zone</div>
       <p className="mt-2 text-[13.5px] leading-relaxed text-muted">Permanently delete your account, documents, reels and credits. This cannot be undone.</p>
       {!confirming ? (

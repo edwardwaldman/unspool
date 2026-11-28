@@ -485,7 +485,7 @@ function MobileStudio({ docs, style, canEdit, email, queue, name }: StudioProps)
         </Link>
         {/* Recharge and the menu up here; the + is in the middle of the page */}
         <RechargeButton />
-        <AccountMenu email={email} onReelStyle={openStyle} />
+        <AccountMenu email={email} name={name} onReelStyle={openStyle} />
       </div>
 
       <div className="mx-auto w-full max-w-[560px] shrink-0 px-4 pb-5 pt-5 ipad:max-w-[680px]">
