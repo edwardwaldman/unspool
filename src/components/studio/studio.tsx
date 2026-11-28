@@ -511,7 +511,10 @@ function MobileStudio({ docs, style, canEdit, email, queue, name }: StudioProps)
             data-testid="style-chip"
             data-tour="studio-style"
           >
-            <span aria-hidden className="text-thread">✦</span> Reel style
+            <svg aria-hidden width="13" height="13" viewBox="0 0 24 24" className="shrink-0 text-thread" fill="currentColor">
+              <path d="M12 0c.9 6.6 5.4 11.1 12 12-6.6.9-11.1 5.4-12 12-.9-6.6-5.4-11.1-12-12C6.6 11.1 11.1 6.6 12 0Z" />
+            </svg>
+            Reel style
             {!canEdit && <span className="rounded-[3px] bg-thread px-1.5 py-[1px] text-[10px] font-bold text-paper">PRO</span>}
           </button>
         </div>
