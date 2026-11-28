@@ -17,6 +17,7 @@ import { formatCountdown, useCountdown } from "../ui/use-countdown";
 import { QueueTimer } from "./queue-timer";
 import { toast } from "../ui/toast";
 import { AccountMenu } from "./account-menu";
+import { useStreak } from "./streak";
 import { track } from "../analytics/track";
 import { PromptBox } from "../go/go-hero";
 import { PICK_EVENT, WelcomeTour } from "./welcome-tour";
@@ -210,9 +211,17 @@ function Greeting({ name }: { name?: string | null }) {
     return Math.random() < 0.7 ? time : others[Math.floor(Math.random() * others.length)];
   });
   const date = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const streak = useStreak();
   return (
     <div data-testid="studio-greeting">
-      <div className="text-[13px] text-muted">{date}</div>
+      <div className="flex items-center justify-between gap-3 text-[13px] text-muted">
+        <span>{date}</span>
+        {streak >= 2 && (
+          <span className="shrink-0 rounded-full border border-line px-2.5 py-0.5 text-[12px]" title="Days in a row you watched a reel, counted on this device" data-testid="streak">
+            <span className="font-semibold text-ink">{streak}-day streak</span> · this device
+          </span>
+        )}
+      </div>
       <h1 className="mt-0.5 font-display text-[26px] leading-[1.1] text-ink">
         {line}
         {name ? `, ${name}` : ""}
