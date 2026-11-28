@@ -167,7 +167,8 @@ export function PromptBox({ className = "mt-4", topics = EXAMPLE_TOPICS, divider
           <span className="h-px flex-1 bg-line" />
         </div>
       )}
-      <div className={`flex items-end gap-2 border border-line bg-surface py-1.5 pl-5 pr-1.5 focus-within:border-thread ${multi ? "rounded-[22px]" : "rounded-full"}`}>
+      <div className="flex items-end gap-2">
+      <div className={`flex min-w-0 flex-1 items-end gap-2 border border-line bg-surface py-1.5 pl-5 pr-1.5 focus-within:border-thread ${multi ? "rounded-[22px]" : "rounded-full"}`}>
         <div className="relative flex min-w-0 flex-1 self-center">
         {/* While empty and not focused, an example topic types itself out behind the box (the real placeholder stays for screen readers). */}
         {!text && !focused && (
@@ -196,23 +197,6 @@ export function PromptBox({ className = "mt-4", topics = EXAMPLE_TOPICS, divider
           className="min-w-0 flex-1 resize-none self-center bg-transparent py-2 text-[16px] leading-snug text-ink outline-none placeholder:text-muted/70"
         />
         </div>
-        {/* Snap a page: opens the camera on phones (a photo picker elsewhere), then makes reels from the photo */}
-        {!text && (
-          <button
-            type="button"
-            onClick={() => camera.current?.click()}
-            disabled={!!pending}
-            aria-label="Snap a photo of a page"
-            title="Snap a photo of a page"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line text-ink transition-colors hover:border-thread disabled:opacity-35"
-            data-testid="snap-photo"
-          >
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z" />
-              <circle cx="12" cy="13" r="3.5" />
-            </svg>
-          </button>
-        )}
         <input
           ref={camera}
           type="file"
@@ -233,6 +217,23 @@ export function PromptBox({ className = "mt-4", topics = EXAMPLE_TOPICS, divider
         >
           <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
             <path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
+        {/* Snap a page, beside the box: opens the camera on phones (a photo picker elsewhere), then makes reels from the photo */}
+        <button
+          type="button"
+          onClick={() => camera.current?.click()}
+          disabled={!!pending}
+          aria-label="Snap a photo of a page"
+          title="Snap a photo of a page"
+          className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full bg-thread text-paper transition-opacity hover:opacity-90 disabled:opacity-40"
+          data-testid="snap-photo"
+        >
+          {/* drawn so the whole camera (bump included) is centred in its 24 x 24 box */}
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M3.5 9A2 2 0 0 1 5.5 7h2.2l1.6-2.3h5.4L16.3 7h2.2a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z" />
+            <circle cx="12" cy="13.2" r="3.4" />
           </svg>
         </button>
       </div>
