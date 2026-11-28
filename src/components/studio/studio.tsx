@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, Flame } from "lucide-react";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -221,8 +221,9 @@ function Greeting({ name }: { name?: string | null }) {
       <div className="flex items-center justify-between gap-3 text-[13px] text-muted">
         <span>{date}</span>
         {streak >= 2 && (
-          <span className="shrink-0 rounded-full border border-line px-2.5 py-0.5 text-[12px]" title="Days in a row you watched a reel, counted on this device" data-testid="streak">
-            <span className="font-semibold text-ink">{streak}-day streak</span> on this device
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line py-0.5 pl-2 pr-2.5 text-[12px]" title="Days in a row you watched a reel (counted on this device)" data-testid="streak">
+            <Flame size={13} strokeWidth={2.2} className="fill-[#ff8b3d] text-[#ff8b3d]" aria-hidden />
+            <span className="font-semibold text-ink">{streak}-day streak</span>
           </span>
         )}
       </div>
