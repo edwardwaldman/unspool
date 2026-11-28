@@ -63,8 +63,8 @@ export function CreditBar({ size = "md", recharge = true }: { size?: "md" | "lg"
           {usage && c && !c.unlimited && (
             <div className="mt-1 truncate text-[11.5px] tabular-nums text-muted ipad:text-[13px]">
               {c.free
-                ? `${c.weekly} free ${c.weekly === 1 ? "reel" : "reels"} today${usage.topup ? ` · ${usage.topup} top-up` : ""}`
-                : `${c.weekly} this week · ${usage.topup} top-up · resets ${shortDate(usage.resetsAt)}`}
+                ? `${c.weekly} free ${c.weekly === 1 ? "reel" : "reels"} today${usage.topup ? `, ${usage.topup} top-up` : ""}`
+                : `${c.weekly} this week, ${usage.topup} top-up, resets ${shortDate(usage.resetsAt)}`}
             </div>
           )}
         </div>
@@ -143,7 +143,7 @@ function RechargePanel() {
                     {p.id === best && <span className="font-mono text-[10.5px] text-thread">BEST VALUE</span>}
                   </span>
                   <span className="mt-1 block font-mono text-[11.5px] tabular-nums text-muted">
-                    {(p.priceCents / p.credits).toFixed(1)}¢ per credit{save === 0 ? " · full price" : ""}
+                    {(p.priceCents / p.credits).toFixed(1)}¢ per credit{save === 0 ? ", full price" : ""}
                   </span>
                 </span>
                 <span className="shrink-0 text-[16px] font-semibold tabular-nums text-ink">{busy === p.id ? "Opening" : formatCents(p.priceCents)}</span>

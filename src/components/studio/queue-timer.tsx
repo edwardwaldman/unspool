@@ -57,7 +57,7 @@ export function SkipPopup({ left, onClose }: { left: number; onClose: () => void
           className="mt-5 min-h-[52px] w-full rounded-full bg-thread px-4 text-[16px] font-semibold text-paper hover:opacity-90 disabled:opacity-60"
           data-testid="skip-cta"
         >
-          {busy ? "Loading..." : usage?.trialEligible ? "Skip the wait · Try free" : "Skip the wait"}
+          {busy ? "Loading..." : "Skip the wait"}
         </button>
         <SeeAllPlans returnTo="/studio" />
         <button type="button" onClick={onClose} className="w-full py-2 text-[13.5px] text-muted hover:text-ink">
@@ -100,8 +100,8 @@ export function QueueTimer({ nextAt, queued }: { nextAt: string | null; queued: 
           <div>
             <div className="text-[12.5px] font-semibold text-muted">Next free reel in</div>
             <div className="mt-0.5 text-[13px] text-muted">
-              {queued > 0 ? `${queued} ${queued === 1 ? "upload" : "uploads"} queued · ` : ""}
-              <span className="text-thread">Tap to skip</span>
+              {queued > 0 ? `${queued} ${queued === 1 ? "upload" : "uploads"} queued, ` : ""}
+              <span className="text-thread">{queued > 0 ? "tap to skip" : "Tap to skip"}</span>
             </div>
           </div>
           <div className="font-mono text-[26px] font-bold tabular-nums leading-none text-ink" aria-live="off">

@@ -400,7 +400,7 @@ const plainText = (t: string) => t.replace(/[*#^~]/g, "");
 function chipText(doc: string, index: number) {
   const name = doc.replace(/\.[a-z0-9]{2,5}$/i, "").replace(/[+_]+/g, " ").replace(/\s+/g, " ").trim();
   const short = name.length > 22 ? `${name.slice(0, 21).trim()}…` : name;
-  return `${short} · Part ${index}`.toUpperCase();
+  return `${short} | Part ${index}`.toUpperCase();
 }
 
 /** The reel as text: its summary, the points it makes in order, and its quick-check question. */
@@ -408,7 +408,7 @@ function ReelSummary({ script, index, sensitive }: { script: ReelDTO["script"] &
   const points = script.beats.slice(1).map((b) => plainText(b.say)).filter(Boolean);
   return (
     <div className="max-h-[70dvh] overflow-y-auto" data-testid="reel-summary" onClick={(e) => e.stopPropagation()}>
-      <div className="label">Reel {index} · summary</div>
+      <div className="label">Reel {index} summary</div>
       <h2 className="mt-1.5 font-display text-[22px] leading-[1.12] text-ink">{sentence(script.title)}</h2>
       <p className="mt-3 text-[15.5px] leading-[1.5] text-ink/90">
         <MarkedText text={script.summary} />

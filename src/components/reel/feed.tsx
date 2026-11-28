@@ -310,7 +310,7 @@ export function Feed({
           className="absolute left-1/2 top-12 z-30 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/55 px-4 py-2 text-[13px] font-semibold text-white backdrop-blur-sm"
           data-testid="unlock-bar"
         >
-          Unlock all {total(active?.spool ?? null)} reels · <span className="text-thread">{viewer?.usage?.trialEligible ? "Try free" : "Upgrade"}</span>
+          Unlock all <span className="text-thread">{total(active?.spool ?? null)} reels</span>
         </button>
       )}
 

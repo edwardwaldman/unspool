@@ -67,7 +67,7 @@ function WaitClock({ since, topic }: { since?: string; topic: boolean }) {
   const target = topic ? MOST_READY_BY_S.topic : MOST_READY_BY_S.doc;
   return (
     <p className="mt-2 font-mono text-[12.5px] text-white/70" aria-live="off" data-testid="wait-clock">
-      {clock(elapsed)} so far · {elapsed < target ? `most are ready by ${clock(target)}` : "almost there, bigger files take longer"}
+      {clock(elapsed)} so far, {elapsed < target ? `most are ready by ${clock(target)}` : "almost there, bigger files take longer"}
     </p>
   );
 }

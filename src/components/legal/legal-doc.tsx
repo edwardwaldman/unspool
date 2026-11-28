@@ -9,7 +9,7 @@ export function LegalHeader({ title, effective, intro }: { title: string; effect
       <div className="label">Legal</div>
       <h1 className="mt-3 font-display text-[42px] leading-none">{title}</h1>
       <p className="font-mono !text-[12px] !text-muted">
-        Effective {effective} · Last updated {effective}
+        Effective {effective}, last updated {effective}
       </p>
       {intro}
     </header>

@@ -455,7 +455,7 @@ export function AuthModal() {
               {fileLabel(file.name.split(".").pop() ?? "")}
             </span>
             <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">
-              {displayName(file)} <span className="text-muted">· ready to unspool</span>
+              {displayName(file)} <span className="text-muted">is ready to unspool</span>
             </span>
             <Check size={15} strokeWidth={2} className="hidden shrink-0 text-thread sm:block" aria-hidden />
           </div>

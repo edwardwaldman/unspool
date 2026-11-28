@@ -220,7 +220,7 @@ function Greeting({ name }: { name?: string | null }) {
         <span>{date}</span>
         {streak >= 2 && (
           <span className="shrink-0 rounded-full border border-line px-2.5 py-0.5 text-[12px]" title="Days in a row you watched a reel, counted on this device" data-testid="streak">
-            <span className="font-semibold text-ink">{streak}-day streak</span> · this device
+            <span className="font-semibold text-ink">{streak}-day streak</span> on this device
           </span>
         )}
       </div>

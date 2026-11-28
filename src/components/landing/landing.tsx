@@ -238,7 +238,7 @@ export function Landing({ studioOnSignIn = true, faq }: { /** Off while the owne
                   <path id="cue-ring" d="M50 50 m-38 0 a38 38 0 1 1 76 0 a38 38 0 1 1 -76 0" />
                 </defs>
                 <text className="fill-ink font-mono uppercase" style={{ fontSize: 9.6 }}>
-                  <textPath href="#cue-ring" textLength="236" lengthAdjust="spacing">see how it works · see how it works ·</textPath>
+                  <textPath href="#cue-ring" textLength="236" lengthAdjust="spacing">see how it works ✦ see how it works ✦</textPath>
                 </text>
               </motion.svg>
               <span className="flex h-14 w-14 items-center justify-center rounded-full bg-thread text-paper min-[900px]:h-20 min-[900px]:w-20">

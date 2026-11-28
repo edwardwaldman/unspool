@@ -108,7 +108,7 @@ export function DripGate({ open, onClose, spool, usage, reel }: { open: boolean;
               {formatCountdown(resetLeft)}
             </p>
             <p className="mt-2 text-[12px] text-muted">
-              {usage.freeUsedToday} of {usage.freePerDay} used today · resets 12:00 AM ET
+              {usage.freeUsedToday} of {usage.freePerDay} used today, resets 12:00 AM ET
             </p>
           </>
         ) : left > 0 ? (

@@ -79,7 +79,7 @@ function AccountDialog() {
               {info ? (
                 <>
                   Current plan: <span className="text-thread">{info.plan}</span>
-                  {info.accountNumber != null && <> · Account #{info.accountNumber.toLocaleString("en-US")}</>}
+                  {info.accountNumber != null && <>, account #{info.accountNumber.toLocaleString("en-US")}</>}
                 </>
               ) : loadErr ? (
                 <span className="text-coral">{loadErr}</span>

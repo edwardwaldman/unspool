@@ -72,13 +72,13 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
               )}
               {up && (
                 <div>
-                  <BillingButton mode="subscribe" tier={up} label={`${tier === "free" ? "Get" : "Upgrade to"} ${PLANS[up].name} · ${formatCents(PLANS[up].priceCents)}/week`} />
+                  <BillingButton mode="subscribe" tier={up} label={`${tier === "free" ? "Get" : "Upgrade to"} ${PLANS[up].name}, ${formatCents(PLANS[up].priceCents)}/week`} />
                   <p className="mt-2 text-center text-[12.5px] text-muted">
-                    {PLANS[up].credits.toLocaleString("en-US")} reels a week · {approxMonthly(PLANS[up].priceCents)}
+                    {PLANS[up].credits.toLocaleString("en-US")} reels a week ({approxMonthly(PLANS[up].priceCents)})
                   </p>
                 </div>
               )}
-              <BillingButton mode="topup" label={`Top up ${TOPUP.credits} reels · ${formatCents(TOPUP.priceCents)}`} />
+              <BillingButton mode="topup" label={`Top up ${TOPUP.credits} reels, ${formatCents(TOPUP.priceCents)}`} />
               {(viewer.subscribed || viewer.profile?.stripe_customer_id) && (
                 <BillingButton mode="portal" label={viewer.subscribed ? "Manage subscription" : "Billing and receipts"} />
               )}

@@ -8,9 +8,9 @@ import { toast } from "../ui/toast";
 import { startCheckout } from "./checkout";
 
 const PERKS: Record<Exclude<Tier, "free">, string> = {
-  plus: "No watermark · up to 60 pages",
-  pro: "Priority · longer reels · up to 150 pages",
-  ultra: "Everything in Pro · up to 300 pages · early features",
+  plus: "no watermark, up to 60 pages",
+  pro: "priority, longer reels, up to 150 pages",
+  ultra: "everything in Pro, up to 300 pages, early features",
 };
 
 /**
@@ -64,7 +64,7 @@ export function PlanPicker({ open, onClose, returnTo }: { open: boolean; onClose
               onClick={() => setBilling(b)}
               className={`rounded-full px-4 py-1.5 text-[13.5px] font-semibold ${billing === b ? "bg-ink text-paper" : "text-muted"}`}
             >
-              {b === "week" ? "Weekly" : `Yearly · save up to ${Math.max(...PAID_TIERS.map(yearlySavingsPct))}%`}
+              {b === "week" ? "Weekly" : `Yearly (save up to ${Math.max(...PAID_TIERS.map(yearlySavingsPct))}%)`}
             </button>
           ))}
         </div>
@@ -86,12 +86,12 @@ export function PlanPicker({ open, onClose, returnTo }: { open: boolean; onClose
                       <span className="text-[17px] font-semibold text-ink">{p.name}</span>
                     </div>
                     <div className="mt-0.5 text-[13px] text-muted">
-                      {p.credits} reels a week · {PERKS[tier]}
+                      {p.credits} reels a week, {PERKS[tier]}
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
                     <div className="font-mono text-[17px] font-bold text-ink">{busy === tier ? "…" : formatCents(cents)}</div>
-                    <div className="text-[11.5px] text-muted">{billing === "week" ? `/week · ${approxMonthly(cents)}` : "/year"}</div>
+                    <div className="text-[11.5px] text-muted">{billing === "week" ? `/week (${approxMonthly(cents)})` : "/year"}</div>
                   </div>
                 </button>
               </li>

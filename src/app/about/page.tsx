@@ -52,7 +52,7 @@ function ReelAnatomy() {
     <div className="border border-line p-6">
       <div className="flex items-baseline justify-between">
         <span className="label">Anatomy of one reel</span>
-        <span className="font-mono text-[12px] text-muted">{Math.round(total)}s · {segs.length} beats</span>
+        <span className="font-mono text-[12px] text-muted">{Math.round(total)}s, {segs.length} beats</span>
       </div>
       <div className="mt-2 text-[15px]">&ldquo;{script.title}&rdquo;, from the sample spool</div>
       <div className="mt-6 flex h-8 w-full gap-px">
@@ -125,7 +125,7 @@ export default function AboutPage() {
         <div>
           <div className="label">Pricing</div>
           <p className="mt-2 font-display text-[30px] leading-tight">
-            Your first reel is free · then 1 every {FREE_REEL_INTERVAL_MIN} min · Plus from {formatCents(PLANS.plus.priceCents)}/week
+            Your first reel is free, then 1 every {FREE_REEL_INTERVAL_MIN} min. Plus from {formatCents(PLANS.plus.priceCents)}/week
           </p>
         </div>
         <Link href="/pricing" className="text-[14px] text-thread underline underline-offset-4">

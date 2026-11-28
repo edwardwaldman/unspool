@@ -653,7 +653,7 @@ export default function PrivacyPage() {
             Privacy questions, requests and security reports: <Mail to={PRIVACY} />. Everything else: <Mail to={CONTACT} />. If you are in the
             EEA or UK and are not satisfied with our response, you can contact your data protection authority (<See id="your-rights" />).
           </p>
-          <p>Unspool · unspool.cc</p>
+          <p>Unspool, unspool.cc</p>
         </Section>
       </article>
     </MarketingPage>

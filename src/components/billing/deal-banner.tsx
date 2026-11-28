@@ -29,7 +29,7 @@ function fmt(ms: number) {
 export function DealBanner({ variant = "bar", trial = false }: { variant?: "bar" | "compact"; trial?: boolean }) {
   const left = useDealLeft();
   if (left === null) return null;
-  const offer = trial ? `Start free, then ${DEAL.weekPct}% off your first month` : `${DEAL.weekPct}% off your first month · ${DEAL.yearPct}% off yearly`;
+  const offer = trial ? `Start free, then ${DEAL.weekPct}% off your first month` : `${DEAL.weekPct}% off your first month, ${DEAL.yearPct}% off yearly`;
   if (variant === "compact")
     return (
       <div className="mt-3 flex items-center justify-between gap-3 px-3 py-2 text-[12.5px] font-semibold" style={{ background: "#14141f", color: "#ffd23f" }} data-testid="deal-banner">
@@ -40,7 +40,7 @@ export function DealBanner({ variant = "bar", trial = false }: { variant?: "bar"
   return (
     <div className="mt-8 flex flex-wrap items-center justify-between gap-3 px-5 py-4" style={{ background: "#14141f", color: "#fff" }} data-testid="deal-banner">
       <div>
-        <div className="text-[12px] font-semibold uppercase tracking-[0.12em]" style={{ color: "#ffd23f" }}>{DEAL.name} · limited time</div>
+        <div className="text-[12px] font-semibold uppercase tracking-[0.12em]" style={{ color: "#ffd23f" }}>{DEAL.name}, limited time</div>
         <div className="mt-1 text-[17px] font-semibold">{DEAL.weekPct}% off your first month on weekly plans, {DEAL.yearPct}% off your first year on yearly. Applied at checkout.</div>
       </div>
       <div className="text-right">

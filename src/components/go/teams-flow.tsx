@@ -163,7 +163,7 @@ function Flow({ L }: { L: Layout }) {
         <div className="relative mt-2 w-full lg:mt-4" style={{ height: L.stageH }} aria-hidden>
           <motion.div style={{ x: pageX, y: pageY, scale: pageS, opacity: pageIn }} className="absolute left-1/2 top-1/2 -ml-[140px] -mt-[180px] h-[360px] w-[280px]">
             <motion.div style={{ opacity: pageDim }} className="h-full w-full rotate-[-1.5deg] rounded-[6px] bg-[#f4f1e8] px-6 py-5 text-[#2a2a2a] shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8a8577]">Employee handbook · p. 34</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8a8577]">Employee handbook, p. 34</div>
               <div className="mt-1.5 text-[17px] font-bold leading-tight">4. Safety at work</div>
               {IDEAS.map((_, i) => <PageSection key={i} p={p} i={i} />)}
             </motion.div>

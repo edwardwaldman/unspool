@@ -916,7 +916,7 @@ export default function TermsPage() {
             Questions about these Terms, billing, chargebacks or copyright: <Mail to={CONTACT} />. Privacy questions, requests about your data
             and security reports: <Mail to={PRIVACY_CONTACT} />.
           </p>
-          <p>Unspool · unspool.cc</p>
+          <p>Unspool, unspool.cc</p>
         </Section>
       </article>
     </MarketingPage>

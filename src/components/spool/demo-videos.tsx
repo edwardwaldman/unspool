@@ -231,7 +231,7 @@ export function DemoVideos() {
                 </div>
                 <p className="mt-2 line-clamp-2 text-[14px] leading-snug">{r.caption}</p>
                 <div className="mt-2 flex items-center gap-1.5 text-[12.5px] text-white/90">
-                  <Music2 size={13} strokeWidth={2} /> <span className="truncate">unspool · Original audio</span>
+                  <Music2 size={13} strokeWidth={2} /> <span className="truncate">unspool, original audio</span>
                 </div>
                 <button type="button" onClick={() => setMuted((m) => !m)} aria-label={muted ? "Unmute" : "Mute"} className="pointer-events-auto absolute bottom-4 right-3 rounded-full bg-black/40 p-2">
                   <VolumeIcon size={18} muted={muted} />
@@ -370,7 +370,7 @@ function ShareDemo({ reel, index, onDone }: { reel: DemoReel; index: number; onD
           <Download size={22} strokeWidth={1.6} /> Save video
         </a>
       </div>
-      <p className="mt-4 text-center font-mono text-[11.5px] text-muted">made with unspool · unspool.cc</p>
+      <p className="mt-4 text-center font-mono text-[11.5px] text-muted">made with unspool at unspool.cc</p>
     </div>
   );
 }

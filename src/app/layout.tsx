@@ -19,7 +19,7 @@ const SAME_AS = SOCIALS.map((s) => s.href);
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://unspool.cc"),
-  title: { default: "Unspool - Documents into Short Videos", template: "%s · Unspool" },
+  title: { default: "Unspool - Documents into Short Videos", template: "%s - Unspool" },
   description:
     "Drop in class notes, a textbook chapter, a work PDF or a contract. Unspool turns it into short reels with voiceover, captions, visuals and a quiz, so studying takes minutes instead of hours.",
   applicationName: "Unspool",

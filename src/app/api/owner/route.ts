@@ -36,7 +36,7 @@ async function deployment() {
     try {
       const a = await stripeAccount();
       const wrong = await wrongStripeAccount();
-      stripeLine = { name: `Stripe account: ${a.name || "(no name)"} · ${a.id}`, on: !wrong, hint: wrong ? "WRONG ACCOUNT: replace STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET with the Unspool account's, and set STRIPE_ACCOUNT_ID" : "" };
+      stripeLine = { name: `Stripe account: ${a.name || "(no name)"}, ${a.id}`, on: !wrong, hint: wrong ? "WRONG ACCOUNT: replace STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET with the Unspool account's, and set STRIPE_ACCOUNT_ID" : "" };
     } catch {
       stripeLine = { name: "Stripe account (couldn't reach Stripe)", on: false, hint: "Check STRIPE_SECRET_KEY" };
     }
@@ -119,7 +119,7 @@ export async function GET(req: Request) {
         lastIn: u.last_sign_in_at ?? null,
         owner: isOwnerEmail(u.email),
         comp: (p?.comp_tier as string | null) ?? null,
-        subscription: paying ? `${p?.tier ?? "plus"} · ${p?.billing_interval === "year" ? "yearly" : "weekly"} · ${p?.subscription_status}` : null,
+        subscription: paying ? `${p?.tier ?? "plus"}, ${p?.billing_interval === "year" ? "yearly" : "weekly"}, ${p?.subscription_status}` : null,
         documents: perUser.get(u.id) ?? 0,
         ips: analytics.ipsByUser[u.id] ?? [],
       };
@@ -204,7 +204,7 @@ export async function POST(req: Request) {
   if (body.action === "test_text") {
     if (!textAlertsConfigured()) return error(400, "Text alerts aren't set up: add the Twilio variables (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM, ALERT_SMS_TO) or NTFY_TOPIC in Vercel.");
     const errs = await sendAlertText("Unspool test alert", "Text alerts work. You'll get one like this if uploads start failing.");
-    if (errs.length) return error(502, errs.join(" · "));
+    if (errs.length) return error(502, errs.join(", "));
     return json({ ok: true });
   }
   if (body.action === "outcomes") {

@@ -14,7 +14,7 @@ import { track } from "../analytics/track";
 const plain = (s: string) => s.replace(/[*#^~]/g, "");
 
 export function shareText(hook: string) {
-  return `${plain(hook)} · made with Unspool`;
+  return `${plain(hook)} (made with Unspool)`;
 }
 
 /** Quick share targets for a link. */

@@ -17,7 +17,7 @@ function hoursLeft(iso: string | null) {
   return h;
 }
 
-/** The credit meter: "32 of 40 credits left · resets Mon 3 Nov", or the free drip's daily count. */
+/** The credit meter: "32 of 40 credits left, resets Mon 3 Nov", or the free drip's daily count. */
 export function UsageMeter({ usage, compact = false, onUpgrade }: { usage: UsageDTO; compact?: boolean; onUpgrade?: () => void }) {
   const free = usage.tier === "free";
   const total = free ? usage.freePerDay : usage.allowance;
@@ -39,11 +39,11 @@ export function UsageMeter({ usage, compact = false, onUpgrade }: { usage: Usage
       <p className="mt-1.5 text-[13.5px] tabular-nums text-ink" data-testid="usage-line">
         {free ? (
           <>
-            {left} of {total} free reels left today · 1 every {usage.freeIntervalMin} min
+            {left} of {total} free reels left today, 1 every {usage.freeIntervalMin} min
           </>
         ) : (
           <>
-            {left} of {total} credits left · resets {shortDate(usage.resetsAt)}
+            {left} of {total} credits left, resets {shortDate(usage.resetsAt)}
           </>
         )}
       </p>

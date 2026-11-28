@@ -265,7 +265,7 @@ export function OwnerPanel() {
                 {a.owner && <span className="border border-thread px-1.5 font-mono text-[10.5px] text-thread">OWNER</span>}
               </div>
               <div className="mt-1 text-[12.5px] text-muted">
-                {a.provider === "google" ? "Google" : "Email"} · Joined {new Date(a.joined).toLocaleDateString()} · Last in {ago(a.lastIn)} · {a.documents} docs
+                {a.provider === "google" ? "Google" : "Email"}, Joined {new Date(a.joined).toLocaleDateString()}, Last in {ago(a.lastIn)}, {a.documents} docs
               </div>
               <div className="mt-1 text-[12.5px] text-muted">Subscription: {a.owner ? "Owner (unlimited)" : a.subscription ?? "None"}</div>
               {a.ips.length > 0 && (
@@ -322,11 +322,11 @@ export function OwnerPanel() {
                   {d.file}
                 </a>
                 <span className={`shrink-0 font-mono text-[11.5px] ${d.status === "failed" ? "text-coral" : d.status === "ready" ? "text-sage" : "text-muted"}`}>
-                  {d.status} · {d.ready}/{d.total ?? "?"}
+                  {d.status}, {d.ready}/{d.total ?? "?"}
                 </span>
               </div>
               <div className="mt-0.5 font-mono text-[12px] text-muted">
-                {d.email} · {ago(d.at)}
+                {d.email}, {ago(d.at)}
               </div>
               {d.error && <pre className="mt-2 whitespace-pre-wrap break-words border border-coral/40 bg-coral/5 p-2 font-mono text-[11.5px] text-coral">{d.error}</pre>}
               {d.reels.length > 0 && (
@@ -342,7 +342,7 @@ export function OwnerPanel() {
                           </a>
                           <span className={`shrink-0 font-mono text-[11px] ${r.status === "failed" ? "text-coral" : r.status === "ready" ? "text-sage" : r.status === "generating" ? "text-thread" : "text-muted"}`}>
                             {r.status}
-                            {r.attempts > 1 ? ` · ${r.attempts} tries` : ""} · {ago(r.at)}
+                            {r.attempts > 1 ? `, ${r.attempts} tries` : ""}, {ago(r.at)}
                           </span>
                         </div>
                         {r.error && r.status !== "ready" && <pre className="ml-9 mt-1 whitespace-pre-wrap break-words font-mono text-[11px] text-coral">{r.error.slice(0, 400)}</pre>}
@@ -418,7 +418,7 @@ function WhatPeopleDid({ data: bySegment, build }: { data: Data["visits"]; build
               {v.signedUp && <Badge tone="border-sage text-sage">SIGNED UP</Badge>}
               {v.checkout && <Badge tone="border-thread text-thread">CHECKOUT</Badge>}
               <span className="ml-auto font-mono text-[11.5px] text-muted" title={new Date(v.at).toLocaleString()}>
-                {stay(v.duration)} · {ago(v.at)}
+                {stay(v.duration)}, {ago(v.at)}
               </span>
             </div>
             <Trail events={v.events} />
@@ -447,7 +447,7 @@ function AccountsByAddress({ rows }: { rows: Address[] }) {
               <IpTag ip={r.ip} country={r.country} />
               {r.shared && <Badge tone="border-coral text-coral">{r.emails.length} ACCOUNTS</Badge>}
               <span className="ml-auto font-mono text-[11.5px] text-muted">
-                {r.visits} visit{r.visits === 1 ? "" : "s"} · {ago(r.lastSeen)}
+                {r.visits} visit{r.visits === 1 ? "" : "s"}, {ago(r.lastSeen)}
               </span>
             </div>
             <div className={`mt-1 font-mono text-[12px] ${!r.emails.length ? "text-muted" : r.emails.length > 1 ? "text-thread" : "text-ink/85"}`}>
@@ -503,7 +503,7 @@ function BeforeTheySignedUp({ data }: { data: BeforeSignup }) {
             <div className="flex flex-wrap items-center gap-2">
               <IpTag ip={v.ip} country={v.country} />
               <span className="ml-auto font-mono text-[11.5px] text-muted">
-                {stay(v.duration)} · {new Date(v.at).toLocaleString()}
+                {stay(v.duration)}, {new Date(v.at).toLocaleString()}
               </span>
             </div>
             <FoldedTrail events={v.events} />
@@ -790,7 +790,7 @@ function IpEmailLookup() {
                     <IpTag ip={v.ip} country={v.country} />
                   </span>
                   <span className="ml-auto font-mono text-[11.5px] text-muted">
-                    {stay(v.duration)} · {new Date(v.at).toLocaleString()}
+                    {stay(v.duration)}, {new Date(v.at).toLocaleString()}
                   </span>
                 </div>
                 <Trail events={v.events} />
@@ -853,7 +853,7 @@ function TrialOutcomes() {
                   {g.key === "none" && g.accounts.length > 0 && <div className="mt-0.5 text-[11.5px] text-muted">Used their trial, no subscription now:</div>}
                   {g.accounts.map((a) => (
                     <div key={a.email} className="mt-0.5 font-mono text-[11.5px] text-ink/80">
-                      {a.email} <span className="text-muted">· {a.tier ?? "plus"} · {a.interval === "year" ? "yearly" : "weekly"}{a.comp ? ` · comped ${a.comp}` : ""}</span>
+                      {a.email} <span className="text-muted">, {a.tier ?? "plus"}, {a.interval === "year" ? "yearly" : "weekly"}{a.comp ? `, comped ${a.comp}` : ""}</span>
                     </div>
                   ))}
                 </li>
@@ -898,8 +898,8 @@ function Broadcast() {
           <div className="flex flex-wrap gap-2 text-[13px]">
             {(
               [
-                ["updates", `Product update · opted in (${aud.updates})`],
-                ["everyone", `Important notice · every account (${aud.everyone})`],
+                ["updates", `Product update, opted in (${aud.updates})`],
+                ["everyone", `Important notice, every account (${aud.everyone})`],
               ] as const
             ).map(([k, label]) => (
               <button key={k} type="button" onClick={() => setWho(k)} className={`border px-3 py-1 ${who === k ? "border-sage text-sage" : "border-line hover:border-ink"}`}>
@@ -1017,10 +1017,10 @@ function PremiumCard({ data }: { data: Data }) {
           {data.premium.slice(0, 25).map((p) => (
             <li key={p.email + p.since} className="flex items-baseline justify-between gap-3 py-2">
               <span className="min-w-0 truncate">
-                {p.email} <span className="text-muted">· {p.tier} · {p.interval === "year" ? "yearly" : "weekly"}</span>
+                {p.email} <span className="text-muted">, {p.tier}, {p.interval === "year" ? "yearly" : "weekly"}</span>
               </span>
               <span className={`shrink-0 ${p.status === "trialing" ? "text-thread" : p.status === "past_due" ? "text-coral" : "text-sage"}`}>
-                {p.status === "trialing" ? "trial" : p.status === "past_due" ? "payment failed" : "paid"} · {ago(p.since)}
+                {p.status === "trialing" ? "trial" : p.status === "past_due" ? "payment failed" : "paid"}, {ago(p.since)}
               </span>
             </li>
           ))}
@@ -1079,7 +1079,7 @@ function AiCard() {
               <li key={x.id} className="border border-line p-3 text-[14px]">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="font-semibold">
-                    {x.name} <span className="font-normal text-muted">· {x.role}</span>
+                    {x.name} <span className="font-normal text-muted">, {x.role}</span>
                   </span>
                   <span className={`shrink-0 font-mono text-[11px] ${tone(x.state)}`}>{label[x.state]}</span>
                 </div>

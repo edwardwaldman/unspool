@@ -54,10 +54,10 @@ export function ReelMock({ r, width, height, liked = false }: { r: Reel; width: 
             <span className="rounded-[4px] border border-white/60 px-1.5 py-[1px] text-[8px] font-semibold">Follow</span>
           </div>
           <div className="mt-1.5 truncate text-[9px] text-white/90">
-            {r.title.toLowerCase()} · part {r.index}
+            {r.title.toLowerCase()}, part {r.index}
           </div>
           <div className="mt-1 flex items-center gap-1 text-[8px] text-white/70">
-            <Music2 size={8} strokeWidth={2} /> Original audio · unspool
+            <Music2 size={8} strokeWidth={2} /> Original audio, unspool
           </div>
         </div>
 

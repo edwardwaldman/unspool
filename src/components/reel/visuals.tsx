@@ -222,7 +222,7 @@ function ItemLabel({ label, size = 21 }: { label: string; size?: number }) {
   return (
     <span className="flex min-w-0 flex-col">
       <span className="font-hook font-extrabold leading-[1.05] tracking-[-0.02em] text-white" style={{ fontSize: size }}>{sentence(rest.length ? name : label)}</span>
-      {rest.length > 0 && <span className="mt-1 font-medium leading-tight text-white/70" style={{ fontSize: Math.round(size * 0.62) }}>{sentence(rest.join(" · "))}</span>}
+      {rest.length > 0 && <span className="mt-1 font-medium leading-tight text-white/70" style={{ fontSize: Math.round(size * 0.62) }}>{sentence(rest.join(", "))}</span>}
     </span>
   );
 }

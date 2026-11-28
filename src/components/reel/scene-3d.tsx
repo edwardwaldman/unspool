@@ -482,7 +482,7 @@ function BigWordScene({ v, progress, color }: { v: Extract<Visual, { type: "bigw
         <Pedestal radius={1.7} height={0.3} />
         <Words text={sentence(v.word)} color={color} height={0.8} position={[0, 1.05, 0]} />
       </Pop>
-      {v.sub && <Label id="sub" text={sentence(v.sub)} position={[0, 0.32, 1.2]} line={26} />}
+      {v.sub && <Label id="sub" text={sentence(v.sub.replace(/\s*·\s*/g, ", "))} position={[0, 0.32, 1.2]} line={26} />}
     </>
   );
 }
@@ -729,13 +729,13 @@ export function keyTerm(v: SceneVisual): string {
     case "stat":
       return v.value;
     case "split":
-      return `${v.left.title} ${v.mode === "vs" ? "vs" : /→/.test(v.left.title + v.right.title) ? "·" : "→"} ${v.right.title}`;
+      return `${v.left.title} ${v.mode === "vs" ? "vs" : /→/.test(v.left.title + v.right.title) ? "/" : "→"} ${v.right.title}`;
     case "flow":
-      return v.steps.map((s) => s.title).join(v.steps.some((s) => /→/.test(s.title)) ? " · " : " → ");
+      return v.steps.map((s) => s.title).join(v.steps.some((s) => /→/.test(s.title)) ? ", " : " → ");
     case "list":
       return v.title;
     case "icons":
-      return v.items.map((s) => s.label).join(v.arrow ? " → " : " · ");
+      return v.items.map((s) => s.label).join(v.arrow ? " → " : ", ");
     case "crowd":
       return v.highlight_label;
     case "hook":

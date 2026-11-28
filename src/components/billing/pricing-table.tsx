@@ -43,7 +43,7 @@ function PriceCell({ tier, billing }: { tier: Tier; billing: Billing }) {
           <span className="whitespace-nowrap bg-thread px-1.5 py-[1px] font-mono text-[11px] font-semibold text-paper">save {yearlySavingsPct(tier)}%</span>
         </div>
       ) : (
-        <div className="mt-1.5 font-mono text-[11.5px] text-muted">billed weekly · {approxMonthly(weekly)}</div>
+        <div className="mt-1.5 font-mono text-[11.5px] text-muted">billed weekly ({approxMonthly(weekly)})</div>
       )}
     </div>
   );
