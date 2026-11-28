@@ -14,7 +14,7 @@ import { CreditBar, RechargeButton, useCredits } from "./credit-bar";
 import { startCheckout } from "../billing/checkout";
 import { SeeAllPlans } from "../billing/plan-picker";
 import { formatCountdown, useCountdown } from "../ui/use-countdown";
-import { QueueTimer } from "./queue-timer";
+import { QueueTimer, SkipPopup } from "./queue-timer";
 import { toast } from "../ui/toast";
 import { AccountMenu } from "./account-menu";
 import { useStreak } from "./streak";
@@ -238,6 +238,7 @@ function ActiveList({ docs, nextAt }: { docs: StudioDoc[]; nextAt: string | null
   const usage = useCredits();
   const left = useCountdown(nextAt);
   const queued = items.some((d) => d.status === "queued");
+  const [skipOpen, setSkipOpen] = useState(false);
   const remove = async (id: string) => {
     if (!window.confirm("Remove this from your queue?")) return;
     const res = await fetch(`/api/documents/${id}`, { method: "DELETE" }).catch(() => null);
@@ -266,10 +267,14 @@ function ActiveList({ docs, nextAt }: { docs: StudioDoc[]; nextAt: string | null
               <li key={d.id} className="flex items-center gap-3 rounded-[18px] border border-line bg-surface px-4 py-4" data-testid="queued-row">
                 <div className="min-w-0 flex-1">
                   <div className="line-clamp-2 text-[17px] font-semibold leading-snug text-ink">{d.name}</div>
-                  <div className="mt-1.5 flex items-baseline gap-2">
-                    <span className="text-[12.5px] text-muted">{left > 0 ? "Starts in" : "Starting next"}</span>
-                    {left > 0 && <span className="font-mono text-[20px] font-bold tabular-nums text-ink">{formatCountdown(left)}</span>}
-                  </div>
+                  {left > 0 ? (
+                    <button type="button" onClick={() => setSkipOpen(true)} className="mt-1.5 flex items-baseline gap-2 text-left" aria-label={`Starts in ${formatCountdown(left)}. Tap to skip the wait`}>
+                      <span className="text-[12.5px] text-muted">Starts in</span>
+                      <span className="font-mono text-[20px] font-bold tabular-nums text-ink">{formatCountdown(left)}</span>
+                    </button>
+                  ) : (
+                    <div className="mt-1.5 text-[12.5px] text-muted">Starting next</div>
+                  )}
                 </div>
                 <button type="button" onClick={() => remove(d.id)} aria-label={`Remove ${d.name} from the queue`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line text-[18px] text-muted hover:border-coral hover:text-coral">
                   ×
@@ -295,6 +300,7 @@ function ActiveList({ docs, nextAt }: { docs: StudioDoc[]; nextAt: string | null
         </button>
       )}
       {queued && <SeeAllPlans returnTo="/studio" />}
+      {skipOpen && <SkipPopup left={left} onClose={() => setSkipOpen(false)} />}
     </div>
   );
 }
