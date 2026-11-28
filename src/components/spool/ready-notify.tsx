@@ -1,5 +1,7 @@
 "use client";
 
+import { X } from "lucide-react";
+
 import { useEffect, useRef, useState } from "react";
 
 // Browser notification when the first reel is ready, so people who switch tabs while it's being made come back.
@@ -77,7 +79,7 @@ export function ReadyNotify({ docId, title, ready, waiting }: { docId: string; t
             } catch {}
           }}
         >
-          ✕
+          <X size={16} strokeWidth={2} aria-hidden />
         </button>
       </span>
     </div>

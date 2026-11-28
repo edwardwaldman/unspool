@@ -1,5 +1,7 @@
 "use client";
 
+import { X } from "lucide-react";
+
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { ReelStyle } from "@/lib/reel-style";
@@ -277,14 +279,13 @@ function ActiveList({ docs, nextAt }: { docs: StudioDoc[]; nextAt: string | null
                   )}
                 </div>
                 <button type="button" onClick={() => remove(d.id)} aria-label={`Remove ${d.name} from the queue`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line text-[18px] text-muted hover:border-coral hover:text-coral">
-                  ×
+                  <X size={18} strokeWidth={2} aria-hidden />
                 </button>
               </li>
             );
           return (
             <li key={d.id}>
               <Link href={`/s/${d.id}`} className="flex items-center gap-3 rounded-[16px] border border-line px-4 py-3.5">
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: st.tone }} aria-hidden />
                 <span className="min-w-0 flex-1 truncate text-[15.5px] text-ink">{d.name}</span>
                 <span className="shrink-0 text-[13px] font-medium" style={{ color: st.tone }}>
                   {st.label}

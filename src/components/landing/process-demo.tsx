@@ -159,10 +159,7 @@ export function ProcessDemo({ progress }: { progress: MotionValue<number> }) {
       <div style={{ width: w * k, height: h * k }}>
         <div className="relative origin-top-left overflow-hidden border border-line bg-surface" style={{ width: w, height: h, transform: `scale(${k})` }}>
           <div className="flex h-10 items-center gap-2 border-b border-line px-4">
-            <span className="h-2.5 w-2.5 rounded-full bg-line" />
-            <span className="h-2.5 w-2.5 rounded-full bg-line" />
-            <span className="h-2.5 w-2.5 rounded-full bg-line" />
-            <span className="ml-4 font-mono text-[11px] text-muted">unspool.cc</span>
+            <span className="font-mono text-[11px] text-muted">unspool.cc</span>
           </div>
           <Stage p={p} narrow={narrow} h={h} />
         </div>

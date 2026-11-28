@@ -1,5 +1,7 @@
 "use client";
 
+import { X } from "lucide-react";
+
 import Link from "next/link";
 import { useState } from "react";
 import { openAccount } from "../account/account-store";
@@ -60,8 +62,8 @@ export function AccountMenu({ email, onReelStyle }: { email?: string | null; /**
             >
               <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-5">
                 <span className="truncate text-[13px] text-muted">{email ?? "Menu"}</span>
-                <button type="button" onClick={close} aria-label="Close menu" className="-mr-2 flex h-11 w-11 items-center justify-center text-[22px] leading-none text-muted">
-                  ×
+                <button type="button" onClick={close} aria-label="Close menu" className="-mr-2 flex h-11 w-11 items-center justify-center text-muted">
+                  <X size={22} strokeWidth={2} aria-hidden />
                 </button>
               </div>
         <div className="flex-1 overflow-y-auto pb-2">

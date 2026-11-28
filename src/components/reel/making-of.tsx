@@ -68,7 +68,6 @@ function MiniReel({ n, state, big = false }: { n: number; state: "ready" | "writ
       <span className="absolute left-1.5 top-1 font-mono font-bold text-white/90" style={{ fontSize: big ? 11 : 8 }}>
         {n}
       </span>
-      {state === "ready" && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-thread" />}
     </div>
   );
 }

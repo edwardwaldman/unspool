@@ -1,5 +1,7 @@
 "use client";
 
+import { X } from "lucide-react";
+
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReelDTO, SpoolDTO } from "@/lib/spool-types";
@@ -341,8 +343,8 @@ export function ReelView({
             >
               Share
             </button>
-            <button type="button" aria-label="Close" onClick={() => setNudge("done")} className="px-1 text-[16px] text-white/70">
-              ×
+            <button type="button" aria-label="Close" onClick={() => setNudge("done")} className="flex h-8 w-8 items-center justify-center text-white/70">
+              <X size={16} strokeWidth={2} aria-hidden />
             </button>
           </motion.div>
         )}

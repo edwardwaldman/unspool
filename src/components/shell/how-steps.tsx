@@ -169,7 +169,7 @@ function SwipeScene() {
             <div className="pt-5 text-center font-hook text-[12px] font-extrabold leading-[1.2] text-white">{r.hook}</div>
             <div className="flex items-end justify-between">
               <div className="flex items-center gap-1">
-                <span className="h-3.5 w-3.5 rounded-full" style={{ background: r.color }} />
+                <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full font-wordmark text-[7px] font-bold text-[#08110e]" style={{ background: r.color }}>u</span>
                 <span className="text-[8px] font-semibold text-white">unspool</span>
               </div>
               <div className="flex flex-col items-center gap-1.5 text-white">

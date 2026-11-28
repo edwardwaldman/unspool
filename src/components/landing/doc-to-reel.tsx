@@ -54,7 +54,7 @@ export function DocToReel() {
       <div className="relative h-px w-14 shrink-0 bg-line">
         <motion.div
           key={i}
-          className="absolute -top-[3px] h-[7px] w-[7px] rounded-full bg-thread"
+          className="absolute -top-px h-[3px] w-4 rounded-[2px] bg-thread"
           initial={{ left: 0, opacity: 0 }}
           animate={{ left: "100%", opacity: [0, 1, 1, 0] }}
           transition={{ duration: 0.7, ease: "easeInOut" }}

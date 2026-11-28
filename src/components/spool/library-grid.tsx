@@ -87,7 +87,6 @@ export function LibraryGrid({ initial }: { initial: LibraryItem[] }) {
                   <span className="rounded-[4px] bg-black/45 px-1.5 py-[2px] font-mono text-[9.5px] font-bold uppercase tracking-[0.06em] text-white/90">{fileLabel(it.fileType)}</span>
                   {(busy || failed) && (
                     <span className={`flex items-center gap-1 rounded-full px-2 py-[2px] text-[10.5px] font-semibold ${failed ? "bg-coral/90 text-[#1a0905]" : "bg-thread text-paper"}`}>
-                      {!failed && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-paper" />}
                       {failed ? "Failed" : "Making"}
                     </span>
                   )}

@@ -1,5 +1,7 @@
 "use client";
 
+import { X } from "lucide-react";
+
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -36,8 +38,8 @@ export function SkipPopup({ left, onClose }: { left: number; onClose: () => void
       data-testid="skip-popup"
     >
       <div className="relative w-full max-w-[340px] rounded-[20px] border border-line bg-surface p-5 text-center shadow-[0_20px_60px_rgba(0,0,0,.5)]">
-        <button type="button" onClick={onClose} aria-label="Close" className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full border border-line text-[20px] leading-none text-muted hover:text-ink">
-          ×
+        <button type="button" onClick={onClose} aria-label="Close" className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full border border-line text-muted hover:text-ink">
+          <X size={18} strokeWidth={2} aria-hidden />
         </button>
         <h2 className="px-10 font-display text-[24px] leading-[1.05] text-ink">Don&apos;t want to wait?</h2>
         {left > 0 && (

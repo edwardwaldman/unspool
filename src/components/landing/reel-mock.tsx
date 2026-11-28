@@ -96,7 +96,7 @@ function Crowd({ accent }: { accent: string }) {
         return (
           <motion.span
             key={k}
-            className="h-[7px] w-[7px] rounded-full"
+            className="h-[9px] w-[3px] rounded-[2px]"
             style={{ background: picked ? accent : "rgba(255,255,255,.18)" }}
             animate={picked ? { scale: [1, 1.7, 1], opacity: [0.6, 1, 0.6] } : { opacity: [0.5, 0.8, 0.5] }}
             transition={{ ...loop, duration: 2, delay: (k % 8) * 0.12 }}

@@ -148,7 +148,7 @@ export function ThreadGame() {
       <div className="absolute left-3 top-2.5 font-mono text-[13px] text-white/80">
         <span className="font-bold text-thread">{score}</span> pts{best ? <span className="ml-2 text-white/45">best {Math.max(best, score)}</span> : null}
       </div>
-      {mode === "play" && <div className="absolute right-3 top-2 text-[13px] tracking-[2px]">{"●".repeat(lives)}<span className="text-white/25">{"●".repeat(3 - lives)}</span></div>}
+      {mode === "play" && <div className="absolute right-3 top-2 text-[13px] tracking-[2px]">{"♥".repeat(lives)}<span className="text-white/25">{"♥".repeat(3 - lives)}</span></div>}
 
       {/* falling ideas */}
       {drops.map((d) => (

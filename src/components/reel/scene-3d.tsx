@@ -984,7 +984,6 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
                 {p.text}
               </span>
               <span className="w-px" style={{ height: p.line, background: "linear-gradient(#ff5a5f, #e5484d)" }} />
-              <span className="-mt-px h-[5px] w-[5px] rounded-full" style={{ background: "#ff4d52", boxShadow: "0 0 0 2px rgba(229,72,77,.25), 0 0 6px rgba(229,72,77,.8)" }} />
             </div>
           </div>
         ))}
