@@ -67,14 +67,14 @@ export function Captions({ text, words, fraction, variant = "spotlight" }: { tex
         return (
           <span
             key={i}
-            className="mx-[0.04em] inline-block px-[0.14em] transition-transform duration-150 ease-[cubic-bezier(.3,1.8,.5,1)]"
+            className="mx-[0.13em] inline-block origin-bottom transition-[transform,opacity] duration-200 ease-out"
             style={
               variant === "spotlight"
-                ? { color: w.color ? KEY_YELLOW : "#fff", opacity: spoken ? 1 : 0.38, transform: isNow ? "scale(1.08)" : undefined }
+                ? { color: w.color ? KEY_YELLOW : "#fff", opacity: spoken ? 1 : 0.38, transform: isNow ? "scale(1.04)" : undefined }
                 : variant === "clean"
                 ? { color: isNow ? "var(--thread)" : w.color ? COLOR_VAR[w.color] : "#fff", opacity: spoken ? 1 : 0.72 }
                 : variant === "karaoke"
-                  ? { color: spoken ? "var(--thread)" : "#fff", opacity: spoken ? 1 : 0.85, transform: isNow ? "scale(1.06)" : undefined }
+                  ? { color: spoken ? "var(--thread)" : "#fff", opacity: spoken ? 1 : 0.85, transform: isNow ? "scale(1.04)" : undefined }
                   : isNow
                 ? { background: "var(--thread)", color: "#08110e", textShadow: "none", transform: `scale(1.22) rotate(${i % 2 ? 3 : -3}deg)`, boxShadow: "3px 3px 0 #08110e" }
                 : { color: w.color ? COLOR_VAR[w.color] : "#fff", opacity: spoken ? 1 : 0.72 }

@@ -41,6 +41,7 @@ export function ReelSlot({
   onShare,
   onPlayGate,
   trialEligible = false,
+  unlockAll,
 }: {
   item: FeedItem;
   upload: UploadState | null;
@@ -56,6 +57,7 @@ export function ReelSlot({
   onMore: () => void;
   onEnded: () => void;
   onShare?: () => void;
+  unlockAll?: () => void;
   /** Signed-out preview: hold the first frame under a play button; pressing it calls this (the sign-up). */
   onPlayGate?: () => void;
   trialEligible?: boolean;
@@ -68,7 +70,7 @@ export function ReelSlot({
     const s = item.spool;
     return <LockedReel reel={r} total={total} bottomInset={bottomInset} topInset={topInset} onUnlock={onUnlock} gateOpen={onScreen && !active} trialEligible={trialEligible} freeAt={s ? freeAtFor(r.index, s.freeReels, s.nextFreeUnlockAt) : null} />;
   }
-  return <ReelView spool={item.spool!} reel={r} active={active} onScreen={onScreen} total={total} chrome={{ bottomInset, topInset }} onMore={onMore} onEnded={onEnded} onShare={onShare} overlay={onPlayGate ? <PlayGate onPlay={onPlayGate} /> : undefined} poster={Boolean(onPlayGate)} />;
+  return <ReelView spool={item.spool!} reel={r} active={active} onScreen={onScreen} total={total} chrome={{ bottomInset, topInset }} onMore={onMore} onEnded={onEnded} onShare={onShare} overlay={onPlayGate ? <PlayGate onPlay={onPlayGate} /> : undefined} poster={Boolean(onPlayGate)} unlockAll={unlockAll} />;
 }
 
 /** The "more" sheet for a spool's reel (mute, speed, delete the document). */
@@ -246,6 +248,14 @@ export function Feed({
                 dismissedPaywall.current.delete(it.reel!.id);
                 setPaywallFor(i);
               }}
+              unlockAll={
+                unlockAt !== null && it.spool?.id === active?.spool?.id
+                  ? () => {
+                      track("unlock_bar_tapped", lockedCount);
+                      setPaywallFor(unlockAt);
+                    }
+                  : undefined
+              }
               onMore={() => setMoreOpen(true)}
               onShare={() => setShareOpen(true)}
               onEnded={() => {
@@ -299,21 +309,6 @@ export function Feed({
           <FilterIcon size={20} />
         </Link>
       </div>
-
-      {/* Free accounts: one always-there way to unlock the whole document (opens the same unlock sheet) */}
-      {unlockAt !== null && paywallFor === null && !moreOpen && !shareOpen && (
-        <button
-          type="button"
-          onClick={() => {
-            track("unlock_bar_tapped", lockedCount);
-            setPaywallFor(unlockAt);
-          }}
-          className="absolute left-1/2 top-12 z-30 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/55 px-4 py-2 text-[13px] font-semibold text-white backdrop-blur-sm"
-          data-testid="unlock-bar"
-        >
-          Unlock all <span className="text-thread">{total(active?.spool ?? null)} reels</span>
-        </button>
-      )}
 
       {leaving && (
         <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 px-6" role="dialog" aria-modal="true" aria-label="Leave while unspooling?" onClick={() => setLeaving(false)} data-testid="leave-confirm">

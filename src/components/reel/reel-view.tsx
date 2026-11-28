@@ -58,6 +58,7 @@ export function ReelView({
   onScreen = false,
   record = false,
   poster = false,
+  unlockAll,
 }: {
   spool: SpoolDTO;
   reel: ReelDTO;
@@ -78,6 +79,8 @@ export function ReelView({
   /** The still frame a signed-out preview's play button sits on: drawn as the opening at its fullest (headline
    * built, every key word lit, the scene and caption on screen), not the empty first instant. */
   poster?: boolean;
+  /** Free accounts with locked reels: an "Unlock all" pill beside the counter, in the chip row (nothing floats over it). */
+  unlockAll?: () => void;
 }) {
   // Old reels get today's visual repairs too (nothing said or timed changes).
   const script = useMemo(() => repairVisuals(reel.script!), [reel.script]);
@@ -243,11 +246,24 @@ export function ReelView({
       {/* Top: the document chip, as in the demo ("| AP STATS · UNIT 3"), and the wordmark */}
       {!preview && !record && (
         <div className="pointer-events-none absolute inset-x-0 z-10 flex items-start justify-between px-3.5" style={{ top: top + 14 }}>
-          <span className="max-w-[70%] truncate rounded-[3px] bg-black/80 px-2 py-[3px] font-hook text-[10.5px] font-extrabold uppercase tracking-[0.04em] text-white" data-testid="reel-chip">
+          <span className={`${unlockAll ? "max-w-[52%]" : "max-w-[70%]"} truncate rounded-[3px] bg-black/80 px-2 py-[3px] font-hook text-[10.5px] font-extrabold uppercase tracking-[0.04em] text-white`} data-testid="reel-chip">
             {chipText(spool.title ?? spool.fileName, reel.index)}
           </span>
-          <span className="rounded-full bg-[#ff3d8b] px-2.5 py-[3px] font-hook text-[10.5px] font-extrabold tabular-nums text-white shadow-[0_2px_8px_rgba(255,61,139,.45)]" data-testid="reel-pill">
-            {reel.index}/{total}
+          <span className="flex shrink-0 items-center gap-1.5">
+            {unlockAll && (
+              <button
+                type="button"
+                onClick={unlockAll}
+                className="pointer-events-auto rounded-full bg-thread px-2.5 py-[3px] font-hook text-[10.5px] font-extrabold text-paper shadow-[0_2px_8px_rgba(0,0,0,.35)]"
+                data-no-press
+                data-testid="unlock-bar"
+              >
+                Unlock all
+              </button>
+            )}
+            <span className="rounded-full bg-[#ff3d8b] px-2.5 py-[3px] font-hook text-[10.5px] font-extrabold tabular-nums text-white shadow-[0_2px_8px_rgba(255,61,139,.45)]" data-testid="reel-pill">
+              {reel.index}/{total}
+            </span>
           </span>
         </div>
       )}

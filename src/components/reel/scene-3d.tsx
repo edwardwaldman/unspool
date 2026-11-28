@@ -290,7 +290,7 @@ function CameraRig({ shot, progress }: { shot: Shot; progress: number }) {
     const camera = s.camera as THREE.PerspectiveCamera;
     // Smooth, frame-rate independent dolly: the camera eases toward its goal instead of snapping to it.
     const t = s.clock.elapsedTime, k = 1 - Math.pow(0.02, dt);
-    const sway = shot.sway ?? 0.5, push = shot.push ?? 0.12;
+    const sway = (shot.sway ?? 0.5) * 0.5, push = shot.push ?? 0.12;
     const aspect = s.size.width / Math.max(1, s.size.height);
     const back = clamp(1.05 / aspect, 1, 2.4) * (1 - push * easeOut(prog.current));
     const lk = new THREE.Vector3(...shot.look);
@@ -301,7 +301,7 @@ function CameraRig({ shot, progress }: { shot: Shot; progress: number }) {
     const yaw = mv === "orbit" ? (p - 0.5) * 1.0 : mv === "whip" ? 1.15 * (1 - easeOut(prog.current / 0.14)) : 0;
     const lift = mv === "crane_up" ? -0.9 + 2.2 * p : mv === "crane_down" ? 1.6 - 2.1 * p : 0;
     const slide = mv === "truck" ? (p - 0.5) * 3.6 : 0;
-    const rel = new THREE.Vector3(shot.pos[0] + Math.sin(t * 0.35) * sway + slide, shot.pos[1] + Math.sin(t * 0.27) * 0.08 + lift, shot.pos[2]).sub(lk);
+    const rel = new THREE.Vector3(shot.pos[0] + Math.sin(t * 0.22) * sway + slide, shot.pos[1] + Math.sin(t * 0.17) * 0.04 + lift, shot.pos[2]).sub(lk);
     if (yaw) rel.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
     const goal = rel.multiplyScalar(back * f.scale).add(lk).add(f.off);
     camera.position.lerp(goal, k);
@@ -975,7 +975,7 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
             className="absolute left-0 top-0 transition-opacity duration-200"
             style={{ transform: "translate(-999px,-999px)" }}
           >
-            {/* The demo's chip: a near-black rounded tag in bold wide-tracked caps, a hairline red leader, a red dot */}
+            {/* The demo's chip: a near-black rounded tag in bold wide-tracked caps over a soft hairline leader */}
             <div className="flex flex-col items-center" style={{ transform: `translate(-50%, calc(-100% + 3px))` }}>
               <span
                 className="line-clamp-2 max-w-[52cqw] origin-bottom animate-[term-in_.32s_cubic-bezier(.3,1.5,.5,1)_both] text-balance rounded-[4px] px-[7px] pb-[3px] pt-[4px] text-center font-hook text-[11px] font-extrabold uppercase leading-[1.15] tracking-[0.06em] antialiased"
@@ -983,7 +983,7 @@ export default function Scene3D({ visual, progress, accent, colors, beatKey, sce
               >
                 {p.text}
               </span>
-              <span className="w-px" style={{ height: p.line, background: "linear-gradient(#ff5a5f, #e5484d)" }} />
+              <span className="w-px" style={{ height: p.line, background: "linear-gradient(rgba(255,255,255,.7), rgba(255,255,255,.15))" }} />
             </div>
           </div>
         ))}
