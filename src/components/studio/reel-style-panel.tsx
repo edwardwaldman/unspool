@@ -48,12 +48,13 @@ const SAMPLE = "Mitochondria turn your lunch into *energy* for every cell.";
 const SAMPLE_WORDS = SAMPLE.split(" ").map((_, i, a) => i / a.length);
 
 /** A small 9:16 card that plays a sample caption in the chosen style. */
-export function StylePreview({ style, className = "" }: { style: ReelStyle; className?: string }) {
-  const [t, setT] = useState(0.35);
+export function StylePreview({ style, className = "", still = false }: { style: ReelStyle; className?: string; /** Hold the caption still (no word-by-word ticking). */ still?: boolean }) {
+  const [t, setT] = useState(still ? 1 : 0.35);
   useEffect(() => {
+    if (still) return;
     const id = window.setInterval(() => setT((x) => (x >= 0.98 ? 0 : x + 0.11)), 520);
     return () => window.clearInterval(id);
-  }, []);
+  }, [still]);
   const paper = style.theme === "paper";
   return (
     <div
@@ -85,10 +86,10 @@ export function StylePreview({ style, className = "" }: { style: ReelStyle; clas
 
 // The looks the upsell shows, one after another (each a real combination of the options below).
 const SHOWCASE: ReelStyle[] = [
-  { captions: "pop", font: "display", accent: "coral", position: "middle", theme: "dark" },
+  { captions: "pop", font: "display", accent: "coral", position: "bottom", theme: "dark" },
   { captions: "karaoke", font: "rounded", accent: "ocean", position: "bottom", theme: "dark" },
   { captions: "clean", font: "serif", accent: "violet", position: "bottom", theme: "paper" },
-  { captions: "spotlight", font: "mono", accent: "lime", position: "middle", theme: "dark" },
+  { captions: "spotlight", font: "mono", accent: "lime", position: "bottom", theme: "dark" },
   { captions: "pop", font: "classic", accent: "mono", position: "bottom", theme: "dark" },
 ];
 const optName = (k: ReelStyleKey, id: string) => (REEL_STYLE_OPTIONS[k] as readonly (readonly [string, string])[]).find(([v]) => v === id)?.[1] ?? id;
@@ -105,7 +106,7 @@ export function StyleUpsell({ open, onClose }: { open: boolean; onClose: () => v
   useEffect(() => {
     if (!open) return;
     track("style_upsell_shown");
-    const id = window.setInterval(() => setI((x) => x + 1), 1700);
+    const id = window.setInterval(() => setI((x) => x + 1), 2200);
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => (window.clearInterval(id), window.removeEventListener("keydown", onKey));
@@ -121,16 +122,10 @@ export function StyleUpsell({ open, onClose }: { open: boolean; onClose: () => v
       setBusy(false);
     }
   };
-  const card = (k: number, tilt: number, cls: string) => (
-    <div className={`relative ${cls}`} style={{ transform: `rotate(${tilt}deg)` }}>
-      {/* the old look leaves before the new one arrives, so two never overlap */}
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div key={i + k} initial={{ opacity: 0, scale: 0.92, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: -8 }} transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}>
-          <StylePreview style={at(k)} className="w-full rounded-[14px] shadow-[0_14px_34px_rgba(0,0,0,.45)]" />
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  );
+  // A carousel: every sample keeps its own card, and each step they all glide one place left. The middle one is the
+  // look being named; the side ones sit smaller, dimmer and still.
+  const N = SHOWCASE.length;
+  const slotOf = (k: number) => ((((k - i) % N) + N + 2) % N) - 2; // -2..2, 0 is the middle
   return createPortal(
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 px-5" role="dialog" aria-modal aria-label="Reel style" onClick={(e) => e.target === e.currentTarget && onClose()} data-testid="style-upsell-popup">
       <div className="relative w-full max-w-[360px] rounded-[22px] border border-line bg-surface p-5 text-center shadow-[0_20px_60px_rgba(0,0,0,.5)]">
@@ -139,13 +134,30 @@ export function StyleUpsell({ open, onClose }: { open: boolean; onClose: () => v
         </button>
         <h2 className="px-10 font-display text-[24px] leading-[1.05] text-ink">Make every reel yours</h2>
         <p className="mt-2 text-[13px] leading-snug text-muted">Pick the captions, font, colour and layout once. Every reel you make follows.</p>
-        {/* three sample reels fanned out, each changing look in turn */}
-        <div className="mt-5 flex items-end justify-center gap-2" aria-hidden>
-          {card(-1, -6, "w-[86px] translate-y-2 opacity-80")}
-          {card(0, 0, "z-10 w-[118px]")}
-          {card(1, 6, "w-[86px] translate-y-2 opacity-80")}
+        <div className="relative mx-auto mt-5 h-[214px] w-full overflow-hidden" aria-hidden>
+          {SHOWCASE.map((st, k) => {
+            const slot = slotOf(k), mid = slot === 0;
+            return (
+              <motion.div
+                key={k}
+                className="absolute left-1/2 top-1/2 w-[118px]"
+                style={{ zIndex: 10 - Math.abs(slot), marginLeft: -59, marginTop: -105 }}
+                initial={false}
+                animate={{ x: slot * 92, scale: mid ? 1 : 0.78, rotate: slot * 4, opacity: Math.abs(slot) > 1 ? 0 : mid ? 1 : 0.55 }}
+                transition={{ type: "spring", stiffness: 170, damping: 26, mass: 0.9 }}
+              >
+                <StylePreview style={st} still={!mid} className="w-full rounded-[14px] shadow-[0_14px_34px_rgba(0,0,0,.45)]" />
+              </motion.div>
+            );
+          })}
         </div>
-        <div className="mt-4 h-5 text-[12.5px] font-medium text-thread" aria-live="off">{describe(at(0))}</div>
+        <div className="relative mt-3 h-5 text-[12.5px] font-medium text-thread" aria-live="off">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span key={i} className="absolute inset-x-0" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }}>
+              {describe(at(0))}
+            </motion.span>
+          </AnimatePresence>
+        </div>
         <button type="button" onClick={upgrade} disabled={busy} className="mt-4 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-thread px-4 text-[16px] font-semibold text-paper hover:opacity-90 disabled:opacity-60" data-testid="style-upsell-cta">
           <Crown size={17} strokeWidth={2.2} aria-hidden /> {busy ? "Loading..." : "Upgrade to Plus"}
         </button>
