@@ -71,14 +71,23 @@ export function SkipPopup({ left, onClose }: { left: number; onClose: () => void
 
 /**
  * Free accounts: the countdown to their next free reel, and how many uploads are waiting in the queue for it.
- * Tap it to skip the wait. When it reaches zero the page reloads, and the next queued upload shows a Ready button
+ * A Skip the wait button goes straight to checkout. When it reaches zero the page reloads, and the next queued upload shows a Ready button
  * (nothing starts on its own: src/lib/queue.ts).
  */
 export function QueueTimer({ nextAt, queued }: { nextAt: string | null; queued: number }) {
   const router = useRouter();
   const left = useCountdown(nextAt);
   const fired = useRef(false);
-  const [open, setOpen] = useState(false);
+  const usage = useCredits();
+  const [busy, setBusy] = useState(false);
+  const skip = async () => {
+    setBusy(true);
+    const err = await startCheckout(usage?.trialEligible ? { kind: "trial", returnTo: "/studio" } : { kind: "subscription", tier: "plus", returnTo: "/studio" });
+    if (err) {
+      toast(err, 4000);
+      setBusy(false);
+    }
+  };
   useEffect(() => {
     if (!nextAt || left > 0 || fired.current) return;
     if (Date.parse(nextAt) > Date.now()) return; // the shared clock hasn't ticked yet
@@ -86,18 +95,10 @@ export function QueueTimer({ nextAt, queued }: { nextAt: string | null; queued: 
     router.refresh();
   }, [left, nextAt, router]);
 
-  const popup = open && <SkipPopup left={left} onClose={() => setOpen(false)} />;
-
   if (left > 0) {
     return (
-      <>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="flex w-full items-center justify-between rounded-[16px] border border-line px-4 py-3 text-left transition-colors hover:border-thread"
-          aria-label={`Next free reel in ${formatCountdown(left)}. Tap to skip the wait`}
-          data-testid="queue-timer"
-        >
+      <div className="rounded-[16px] border border-line px-4 py-3" data-testid="queue-timer">
+        <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-[12.5px] font-semibold text-muted">Next free reel in</div>
             {queued > 0 && (
@@ -109,9 +110,18 @@ export function QueueTimer({ nextAt, queued }: { nextAt: string | null; queued: 
           <div className="font-mono text-[26px] font-bold tabular-nums leading-none text-ink" aria-live="off">
             {formatCountdown(left)}
           </div>
+        </div>
+        {/* One tap to skip: the free trial when they can still take it, otherwise Plus */}
+        <button
+          type="button"
+          onClick={skip}
+          disabled={busy}
+          className="mt-3 min-h-[44px] w-full rounded-full bg-thread px-4 text-[15px] font-semibold text-paper transition-opacity hover:opacity-90 disabled:opacity-60"
+          data-testid="timer-skip"
+        >
+          {busy ? "Loading..." : "Skip the wait"}
         </button>
-        {popup}
-      </>
+      </div>
     );
   }
   return (
